@@ -1,14 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { HeartPulse, Loader2, Download, Wand2 } from 'lucide-react';
+import { HeartPulse, Loader2, Download, Wand2, ToyBrick, Trash2 } from 'lucide-react';
 import { extractMedicalFindings, type ExtractMedicalFindingsOutput } from '@/ai/flows/extract-medical-findings';
+import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { FileUploader } from './file-uploader';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from './ui/input';
 
 function ResultDisplay({ label, value }: { label: string; value: string }) {
   return (
@@ -21,35 +23,56 @@ function ResultDisplay({ label, value }: { label: string; value: string }) {
 
 export function MedicalExtractor() {
   const [reportDataUri, setReportDataUri] = useState<string>('');
-  const [result, setResult] = useState<ExtractMedicalFindingsOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [medicalResult, setMedicalResult] = useState<ExtractMedicalFindingsOutput | null>(null);
+  const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
+  const [isLoadingMedical, setIsLoadingMedical] = useState(false);
+  const [isLoadingFields, setIsLoadingFields] = useState(false);
   const { toast } = useToast();
 
-  const handleScan = async () => {
+  const handleScanMedical = async () => {
     if (!reportDataUri) {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
-    setIsLoading(true);
-    setResult(null);
+    setIsLoadingMedical(true);
+    setMedicalResult(null);
 
     try {
       const response = await extractMedicalFindings({ reportDataUri });
-      setResult(response);
+      setMedicalResult(response);
     } catch (error) {
       console.error(error);
       toast({ title: 'Extraction Failed', description: 'Could not analyze the medical report.', variant: 'destructive' });
     } finally {
-      setIsLoading(false);
+      setIsLoadingMedical(false);
     }
   };
 
-  const getFullText = () => {
-    if (!result) return '';
-    return `Diagnosis: ${result.diagnosis}\n\nFindings: ${result.findings}`;
+  const handleGetFields = async () => {
+    if (!reportDataUri) {
+      toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
+      return;
+    }
+    setIsLoadingFields(true);
+    setFieldsResult(null);
+
+    try {
+      const response = await extractDynamicFormFromImage({ photoDataUri: reportDataUri });
+      setFieldsResult(response);
+    } catch (error) {
+      console.error(error);
+      toast({ title: 'Extraction Failed', description: 'Could not extract fields from the image.', variant: 'destructive' });
+    } finally {
+      setIsLoadingFields(false);
+    }
   };
   
-  const handleDownload = () => {
+  const getFullText = () => {
+    if (!medicalResult) return '';
+    return `Diagnosis: ${medicalResult.diagnosis}\n\nFindings: ${medicalResult.findings}`;
+  };
+  
+  const handleDownloadMedical = () => {
     const text = getFullText();
     if (!text) return;
     const element = document.createElement('a');
@@ -61,54 +84,165 @@ export function MedicalExtractor() {
     document.body.removeChild(element);
   };
   
+  const handleFieldChange = (index: number, field: 'key' | 'value', value: string) => {
+    if (!fieldsResult) return;
+    const newFields = [...fieldsResult.fields];
+    newFields[index] = { ...newFields[index], [field]: value };
+    setFieldsResult({ fields: newFields });
+  };
+  
+  const handleRemoveField = (index: number) => {
+    if (!fieldsResult) return;
+    const newFields = fieldsResult.fields.filter((_, i) => i !== index);
+    setFieldsResult({ fields: newFields });
+  };
+
+  const handleDownloadFields = (format: 'json' | 'csv') => {
+    if (!fieldsResult?.fields || fieldsResult.fields.length === 0) return;
+
+    let content = '';
+    let mimeType = '';
+    let fileName = '';
+
+    if (format === 'json') {
+      const jsonObject = fieldsResult.fields.reduce((acc, { key, value }) => {
+        acc[key] = value;
+        return acc;
+      }, {} as Record<string, string>);
+      content = JSON.stringify(jsonObject, null, 2);
+      mimeType = 'application/json';
+      fileName = 'extracted_fields.json';
+    } else { // csv
+      const header = 'key,value\n';
+      const rows = fieldsResult.fields.map(({ key, value }) => `"${key.replace(/"/g, '""')}","${value.replace(/"/g, '""')}"`).join('\n');
+      content = header + rows;
+      mimeType = 'text/csv';
+      fileName = 'extracted_fields.csv';
+    }
+
+    const element = document.createElement('a');
+    const file = new Blob([content], { type: mimeType });
+    element.href = URL.createObjectURL(file);
+    element.download = fileName;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+  
+  const isLoading = isLoadingMedical || isLoadingFields;
+
   return (
-    <div className="grid md:grid-cols-2 gap-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HeartPulse className="w-6 h-6" />
-            Upload Medical Report
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-6">
-          <FileUploader onFileSelect={setReportDataUri} />
-          <Button onClick={handleScan} disabled={!reportDataUri || isLoading} className="w-full">
-            {isLoading ? <Loader2 className="animate-spin" /> : 'Analyze Report'}
-          </Button>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Wand2 className="w-6 h-6" />
-            Medical Analysis
-          </CardTitle>
-           {result && (
-             <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="mr-2 h-4 w-4" /> Download
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isLoading && (
-            <div className="space-y-4">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-24 w-full" />
+    <div className="flex flex-col gap-8">
+      <div className="grid md:grid-cols-2 gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HeartPulse className="w-6 h-6" />
+              Upload Medical Report
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+            <FileUploader onFileSelect={setReportDataUri} />
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button onClick={handleScanMedical} disabled={!reportDataUri || isLoading} className="w-full">
+                {isLoadingMedical ? <Loader2 className="animate-spin" /> : 'Analyze Report'}
+              </Button>
+              <Button onClick={handleGetFields} disabled={!reportDataUri || isLoading} className="w-full">
+                {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
+              </Button>
             </div>
-          )}
-          {result && (
-            <div className="space-y-4">
-              <ResultDisplay label="Diagnosis" value={result.diagnosis} />
-              <ResultDisplay label="Key Findings" value={result.findings} />
-            </div>
-          )}
-          {!isLoading && !result && (
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              <p>Your results will appear here.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Wand2 className="w-6 h-6" />
+              Medical Analysis
+            </CardTitle>
+            {medicalResult && (
+              <Button variant="outline" size="sm" onClick={handleDownloadMedical}>
+                <Download className="mr-2 h-4 w-4" /> Download
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingMedical && (
+              <div className="space-y-4">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </div>
+            )}
+            {medicalResult && (
+              <div className="space-y-4">
+                <ResultDisplay label="Diagnosis" value={medicalResult.diagnosis} />
+                <ResultDisplay label="Key Findings" value={medicalResult.findings} />
+              </div>
+            )}
+            {!isLoadingMedical && !medicalResult && (
+              <div className="flex items-center justify-center h-64 text-muted-foreground">
+                <p>Your results will appear here.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {(isLoadingFields || fieldsResult) && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ToyBrick className="w-6 h-6" />
+              Extracted Fields
+            </CardTitle>
+            {fieldsResult && (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleDownloadFields('json')}>
+                  <Download className="mr-2 h-4 w-4" /> JSON
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleDownloadFields('csv')}>
+                  <Download className="mr-2 h-4 w-4" /> CSV
+                </Button>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingFields && (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Skeleton className="h-10 w-1/3" />
+                    <Skeleton className="h-10 w-2/3" />
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {!isLoadingFields && fieldsResult && (
+              <div className="space-y-3 max-h-[24rem] overflow-y-auto pr-2">
+                {fieldsResult.fields.map((field, index) => (
+                  <div key={index} className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center">
+                    <Input
+                      value={field.key}
+                      onChange={(e) => handleFieldChange(index, 'key', e.target.value)}
+                      placeholder="Key"
+                      className="font-code"
+                    />
+                    <Input
+                      value={field.value}
+                      onChange={(e) => handleFieldChange(index, 'value', e.target.value)}
+                      placeholder="Value"
+                      className="font-code"
+                    />
+                    <Button variant="ghost" size="icon" onClick={() => handleRemoveField(index)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
