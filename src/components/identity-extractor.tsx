@@ -66,6 +66,12 @@ export function IdentityExtractor() {
       setIsLoadingFields(false);
     }
   };
+  
+  const handleClear = () => {
+    setPhotoDataUri('');
+    setInfoResult(null);
+    setFieldsResult(null);
+  };
 
   const getFullText = () => {
     if (!infoResult) return '';
@@ -106,6 +112,11 @@ export function IdentityExtractor() {
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
+            {photoDataUri && (
+                <Button onClick={handleClear} variant="outline" className="w-full">
+                    <Trash2 className="mr-2 h-4 w-4" /> Clear
+                </Button>
+            )}
           </CardContent>
         </Card>
         <Card>

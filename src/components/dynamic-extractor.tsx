@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ToyBrick, Loader2, Wand2 } from 'lucide-react';
+import { ToyBrick, Loader2, Wand2, Trash2 } from 'lucide-react';
 import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,11 @@ export function DynamicExtractor() {
     }
   };
 
+  const handleClear = () => {
+    setPhotoDataUri('');
+    setResult(null);
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className="grid md:grid-cols-2 gap-8">
@@ -50,6 +55,11 @@ export function DynamicExtractor() {
             <Button onClick={handleScan} disabled={!photoDataUri || isLoading} className="w-full">
               {isLoading ? <Loader2 className="animate-spin" /> : 'Extract Dynamic Data'}
             </Button>
+            {photoDataUri && (
+                <Button onClick={handleClear} variant="outline" className="w-full">
+                    <Trash2 className="mr-2 h-4 w-4" /> Clear
+                </Button>
+            )}
           </CardContent>
         </Card>
         <Card>

@@ -67,6 +67,12 @@ export function MedicalExtractor() {
       setIsLoadingFields(false);
     }
   };
+
+  const handleClear = () => {
+    setReportDataUri('');
+    setMedicalResult(null);
+    setFieldsResult(null);
+  };
   
   const getFullText = () => {
     if (!medicalResult) return '';
@@ -108,6 +114,11 @@ export function MedicalExtractor() {
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
+            {reportDataUri && (
+                <Button onClick={handleClear} variant="outline" className="w-full">
+                    <Trash2 className="mr-2 h-4 w-4" /> Clear
+                </Button>
+            )}
           </CardContent>
         </Card>
         <Card>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Loader2, Download, Wand2 } from 'lucide-react';
+import { FileText, Loader2, Download, Wand2, Trash2 } from 'lucide-react';
 import { extractAndCorrectText, type ExtractAndCorrectTextOutput } from '@/ai/flows/extract-and-correct-text';
 import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 
@@ -58,6 +58,12 @@ export function TextExtractor() {
       setIsLoadingFields(false);
     }
   };
+
+  const handleClear = () => {
+    setPhotoDataUri('');
+    setTextResult(null);
+    setFieldsResult(null);
+  };
   
   const handleDownloadText = () => {
     if (!textResult?.extractedText) return;
@@ -92,6 +98,11 @@ export function TextExtractor() {
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
+            {photoDataUri && (
+                <Button onClick={handleClear} variant="outline" className="w-full">
+                    <Trash2 className="mr-2 h-4 w-4" /> Clear
+                </Button>
+            )}
           </CardContent>
         </Card>
         <Card>

@@ -68,6 +68,12 @@ export function BillingExtractor() {
       setIsLoadingFields(false);
     }
   };
+
+  const handleClear = () => {
+    setPhotoDataUri('');
+    setBillingResult(null);
+    setFieldsResult(null);
+  };
   
   const getFullText = () => {
     if (!billingResult) return '';
@@ -111,6 +117,11 @@ export function BillingExtractor() {
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
+             {photoDataUri && (
+                <Button onClick={handleClear} variant="outline" className="w-full">
+                    <Trash2 className="mr-2 h-4 w-4" /> Clear
+                </Button>
+            )}
           </CardContent>
         </Card>
         <Card>
