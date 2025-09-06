@@ -13,14 +13,12 @@ import { FileUploader } from './file-uploader';
 import { Skeleton } from './ui/skeleton';
 import { Input } from './ui/input';
 
-type ExtractionMode = 'text' | 'fields';
-
 export function TextExtractor() {
   const [photoDataUri, setPhotoDataUri] = useState<string>('');
   const [textResult, setTextResult] = useState<ExtractAndCorrectTextOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [mode, setMode] = useState<ExtractionMode>('text');
+  const [isLoadingText, setIsLoadingText] = useState(false);
+  const [isLoadingFields, setIsLoadingFields] = useState(false);
   const { toast } = useToast();
 
   const handleScanText = async () => {
@@ -28,10 +26,8 @@ export function TextExtractor() {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
-    setIsLoading(true);
-    setMode('text');
+    setIsLoadingText(true);
     setTextResult(null);
-    setFieldsResult(null);
 
     try {
       const response = await extractAndCorrectText({ photoDataUri });
@@ -40,7 +36,7 @@ export function TextExtractor() {
       console.error(error);
       toast({ title: 'Extraction Failed', description: 'Could not extract text from the image.', variant: 'destructive' });
     } finally {
-      setIsLoading(false);
+      setIsLoadingText(false);
     }
   };
 
@@ -49,9 +45,7 @@ export function TextExtractor() {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
-    setIsLoading(true);
-    setMode('fields');
-    setTextResult(null);
+    setIsLoadingFields(true);
     setFieldsResult(null);
 
     try {
@@ -61,7 +55,7 @@ export function TextExtractor() {
       console.error(error);
       toast({ title: 'Extraction Failed', description: 'Could not extract fields from the image.', variant: 'destructive' });
     } finally {
-      setIsLoading(false);
+      setIsLoadingFields(false);
     }
   };
   
@@ -78,15 +72,25 @@ export function TextExtractor() {
     setFieldsResult({ fields: newFields });
   };
 
-  const handleDownload = () => {
-    let content: string | undefined;
-    let fileName: string;
-    let mimeType = 'text/plain';
+  const handleDownloadText = () => {
+    if (!textResult?.extractedText) return;
+    const element = document.createElement('a');
+    const file = new Blob([textResult.extractedText], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = 'extracted_text.txt';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
 
-    if (mode === 'text' && textResult?.extractedText) {
-      content = textResult.extractedText;
-      fileName = 'extracted_text.txt';
-    } else if (mode === 'fields' && fieldsResult?.fields) {
+  const handleDownloadFields = (format: 'json' | 'csv') => {
+    if (!fieldsResult?.fields || fieldsResult.fields.length === 0) return;
+
+    let content = '';
+    let mimeType = '';
+    let fileName = '';
+
+    if (format === 'json') {
       const jsonObject = fieldsResult.fields.reduce((acc, { key, value }) => {
         acc[key] = value;
         return acc;
@@ -94,9 +98,13 @@ export function TextExtractor() {
       content = JSON.stringify(jsonObject, null, 2);
       mimeType = 'application/json';
       fileName = 'extracted_fields.json';
+    } else { // csv
+      const header = 'key,value\n';
+      const rows = fieldsResult.fields.map(({ key, value }) => `"${key.replace(/"/g, '""')}","${value.replace(/"/g, '""')}"`).join('\n');
+      content = header + rows;
+      mimeType = 'text/csv';
+      fileName = 'extracted_fields.csv';
     }
-
-    if (!content) return;
 
     const element = document.createElement('a');
     const file = new Blob([content], { type: mimeType });
@@ -107,98 +115,121 @@ export function TextExtractor() {
     document.body.removeChild(element);
   };
   
-  const hasResult = (textResult && mode === 'text') || (fieldsResult && mode === 'fields');
+  const isLoading = isLoadingText || isLoadingFields;
 
   return (
-    <div className="grid md:grid-cols-2 gap-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-6 h-6" />
-            Upload Document
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
-          <FileUploader onFileSelect={setPhotoDataUri} />
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button onClick={handleScanText} disabled={!photoDataUri || isLoading} className="w-full">
-              {isLoading && mode === 'text' ? <Loader2 className="animate-spin" /> : 'Extract Text'}
-            </Button>
-            <Button onClick={handleGetFields} disabled={!photoDataUri || isLoading} className="w-full">
-              {isLoading && mode === 'fields' ? <Loader2 className="animate-spin" /> : 'Get Fields'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Wand2 className="w-6 h-6" />
-            Extracted Text
-          </CardTitle>
-          {hasResult && (
-            <Button variant="outline" size="sm" onClick={handleDownload}>
-              <Download className="mr-2 h-4 w-4" /> Download
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {isLoading && (
-             <div className="space-y-4">
-               {mode === 'text' ? (
-                <Skeleton className="h-64 w-full" />
-               ) : (
-                [...Array(5)].map((_, i) => (
+    <div className="flex flex-col gap-8">
+      <div className="grid md:grid-cols-2 gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-6 h-6" />
+              Upload Document
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+            <FileUploader onFileSelect={setPhotoDataUri} />
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button onClick={handleScanText} disabled={!photoDataUri || isLoading} className="w-full">
+                {isLoadingText ? <Loader2 className="animate-spin" /> : 'Extract Text'}
+              </Button>
+              <Button onClick={handleGetFields} disabled={!photoDataUri || isLoading} className="w-full">
+                {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Wand2 className="w-6 h-6" />
+              Extracted Text
+            </CardTitle>
+            {textResult && (
+              <Button variant="outline" size="sm" onClick={handleDownloadText}>
+                <Download className="mr-2 h-4 w-4" /> Download
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            {isLoadingText && (
+              <Skeleton className="h-64 w-full" />
+            )}
+            
+            {!isLoadingText && !textResult && (
+              <div className="flex items-center justify-center h-64 text-muted-foreground">
+                <p>Your extracted text will appear here.</p>
+              </div>
+            )}
+
+            {!isLoadingText && textResult && (
+              <Textarea
+                value={textResult.extractedText}
+                readOnly
+                rows={12}
+                className="font-code bg-secondary"
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {(isLoadingFields || fieldsResult) && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ToyBrick className="w-6 h-6" />
+              Extracted Fields
+            </CardTitle>
+            {fieldsResult && (
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleDownloadFields('json')}>
+                  <Download className="mr-2 h-4 w-4" /> JSON
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => handleDownloadFields('csv')}>
+                  <Download className="mr-2 h-4 w-4" /> CSV
+                </Button>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {isLoadingFields && (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
                   <div key={i} className="flex gap-2">
                     <Skeleton className="h-10 w-1/3" />
                     <Skeleton className="h-10 w-2/3" />
                   </div>
-                ))
-               )}
-            </div>
-          )}
-          
-          {!isLoading && !hasResult && (
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              <p>Your results will appear here.</p>
-            </div>
-          )}
-
-          {!isLoading && hasResult && mode === 'text' && textResult && (
-            <Textarea
-              value={textResult.extractedText}
-              readOnly
-              rows={12}
-              className="font-code bg-secondary"
-            />
-          )}
-
-          {!isLoading && hasResult && mode === 'fields' && fieldsResult && (
-             <div className="space-y-3 max-h-[24rem] overflow-y-auto pr-2">
-              {fieldsResult.fields.map((field, index) => (
-                <div key={index} className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center">
-                  <Input
-                    value={field.key}
-                    onChange={(e) => handleFieldChange(index, 'key', e.target.value)}
-                    placeholder="Key"
-                    className="font-code"
-                  />
-                  <Input
-                    value={field.value}
-                    onChange={(e) => handleFieldChange(index, 'value', e.target.value)}
-                    placeholder="Value"
-                    className="font-code"
-                  />
-                  <Button variant="ghost" size="icon" onClick={() => handleRemoveField(index)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
-        </CardContent>
-      </Card>
+                ))}
+              </div>
+            )}
+            
+            {!isLoadingFields && fieldsResult && (
+              <div className="space-y-3 max-h-[24rem] overflow-y-auto pr-2">
+                {fieldsResult.fields.map((field, index) => (
+                  <div key={index} className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center">
+                    <Input
+                      value={field.key}
+                      onChange={(e) => handleFieldChange(index, 'key', e.target.value)}
+                      placeholder="Key"
+                      className="font-code"
+                    />
+                    <Input
+                      value={field.value}
+                      onChange={(e) => handleFieldChange(index, 'value', e.target.value)}
+                      placeholder="Value"
+                      className="font-code"
+                    />
+                    <Button variant="ghost" size="icon" onClick={() => handleRemoveField(index)}>
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
