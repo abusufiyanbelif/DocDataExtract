@@ -2,50 +2,90 @@
 'use client';
 
 import { useState, useRef, type ChangeEvent, type MouseEvent } from 'react';
-import { UploadCloud, ZoomIn, ZoomOut, SearchX } from 'lucide-react';
+import { UploadCloud, ZoomIn, ZoomOut, SearchX, X } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface FileUploaderProps {
-  onFileSelect: (dataUri: string) => void;
+  onFileSelect: (dataUris: string[]) => void;
   acceptedFileTypes?: string;
+  multiple?: boolean;
 }
 
 export function FileUploader({
   onFileSelect,
   acceptedFileTypes = 'image/*',
+  multiple = false,
 }: FileUploaderProps) {
-  const [preview, setPreview] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string>('');
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [fileNames, setFileNames] = useState<string[]>([]);
+  const [activePreview, setActivePreview] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
   const startPos = useRef({ x: 0, y: 0 });
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const dataUri = reader.result as string;
-        setPreview(dataUri);
-        onFileSelect(dataUri);
-        // Reset zoom/pan when new file is uploaded
-        setScale(1);
-        setPosition({ x: 0, y: 0 });
-      };
-      reader.readAsDataURL(file);
+  const handleFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      const newPreviews: string[] = [];
+      const newFileNames: string[] = [];
+      const filePromises = Array.from(files).map(file => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            newPreviews.push(reader.result as string);
+            newFileNames.push(file.name);
+            resolve(reader.result as string)
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(filePromises).then(dataUris => {
+        if (multiple) {
+            const allPreviews = [...previews, ...newPreviews];
+            const allFileNames = [...fileNames, ...newFileNames];
+            setPreviews(allPreviews);
+            setFileNames(allFileNames);
+            onFileSelect(allPreviews);
+            if (!activePreview) {
+              setActivePreview(newPreviews[0]);
+            }
+        } else {
+            setPreviews(newPreviews);
+            setFileNames(newFileNames);
+            onFileSelect(newPreviews);
+            setActivePreview(newPreviews[0]);
+        }
+      });
+      // Reset zoom/pan when new file is uploaded
+      setScale(1);
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+  
+  const handleRemoveFile = (index: number) => {
+    const newPreviews = previews.filter((_, i) => i !== index);
+    const newFileNames = fileNames.filter((_, i) => i !== index);
+    setPreviews(newPreviews);
+    setFileNames(newFileNames);
+    onFileSelect(newPreviews);
+
+    if (activePreview === previews[index]) {
+        setActivePreview(newPreviews.length > 0 ? newPreviews[0] : null);
     }
   };
 
   const handleReset = () => {
-    setPreview(null);
-    setFileName('');
-    onFileSelect('');
+    setPreviews([]);
+    setFileNames([]);
+    onFileSelect([]);
+    setActivePreview(null);
     setScale(1);
     setPosition({ x: 0, y: 0 });
   };
@@ -76,7 +116,7 @@ export function FileUploader({
     e.currentTarget.style.cursor = scale > 1 ? 'grab' : 'default';
   };
 
-  if (preview) {
+  if (previews.length > 0) {
     return (
       <div className="flex flex-col items-center gap-4 w-full">
         <div 
@@ -87,8 +127,8 @@ export function FileUploader({
           onMouseLeave={handleMouseUp}
           ref={imageRef}
         >
-          <Image 
-            src={preview} 
+          {activePreview && <Image 
+            src={activePreview} 
             alt="File preview" 
             fill 
             style={{ 
@@ -99,17 +139,61 @@ export function FileUploader({
             }} 
             data-ai-hint="document preview"
             draggable="false"
-          />
+          />}
            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/70 p-1 rounded-md">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomIn}><ZoomIn /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut}><ZoomOut /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleResetZoom}><SearchX /></Button>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">{fileName}</p>
-        <Button onClick={handleReset} variant="outline">
-          Choose a different file
-        </Button>
+
+        {multiple && previews.length > 0 && (
+          <div className="w-full flex flex-wrap gap-2 justify-center">
+            {previews.map((preview, index) => (
+              <Card 
+                key={index} 
+                className={cn(
+                  "p-1 w-20 h-20 relative cursor-pointer", 
+                  activePreview === preview && "ring-2 ring-primary"
+                )}
+                onClick={() => setActivePreview(preview)}
+              >
+                <CardContent className="p-0 relative w-full h-full">
+                  <Image src={preview} alt={fileNames[index]} fill style={{objectFit: 'cover'}} />
+                  <Button 
+                    variant="destructive" 
+                    size="icon" 
+                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveFile(index);
+                    }}
+                  >
+                    <X className="h-3 w-3"/>
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        <p className="text-sm text-muted-foreground">{multiple ? `${fileNames.length} files selected` : fileNames[0]}</p>
+        <div className="flex gap-2">
+            <label htmlFor="file-reupload" className={cn(buttonVariants({ variant: 'outline' }), "cursor-pointer")}>
+                Add another file
+                <Input
+                    id="file-reupload"
+                    type="file"
+                    className="hidden"
+                    onChange={handleFilesChange}
+                    accept={acceptedFileTypes}
+                    multiple={multiple}
+                />
+            </label>
+            <Button onClick={handleReset} variant="outline">
+            Clear all files
+            </Button>
+        </div>
       </div>
     );
   }
@@ -131,8 +215,9 @@ export function FileUploader({
           id="file-upload"
           type="file"
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          onChange={handleFileChange}
+          onChange={handleFilesChange}
           accept={acceptedFileTypes}
+          multiple={multiple}
         />
       </label>
     </div>
