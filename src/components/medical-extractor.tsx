@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FileUploader } from './file-uploader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from './ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 function ResultDisplay({ label, value }: { label: string; value: string }) {
   return (
@@ -69,7 +70,8 @@ export function MedicalExtractor() {
   
   const getFullText = () => {
     if (!medicalResult) return '';
-    return `Diagnosis: ${medicalResult.diagnosis}\n\nFindings: ${medicalResult.findings}`;
+    const findingsText = medicalResult.findings.map(f => `- ${f.finding}: ${f.details}`).join('\n');
+    return `Diagnosis: ${medicalResult.diagnosis}\n\nFindings:\n${findingsText}`;
   };
   
   const handleDownloadMedical = () => {
@@ -175,7 +177,27 @@ export function MedicalExtractor() {
             {medicalResult && (
               <div className="space-y-4">
                 <ResultDisplay label="Diagnosis" value={medicalResult.diagnosis} />
-                <ResultDisplay label="Key Findings" value={medicalResult.findings} />
+                <div>
+                   <h3 className="text-sm font-medium text-muted-foreground mb-1">Key Findings</h3>
+                   <div className="border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Finding</TableHead>
+                          <TableHead>Details</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {medicalResult.findings.map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{item.finding}</TableCell>
+                            <TableCell>{item.details}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </div>
             )}
             {!isLoadingMedical && !medicalResult && (

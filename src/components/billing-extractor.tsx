@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { FileUploader } from './file-uploader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from './ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 function ResultDisplay({ label, value }: { label: string; value: string }) {
   return (
@@ -69,7 +70,10 @@ export function BillingExtractor() {
   
   const getFullText = () => {
     if (!billingResult) return '';
-    return `Vendor Information: ${billingResult.vendorInformation}\nDates: ${billingResult.dates}\nAmounts: ${billingResult.amounts}\nPurchased Items: ${billingResult.purchasedItems}`;
+    const itemsText = billingResult.purchasedItems
+        .map(item => `${item.item} (Qty: ${item.quantity || 'N/A'}, Unit: ${item.unitPrice || 'N/A'}, Total: ${item.totalPrice})`)
+        .join('\n');
+    return `Vendor Information: ${billingResult.vendorInformation}\nDates: ${billingResult.dates}\nAmounts: ${billingResult.amounts}\n\nPurchased Items:\n${itemsText}`;
   };
 
   const handleDownloadBilling = () => {
@@ -179,7 +183,31 @@ export function BillingExtractor() {
                 <ResultDisplay label="Vendor Information" value={billingResult.vendorInformation} />
                 <ResultDisplay label="Dates" value={billingResult.dates} />
                 <ResultDisplay label="Amounts" value={billingResult.amounts} />
-                <ResultDisplay label="Purchased Items" value={billingResult.purchasedItems} />
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Purchased Items</h3>
+                  <div className="border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Item</TableHead>
+                          <TableHead className="text-right">Qty</TableHead>
+                          <TableHead className="text-right">Unit Price</TableHead>
+                          <TableHead className="text-right">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {billingResult.purchasedItems.map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{item.item}</TableCell>
+                            <TableCell className="text-right">{item.quantity ?? 'N/A'}</TableCell>
+                            <TableCell className="text-right">{item.unitPrice?.toFixed(2) ?? 'N/A'}</TableCell>
+                            <TableCell className="text-right">{item.totalPrice.toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </div>
             )}
             {!isLoadingBilling && !billingResult && (
