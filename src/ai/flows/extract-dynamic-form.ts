@@ -1,12 +1,12 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for dynamically extracting key-value pairs from an image of a form or document.
+ * @fileOverview This file defines a Genkit flow for dynamically extracting key-value pairs and tables from an image of a form or document.
  *
  * It includes:
  * - extractDynamicFormFromImage: An async function to initiate the dynamic data extraction flow.
  * - ExtractDynamicFormInput: The input type definition for the function, specifying the image data URI.
- * - ExtractDynamicFormOutput: The output type definition, detailing the extracted key-value pairs.
+ * - ExtractDynamicFormOutput: The output type definition, detailing the extracted key-value pairs and tables.
  */
 
 import {ai} from '@/ai/genkit';
@@ -26,8 +26,15 @@ const KeyValuePairSchema = z.object({
   value: z.string().describe('The value associated with the corresponding key.'),
 });
 
+const TableSchema = z.object({
+  name: z.string().describe("A descriptive name for the table, like 'Purchased Items' or 'Contact List'."),
+  headers: z.array(z.string()).describe("The column headers for the table."),
+  rows: z.array(z.array(z.string())).describe("The row data for the table, where each inner array represents a row."),
+});
+
 const ExtractDynamicFormOutputSchema = z.object({
-    fields: z.array(KeyValuePairSchema).describe('An array of key-value pairs extracted from the document.')
+    fields: z.array(KeyValuePairSchema).describe('An array of key-value pairs extracted from the document.'),
+    tables: z.array(TableSchema).describe('An array of tables extracted from the document.'),
 });
 export type ExtractDynamicFormOutput = z.infer<typeof ExtractDynamicFormOutputSchema>;
 
@@ -43,11 +50,12 @@ const prompt = ai.definePrompt({
   output: {schema: ExtractDynamicFormOutputSchema},
   prompt: `You are an expert in document analysis and data extraction.
 
-  Your task is to analyze the provided image of a document or form and extract all relevant key-value pairs. Identify the labels (keys) and their corresponding values.
+  Your task is to analyze the provided image of a document or form and extract all relevant key-value pairs and any tables. 
   
-  For example, if you see "First Name: John", you should extract { key: "First Name", value: "John" }.
+  - For simple fields, identify the labels (keys) and their corresponding values (e.g., { key: "First Name", value: "John" }).
+  - For tabular data, identify the table's name, its column headers, and all of its rows.
 
-  Return the extracted data as an array of key-value pairs.
+  Return the extracted data as a combination of key-value pair fields and structured tables.
 
   Here is the image of the document: {{media url=photoDataUri}}`,
 });

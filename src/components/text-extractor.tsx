@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Loader2, Download, Wand2, ToyBrick, Trash2 } from 'lucide-react';
+import { FileText, Loader2, Download, Wand2 } from 'lucide-react';
 import { extractAndCorrectText, type ExtractAndCorrectTextOutput } from '@/ai/flows/extract-and-correct-text';
 import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { FileUploader } from './file-uploader';
 import { Skeleton } from './ui/skeleton';
-import { Input } from './ui/input';
+import { DynamicFields } from './dynamic-fields';
 
 export function TextExtractor() {
   const [photoDataUri, setPhotoDataUri] = useState<string>('');
@@ -59,57 +59,12 @@ export function TextExtractor() {
     }
   };
   
-  const handleFieldChange = (index: number, field: 'key' | 'value', value: string) => {
-    if (!fieldsResult) return;
-    const newFields = [...fieldsResult.fields];
-    newFields[index] = { ...newFields[index], [field]: value };
-    setFieldsResult({ fields: newFields });
-  };
-  
-  const handleRemoveField = (index: number) => {
-    if (!fieldsResult) return;
-    const newFields = fieldsResult.fields.filter((_, i) => i !== index);
-    setFieldsResult({ fields: newFields });
-  };
-
   const handleDownloadText = () => {
     if (!textResult?.extractedText) return;
     const element = document.createElement('a');
     const file = new Blob([textResult.extractedText], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
     element.download = 'extracted_text.txt';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const handleDownloadFields = (format: 'json' | 'csv') => {
-    if (!fieldsResult?.fields || fieldsResult.fields.length === 0) return;
-
-    let content = '';
-    let mimeType = '';
-    let fileName = '';
-
-    if (format === 'json') {
-      const jsonObject = fieldsResult.fields.reduce((acc, { key, value }) => {
-        acc[key] = value;
-        return acc;
-      }, {} as Record<string, string>);
-      content = JSON.stringify(jsonObject, null, 2);
-      mimeType = 'application/json';
-      fileName = 'extracted_fields.json';
-    } else { // csv
-      const header = 'key,value\n';
-      const rows = fieldsResult.fields.map(({ key, value }) => `"${key.replace(/"/g, '""')}","${value.replace(/"/g, '""')}"`).join('\n');
-      content = header + rows;
-      mimeType = 'text/csv';
-      fileName = 'extracted_fields.csv';
-    }
-
-    const element = document.createElement('a');
-    const file = new Blob([content], { type: mimeType });
-    element.href = URL.createObjectURL(file);
-    element.download = fileName;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -174,62 +129,11 @@ export function TextExtractor() {
         </Card>
       </div>
 
-      {(isLoadingFields || fieldsResult) && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <ToyBrick className="w-6 h-6" />
-              Extracted Fields
-            </CardTitle>
-            {fieldsResult && (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleDownloadFields('json')}>
-                  <Download className="mr-2 h-4 w-4" /> JSON
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDownloadFields('csv')}>
-                  <Download className="mr-2 h-4 w-4" /> CSV
-                </Button>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {isLoadingFields && (
-              <div className="space-y-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex gap-2">
-                    <Skeleton className="h-10 w-1/3" />
-                    <Skeleton className="h-10 w-2/3" />
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {!isLoadingFields && fieldsResult && (
-              <div className="space-y-3 max-h-[24rem] overflow-y-auto pr-2">
-                {fieldsResult.fields.map((field, index) => (
-                  <div key={index} className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center">
-                    <Input
-                      value={field.key}
-                      onChange={(e) => handleFieldChange(index, 'key', e.target.value)}
-                      placeholder="Key"
-                      className="font-code"
-                    />
-                    <Input
-                      value={field.value}
-                      onChange={(e) => handleFieldChange(index, 'value', e.target.value)}
-                      placeholder="Value"
-                      className="font-code"
-                    />
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveField(index)}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      <DynamicFields 
+        isLoading={isLoadingFields} 
+        result={fieldsResult} 
+        setResult={setFieldsResult} 
+      />
     </div>
   );
 }
