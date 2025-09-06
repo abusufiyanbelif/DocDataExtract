@@ -50,14 +50,15 @@ const prompt = ai.definePrompt({
   output: {schema: ExtractDynamicFormOutputSchema},
   prompt: `You are an expert in document analysis and data extraction.
 
-  Your task is to analyze the provided image of a document or form and extract all relevant key-value pairs and any tables. 
-  
-  - For simple fields, identify the labels (keys) and their corresponding values (e.g., { key: "First Name", value: "John" }).
-  - For tabular data, identify the table's name, its column headers, and all of its rows.
+Your task is to analyze the provided image of a document or form and extract all relevant key-value pairs and any tables. Pay close attention to the layout.
 
-  Return the extracted data as a combination of key-value pair fields and structured tables.
+- For simple fields, identify the labels (keys) and their corresponding values (e.g., { key: "First Name", value: "John" }).
+- In many documents, a key will be in one column and the value in another, often separated by a colon (:). For example, "Patient Name : Mr. John Doe". In this case, the key is "Patient Name" and the value is "Mr. John Doe". Make sure to remove the colon from the beginning of the value if it gets included.
+- For tabular data, identify the table's name (if any), its column headers, and all of its rows.
 
-  Here is the image of the document: {{media url=photoDataUri}}`,
+Return the extracted data as a combination of key-value pair fields and structured tables.
+
+Here is the image of the document: {{media url=photoDataUri}}`,
 });
 
 const extractDynamicFormFlow = ai.defineFlow(
