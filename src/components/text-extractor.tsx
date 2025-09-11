@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { FileUploader } from './file-uploader';
 import { Skeleton } from './ui/skeleton';
 import { DynamicFields } from './dynamic-fields';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Label } from './ui/label';
 
 export function TextExtractor() {
   const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
@@ -19,11 +21,12 @@ export function TextExtractor() {
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoadingText, setIsLoadingText] = useState(false);
   const [isLoadingFields, setIsLoadingFields] = useState(false);
+  const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
 
   const handleScanText = async () => {
     if (photoDataUris.length === 0) {
-      toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
+      toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoadingText(true);
@@ -34,7 +37,7 @@ export function TextExtractor() {
       setTextResult(response);
     } catch (error) {
       console.error(error);
-      toast({ title: 'Extraction Failed', description: 'Could not extract text from the image.', variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: `Could not extract text from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingText(false);
     }
@@ -42,7 +45,7 @@ export function TextExtractor() {
 
   const handleGetFields = async () => {
     if (photoDataUris.length === 0) {
-      toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
+      toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoadingFields(true);
@@ -53,7 +56,7 @@ export function TextExtractor() {
       setFieldsResult(response);
     } catch (error) {
       console.error(error);
-      toast({ title: 'Extraction Failed', description: 'Could not extract fields from the image.', variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
     }
@@ -77,6 +80,7 @@ export function TextExtractor() {
   };
   
   const isLoading = isLoadingText || isLoadingFields;
+  const acceptedFileTypes = uploadType === 'image' ? 'image/*' : 'application/pdf';
 
   return (
     <div className="flex flex-col gap-8">
@@ -89,10 +93,44 @@ export function TextExtractor() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <FileUploader onFileSelect={setPhotoDataUris} />
+             <RadioGroup
+              defaultValue="image"
+              onValueChange={(value: 'image' | 'pdf') => {
+                setUploadType(value);
+                handleClear();
+              }}
+              className="grid grid-cols-2 gap-4 w-full mb-4"
+              value={uploadType}
+            >
+              <div>
+                <RadioGroupItem value="image" id="image" className="peer sr-only" />
+                <Label
+                  htmlFor="image"
+                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                >
+                  Image
+                </Label>
+              </div>
+              <div>
+                <RadioGroupItem value="pdf" id="pdf" className="peer sr-only" />
+                <Label
+                  htmlFor="pdf"
+                  className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                >
+                  PDF
+                </Label>
+              </div>
+            </RadioGroup>
+            
+            <FileUploader 
+                onFileSelect={setPhotoDataUris} 
+                acceptedFileTypes={acceptedFileTypes}
+                key={uploadType} 
+            />
+
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button onClick={handleScanText} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
-                {isLoadingText ? <Loader2 className="animate-spin" /> : 'Extract Text'}
+                {isLoadingText ? <Loader2 className="animate-spin" /> : `Extract Text from ${uploadType === 'image' ? 'Image' : 'PDF'}`}
               </Button>
               <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}

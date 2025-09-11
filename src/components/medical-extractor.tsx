@@ -14,6 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DynamicFields } from './dynamic-fields';
 import { Textarea } from './ui/textarea';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Label } from './ui/label';
 
 function ResultDisplay({ label, value }: { label: string; value: string }) {
   return (
@@ -32,6 +34,7 @@ export function MedicalExtractor() {
   const [isLoadingMedical, setIsLoadingMedical] = useState(false);
   const [isLoadingFields, setIsLoadingFields] = useState(false);
   const [isLoadingStory, setIsLoadingStory] = useState(false);
+  const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
 
   const handleFileSelection = (dataUris: string[]) => {
@@ -40,7 +43,7 @@ export function MedicalExtractor() {
   
   const handleScanMedical = async () => {
     if (reportDataUris.length === 0) {
-      toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
+      toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
     setIsLoadingMedical(true);
@@ -52,7 +55,7 @@ export function MedicalExtractor() {
       setMedicalResult(response);
     } catch (error) {
       console.error(error);
-      toast({ title: 'Extraction Failed', description: 'Could not analyze the medical report.', variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: `Could not analyze the medical ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingMedical(false);
     }
@@ -60,7 +63,7 @@ export function MedicalExtractor() {
 
   const handleGetFields = async () => {
     if (reportDataUris.length === 0) {
-      toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
+      toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
     setIsLoadingFields(true);
@@ -72,7 +75,7 @@ export function MedicalExtractor() {
       setFieldsResult(response);
     } catch (error) {
       console.error(error);
-      toast({ title: 'Extraction Failed', description: 'Could not extract fields from the image.', variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
     }
@@ -80,7 +83,7 @@ export function MedicalExtractor() {
   
   const handleCreateStory = async () => {
     if (reportDataUris.length === 0) {
-      toast({ title: 'Error', description: 'Please upload at least one image.', variant: 'destructive' });
+      toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
     setIsLoadingStory(true);
@@ -122,6 +125,7 @@ export function MedicalExtractor() {
   };
   
   const isLoading = isLoadingMedical || isLoadingFields || isLoadingStory;
+  const acceptedFileTypes = uploadType === 'image' ? 'image/*' : 'application/pdf';
 
   return (
     <div className="flex flex-col gap-8">
@@ -134,10 +138,45 @@ export function MedicalExtractor() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <FileUploader onFileSelect={handleFileSelection} multiple={true} />
+             <RadioGroup
+                defaultValue="image"
+                onValueChange={(value: 'image' | 'pdf') => {
+                    setUploadType(value);
+                    handleClear();
+                }}
+                className="grid grid-cols-2 gap-4 w-full mb-4"
+                value={uploadType}
+                >
+                <div>
+                    <RadioGroupItem value="image" id="image-medical" className="peer sr-only" />
+                    <Label
+                    htmlFor="image-medical"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                    Image
+                    </Label>
+                </div>
+                <div>
+                    <RadioGroupItem value="pdf" id="pdf-medical" className="peer sr-only" />
+                    <Label
+                    htmlFor="pdf-medical"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                    PDF
+                    </Label>
+                </div>
+            </RadioGroup>
+
+            <FileUploader 
+                onFileSelect={handleFileSelection} 
+                acceptedFileTypes={acceptedFileTypes}
+                key={uploadType}
+                multiple={true} 
+            />
+
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button onClick={handleScanMedical} disabled={reportDataUris.length === 0 || isLoading} className="w-full">
-                {isLoadingMedical ? <Loader2 className="animate-spin" /> : 'Analyze Report'}
+                {isLoadingMedical ? <Loader2 className="animate-spin" /> : `Analyze Report from ${uploadType === 'image' ? 'Image' : 'PDF'}`}
               </Button>
               <Button onClick={handleGetFields} disabled={reportDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
