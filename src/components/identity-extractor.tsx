@@ -22,7 +22,7 @@ function ResultDisplay({ label, value }: { label: string; value: string }) {
 }
 
 export function IdentityExtractor() {
-  const [photoDataUri, setPhotoDataUri] = useState<string>('');
+  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
   const [infoResult, setInfoResult] = useState<ExtractKeyInfoFromIdentityDocumentOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoadingInfo, setIsLoadingInfo] = useState(false);
@@ -30,7 +30,7 @@ export function IdentityExtractor() {
   const { toast } = useToast();
 
   const handleScanInfo = async () => {
-    if (!photoDataUri) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
@@ -38,7 +38,7 @@ export function IdentityExtractor() {
     setInfoResult(null);
 
     try {
-      const response = await extractKeyInfoFromIdentityDocument({ photoDataUri });
+      const response = await extractKeyInfoFromIdentityDocument({ photoDataUri: photoDataUris[0] });
       setInfoResult(response);
     } catch (error) {
       console.error(error);
@@ -49,7 +49,7 @@ export function IdentityExtractor() {
   };
   
   const handleGetFields = async () => {
-    if (!photoDataUri) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
@@ -57,7 +57,7 @@ export function IdentityExtractor() {
     setFieldsResult(null);
 
     try {
-      const response = await extractDynamicFormFromImage({ photoDataUri });
+      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
     } catch (error) {
       console.error(error);
@@ -68,7 +68,7 @@ export function IdentityExtractor() {
   };
   
   const handleClear = () => {
-    setPhotoDataUri('');
+    setPhotoDataUris([]);
     setInfoResult(null);
     setFieldsResult(null);
   };
@@ -103,16 +103,16 @@ export function IdentityExtractor() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <FileUploader onFileSelect={setPhotoDataUri} />
+            <FileUploader onFileSelect={setPhotoDataUris} />
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button onClick={handleScanInfo} disabled={!photoDataUri || isLoading} className="w-full">
+              <Button onClick={handleScanInfo} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingInfo ? <Loader2 className="animate-spin" /> : 'Extract Info'}
               </Button>
-              <Button onClick={handleGetFields} disabled={!photoDataUri || isLoading} className="w-full">
+              <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
-            {photoDataUri && (
+            {photoDataUris.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear
                 </Button>

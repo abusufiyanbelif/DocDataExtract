@@ -14,7 +14,7 @@ import { Skeleton } from './ui/skeleton';
 import { DynamicFields } from './dynamic-fields';
 
 export function TextExtractor() {
-  const [photoDataUri, setPhotoDataUri] = useState<string>('');
+  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
   const [textResult, setTextResult] = useState<ExtractAndCorrectTextOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoadingText, setIsLoadingText] = useState(false);
@@ -22,7 +22,7 @@ export function TextExtractor() {
   const { toast } = useToast();
 
   const handleScanText = async () => {
-    if (!photoDataUri) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
@@ -30,7 +30,7 @@ export function TextExtractor() {
     setTextResult(null);
 
     try {
-      const response = await extractAndCorrectText({ photoDataUri });
+      const response = await extractAndCorrectText({ photoDataUri: photoDataUris[0] });
       setTextResult(response);
     } catch (error) {
       console.error(error);
@@ -41,7 +41,7 @@ export function TextExtractor() {
   };
 
   const handleGetFields = async () => {
-    if (!photoDataUri) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
@@ -49,7 +49,7 @@ export function TextExtractor() {
     setFieldsResult(null);
 
     try {
-      const response = await extractDynamicFormFromImage({ photoDataUri });
+      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
     } catch (error) {
       console.error(error);
@@ -60,7 +60,7 @@ export function TextExtractor() {
   };
 
   const handleClear = () => {
-    setPhotoDataUri('');
+    setPhotoDataUris([]);
     setTextResult(null);
     setFieldsResult(null);
   };
@@ -89,16 +89,16 @@ export function TextExtractor() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <FileUploader onFileSelect={setPhotoDataUri} />
+            <FileUploader onFileSelect={setPhotoDataUris} />
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button onClick={handleScanText} disabled={!photoDataUri || isLoading} className="w-full">
+              <Button onClick={handleScanText} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingText ? <Loader2 className="animate-spin" /> : 'Extract Text'}
               </Button>
-              <Button onClick={handleGetFields} disabled={!photoDataUri || isLoading} className="w-full">
+              <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
-            {photoDataUri && (
+            {photoDataUris.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear
                 </Button>

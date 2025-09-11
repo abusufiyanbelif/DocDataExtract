@@ -2,9 +2,9 @@
 'use client';
 
 import { useState, useRef, type ChangeEvent, type MouseEvent } from 'react';
-import { UploadCloud, ZoomIn, ZoomOut, SearchX, X } from 'lucide-react';
+import { UploadCloud, ZoomIn, ZoomOut, SearchX, X, File as FileIcon } from 'lucide-react';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,7 +17,7 @@ interface FileUploaderProps {
 
 export function FileUploader({
   onFileSelect,
-  acceptedFileTypes = 'image/*',
+  acceptedFileTypes = 'image/*,application/pdf',
   multiple = false,
 }: FileUploaderProps) {
   const [previews, setPreviews] = useState<string[]>([]);
@@ -98,7 +98,7 @@ export function FileUploader({
   };
   
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    if (scale <= 1) return;
+    if (scale <= 1 || (activePreview && activePreview.startsWith('data:application/pdf'))) return;
     setIsDragging(true);
     startPos.current = { x: e.clientX - position.x, y: e.clientY - position.y };
     e.currentTarget.style.cursor = 'grabbing';
@@ -113,8 +113,14 @@ export function FileUploader({
   
   const handleMouseUp = (e: MouseEvent<HTMLDivElement>) => {
     setIsDragging(false);
+    if (activePreview && activePreview.startsWith('data:application/pdf')) {
+        e.currentTarget.style.cursor = 'default';
+        return;
+    }
     e.currentTarget.style.cursor = scale > 1 ? 'grab' : 'default';
   };
+
+  const isPdf = (preview: string) => preview.startsWith('data:application/pdf');
 
   if (previews.length > 0) {
     return (
@@ -127,23 +133,32 @@ export function FileUploader({
           onMouseLeave={handleMouseUp}
           ref={imageRef}
         >
-          {activePreview && <Image 
-            src={activePreview} 
-            alt="File preview" 
-            fill 
-            style={{ 
-              objectFit: 'contain',
-              transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-              cursor: scale > 1 ? 'grab' : 'default',
-              transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-            }} 
-            data-ai-hint="document preview"
-            draggable="false"
-          />}
+          {activePreview && (
+            isPdf(activePreview) ? (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <FileIcon className="w-16 h-16" />
+                <p className="mt-2 text-sm font-medium">{fileNames[previews.indexOf(activePreview)]}</p>
+              </div>
+            ) : (
+              <Image 
+                src={activePreview} 
+                alt="File preview" 
+                fill 
+                style={{ 
+                  objectFit: 'contain',
+                  transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
+                  cursor: scale > 1 ? 'grab' : 'default',
+                  transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+                }} 
+                data-ai-hint="document preview"
+                draggable="false"
+              />
+            )
+          )}
            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/70 p-1 rounded-md">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomIn}><ZoomIn /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut}><ZoomOut /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleResetZoom}><SearchX /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomIn} disabled={activePreview && isPdf(activePreview)}><ZoomIn /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut} disabled={activePreview && isPdf(activePreview)}><ZoomOut /></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleResetZoom} disabled={activePreview && isPdf(activePreview)}><SearchX /></Button>
           </div>
         </div>
 
@@ -158,8 +173,12 @@ export function FileUploader({
                 )}
                 onClick={() => setActivePreview(preview)}
               >
-                <CardContent className="p-0 relative w-full h-full">
-                  <Image src={preview} alt={fileNames[index]} fill style={{objectFit: 'cover'}} />
+                <CardContent className="p-0 relative w-full h-full flex items-center justify-center bg-secondary/20">
+                  {isPdf(preview) ? (
+                    <FileIcon className="w-8 h-8 text-muted-foreground" />
+                  ) : (
+                    <Image src={preview} alt={fileNames[index]} fill style={{objectFit: 'cover'}} />
+                  )}
                   <Button 
                     variant="destructive" 
                     size="icon" 
@@ -180,7 +199,7 @@ export function FileUploader({
         <p className="text-sm text-muted-foreground">{multiple ? `${fileNames.length} files selected` : fileNames[0]}</p>
         <div className="flex gap-2">
             <label htmlFor="file-reupload" className={cn(buttonVariants({ variant: 'outline' }), "cursor-pointer")}>
-                Add another file
+                {multiple ? 'Add more files' : 'Change file'}
                 <Input
                     id="file-reupload"
                     type="file"
@@ -191,7 +210,7 @@ export function FileUploader({
                 />
             </label>
             <Button onClick={handleReset} variant="outline">
-            Clear all files
+              Clear all files
             </Button>
         </div>
       </div>
@@ -209,7 +228,7 @@ export function FileUploader({
           <p className="mb-2 text-sm text-center text-muted-foreground">
             <span className="font-semibold text-primary">Click to upload</span> or drag and drop
           </p>
-          <p className="text-xs text-muted-foreground">Any image file (PNG, JPG, etc.)</p>
+          <p className="text-xs text-muted-foreground">Any image file (PNG, JPG, etc.) or PDF</p>
         </div>
         <Input
           id="file-upload"

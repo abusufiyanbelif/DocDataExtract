@@ -24,7 +24,7 @@ function ResultDisplay({ label, value }: { label: string; value: string }) {
 }
 
 export function BillingExtractor() {
-  const [photoDataUri, setPhotoDataUri] = useState<string>('');
+  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
   const [billingResult, setBillingResult] = useState<ExtractBillingDataOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoadingBilling, setIsLoadingBilling] = useState(false);
@@ -32,7 +32,7 @@ export function BillingExtractor() {
   const { toast } = useToast();
 
   const handleScanBilling = async () => {
-    if (!photoDataUri) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
@@ -40,7 +40,7 @@ export function BillingExtractor() {
     setBillingResult(null);
 
     try {
-      const response = await extractBillingDataFromImage({ photoDataUri });
+      const response = await extractBillingDataFromImage({ photoDataUri: photoDataUris[0] });
       setBillingResult(response);
     } catch (error) {
       console.error(error);
@@ -51,7 +51,7 @@ export function BillingExtractor() {
   };
   
   const handleGetFields = async () => {
-    if (!photoDataUri) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
@@ -59,7 +59,7 @@ export function BillingExtractor() {
     setFieldsResult(null);
 
     try {
-      const response = await extractDynamicFormFromImage({ photoDataUri });
+      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
     } catch (error) {
       console.error(error);
@@ -70,7 +70,7 @@ export function BillingExtractor() {
   };
 
   const handleClear = () => {
-    setPhotoDataUri('');
+    setPhotoDataUris([]);
     setBillingResult(null);
     setFieldsResult(null);
   };
@@ -108,16 +108,16 @@ export function BillingExtractor() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
-            <FileUploader onFileSelect={setPhotoDataUri} />
+            <FileUploader onFileSelect={setPhotoDataUris} />
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button onClick={handleScanBilling} disabled={!photoDataUri || isLoading} className="w-full">
+              <Button onClick={handleScanBilling} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingBilling ? <Loader2 className="animate-spin" /> : 'Extract Bill Data'}
               </Button>
-              <Button onClick={handleGetFields} disabled={!photoDataUri || isLoading} className="w-full">
+              <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
-             {photoDataUri && (
+             {photoDataUris.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear
                 </Button>

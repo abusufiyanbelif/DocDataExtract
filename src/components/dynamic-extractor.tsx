@@ -11,13 +11,13 @@ import { FileUploader } from './file-uploader';
 import { DynamicFields } from './dynamic-fields';
 
 export function DynamicExtractor() {
-  const [photoDataUri, setPhotoDataUri] = useState<string>('');
+  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
   const [result, setResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleScan = async () => {
-    if (!photoDataUri) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: 'Please upload an image first.', variant: 'destructive' });
       return;
     }
@@ -25,7 +25,7 @@ export function DynamicExtractor() {
     setResult(null);
 
     try {
-      const response = await extractDynamicFormFromImage({ photoDataUri });
+      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setResult(response);
     } catch (error) {
       console.error(error);
@@ -36,7 +36,7 @@ export function DynamicExtractor() {
   };
 
   const handleClear = () => {
-    setPhotoDataUri('');
+    setPhotoDataUris([]);
     setResult(null);
   };
 
@@ -51,11 +51,11 @@ export function DynamicExtractor() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-6">
-            <FileUploader onFileSelect={setPhotoDataUri} />
-            <Button onClick={handleScan} disabled={!photoDataUri || isLoading} className="w-full">
+            <FileUploader onFileSelect={setPhotoDataUris} />
+            <Button onClick={handleScan} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
               {isLoading ? <Loader2 className="animate-spin" /> : 'Extract Dynamic Data'}
             </Button>
-            {photoDataUri && (
+            {photoDataUris.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear
                 </Button>
