@@ -48,19 +48,19 @@ export function FileUploader({
 
       Promise.all(filePromises).then(dataUris => {
         if (multiple) {
-            const allPreviews = [...previews, ...newPreviews];
+            const allDataUris = [...previews, ...dataUris];
             const allFileNames = [...fileNames, ...newFileNames];
-            setPreviews(allPreviews);
+            setPreviews(allDataUris);
             setFileNames(allFileNames);
-            onFileSelect(allPreviews);
+            onFileSelect(allDataUris);
             if (!activePreview) {
-              setActivePreview(newPreviews[0]);
+              setActivePreview(dataUris[0]);
             }
         } else {
-            setPreviews(newPreviews);
+            setPreviews(dataUris);
             setFileNames(newFileNames);
-            onFileSelect(newPreviews);
-            setActivePreview(newPreviews[0]);
+            onFileSelect(dataUris);
+            setActivePreview(dataUris[0]);
         }
       });
       // Reset zoom/pan when new file is uploaded
