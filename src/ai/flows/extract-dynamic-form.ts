@@ -33,6 +33,9 @@ const TableSchema = z.object({
 });
 
 const ExtractDynamicFormOutputSchema = z.object({
+    firstName: z.string().optional().describe("The person's first name, if present."),
+    lastName: z.string().optional().describe("The person's last name, if present."),
+    middleName: z.string().optional().describe("The person's middle name, if present."),
     fields: z.array(KeyValuePairSchema).describe('An array of key-value pairs extracted from the document.'),
     tables: z.array(TableSchema).describe('An array of tables extracted from the document.'),
 });
@@ -50,8 +53,9 @@ const prompt = ai.definePrompt({
   output: {schema: ExtractDynamicFormOutputSchema},
   prompt: `You are an expert in document analysis and data extraction.
 
-Your task is to analyze the provided image of a document or form and extract all relevant key-value pairs and any tables. Pay close attention to the layout.
+Your task is to analyze the provided image of a document or form and extract all relevant information.
 
+- If a person's full name is present, extract their first, middle, and last names into the dedicated fields.
 - For simple fields, identify the labels (keys) and their corresponding values (e.g., { key: "First Name", value: "John" }).
 - In many documents, a key will be in one column and the value in another, often separated by a colon (:). For example, "Patient Name : Mr. John Doe". In this case, the key is "Patient Name" and the value is "Mr. John Doe". Make sure to remove the colon from the beginning of the value if it gets included.
 - For tabular data, identify the table's name (if any), its column headers, and all of its rows.

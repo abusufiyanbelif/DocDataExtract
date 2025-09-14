@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Label } from './ui/label';
 
 type DynamicFieldsProps = {
   isLoading: boolean;
@@ -20,6 +21,11 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
   if (!isLoading && !result) {
     return null;
   }
+  
+  const handleNameChange = (field: 'firstName' | 'lastName' | 'middleName', value: string) => {
+    if (!result) return;
+    setResult({ ...result, [field]: value });
+  };
 
   const handleFieldChange = (index: number, field: 'key' | 'value', value: string) => {
     if (!result) return;
@@ -65,9 +71,16 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
     let content = '';
     let mimeType = '';
     let fileName = '';
+    
+    const nameFields = {
+        ...(result.firstName && { firstName: result.firstName }),
+        ...(result.middleName && { middleName: result.middleName }),
+        ...(result.lastName && { lastName: result.lastName }),
+    };
 
     if (format === 'json') {
       const jsonObject = {
+        ...nameFields,
         fields: result.fields.reduce((acc, { key, value }) => {
           acc[key] = value;
           return acc;
@@ -86,13 +99,14 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
       mimeType = 'application/json';
       fileName = 'extracted_data.json';
     } else { // csv
+      const nameCsv = Object.entries(nameFields).map(([key, value]) => `"${key}","${value}"`).join('\n');
       const fieldsCsv = result.fields.map(({ key, value }) => `"${key.replace(/"/g, '""')}","${value.replace(/"/g, '""')}"`).join('\n');
       const tablesCsv = result.tables.map(table => {
         const header = table.headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',');
         const rows = table.rows.map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
         return `\nTable: ${table.name}\n${header}\n${rows}`;
       }).join('\n');
-      content = `key,value\n${fieldsCsv}${tablesCsv}`;
+      content = `key,value\n${nameCsv ? nameCsv + '\n' : ''}${fieldsCsv}${tablesCsv}`;
       mimeType = 'text/csv';
       fileName = 'extracted_data.csv';
     }
@@ -106,6 +120,8 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
     document.body.removeChild(element);
   };
   
+  const hasName = result?.firstName || result?.middleName || result?.lastName;
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -138,6 +154,32 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
         
         {!isLoading && result && (
           <div className="space-y-6">
+            {/* Name Fields */}
+            {hasName && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {result.firstName && (
+                        <div className="space-y-2">
+                            <Label htmlFor="firstName">First Name</Label>
+                            <Input id="firstName" value={result.firstName} onChange={(e) => handleNameChange('firstName', e.target.value)} />
+                        </div>
+                    )}
+                    {result.middleName && (
+                        <div className="space-y-2">
+                            <Label htmlFor="middleName">Middle Name</Label>
+                            <Input id="middleName" value={result.middleName} onChange={(e) => handleNameChange('middleName', e.target.value)} />
+                        </div>
+                    )}
+                    {result.lastName && (
+                         <div className="space-y-2">
+                            <Label htmlFor="lastName">Last Name</Label>
+                            <Input id="lastName" value={result.lastName} onChange={(e) => handleNameChange('lastName', e.target.value)} />
+                        </div>
+                    )}
+                </div>
+              </div>
+            )}
+            
             {/* Key-Value Pairs */}
             {result.fields?.length > 0 && (
               <div className="space-y-3 max-h-[24rem] overflow-y-auto pr-2">
