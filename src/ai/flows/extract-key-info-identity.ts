@@ -1,64 +1,69 @@
 'use server';
 /**
- * @fileOverview This file defines a Genkit flow for extracting key information from identity documents.
+ * @fileOverview This file defines a Genkit flow for extracting key information from an Aadhaar card.
  *
- * The flow takes an image of an identity document as input and uses an AI model to extract information
- * such as name, address, and ID number.
+ * The flow takes an image of an Aadhaar card as input and uses an AI model to extract information
+ * such as name, date of birth, gender, Aadhaar number, and address.
  *
- * @exports `extractKeyInfoFromIdentityDocument` - The main function to call to start the flow.
- * @exports `ExtractKeyInfoFromIdentityDocumentInput` - The input type for the flow.
- * @exports `ExtractKeyInfoFromIdentityDocumentOutput` - The output type for the flow.
+ * @exports `extractKeyInfoFromAadhaar` - The main function to call to start the flow.
+ * @exports `ExtractKeyInfoFromAadhaarInput` - The input type for the flow.
+ * @exports `ExtractKeyInfoFromAadhaarOutput` - The output type for the flow.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const ExtractKeyInfoFromIdentityDocumentInputSchema = z.object({
+const ExtractKeyInfoFromAadhaarInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
-      'A photo of an identity document, as a data URI that must include a MIME type and use Base64 encoding. Expected format: data:<mimetype>;base64,<encoded_data>.'
+      'A photo of an Aadhaar card, as a data URI that must include a MIME type and use Base64 encoding. Expected format: data:<mimetype>;base64,<encoded_data>.'
     ),
 });
-export type ExtractKeyInfoFromIdentityDocumentInput = z.infer<
-  typeof ExtractKeyInfoFromIdentityDocumentInputSchema
+export type ExtractKeyInfoFromAadhaarInput = z.infer<
+  typeof ExtractKeyInfoFromAadhaarInputSchema
 >;
 
-const ExtractKeyInfoFromIdentityDocumentOutputSchema = z.object({
-  name: z.string().describe('The full name of the person.'),
-  address: z.string().describe('The full address of the person.'),
-  idNumber: z.string().describe('The unique identification number.'),
+const ExtractKeyInfoFromAadhaarOutputSchema = z.object({
+  name: z.string().describe('The full name of the person as it appears on the card.'),
+  dob: z.string().describe("The person's Date of Birth in DD/MM/YYYY format."),
+  gender: z.string().describe("The person's gender (e.g., MALE, FEMALE)."),
+  aadhaarNumber: z.string().describe("The 12-digit unique Aadhaar number, often formatted with spaces."),
+  address: z.string().describe('The full residential address, including pin code.'),
 });
-export type ExtractKeyInfoFromIdentityDocumentOutput = z.infer<
-  typeof ExtractKeyInfoFromIdentityDocumentOutputSchema
+export type ExtractKeyInfoFromAadhaarOutput = z.infer<
+  typeof ExtractKeyInfoFromAadhaarOutputSchema
 >;
 
-export async function extractKeyInfoFromIdentityDocument(
-  input: ExtractKeyInfoFromIdentityDocumentInput
-): Promise<ExtractKeyInfoFromIdentityDocumentOutput> {
-  return extractKeyInfoFromIdentityDocumentFlow(input);
+export async function extractKeyInfoFromAadhaar(
+  input: ExtractKeyInfoFromAadhaarInput
+): Promise<ExtractKeyInfoFromAadhaarOutput> {
+  return extractKeyInfoFromAadhaarFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'extractKeyInfoFromIdentityDocumentPrompt',
-  input: {schema: ExtractKeyInfoFromIdentityDocumentInputSchema},
-  output: {schema: ExtractKeyInfoFromIdentityDocumentOutputSchema},
-  prompt: `You are an expert in extracting information from identity documents.
+  name: 'extractKeyInfoFromAadhaarPrompt',
+  input: {schema: ExtractKeyInfoFromAadhaarInputSchema},
+  output: {schema: ExtractKeyInfoFromAadhaarOutputSchema},
+  prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided image of an Aadhaar card and extract the following details:
 
-  Analyze the image and extract the following information:
-  - The full name of the person
-  - The full address of the person
-  - The unique identification number
+- The person's full name.
+- Their Date of Birth (dob).
+- Their gender.
+- The 12-digit Aadhaar number.
+- The full residential address printed on the card.
 
-  Image: {{media url=photoDataUri}}
+Return the information in the structured format requested.
+
+Image: {{media url=photoDataUri}}
   `,
 });
 
-const extractKeyInfoFromIdentityDocumentFlow = ai.defineFlow(
+const extractKeyInfoFromAadhaarFlow = ai.defineFlow(
   {
-    name: 'extractKeyInfoFromIdentityDocumentFlow',
-    inputSchema: ExtractKeyInfoFromIdentityDocumentInputSchema,
-    outputSchema: ExtractKeyInfoFromIdentityDocumentOutputSchema,
+    name: 'extractKeyInfoFromAadhaarFlow',
+    inputSchema: ExtractKeyInfoFromAadhaarInputSchema,
+    outputSchema: ExtractKeyInfoFromAadhaarOutputSchema,
   },
   async (input) => {
     let retries = 3;

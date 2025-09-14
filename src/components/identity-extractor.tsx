@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { User, Loader2, Download, Wand2, ToyBrick, Trash2 } from 'lucide-react';
-import { extractKeyInfoFromIdentityDocument, type ExtractKeyInfoFromIdentityDocumentOutput } from '@/ai/flows/extract-key-info-identity';
+import { extractKeyInfoFromAadhaar, type ExtractKeyInfoFromAadhaarOutput } from '@/ai/flows/extract-key-info-identity';
 import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 
 import { Button } from '@/components/ui/button';
@@ -18,14 +18,14 @@ function ResultDisplay({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
       <h3 className="text-sm font-medium text-muted-foreground">{label}</h3>
-      <p className="font-code bg-secondary p-3 rounded-md text-foreground">{value || 'N/A'}</p>
+      <p className="font-code bg-secondary p-3 rounded-md text-foreground whitespace-pre-wrap">{value || 'N/A'}</p>
     </div>
   );
 }
 
 export function IdentityExtractor() {
   const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
-  const [infoResult, setInfoResult] = useState<ExtractKeyInfoFromIdentityDocumentOutput | null>(null);
+  const [infoResult, setInfoResult] = useState<ExtractKeyInfoFromAadhaarOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoadingInfo, setIsLoadingInfo] = useState(false);
   const [isLoadingFields, setIsLoadingFields] = useState(false);
@@ -41,7 +41,7 @@ export function IdentityExtractor() {
     setInfoResult(null);
 
     try {
-      const response = await extractKeyInfoFromIdentityDocument({ photoDataUri: photoDataUris[0] });
+      const response = await extractKeyInfoFromAadhaar({ photoDataUri: photoDataUris[0] });
       setInfoResult(response);
     } catch (error) {
       console.error(error);
@@ -78,7 +78,7 @@ export function IdentityExtractor() {
 
   const getFullText = () => {
     if (!infoResult) return '';
-    return `Name: ${infoResult.name}\nAddress: ${infoResult.address}\nID Number: ${infoResult.idNumber}`;
+    return `Name: ${infoResult.name}\nDate of Birth: ${infoResult.dob}\nGender: ${infoResult.gender}\nAadhaar Number: ${infoResult.aadhaarNumber}\nAddress: ${infoResult.address}`;
   };
 
   const handleDownloadInfo = () => {
@@ -87,7 +87,7 @@ export function IdentityExtractor() {
     const element = document.createElement('a');
     const file = new Blob([text], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = 'identity_info.txt';
+    element.download = 'aadhaar_info.txt';
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -103,7 +103,7 @@ export function IdentityExtractor() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-6 h-6" />
-              Upload Identity Document
+              Upload Aadhaar Card
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-4">
@@ -174,13 +174,17 @@ export function IdentityExtractor() {
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
               </div>
             )}
             {infoResult && (
               <div className="space-y-4">
                 <ResultDisplay label="Full Name" value={infoResult.name} />
+                <ResultDisplay label="Date of Birth" value={infoResult.dob} />
+                <ResultDisplay label="Gender" value={infoResult.gender} />
+                <ResultDisplay label="Aadhaar Number" value={infoResult.aadhaarNumber} />
                 <ResultDisplay label="Address" value={infoResult.address} />
-                <ResultDisplay label="ID Number" value={infoResult.idNumber} />
               </div>
             )}
             {!isLoadingInfo && !infoResult && (
