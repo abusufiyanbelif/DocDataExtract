@@ -22,12 +22,12 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
     return null;
   }
   
-  const handleNameChange = (field: 'firstName' | 'lastName' | 'middleName', value: string) => {
+  const handleFieldChange = (field: keyof ExtractDynamicFormOutput, value: string) => {
     if (!result) return;
     setResult({ ...result, [field]: value });
   };
-
-  const handleFieldChange = (index: number, field: 'key' | 'value', value: string) => {
+  
+  const handleKeyValuePairChange = (index: number, field: 'key' | 'value', value: string) => {
     if (!result) return;
     const newFields = [...(result.fields || [])];
     newFields[index] = { ...newFields[index], [field]: value };
@@ -62,7 +62,7 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
     const newTables = [...(result.tables || [])];
     const newRows = [...newTables[tableIndex].rows, Array(newTables[tableIndex].headers.length).fill('')];
     newTables[tableIndex] = { ...newTables[tableIndex], rows: newRows };
-    setResult({ ...result, tables: newTables });
+    setResult({ ...result, tables: newRows });
   };
   
   const handleDownload = (format: 'json' | 'csv') => {
@@ -72,15 +72,19 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
     let mimeType = '';
     let fileName = '';
     
-    const nameFields = {
+    const specialFields = {
         ...(result.firstName && { firstName: result.firstName }),
         ...(result.middleName && { middleName: result.middleName }),
         ...(result.lastName && { lastName: result.lastName }),
+        ...(result.country && { country: result.country }),
+        ...(result.state && { state: result.state }),
+        ...(result.city && { city: result.city }),
+        ...(result.pinCode && { pinCode: result.pinCode }),
     };
 
     if (format === 'json') {
       const jsonObject = {
-        ...nameFields,
+        ...specialFields,
         fields: result.fields.reduce((acc, { key, value }) => {
           acc[key] = value;
           return acc;
@@ -99,14 +103,14 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
       mimeType = 'application/json';
       fileName = 'extracted_data.json';
     } else { // csv
-      const nameCsv = Object.entries(nameFields).map(([key, value]) => `"${key}","${value}"`).join('\n');
+      const specialFieldsCsv = Object.entries(specialFields).map(([key, value]) => `"${key}","${value}"`).join('\n');
       const fieldsCsv = result.fields.map(({ key, value }) => `"${key.replace(/"/g, '""')}","${value.replace(/"/g, '""')}"`).join('\n');
       const tablesCsv = result.tables.map(table => {
         const header = table.headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',');
         const rows = table.rows.map(row => row.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
         return `\nTable: ${table.name}\n${header}\n${rows}`;
       }).join('\n');
-      content = `key,value\n${nameCsv ? nameCsv + '\n' : ''}${fieldsCsv}${tablesCsv}`;
+      content = `key,value\n${specialFieldsCsv ? specialFieldsCsv + '\n' : ''}${fieldsCsv}${tablesCsv}`;
       mimeType = 'text/csv';
       fileName = 'extracted_data.csv';
     }
@@ -121,6 +125,7 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
   };
   
   const hasName = result?.firstName || result?.middleName || result?.lastName;
+  const hasAddress = result?.city || result?.state || result?.country || result?.pinCode;
 
   return (
     <Card>
@@ -157,23 +162,57 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
             {/* Name Fields */}
             {hasName && (
               <div className="space-y-3">
+                <h3 className="font-medium text-lg">Name</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {result.firstName && (
                         <div className="space-y-2">
                             <Label htmlFor="firstName">First Name</Label>
-                            <Input id="firstName" value={result.firstName} onChange={(e) => handleNameChange('firstName', e.target.value)} />
+                            <Input id="firstName" value={result.firstName} onChange={(e) => handleFieldChange('firstName', e.target.value)} />
                         </div>
                     )}
                     {result.middleName && (
                         <div className="space-y-2">
                             <Label htmlFor="middleName">Middle Name</Label>
-                            <Input id="middleName" value={result.middleName} onChange={(e) => handleNameChange('middleName', e.target.value)} />
+                            <Input id="middleName" value={result.middleName} onChange={(e) => handleFieldChange('middleName', e.target.value)} />
                         </div>
                     )}
                     {result.lastName && (
                          <div className="space-y-2">
                             <Label htmlFor="lastName">Last Name</Label>
-                            <Input id="lastName" value={result.lastName} onChange={(e) => handleNameChange('lastName', e.target.value)} />
+                            <Input id="lastName" value={result.lastName} onChange={(e) => handleFieldChange('lastName', e.target.value)} />
+                        </div>
+                    )}
+                </div>
+              </div>
+            )}
+            
+            {/* Address Fields */}
+            {hasAddress && (
+              <div className="space-y-3">
+                 <h3 className="font-medium text-lg">Address</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {result.city && (
+                        <div className="space-y-2">
+                            <Label htmlFor="city">City</Label>
+                            <Input id="city" value={result.city} onChange={(e) => handleFieldChange('city', e.target.value)} />
+                        </div>
+                    )}
+                    {result.state && (
+                        <div className="space-y-2">
+                            <Label htmlFor="state">State</Label>
+                            <Input id="state" value={result.state} onChange={(e) => handleFieldChange('state', e.target.value)} />
+                        </div>
+                    )}
+                    {result.country && (
+                         <div className="space-y-2">
+                            <Label htmlFor="country">Country</Label>
+                            <Input id="country" value={result.country} onChange={(e) => handleFieldChange('country', e.target.value)} />
+                        </div>
+                    )}
+                     {result.pinCode && (
+                         <div className="space-y-2">
+                            <Label htmlFor="pinCode">Pin Code</Label>
+                            <Input id="pinCode" value={result.pinCode} onChange={(e) => handleFieldChange('pinCode', e.target.value)} />
                         </div>
                     )}
                 </div>
@@ -182,26 +221,29 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
             
             {/* Key-Value Pairs */}
             {result.fields?.length > 0 && (
-              <div className="space-y-3 max-h-[24rem] overflow-y-auto pr-2">
-                {result.fields.map((field, index) => (
-                  <div key={index} className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center">
-                    <Input
-                      value={field.key}
-                      onChange={(e) => handleFieldChange(index, 'key', e.target.value)}
-                      placeholder="Key"
-                      className="font-code"
-                    />
-                    <Input
-                      value={field.value}
-                      onChange={(e) => handleFieldChange(index, 'value', e.target.value)}
-                      placeholder="Value"
-                      className="font-code"
-                    />
-                    <Button variant="ghost" size="icon" onClick={() => handleRemoveField(index)}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                <h3 className="font-medium text-lg">Other Fields</h3>
+                <div className="max-h-[24rem] overflow-y-auto pr-2 space-y-3">
+                    {result.fields.map((field, index) => (
+                    <div key={index} className="grid grid-cols-[1fr_2fr_auto] gap-2 items-center">
+                        <Input
+                        value={field.key}
+                        onChange={(e) => handleKeyValuePairChange(index, 'key', e.target.value)}
+                        placeholder="Key"
+                        className="font-code"
+                        />
+                        <Input
+                        value={field.value}
+                        onChange={(e) => handleKeyValuePairChange(index, 'value', e.target.value)}
+                        placeholder="Value"
+                        className="font-code"
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => handleRemoveField(index)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                    </div>
+                    ))}
+                </div>
               </div>
             )}
 
