@@ -22,12 +22,6 @@ export function LandingPage() {
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
-          <Link href="/story-creator">
-            <Button size="lg" variant="outline" className="text-lg">
-                <FileText className="mr-2 h-5 w-5" />
-              Create a Story
-            </Button>
-          </Link>
         </div>
       </div>
     </div>
