@@ -26,7 +26,11 @@ function ResultDisplay({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function MedicalExtractor() {
+interface MedicalExtractorProps {
+  enableStoryCreator?: boolean;
+}
+
+export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtractorProps) {
   const [reportDataUris, setReportDataUris] = useState<string[]>([]);
   const [medicalResult, setMedicalResult] = useState<ExtractMedicalFindingsOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
@@ -171,20 +175,22 @@ export function MedicalExtractor() {
                 onFileSelect={handleFileSelection} 
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
-                multiple={true} 
+                multiple={enableStoryCreator} 
             />
 
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button onClick={handleScanMedical} disabled={reportDataUris.length === 0 || isLoading} className="w-full">
-                {isLoadingMedical ? <Loader2 className="animate-spin" /> : `Analyze Report from ${uploadType === 'image' ? 'Image' : 'PDF'}`}
+                {isLoadingMedical ? <Loader2 className="animate-spin" /> : `Analyze Report`}
               </Button>
               <Button onClick={handleGetFields} disabled={reportDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
-            <Button onClick={handleCreateStory} disabled={reportDataUris.length === 0 || isLoading} className="w-full">
-              {isLoadingStory ? <Loader2 className="animate-spin" /> : <><FileText className="mr-2 h-4 w-4"/> Create Lead Story</>}
-            </Button>
+            {enableStoryCreator && (
+              <Button onClick={handleCreateStory} disabled={reportDataUris.length === 0 || isLoading} className="w-full">
+                {isLoadingStory ? <Loader2 className="animate-spin" /> : <><FileText className="mr-2 h-4 w-4"/> Create Lead Story</>}
+              </Button>
+            )}
             {reportDataUris.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear All
@@ -246,7 +252,7 @@ export function MedicalExtractor() {
         </Card>
       </div>
       
-      { (isLoadingStory || storyResult) &&
+      { (enableStoryCreator && (isLoadingStory || storyResult)) &&
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
