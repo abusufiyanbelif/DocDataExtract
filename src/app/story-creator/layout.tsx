@@ -3,8 +3,8 @@ import '../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'DocuExtract Story Creator',
-  description: 'Create stories from your documents.',
+  title: 'DocuExtract',
+  description: 'Scan images and documents to extract text and structured data.',
 };
 
 export default function StoryCreatorLayout({
