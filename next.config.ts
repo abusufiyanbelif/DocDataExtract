@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Exclude 'handlebars' from client-side bundle to remove warnings
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'handlebars': false,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
