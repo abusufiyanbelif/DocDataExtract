@@ -8,7 +8,7 @@ export function DocuExtractHeader() {
         <Link href="/" className="flex items-center gap-3 w-fit">
             <ScanSearch className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold font-headline text-foreground">
-            DocuExtract
+            DocDataExtract AB
             </h1>
         </Link>
       </div>
