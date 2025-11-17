@@ -143,7 +143,7 @@ export function IdentityExtractor() {
             />
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button onClick={handleScanInfo} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
-                {isLoadingInfo ? <Loader2 className="animate-spin" /> : `Extract Info from ${uploadType === 'image' ? 'Image' : 'PDF'}`}
+                {isLoadingInfo ? <Loader2 className="animate-spin" /> : `Extract Info`}
               </Button>
               <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}

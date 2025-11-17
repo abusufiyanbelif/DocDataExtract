@@ -43,6 +43,10 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
 
   const handleFileSelection = (dataUris: string[]) => {
     setReportDataUris(dataUris);
+    // Clear results when new files are selected
+    setMedicalResult(null);
+    setFieldsResult(null);
+    setStoryResult(null);
   };
   
   const handleScanMedical = async () => {
@@ -54,7 +58,6 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
     setMedicalResult(null);
 
     try {
-      // For simplicity, we'll analyze the first image for structured findings.
       const response = await extractMedicalFindings({ reportDataUri: reportDataUris[0] });
       setMedicalResult(response);
     } catch (error) {
@@ -74,7 +77,6 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
     setFieldsResult(null);
 
     try {
-      // For simplicity, we'll get fields from the first image.
       const response = await extractDynamicFormFromImage({ photoDataUri: reportDataUris[0] });
       setFieldsResult(response);
     } catch (error) {
@@ -186,10 +188,10 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
             />
 
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Button onClick={handleScanMedical} disabled={reportDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleScanMedical} disabled={reportDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingMedical ? <Loader2 className="animate-spin" /> : `Analyze Report`}
               </Button>
-              <Button onClick={handleGetFields} disabled={reportDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleGetFields} disabled={reportDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>

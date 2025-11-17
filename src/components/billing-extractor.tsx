@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { FileUploader } from './file-uploader';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from './ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DynamicFields } from './dynamic-fields';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
@@ -149,7 +148,7 @@ export function BillingExtractor() {
 
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button onClick={handleScanBilling} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
-                {isLoadingBilling ? <Loader2 className="animate-spin" /> : `Extract Bill Data from ${uploadType === 'image' ? 'Image' : 'PDF'}`}
+                {isLoadingBilling ? <Loader2 className="animate-spin" /> : `Extract Bill Data`}
               </Button>
               <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
