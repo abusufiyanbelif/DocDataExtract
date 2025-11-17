@@ -93,6 +93,13 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
     try {
       const response = await createEducationStory({ reportDataUris });
       setStoryResult(response);
+      if (!response.isCorrectType) {
+        toast({
+          title: 'Document Mismatch',
+          description: 'It looks like you uploaded non-educational documents. A general summary has been created, but for best results, please use academic records.',
+          variant: 'default',
+        });
+      }
     } catch (error) {
       console.error(error);
       toast({ title: 'Story Creation Failed', description: 'Could not generate the academic summary.', variant: 'destructive' });

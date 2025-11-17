@@ -22,6 +22,7 @@ export type CreateLeadStoryInput = z.infer<typeof CreateLeadStoryInputSchema>;
 
 const CreateLeadStoryOutputSchema = z.object({
   story: z.string().describe('A lead story abstract for disease diagnostic based on the provided medical reports, or a summary of the documents if they are not medical in nature.'),
+  isCorrectType: z.boolean().describe('A flag indicating if the uploaded documents appear to be of the correct type (medical).'),
 });
 
 export type CreateLeadStoryOutput = z.infer<typeof CreateLeadStoryOutputSchema>;
@@ -36,7 +37,7 @@ const prompt = ai.definePrompt({
   name: 'createLeadStoryPrompt',
   input: {schema: CreateLeadStoryInputSchema},
   output: {schema: CreateLeadStoryOutputSchema},
-  prompt: `You are an expert analyst. Your primary goal is to create a lead story abstract for a disease diagnostic by synthesizing findings from medical reports.
+  prompt: `You are an expert analyst. Your primary goal is to create a lead story abstract for a disease diagnostic by synthesizing findings from medical reports. First, determine if the documents appear to be medical reports. Set the 'isCorrectType' flag to true if they are, and false otherwise.
 
 If the provided documents are not medical reports, create a concise summary or a coherent narrative based on the information available in them. Do not state that you cannot perform the medical analysis. Instead, adapt to the content provided.
 

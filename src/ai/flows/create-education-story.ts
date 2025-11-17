@@ -22,6 +22,7 @@ export type CreateEducationStoryInput = z.infer<typeof CreateEducationStoryInput
 
 const CreateEducationStoryOutputSchema = z.object({
   story: z.string().describe('A summary of the student\'s academic journey and achievements based on the provided documents.'),
+  isCorrectType: z.boolean().describe('A flag indicating if the uploaded documents appear to be of the correct type (educational).'),
 });
 
 export type CreateEducationStoryOutput = z.infer<typeof CreateEducationStoryOutputSchema>;
@@ -36,7 +37,9 @@ const prompt = ai.definePrompt({
   name: 'createEducationStoryPrompt',
   input: {schema: CreateEducationStoryInputSchema},
   output: {schema: CreateEducationStoryOutputSchema},
-  prompt: `You are an expert academic advisor. Your goal is to create a concise summary of a student's academic journey by synthesizing findings from various educational documents.
+  prompt: `You are an expert academic advisor. Your goal is to create a concise summary of a student's academic journey. First, determine if the documents appear to be educational (transcripts, mark sheets, certificates, etc.). Set the 'isCorrectType' flag to true if they are, and false otherwise.
+
+If the documents are not educational, create a general summary of their content.
 
 Analyze the following documents and generate a summary that highlights key achievements, academic progression, and areas of focus.
 
