@@ -21,7 +21,7 @@ const CreateLeadStoryInputSchema = z.object({
 export type CreateLeadStoryInput = z.infer<typeof CreateLeadStoryInputSchema>;
 
 const CreateLeadStoryOutputSchema = z.object({
-  story: z.string().describe('A lead story abstract for disease diagnostic based on the provided medical reports.'),
+  story: z.string().describe('A lead story abstract for disease diagnostic based on the provided medical reports, or a summary of the documents if they are not medical in nature.'),
 });
 
 export type CreateLeadStoryOutput = z.infer<typeof CreateLeadStoryOutputSchema>;
@@ -36,9 +36,13 @@ const prompt = ai.definePrompt({
   name: 'createLeadStoryPrompt',
   input: {schema: CreateLeadStoryInputSchema},
   output: {schema: CreateLeadStoryOutputSchema},
-  prompt: `You are an expert medical analyst. Based on the following medical reports, create a lead story abstract for disease diagnostic. Synthesize the findings from all provided images into a single, coherent narrative.
+  prompt: `You are an expert analyst. Your primary goal is to create a lead story abstract for a disease diagnostic by synthesizing findings from medical reports.
 
-  Medical Reports:
+If the provided documents are not medical reports, create a concise summary or a coherent narrative based on the information available in them. Do not state that you cannot perform the medical analysis. Instead, adapt to the content provided.
+
+Analyze the following documents and generate the most relevant story or summary.
+
+Documents:
   {{#each reportDataUris}}
   Image: {{media url=this}}
   {{/each}}
