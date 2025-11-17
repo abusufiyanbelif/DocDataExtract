@@ -1,4 +1,3 @@
-// src/ai/flows/extract-and-correct-text.ts
 'use server';
 
 /**
