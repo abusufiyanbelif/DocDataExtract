@@ -13,7 +13,7 @@ function ProfileDetail({ icon, label, value }: { icon: React.ReactNode, label: s
             <div className="text-muted-foreground mt-1">{icon}</div>
             <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="font-medium">{value}</p>
+                <div className="font-medium">{value}</div>
             </div>
         </div>
     );
