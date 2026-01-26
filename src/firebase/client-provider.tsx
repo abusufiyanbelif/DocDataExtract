@@ -9,7 +9,7 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
       return initializeFirebase();
     } catch (error) {
       console.error("Failed to initialize Firebase. Please check your configuration.", error);
-      return { app: null, auth: null, firestore: null };
+      return { app: null, auth: null, firestore: null, storage: null };
     }
   }, []);
 

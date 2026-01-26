@@ -2,7 +2,8 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useStorage } from '@/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import type { Donation, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -44,6 +45,7 @@ export default function DonationsPage() {
   const params = useParams();
   const campaignId = params.campaignId as string;
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
@@ -108,30 +110,34 @@ export default function DonationsPage() {
   };
   
   const handleFormSubmit = async (data: DonationFormData) => {
-    if (!firestore || !campaignId || !isAdmin) return;
+    if (!firestore || !storage || !campaignId || !isAdmin) return;
 
-    // This is a placeholder for file upload logic.
-    // In a real app, you'd upload the file to Firebase Storage and get a URL.
     let screenshotUrl = editingDonation?.screenshotUrl || '';
-    if (data.screenshotFile) {
-        toast({
-            title: "File Upload (Placeholder)",
-            description: `In a real app, '${data.screenshotFile.name}' would be uploaded to Firebase Storage.`,
-        });
-        screenshotUrl = `https://picsum.photos/seed/${data.screenshotFile.name}/400/600`;
-    }
-
-    const donationData = {
-        donorName: data.donorName,
-        donorPhone: data.donorPhone,
-        amount: data.amount,
-        type: data.type,
-        donationDate: data.donationDate,
-        status: data.status,
-        screenshotUrl: screenshotUrl,
-    };
-
+    
     try {
+        if (data.screenshotFile) {
+            toast({
+                title: "Uploading Screenshot...",
+                description: `Please wait while '${data.screenshotFile.name}' is uploaded.`,
+            });
+            const file = data.screenshotFile;
+            const filePath = `donations/${campaignId}/${Date.now()}_${file.name}`;
+            const fileRef = storageRef(storage, filePath);
+
+            const uploadResult = await uploadBytes(fileRef, file);
+            screenshotUrl = await getDownloadURL(uploadResult.ref);
+        }
+
+        const donationData = {
+            donorName: data.donorName,
+            donorPhone: data.donorPhone,
+            amount: data.amount,
+            type: data.type,
+            donationDate: data.donationDate,
+            status: data.status,
+            screenshotUrl: screenshotUrl,
+        };
+    
         if (editingDonation) {
             const docRef = doc(firestore, `campaigns/${campaignId}/donations`, editingDonation.id);
             await updateDoc(docRef, donationData);
@@ -326,7 +332,7 @@ export default function DonationsPage() {
             </DialogHeader>
             {imageToView && (
                 <div className="relative h-[70vh] w-full mt-4">
-                    <Image src={imageToView} alt="Donation screenshot" layout="fill" objectFit="contain" />
+                    <Image src={imageToView} alt="Donation screenshot" fill className="object-contain" />
                 </div>
             )}
         </DialogContent>
