@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ScanSearch, ArrowRight, FileText } from 'lucide-react';
+import { ScanSearch, ArrowRight, FileText, ShoppingBasket } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -26,6 +26,12 @@ export default function LandingPage() {
             <Button size="lg" variant="outline" className="text-lg">
               <FileText className="mr-2 h-5 w-5" />
               Create a Story
+            </Button>
+          </Link>
+          <Link href="/ration-kit">
+            <Button size="lg" variant="outline" className="text-lg">
+              <ShoppingBasket className="mr-2 h-5 w-5" />
+              Ration Kit
             </Button>
           </Link>
         </div>

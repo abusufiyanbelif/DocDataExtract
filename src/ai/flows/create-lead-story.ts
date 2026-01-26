@@ -45,7 +45,7 @@ Analyze the following documents and generate the most relevant story or summary.
 
 Documents:
   {{#each reportDataUris}}
-  Image: {{media url=this}}
+  Document: {{media url=this}}
   {{/each}}
 `,
 });
