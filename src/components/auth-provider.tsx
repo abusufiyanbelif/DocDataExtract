@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Progress } from './ui/progress';
 
-const publicPaths = ['/login'];
+const publicPaths = ['/login', '/seed'];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoading: isAuthLoading } = useUser();
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!user && !isPublicPath) {
       router.push('/login');
-    } else if (user && isPublicPath) {
+    } else if (user && pathname === '/login') {
       router.push('/');
     }
   }, [user, isAuthLoading, pathname, router]);
@@ -55,7 +55,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   if (isLoading) {
     const isPublic = publicPaths.includes(pathname);
-    if ((!user && !isPublic) || (user && isPublic)) {
+    // This condition shows a loader only when a redirect is imminent.
+    if ((!user && !isPublic) || (user && pathname === '/login')) {
         return (
           <div className="flex flex-col items-center justify-center min-h-screen bg-background">
             <div className="w-full max-w-xs text-center">
