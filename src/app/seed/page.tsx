@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth, useFirestore }from '@/firebase';
+import { useAuth, useFirestore, useStorage }from '@/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { ref as storageRef, uploadString } from 'firebase/storage';
 import { writeBatch, doc, collection, serverTimestamp, getDocs, query, where, limit } from 'firebase/firestore';
 import { modules, permissions } from '@/lib/modules';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +18,7 @@ import Link from 'next/link';
 export default function SeedPage() {
     const auth = useAuth();
     const firestore = useFirestore();
+    const storage = useStorage();
     const { toast } = useToast();
     const [isSeeding, setIsSeeding] = useState(false);
     const [logs, setLogs] = useState<string[]>([]);
@@ -25,6 +27,19 @@ export default function SeedPage() {
         console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
         setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
     };
+
+    const createPlaceholderFile = async (path: string) => {
+        if (!storage) return;
+        try {
+            const placeholderRef = storageRef(storage, `${path}/.placeholder`);
+            await uploadString(placeholderRef, '', 'raw');
+            log(` -> Storage path created: ${path}/`);
+        } catch (error: any) {
+            if (error.code === 'storage/object-not-found' || error.code === 'storage/unauthorized') {
+                log(`WARNING: Could not create storage path '${path}/'. Please check your Storage security rules.`);
+            }
+        }
+    }
 
     const createAdminUser = async () => {
         if (!auth) throw new Error("Auth service not available.");
@@ -62,7 +77,12 @@ export default function SeedPage() {
         if (!firestore) throw new Error("Firestore service not available.");
         const batch = writeBatch(firestore);
         
-        log("Step 2: Seeding Firestore Data");
+        log("Step 2: Seeding Firestore Data & Storage Folders");
+
+        // --- Create Root Storage Folders ---
+        log(" -> Creating root folders in Firebase Storage...");
+        await createPlaceholderFile('campaigns');
+        await createPlaceholderFile('users');
 
         // Define full permissions for the Admin role
         const allPermissions: any = {};
@@ -174,6 +194,12 @@ export default function SeedPage() {
                 rationLists: initialRationLists,
                 createdAt: serverTimestamp(),
             });
+            
+            // --- Create Campaign-specific Storage Folders ---
+            await createPlaceholderFile(`campaigns/${campaignId}`);
+            await createPlaceholderFile(`campaigns/${campaignId}/beneficiaries`);
+            await createPlaceholderFile(`campaigns/${campaignId}/donations`);
+            
             log(" -> Campaign data prepared.");
 
             // Seed Beneficiaries for the new campaign
@@ -224,7 +250,7 @@ export default function SeedPage() {
         setLogs([]);
         log('Starting database seeding script...');
 
-        if (!auth || !firestore) {
+        if (!auth || !firestore || !storage) {
             log('ERROR: Firebase services are not available. Please check your configuration.');
             toast({
                 title: 'Seeding Failed',
@@ -242,6 +268,7 @@ export default function SeedPage() {
             toast({
                 title: 'Seeding Successful',
                 description: 'The database has been initialized with sample data.',
+                variant: 'default'
             });
         } catch (e: any) {
             log('❌ Seeding script failed.');
@@ -282,7 +309,7 @@ export default function SeedPage() {
                 <Card className="max-w-4xl mx-auto">
                     <CardHeader>
                         <CardTitle>Database Seeding</CardTitle>
-                        <CardDescription>This page allows you to initialize the Firestore database with sample data. This is useful for first-time setup or for resetting the data to a known state. This action is irreversible.</CardDescription>
+                        <CardDescription>This page allows you to initialize the Firestore database with sample data. This action is irreversible.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <Button onClick={handleSeed} disabled={isSeeding}>
@@ -308,3 +335,5 @@ export default function SeedPage() {
         </div>
     );
 }
+
+    

@@ -1,9 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useStorage } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { ref as storageRef, uploadString } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ type CampaignFormValues = z.infer<typeof campaignSchema>;
 export default function CreateCampaignPage() {
   const router = useRouter();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
@@ -50,8 +52,8 @@ export default function CreateCampaignPage() {
   });
 
   const onSubmit = async (data: CampaignFormValues) => {
-    if (!firestore || userProfile?.role !== 'Admin') {
-      toast({ title: 'Error', description: 'You do not have permission to create a campaign.', variant: 'destructive' });
+    if (!firestore || !storage || userProfile?.role !== 'Admin') {
+      toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
       return;
     }
     setIsLoading(true);
@@ -69,7 +71,21 @@ export default function CreateCampaignPage() {
           'General': [],
         },
       });
-      toast({ title: 'Success', description: 'Campaign created successfully.' });
+
+      const campaignId = docRef.id;
+      const placeholderPaths = [
+        `campaigns/${campaignId}/beneficiaries`,
+        `campaigns/${campaignId}/donations`
+      ];
+
+      await Promise.all(
+        placeholderPaths.map(path => {
+            const placeholderRef = storageRef(storage, `${path}/.placeholder`);
+            return uploadString(placeholderRef, '', 'raw');
+        })
+      );
+
+      toast({ title: 'Success', description: 'Campaign and storage folders created successfully.', variant: 'default' });
       router.push(`/campaign/${docRef.id}`);
     } catch (error) {
       console.error('Error creating campaign:', error);
@@ -221,3 +237,5 @@ export default function CreateCampaignPage() {
     </div>
   );
 }
+
+    

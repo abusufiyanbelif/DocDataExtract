@@ -98,7 +98,7 @@ export default function DonationsPage() {
         const docRef = doc(firestore, 'donations', donationToDelete);
         try {
             await deleteDoc(docRef);
-            toast({ title: 'Success', description: 'Donation deleted.' });
+            toast({ title: 'Success', description: 'Donation deleted.', variant: 'default' });
         } catch (error) {
             console.error("Error deleting donation:", error);
             toast({ title: 'Error', description: 'Could not delete donation.', variant: 'destructive' });
@@ -122,7 +122,7 @@ export default function DonationsPage() {
                 title: "Uploading Screenshot...",
                 description: `Please wait while '${file.name}' is uploaded.`,
             });
-            const filePath = `donations/${campaignId}/${Date.now()}_${file.name}`;
+            const filePath = `campaigns/${campaignId}/donations/${Date.now()}_${file.name}`;
             const fileRef = storageRef(storage, filePath);
 
             const uploadResult = await uploadBytes(fileRef, file);
@@ -139,7 +139,7 @@ export default function DonationsPage() {
         if (editingDonation) {
             const docRef = doc(firestore, 'donations', editingDonation.id);
             await updateDoc(docRef, finalData);
-            toast({ title: 'Success', description: 'Donation updated.' });
+            toast({ title: 'Success', description: 'Donation updated.', variant: 'default' });
         } else {
             const collectionRef = collection(firestore, 'donations');
             await addDoc(collectionRef, {
@@ -150,7 +150,7 @@ export default function DonationsPage() {
                 uploadedById: userProfile.id,
                 createdAt: serverTimestamp(),
             });
-            toast({ title: 'Success', description: 'Donation added.' });
+            toast({ title: 'Success', description: 'Donation added.', variant: 'default' });
         }
     } catch (error) {
         console.error("Error saving donation:", error);
@@ -347,3 +347,5 @@ export default function DonationsPage() {
     </div>
   );
 }
+
+    

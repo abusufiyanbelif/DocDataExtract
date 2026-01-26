@@ -118,7 +118,7 @@ export default function BeneficiariesPage() {
         const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiaryToDelete);
         try {
             await deleteDoc(docRef);
-            toast({ title: 'Success', description: 'Beneficiary deleted.' });
+            toast({ title: 'Success', description: 'Beneficiary deleted.', variant: 'default' });
         } catch (error) {
             console.error("Error deleting beneficiary:", error);
             toast({ title: 'Error', description: 'Could not delete beneficiary.', variant: 'destructive' });
@@ -146,7 +146,7 @@ export default function BeneficiariesPage() {
                 title: "Uploading ID Proof...",
                 description: `Please wait while '${file.name}' is uploaded.`,
             });
-            const filePath = `beneficiaries/${campaignId}/${docRef.id}_${file.name}`;
+            const filePath = `campaigns/${campaignId}/beneficiaries/${docRef.id}_${file.name}`;
             const fileRef = storageRef(storage, filePath);
 
             const uploadResult = await uploadBytes(fileRef, file);
@@ -166,7 +166,7 @@ export default function BeneficiariesPage() {
         
         await setDoc(docRef, finalData, { merge: true });
 
-        toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.` });
+        toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'default' });
 
     } catch (error) {
         console.error("Error saving beneficiary:", error);
@@ -246,7 +246,7 @@ export default function BeneficiariesPage() {
             });
 
             await batch.commit();
-            toast({ title: 'Success', description: `${json.length} beneficiaries imported successfully.` });
+            toast({ title: 'Success', description: `${json.length} beneficiaries imported successfully.`, variant: 'default' });
 
         } catch (error: any) {
             toast({ title: 'Import Failed', description: error.message || "An error occurred during import.", variant: 'destructive' });
@@ -605,3 +605,5 @@ export default function BeneficiariesPage() {
     </div>
   );
 }
+
+    
