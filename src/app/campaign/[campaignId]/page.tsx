@@ -329,7 +329,7 @@ export default function CampaignDetailsPage() {
                     <TableCell className="font-medium text-center">{index + 1}</TableCell>
                     <TableCell>
                       <Input
-                        value={item.name}
+                        value={item.name || ''}
                         onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)}
                         placeholder="Item name"
                         disabled={!isAdmin}
@@ -337,7 +337,7 @@ export default function CampaignDetailsPage() {
                     </TableCell>
                     <TableCell>
                       <Input
-                        value={item.quantity}
+                        value={item.quantity || ''}
                         onChange={e => handleItemChange(memberCount, item.id, 'quantity', e.target.value)}
                         placeholder="e.g. 10 kg"
                         disabled={!isAdmin}
@@ -345,7 +345,7 @@ export default function CampaignDetailsPage() {
                     </TableCell>
                     <TableCell>
                       <Input
-                        value={item.notes}
+                        value={item.notes || ''}
                         onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)}
                         placeholder="e.g. @60/kg"
                         disabled={!isAdmin}
@@ -354,7 +354,7 @@ export default function CampaignDetailsPage() {
                     <TableCell>
                       <Input
                         type="number"
-                        value={item.price}
+                        value={item.price || 0}
                         onChange={e => handleItemChange(memberCount, item.id, 'price', Number(e.target.value))}
                         className="text-right"
                         disabled={!isAdmin}
@@ -459,7 +459,7 @@ export default function CampaignDetailsPage() {
                                 <Input
                                 id="startDate"
                                 type="date"
-                                value={campaign.startDate}
+                                value={campaign.startDate || ''}
                                 onChange={(e) => updateCampaign({ startDate: e.target.value })}
                                 className="w-fit"
                                 disabled={!isAdmin}
@@ -470,7 +470,7 @@ export default function CampaignDetailsPage() {
                                 <Input
                                 id="endDate"
                                 type="date"
-                                value={campaign.endDate}
+                                value={campaign.endDate || ''}
                                 onChange={(e) => updateCampaign({ endDate: e.target.value })}
                                 className="w-fit"
                                 disabled={!isAdmin}
@@ -483,7 +483,7 @@ export default function CampaignDetailsPage() {
                                 <Input
                                 id="priceDate"
                                 type="date"
-                                value={campaign.priceDate}
+                                value={campaign.priceDate || ''}
                                 onChange={(e) => updateCampaign({ priceDate: e.target.value })}
                                 className="w-fit"
                                 disabled={!isAdmin}
@@ -493,7 +493,7 @@ export default function CampaignDetailsPage() {
                                 <Label htmlFor="shopName" className="text-nowrap">Shop Name:</Label>
                                 <Input
                                 id="shopName"
-                                value={campaign.shopName}
+                                value={campaign.shopName || ''}
                                 onChange={(e) => updateCampaign({ shopName: e.target.value })}
                                 className="w-fit"
                                 placeholder="Shop Name"
@@ -506,7 +506,7 @@ export default function CampaignDetailsPage() {
                                 <Label htmlFor="shopContact" className="text-nowrap">Shop Contact:</Label>
                                 <Input
                                 id="shopContact"
-                                value={campaign.shopContact}
+                                value={campaign.shopContact || ''}
                                 onChange={(e) => updateCampaign({ shopContact: e.target.value })}
                                 className="w-fit"
                                 placeholder="Contact Number"
@@ -517,7 +517,7 @@ export default function CampaignDetailsPage() {
                                 <Label htmlFor="shopAddress" className="text-nowrap">Shop Address:</Label>
                                 <Input
                                 id="shopAddress"
-                                value={campaign.shopAddress}
+                                value={campaign.shopAddress || ''}
                                 onChange={(e) => updateCampaign({ shopAddress: e.target.value })}
                                 className="w-full max-w-xs"
                                 placeholder="Shop Address"
