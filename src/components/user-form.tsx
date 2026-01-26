@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import {
   Form,
   FormControl,
@@ -32,17 +32,19 @@ import { Loader2 } from 'lucide-react';
 
 const permissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()).optional()).optional();
 
-const baseSchema = z.object({
+// A single schema that handles both creation and editing.
+const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
   loginId: z.string().min(3, { message: "Login ID must be at least 3 characters." }).regex(/^[a-z0-9_.]+$/, { message: 'Login ID can only contain lowercase letters, numbers, underscores, and periods.' }),
   userKey: z.string().min(1, { message: 'User Key is required.'}),
   role: z.enum(['Admin', 'User']),
   status: z.enum(['Active', 'Inactive']),
+  password: z.string().optional(),
   permissions: permissionsSchema,
 });
 
-export type UserFormData = z.infer<typeof baseSchema> & { password?: string };
+export type UserFormData = z.infer<typeof formSchema>;
 
 interface UserFormProps {
   user?: UserProfile | null;
@@ -57,16 +59,22 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isDefaultAdmin = user?.userKey === 'admin';
   const { toast } = useToast();
   
-  const formSchema = useMemo(() => {
-    return baseSchema.extend({
-        password: isEditing 
-            ? z.string().min(6, { message: "Password must be at least 6 characters." }).optional().or(z.literal(''))
-            : z.string().min(6, { message: "Password is required and must be at least 6 characters." })
-    });
-  }, [isEditing]);
+  // Use a refined schema for validation within the form hook
+  const refinedFormSchema = formSchema.refine((data) => {
+    // If we are NOT editing, password must be a string of at least 6 chars.
+    if (!isEditing) {
+      return typeof data.password === 'string' && data.password.length >= 6;
+    }
+    // If we ARE editing, it's valid if password is not present OR if it has at least 6 chars.
+    return !data.password || data.password.length >= 6;
+  }, {
+    message: isEditing ? "Password must be at least 6 characters if you want to change it." : "Password is required and must be at least 6 characters.",
+    path: ["password"],
+  });
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+
+  const form = useForm<UserFormData>({
+    resolver: zodResolver(refinedFormSchema),
     defaultValues: {
       name: user?.name || '',
       phone: user?.phone || '',
@@ -179,7 +187,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
               <FormLabel>Password</FormLabel>
               <div className="flex gap-2">
                 <FormControl>
-                  <Input type="password" placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} {...field} disabled={isFormDisabled} />
+                  <Input type="password" placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} {...field} value={field.value ?? ''} disabled={isFormDisabled} />
                 </FormControl>
                 <Button type="button" variant="outline" onClick={() => handleFeatureNotReady('Password Reset')} disabled>Reset</Button>
               </div>

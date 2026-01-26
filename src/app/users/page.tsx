@@ -158,7 +158,7 @@ export default function UsersPage() {
             });
             toast({ 
                 title: 'Success', 
-                description: `User '${data.name}' was created. You must now manually create this user in Firebase Authentication.`
+                description: `User '${data.name}' created. Manually create auth user with email '${data.userKey}@docdataextract.app'.`
             });
         }
         setIsFormOpen(false);
