@@ -36,7 +36,7 @@ export default function CampaignPage() {
         </div>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Campaigns</CardTitle>
+            <CardTitle>Ration Campaigns</CardTitle>
             {isProfileLoading && <Skeleton className="h-10 w-44" />}
             {!isProfileLoading && userProfile?.role === 'Admin' && (
               <Button asChild>

@@ -34,7 +34,7 @@ export default function LandingPage() {
           </Link>
           {isLoading && (
             <>
-              <Skeleton className="h-11 w-36" />
+              <Skeleton className="h-11 w-48" />
               <Skeleton className="h-11 w-28" />
               <Skeleton className="h-11 w-44" />
             </>
@@ -44,7 +44,7 @@ export default function LandingPage() {
               <Link href="/campaign">
                 <Button size="lg" variant="outline" className="text-lg">
                   <ShoppingBasket className="mr-2 h-5 w-5" />
-                  Campaign
+                  Ration Campaigns
                 </Button>
               </Link>
               <Link href="/users">

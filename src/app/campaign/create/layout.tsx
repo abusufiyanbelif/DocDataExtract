@@ -3,8 +3,8 @@ import '../../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Create Campaign - DocDataExtract AB',
-  description: 'Create a new campaign.',
+  title: 'Create Ration Campaign - DocDataExtract AB',
+  description: 'Create a new ration campaign.',
 };
 
 export default function CreateCampaignLayout({

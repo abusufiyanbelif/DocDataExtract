@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: 'Campaign Details - DocDataExtract AB',
-  description: 'Details for the campaign.',
+  description: 'Details for the ration campaign.',
 };
 
 export default function CampaignDetailLayout({
