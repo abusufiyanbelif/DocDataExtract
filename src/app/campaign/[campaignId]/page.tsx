@@ -452,6 +452,30 @@ export default function CampaignDetailsPage() {
                     <div className="text-sm text-muted-foreground mt-4 space-y-3">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                             <div className="flex items-center gap-2">
+                                <Label htmlFor="startDate" className="text-nowrap">Start Date:</Label>
+                                <Input
+                                id="startDate"
+                                type="date"
+                                value={campaign.startDate}
+                                onChange={(e) => updateCampaign({ startDate: e.target.value })}
+                                className="w-fit"
+                                disabled={!isAdmin}
+                                />
+                            </div>
+                             <div className="flex items-center gap-2">
+                                <Label htmlFor="endDate" className="text-nowrap">End Date:</Label>
+                                <Input
+                                id="endDate"
+                                type="date"
+                                value={campaign.endDate}
+                                onChange={(e) => updateCampaign({ endDate: e.target.value })}
+                                className="w-fit"
+                                disabled={!isAdmin}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <div className="flex items-center gap-2">
                                 <Label htmlFor="priceDate" className="text-nowrap">Price Date:</Label>
                                 <Input
                                 id="priceDate"

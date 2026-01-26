@@ -102,6 +102,8 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
     batch.set(campaignRef, {
         name: 'Ration Kit Distribution Ramza 2026',
         status: 'Active',
+        startDate: '2026-03-01',
+        endDate: '2026-03-31',
         priceDate: '2025-01-11',
         shopName: 'Example Kirana Store',
         shopContact: '1234567890',

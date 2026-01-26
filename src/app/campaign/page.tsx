@@ -61,7 +61,9 @@ export default function CampaignPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[70%]">Campaign Name</TableHead>
+                  <TableHead className="w-[50%]">Campaign Name</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>End Date</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -70,10 +72,14 @@ export default function CampaignPage() {
                   <>
                     <TableRow>
                       <TableCell><Skeleton className="h-6 w-3/4" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-full" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-1/2" /></TableCell>
                     </TableRow>
                      <TableRow>
                       <TableCell><Skeleton className="h-6 w-2/3" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-full" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-1/2" /></TableCell>
                     </TableRow>
                   </>
@@ -81,12 +87,14 @@ export default function CampaignPage() {
                 {!isLoading && campaigns.map((campaign) => (
                   <TableRow key={campaign.id} onClick={() => handleRowClick(campaign.id)} className="cursor-pointer">
                     <TableCell className="font-medium">{campaign.name}</TableCell>
+                    <TableCell>{campaign.startDate}</TableCell>
+                    <TableCell>{campaign.endDate}</TableCell>
                     <TableCell>{campaign.status}</TableCell>
                   </TableRow>
                 ))}
                 {!isLoading && campaigns.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">
                             No campaigns found. {isAdmin && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
                         </TableCell>
                     </TableRow>

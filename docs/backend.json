@@ -183,6 +183,16 @@
           "type": "string",
           "description": "The name of the campaign."
         },
+        "startDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The start date of the campaign."
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The end date of the campaign."
+        },
         "status": {
           "type": "string",
           "description": "The current status of the campaign (e.g., 'Upcoming', 'Active', 'Completed')."
@@ -217,7 +227,9 @@
       },
       "required": [
         "name",
-        "status"
+        "status",
+        "startDate",
+        "endDate"
       ]
     },
     "Donation": {

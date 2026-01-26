@@ -21,6 +21,11 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const campaignSchema = z.object({
   name: z.string().min(3, 'Campaign name must be at least 3 characters.'),
   status: z.enum(['Upcoming', 'Active', 'Completed']),
+  startDate: z.string().min(1, 'Start date is required.'),
+  endDate: z.string().min(1, 'End date is required.'),
+}).refine(data => new Date(data.startDate) <= new Date(data.endDate), {
+    message: "End date cannot be before the start date.",
+    path: ["endDate"],
 });
 
 type CampaignFormValues = z.infer<typeof campaignSchema>;
@@ -37,6 +42,8 @@ export default function CreateCampaignPage() {
     defaultValues: {
       name: '',
       status: 'Upcoming',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
     },
   });
 
@@ -132,6 +139,34 @@ export default function CreateCampaignPage() {
                     </FormItem>
                   )}
                 />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Start Date</FormLabel>
+                        <FormControl>
+                            <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="endDate"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>End Date</FormLabel>
+                        <FormControl>
+                            <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
                 <FormField
                   control={form.control}
                   name="status"
