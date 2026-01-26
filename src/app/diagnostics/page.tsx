@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
-import { useFirestore, useUser, useAuth } from '@/firebase';
+import { useFirestore, useUser, useAuth, useStorage } from '@/firebase';
 import { collection, query, limit, getDocs } from 'firebase/firestore';
+import { ref as storageRef, uploadString, deleteObject } from 'firebase/storage';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +20,7 @@ interface DiagnosticCheck {
 export default function DiagnosticsPage() {
     const firestore = useFirestore();
     const auth = useAuth();
+    const storage = useStorage();
     const { user } = useUser();
     const [results, setResults] = useState<DiagnosticCheck[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -32,12 +34,12 @@ export default function DiagnosticsPage() {
         checks.push(appCheck);
         setResults([...checks]);
         await new Promise(res => setTimeout(res, 300));
-        if (firestore && auth) {
+        if (firestore && auth && storage) {
             appCheck.status = 'success';
-            appCheck.details = 'Firebase services (Firestore, Auth) are available.';
+            appCheck.details = 'Firebase services (Firestore, Auth, Storage) are available.';
         } else {
             appCheck.status = 'failure';
-            appCheck.details = 'Firebase services could not be initialized. Check .env file and Firebase project settings.';
+            appCheck.details = 'One or more Firebase services could not be initialized. Check .env file and Firebase project settings.';
             setResults([...checks]);
             setIsLoading(false);
             return;
@@ -77,6 +79,29 @@ export default function DiagnosticsPage() {
         } else {
             firestoreCheck.status = 'failure';
             firestoreCheck.details = 'Cannot perform Firestore test without an authenticated user.';
+        }
+        setResults([...checks]);
+
+        // 4. Firebase Storage Connectivity & Permissions
+        const storageCheck: DiagnosticCheck = { name: 'Firebase Storage Write', status: 'pending', details: 'Attempting a test write to the "diagnostics" folder...' };
+        checks.push(storageCheck);
+        setResults([...checks]);
+        await new Promise(res => setTimeout(res, 300));
+        if (user && storage) {
+            const testFileRef = storageRef(storage, 'diagnostics/test.txt');
+            try {
+                await uploadString(testFileRef, 'This is a test file for diagnostics.');
+                storageCheck.status = 'success';
+                storageCheck.details = 'Successfully wrote a file to Firebase Storage. Your Storage rules are configured correctly for authenticated users.';
+                // Clean up the test file
+                await deleteObject(testFileRef);
+            } catch (error: any) {
+                storageCheck.status = 'failure';
+                storageCheck.details = `Storage write failed. This is likely a problem with your Storage Security Rules. Error: ${error.message} (Code: ${error.code})`;
+            }
+        } else {
+            storageCheck.status = 'failure';
+            storageCheck.details = 'Cannot perform Storage test without an authenticated user.';
         }
         setResults([...checks]);
         
