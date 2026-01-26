@@ -24,12 +24,19 @@ import {
 } from "@/components/ui/select";
 import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { modules, permissions } from '@/lib/modules';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from './ui/separator';
+
+const permissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()).optional()).optional();
 
 const baseSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
   userKey: z.string().min(3, { message: "User Key must be at least 3 characters." }).regex(/^[a-z0-9_]+$/, { message: 'User Key can only contain lowercase letters, numbers, and underscores.' }),
   role: z.enum(['Admin', 'User']),
+  permissions: permissionsSchema,
 });
 
 export type UserFormData = z.infer<typeof baseSchema> & { password?: string };
@@ -58,11 +65,13 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
       userKey: user?.userKey || '',
       role: user?.role || 'User',
       password: '',
+      permissions: user?.permissions || {},
     },
   });
 
   const { formState: { isSubmitting }, watch, setValue } = form;
   const nameValue = watch('name');
+  const roleValue = watch('role');
 
   useEffect(() => {
     if (!isEditing && nameValue) {
@@ -71,6 +80,19 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
     }
   }, [nameValue, isEditing, setValue]);
   
+  useEffect(() => {
+    if (roleValue === 'Admin') {
+        const allPermissions: any = {};
+        for (const mod of modules) {
+            allPermissions[mod.id] = {};
+            for (const perm of permissions) {
+                allPermissions[mod.id][perm] = true;
+            }
+        }
+        setValue('permissions', allPermissions);
+    }
+  }, [roleValue, setValue]);
+
   const handleFeatureNotReady = (featureName: string) => {
     toast({
         title: 'Coming Soon!',
@@ -80,7 +102,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
         <FormField
           control={form.control}
           name="name"
@@ -126,6 +148,25 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
         />
         <FormField
           control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <div className="flex gap-2">
+                <FormControl>
+                  <Input type="password" placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} {...field} />
+                </FormControl>
+                <Button type="button" variant="outline" onClick={() => handleFeatureNotReady('Password Reset')} disabled>Reset</Button>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <Separator />
+
+        <FormField
+          control={form.control}
           name="role"
           render={({ field }) => (
             <FormItem>
@@ -141,26 +182,55 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
                   <SelectItem value="Admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
+              <FormDescription>
+                'Admin' has all permissions. 'User' can have custom permissions.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <div className="flex gap-2">
-                <FormControl>
-                  <Input type="password" placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} {...field} />
-                </FormControl>
-                <Button type="button" variant="outline" onClick={() => handleFeatureNotReady('Password Reset')} disabled>Reset</Button>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
+        <div className="space-y-2">
+            <FormLabel>Module Permissions</FormLabel>
+            <div className="rounded-md border">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead className="w-[150px]">Module</TableHead>
+                    {permissions.map((perm) => (
+                        <TableHead key={perm} className="text-center capitalize">{perm}</TableHead>
+                    ))}
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {modules.map((mod) => (
+                    <TableRow key={mod.id}>
+                        <TableCell className="font-medium">{mod.name}</TableCell>
+                        {permissions.map((perm) => (
+                        <TableCell key={perm} className="text-center">
+                            <FormField
+                            control={form.control}
+                            name={`permissions.${mod.id}.${perm}`}
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                    checked={!!field.value}
+                                    onCheckedChange={field.onChange}
+                                    disabled={roleValue === 'Admin'}
+                                    />
+                                </FormControl>
+                                </FormItem>
+                            )}
+                            />
+                        </TableCell>
+                        ))}
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            </div>
+        </div>
         
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>

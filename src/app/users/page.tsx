@@ -4,6 +4,7 @@ import { useFirestore, useCollection } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
+import { modules, permissions } from '@/lib/modules';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -102,10 +103,21 @@ export default function UsersPage() {
     
     const { password, ...userData } = data;
 
+    if (userData.role === 'Admin') {
+        const allPermissions: any = {};
+        for (const mod of modules) {
+            allPermissions[mod.id] = {};
+            for (const perm of permissions) {
+                allPermissions[mod.id][perm] = true;
+            }
+        }
+        userData.permissions = allPermissions;
+    }
+
     try {
         if (editingUser) {
             const docRef = doc(firestore, 'users', editingUser.id);
-            await updateDoc(docRef, userData);
+            await updateDoc(docRef, userData as any);
             toast({ title: 'User Updated', description: 'The user details have been successfully updated.' });
         } else {
             await addDoc(collection(firestore, 'users'), {
@@ -251,7 +263,7 @@ export default function UsersPage() {
       </main>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>{editingUser ? 'Edit' : 'Add'} User</DialogTitle>
             </DialogHeader>

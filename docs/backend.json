@@ -23,7 +23,29 @@
             "Admin",
             "User"
           ],
-          "description": "The user's role."
+          "description": "The user's role. 'Admin' has all permissions by default."
+        },
+        "permissions": {
+          "type": "object",
+          "description": "Granular permissions for each module. Applies to all roles, but 'Admin' will have all fields set to true.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "create": {
+                "type": "boolean"
+              },
+              "read": {
+                "type": "boolean"
+              },
+              "update": {
+                "type": "boolean"
+              },
+              "delete": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
         }
       },
       "required": [

@@ -1,4 +1,5 @@
 import type { DocumentData } from 'firebase/firestore';
+import type { UserPermissions } from './modules';
 
 export interface RationItem {
   id: string;
@@ -46,4 +47,5 @@ export interface UserProfile extends DocumentData {
   phone: string;
   userKey: string;
   role: 'Admin' | 'User';
+  permissions?: UserPermissions;
 }
