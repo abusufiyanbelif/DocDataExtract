@@ -18,6 +18,7 @@ export const seedDatabase = async (firestore: Firestore) => {
     phone: '0000000000',
     userKey: 'admin',
     role: 'Admin',
+    createdAt: serverTimestamp(),
   });
 
   const sampleUserDocRef = doc(collection(firestore, 'users'));
@@ -26,6 +27,7 @@ export const seedDatabase = async (firestore: Firestore) => {
     phone: '1111111111',
     userKey: 'sampleuser',
     role: 'User',
+    createdAt: serverTimestamp(),
   });
 
   // Seed Campaign
@@ -66,7 +68,7 @@ export const seedDatabase = async (firestore: Firestore) => {
     await batch.commit();
     toast({
       title: 'Database Seeded',
-      description: 'Default data has been added to the database. Please try logging in again.',
+      description: 'The database has been populated with default sample data.',
       duration: 7000,
     });
   } catch (error) {

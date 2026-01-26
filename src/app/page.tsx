@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ScanSearch, ArrowRight, FileText, ShoppingBasket, Users, ShieldCheck } from 'lucide-react';
+import { ScanSearch, ArrowRight, FileText, ShoppingBasket, Users, ShieldCheck, DatabaseZap } from 'lucide-react';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 export default function LandingPage() {
+  const { userProfile } = useUserProfile();
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
       <div className="container mx-auto flex flex-col items-center justify-center text-center p-8">
@@ -46,6 +49,14 @@ export default function LandingPage() {
               Diagnostics
             </Button>
           </Link>
+          {userProfile?.role === 'Admin' && (
+            <Link href="/seed">
+              <Button size="lg" variant="destructive" className="text-lg">
+                <DatabaseZap className="mr-2 h-5 w-5" />
+                Seed Database
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </div>

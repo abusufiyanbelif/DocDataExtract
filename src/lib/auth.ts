@@ -20,25 +20,14 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
     // Find the user profile document in Firestore based on the phone number
     const usersRef = collection(firestore, 'users');
     const q = query(usersRef, where("phone", "==", phone));
-    let querySnapshot = await getDocs(q);
-
-    // If the user isn't found and it's the default admin phone, attempt to seed the database.
-    if (querySnapshot.empty && phone === '0000000000') {
-        try {
-            toast({
-                title: 'First-time Setup',
-                description: 'Admin user not found. Attempting to seed the database with default data...',
-            });
-            await seedDatabase(firestore);
-            // Re-query to find the newly created admin user
-            querySnapshot = await getDocs(q);
-        } catch (seedError) {
-            console.error("Database seeding failed during login:", seedError);
-            throw new Error("Login failed: Could not initialize the database.");
-        }
-    }
+    const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
+        // Special case for first-time admin login to an unseeded database.
+        // This prompts the user to create the admin user manually in Firebase Auth.
+        if (phone === '0000000000') {
+             throw new Error("Admin user not found. Please create the user 'admin@docdataextract.app' in Firebase Auth, then log in and use the 'Seed Database' tool.");
+        }
         throw new Error('User with this phone number not found.');
     }
 
