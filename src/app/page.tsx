@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ScanSearch, ArrowRight, FileText, ShoppingBasket, Users, ShieldCheck, DatabaseZap } from 'lucide-react';
+import { ScanSearch, ArrowRight, FileText, ShoppingBasket, Users, ShieldCheck } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -36,7 +36,6 @@ export default function LandingPage() {
             <>
               <Skeleton className="h-11 w-48" />
               <Skeleton className="h-11 w-28" />
-              <Skeleton className="h-11 w-44" />
             </>
           )}
           {!isLoading && userProfile?.role === 'Admin' && (
@@ -61,14 +60,6 @@ export default function LandingPage() {
               Diagnostics
             </Button>
           </Link>
-          {!isLoading && userProfile?.role === 'Admin' && (
-            <Link href="/seed">
-              <Button size="lg" variant="destructive" className="text-lg">
-                <DatabaseZap className="mr-2 h-5 w-5" />
-                Seed Database
-              </Button>
-            </Link>
-          )}
         </div>
       </div>
     </div>

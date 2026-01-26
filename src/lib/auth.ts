@@ -41,6 +41,9 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
              throw new Error("Invalid credentials. Please ensure the user exists in Firebase Auth and the password is correct.");
         }
+        if (error.code === 'auth/configuration-not-found') {
+             throw error; // Re-throw to be handled by the UI
+        }
         if (error.code === 'auth/too-many-requests') {
             throw new Error("Access temporarily disabled due to too many failed login attempts. Please reset your password or try again later.");
         }

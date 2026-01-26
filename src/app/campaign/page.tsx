@@ -21,6 +21,7 @@ export default function CampaignPage() {
   };
 
   const isLoading = areCampaignsLoading || isProfileLoading;
+  const isAdmin = userProfile?.role === 'Admin';
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -37,8 +38,8 @@ export default function CampaignPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Ration Campaigns</CardTitle>
-            {isProfileLoading && <Skeleton className="h-10 w-44" />}
-            {!isProfileLoading && userProfile?.role === 'Admin' && (
+            {isLoading && <Skeleton className="h-10 w-44" />}
+            {!isLoading && isAdmin && (
               <Button asChild>
                 <Link href="/campaign/create">
                   <Plus className="mr-2 h-4 w-4" />
@@ -77,7 +78,7 @@ export default function CampaignPage() {
                 {!isLoading && campaigns.length === 0 && (
                     <TableRow>
                         <TableCell colSpan={2} className="text-center text-muted-foreground">
-                            No campaigns found. {userProfile?.role === 'Admin' && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
+                            No campaigns found. {isAdmin && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
                         </TableCell>
                     </TableRow>
                 )}

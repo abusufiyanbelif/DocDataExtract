@@ -16,28 +16,31 @@ import { toast } from '@/hooks/use-toast';
 export const createAdminUser = async (auth: Auth) => {
     const adminEmail = 'admin@docdataextract.app';
     const adminPassword = 'password';
+    
+    toast({ title: "Step 1: Admin User", description: "Checking admin auth account..." });
+
     try {
-        // This signs the user in automatically upon success
         await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
         toast({ title: "Admin Account Created", description: "Successfully created and signed in as admin." });
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
-            // If the user already exists, sign them in to proceed with seeding.
-            toast({ title: "Admin Exists", description: "Admin user already exists. Attempting to sign in to proceed with seeding..." });
+            toast({ title: "Admin Exists", description: "Admin auth account found. Signing in..." });
             try {
                 await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
                 toast({ title: "Admin Sign-In Successful", description: "Ready to seed database." });
             } catch (signInError: any) {
                  console.error("Failed to sign in existing admin user:", signInError);
-                 throw new Error("The admin user already exists, but sign-in failed. Please check the password or reset it in the Firebase console if needed.");
+                 const message = "The admin user already exists, but sign-in failed. Please check the password or reset it in the Firebase console if needed.";
+                 toast({ title: 'Sign-In Failed', description: message, variant: 'destructive'});
+                 throw new Error(message);
             }
         } else if (error.code === 'auth/configuration-not-found') {
-            // This is a critical error for first-time setup.
-            throw new Error("auth/configuration-not-found");
+            throw error; // Re-throw to be handled by UI
         } else {
-            // For other errors, fail the process.
             console.error("Could not create admin user:", error);
-            throw new Error(`Could not create admin user in Auth: ${error.message}`);
+            const message = `Could not create admin user in Auth: ${error.message}`;
+            toast({ title: 'Auth Error', description: message, variant: 'destructive' });
+            throw new Error(message);
         }
     }
 }
@@ -45,6 +48,8 @@ export const createAdminUser = async (auth: Auth) => {
 
 export const seedDatabase = async (firestore: Firestore) => {
   const batch = writeBatch(firestore);
+  
+  toast({ title: "Step 2: Seeding Data", description: "Preparing sample data for Firestore..." });
 
   // Seed Users
   const adminUserDocRef = doc(collection(firestore, 'users'));
@@ -101,9 +106,11 @@ export const seedDatabase = async (firestore: Firestore) => {
 
   try {
     await batch.commit();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error seeding database:', error);
+    const message = `Could not write to Firestore: ${error.message}`;
+    toast({ title: 'Firestore Seeding Failed', description: message, variant: 'destructive'});
     // Re-throw the error so the calling function knows it failed
-    throw new Error(`Could not write to Firestore: ${error}`);
+    throw new Error(message);
   }
 };
