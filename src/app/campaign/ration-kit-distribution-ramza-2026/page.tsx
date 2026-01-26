@@ -26,6 +26,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 
 interface RationItem {
@@ -124,6 +127,16 @@ export default function CampaignDetailsPage() {
   };
   
   const handleDownload = (format: 'csv' | 'excel' | 'pdf') => {
+    const hasData = Object.values(rationLists).some(list => list.length > 0);
+    if (!hasData) {
+      toast({
+        title: 'No Data',
+        description: 'There is no ration data to export.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (format === 'csv') {
       let csvContent = '#,Member Count,Item Name,Quantity,Price (₹),Notes\n';
 
@@ -139,6 +152,10 @@ export default function CampaignDetailsPage() {
           ].join(',');
           csvContent += row + '\n';
         });
+        if (items.length > 0) {
+          const total = calculateTotal(items);
+          csvContent += ` ,${memberCount},,,Total,${total}\n`;
+        }
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -149,11 +166,79 @@ export default function CampaignDetailsPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } else {
-        toast({
-            title: 'Coming Soon!',
-            description: `The option to download as ${format.toUpperCase()} will be available shortly.`,
+    } else if (format === 'excel') {
+        const wb = XLSX.utils.book_new();
+
+        Object.entries(rationLists).forEach(([memberCount, items]) => {
+            if (items.length > 0) {
+                const total = calculateTotal(items);
+                const worksheetData = items.map((item, index) => ({
+                    '#': index + 1,
+                    'Item Name': item.name,
+                    'Quantity': item.quantity,
+                    'Notes': item.notes,
+                    'Price (₹)': item.price,
+                }));
+                worksheetData.push({
+                    '#': '',
+                    'Item Name': '',
+                    'Quantity': '',
+                    'Notes': 'Total',
+                    'Price (₹)': total,
+                });
+
+                const ws = XLSX.utils.json_to_sheet(worksheetData);
+                ws['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 10 }];
+                XLSX.utils.book_append_sheet(wb, ws, `For ${memberCount} Members`);
+            }
         });
+
+        XLSX.writeFile(wb, `ration-details-${priceDate}.xlsx`);
+    } else if (format === 'pdf') {
+        const doc = new jsPDF();
+        let startY = 20;
+
+        doc.text(`Ration Details - Price Date: ${priceDate}`, 14, 10);
+
+        const sortedMemberCategories = Object.keys(rationLists).sort((a, b) => Number(b) - Number(a));
+        
+        sortedMemberCategories.forEach((memberCount) => {
+            const items = rationLists[memberCount];
+            if (items.length > 0) {
+                const total = calculateTotal(items);
+                const tableBody = items.map((item, index) => [
+                    index + 1,
+                    item.name,
+                    item.quantity,
+                    item.notes,
+                    `₹${item.price.toFixed(2)}`,
+                ]);
+
+                tableBody.push([
+                    { content: 'Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: `₹${total.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }
+                ]);
+                
+                (doc as any).autoTable({
+                    head: [[`For ${memberCount} Members`]],
+                    startY: startY,
+                    theme: 'plain',
+                    styles: { fontStyle: 'bold', fontSize: 12 }
+                });
+
+                startY = (doc as any).lastAutoTable.finalY;
+
+                (doc as any).autoTable({
+                    head: [['#', 'Item Name', 'Quantity', 'Notes', 'Price (₹)']],
+                    body: tableBody,
+                    startY: startY,
+                });
+                
+                startY = (doc as any).lastAutoTable.finalY + 10;
+            }
+        });
+
+        doc.save(`ration-details-${priceDate}.pdf`);
     }
   };
 
