@@ -297,6 +297,14 @@
         "uploadedById": {
           "type": "string",
           "description": "ID of the user who recorded the donation."
+        },
+        "campaignId": {
+          "type": "string",
+          "description": "The ID of the campaign this donation belongs to."
+        },
+        "campaignName": {
+          "type": "string",
+          "description": "The name of the campaign this donation belongs to."
         }
       },
       "required": [
@@ -306,7 +314,9 @@
         "donationDate",
         "status",
         "uploadedBy",
-        "uploadedById"
+        "uploadedById",
+        "campaignId",
+        "campaignName"
       ]
     }
   },
@@ -334,11 +344,11 @@
       },
       "description": "Stores the list of beneficiaries for a specific campaign."
     },
-    "/campaigns/{campaignId}/donations/{donationId}": {
+    "/donations/{donationId}": {
       "schema": {
         "$ref": "#/backend/entities/Donation"
       },
-      "description": "Stores donation records for a specific campaign."
+      "description": "Stores all donation records across all campaigns."
     }
   }
 }

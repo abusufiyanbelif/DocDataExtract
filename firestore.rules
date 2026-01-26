@@ -33,10 +33,10 @@ service cloud.firestore {
       match /beneficiaries/{beneficiaryId} {
         allow read, write: if isSignedIn();
       }
+    }
 
-      match /donations/{donationId} {
-        allow read, write: if isSignedIn();
-      }
+    match /donations/{donationId} {
+      allow read, write: if isSignedIn();
     }
   }
 }

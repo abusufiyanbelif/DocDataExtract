@@ -94,6 +94,7 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
 
     // Seed Campaign
     const campaignId = 'ration-kit-distribution-ramza-2026';
+    const campaignName = 'Ration Kit Distribution Ramza 2026';
     const campaignRef = doc(firestore, 'campaigns', campaignId);
     const initialRationLists = {
         'General': [{ id: 'General-1', name: 'Rice', quantity: '10 kg', price: 600, notes: '@60/kg' }, { id: 'General-2', name: 'Wheat flour', quantity: '5 kg', price: 250, notes: 'Ashirvad' }, { id: 'General-3', name: 'Tea', quantity: '250 gm', price: 100, notes: 'Society mix' }, { id: 'General-4', name: 'Sugar', quantity: '2 kg', price: 88, notes: '@44/kg' }, { id: 'General-5', name: 'Groundnuts', quantity: '500 gm', price: 60, notes: '' }, { id: 'General-6', name: 'Khopra', quantity: '500 gm', price: 180, notes: '' }, { id: 'General-7', name: 'Tur Dal', quantity: '1 kg', price: 120, notes: '' }, { id: 'General-8', name: 'Masoor Dal', quantity: '1 kg', price: 90, notes: '' }, { id: 'General-9', name: 'Khimya Dates', quantity: '', price: 150, notes: '' }, { id: 'General-10', name: 'Edible Palm Oil', quantity: '2 packet', price: 220, notes: '' }, { id: 'General-11', name: 'Garam Masala', quantity: '150 gm', price: 180, notes: '' }, { id: 'General-12', name: 'Captain Cook Salt', quantity: '', price: 20, notes: '' },],
@@ -103,7 +104,7 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
         '1': [{ id: '1-1', name: 'Rice', quantity: '2 kg', price: 120, notes: '@60/kg' }, { id: '1-2', name: 'Wheat flour', quantity: '1 kg', price: 50, notes: 'Ashirvad' }, { id: '1-3', name: 'Sugar', quantity: '0.5 kg', price: 22, notes: '@44/kg' },],
     };
     batch.set(campaignRef, {
-        name: 'Ration Kit Distribution Ramza 2026',
+        name: campaignName,
         description: 'A sample campaign for distributing ration kits to those in need during the holy month of Ramza.',
         targetAmount: 100000,
         status: 'Active',
@@ -131,6 +132,19 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
         batch.set(beneficiaryRef, { ...beneficiaryData, createdAt: serverTimestamp() });
     });
     log(" -> Beneficiary data prepared.");
+
+    // Seed Donations
+    const initialDonations = [
+        { donorName: 'Zoya Farooqui', donorPhone: '9988776655', amount: 5000, type: 'Zakat', donationDate: '2026-03-10', status: 'Verified', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName },
+        { donorName: 'Rohan Sharma', donorPhone: '9988776654', amount: 1000, type: 'General', donationDate: '2026-03-12', status: 'Verified', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName },
+        { donorName: 'Anonymous', donorPhone: '9988776653', amount: 2500, type: 'Sadqa', donationDate: '2026-03-14', status: 'Pending', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName },
+    ];
+
+    initialDonations.forEach((donation) => {
+        const donationRef = doc(collection(firestore, 'donations'));
+        batch.set(donationRef, { ...donation, createdAt: serverTimestamp() });
+    });
+    log(" -> Donation data prepared.");
 
     try {
         log(" -> Writing data to the database... This may take a moment.");

@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useFirestore, useCollection, useDoc, useStorage } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where } from 'firebase/firestore';
 import type { Donation, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -57,7 +57,7 @@ export default function DonationsPage() {
   
   const donationsCollectionRef = useMemo(() => {
     if (!firestore || !campaignId) return null;
-    return collection(firestore, `campaigns/${campaignId}/donations`);
+    return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
   }, [firestore, campaignId]);
   const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
 
@@ -94,8 +94,8 @@ export default function DonationsPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (donationToDelete && firestore && campaignId && isAdmin) {
-        const docRef = doc(firestore, `campaigns/${campaignId}/donations`, donationToDelete);
+    if (donationToDelete && firestore && isAdmin) {
+        const docRef = doc(firestore, 'donations', donationToDelete);
         try {
             await deleteDoc(docRef);
             toast({ title: 'Success', description: 'Donation deleted.' });
@@ -110,7 +110,7 @@ export default function DonationsPage() {
   };
   
   const handleFormSubmit = async (data: DonationFormData) => {
-    if (!firestore || !storage || !campaignId || !isAdmin || !userProfile) return;
+    if (!firestore || !storage || !campaignId || !campaign || !isAdmin || !userProfile) return;
 
     let screenshotUrl = editingDonation?.screenshotUrl || '';
     
@@ -137,13 +137,15 @@ export default function DonationsPage() {
         };
     
         if (editingDonation) {
-            const docRef = doc(firestore, `campaigns/${campaignId}/donations`, editingDonation.id);
+            const docRef = doc(firestore, 'donations', editingDonation.id);
             await updateDoc(docRef, finalData);
             toast({ title: 'Success', description: 'Donation updated.' });
         } else {
-            const collectionRef = collection(firestore, `campaigns/${campaignId}/donations`);
+            const collectionRef = collection(firestore, 'donations');
             await addDoc(collectionRef, {
                 ...finalData,
+                campaignId: campaignId,
+                campaignName: campaign.name,
                 uploadedBy: userProfile.name,
                 uploadedById: userProfile.id,
                 createdAt: serverTimestamp(),

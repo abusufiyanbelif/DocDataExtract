@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, collection, updateDoc } from 'firebase/firestore';
+import { doc, collection, updateDoc, query, where } from 'firebase/firestore';
 import Link from 'next/link';
 import {
   BarChart,
@@ -66,7 +66,10 @@ export default function CampaignSummaryPage() {
     // Data fetching
     const campaignDocRef = useMemo(() => firestore ? doc(firestore, 'campaigns', campaignId) : null, [firestore, campaignId]);
     const beneficiariesCollectionRef = useMemo(() => firestore ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId]);
-    const donationsCollectionRef = useMemo(() => firestore ? collection(firestore, `campaigns/${campaignId}/donations`) : null, [firestore, campaignId]);
+    const donationsCollectionRef = useMemo(() => {
+        if (!firestore || !campaignId) return null;
+        return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
+    }, [firestore, campaignId]);
 
     const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);

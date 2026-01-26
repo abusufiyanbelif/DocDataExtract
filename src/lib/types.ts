@@ -68,4 +68,6 @@ export interface Donation extends DocumentData {
   screenshotUrl?: string;
   uploadedBy: string;
   uploadedById: string;
+  campaignId: string;
+  campaignName: string;
 }
