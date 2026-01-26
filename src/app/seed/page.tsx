@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth, useFirestore, useStorage }from '@/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { ref as storageRef, uploadString } from 'firebase/storage';
+import { ref as storageRef, uploadString, deleteObject } from 'firebase/storage';
 import { writeBatch, doc, collection, serverTimestamp, getDocs, query, where, limit } from 'firebase/firestore';
 import { modules, permissions } from '@/lib/modules';
 import { useToast } from '@/hooks/use-toast';
@@ -34,12 +34,33 @@ export default function SeedPage() {
             log(`ERROR: ${message}`);
             throw new Error(message);
         };
+
+        const testFilePath = `diagnostics/seed_test_${Date.now()}.txt`;
+        const testFileRef = storageRef(storage, testFilePath);
+
+        log(` -> Testing write permissions for storage...`);
+        try {
+            // Step 1: Test write by uploading a temporary file.
+            await uploadString(testFileRef, 'seed test');
+            log(`   -> Write test successful.`);
+
+            // Step 2: Clean up the test file.
+            await deleteObject(testFileRef);
+            log(`   -> Test file cleaned up.`);
+        } catch (error: any) {
+            const message = `Storage write permission test failed. You cannot create folders. Please check your Storage security rules. Error: ${error.message} (Code: ${error.code})`;
+            log(`ERROR: ${message}`);
+            throw new Error(message);
+        }
+        
+        // If test is successful, proceed with creating the actual placeholder.
+        log(` -> Creating placeholder for folder: ${path}/`);
         try {
             const placeholderRef = storageRef(storage, `${path}/.placeholder`);
             await uploadString(placeholderRef, '', 'raw');
-            log(` -> Storage path created: ${path}/`);
+            log(`   -> SUCCESS: Storage path '${path}/' ensured.`);
         } catch (error: any) {
-            const message = `Could not create storage path '${path}/'. Please check your Storage security rules. Error: ${error.message} (Code: ${error.code})`;
+            const message = `Could not create placeholder file for '${path}/'. Error: ${error.message} (Code: ${error.code})`;
             log(`ERROR: ${message}`);
             // Re-throw the error so the main seeding function can catch it and stop.
             throw new Error(message);
@@ -85,7 +106,7 @@ export default function SeedPage() {
         log("Step 2: Seeding Firestore Data & Storage Folders");
 
         // --- Create Root Storage Folders ---
-        log(" -> Creating root folders in Firebase Storage...");
+        log(" -> Creating folders in Firebase Storage by adding a '.placeholder' file in each directory.");
         await createPlaceholderFile('campaigns');
         await createPlaceholderFile('users');
 
