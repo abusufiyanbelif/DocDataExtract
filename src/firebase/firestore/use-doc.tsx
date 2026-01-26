@@ -24,6 +24,7 @@ export function useDoc<T extends DocumentData>(
         } else {
           setData(null);
         }
+        setError(null);
         setIsLoading(false);
       },
       (err) => {

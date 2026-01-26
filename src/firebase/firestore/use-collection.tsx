@@ -27,6 +27,7 @@ export function useCollection<T extends DocumentData>(
           result.push({ id: doc.id, ...doc.data() } as T);
         });
         setData(result);
+        setError(null);
         setIsLoading(false);
       }, 
       (err) => {
