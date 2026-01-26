@@ -13,7 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Loader2, ScanSearch } from 'lucide-react';
+import { Loader2, ScanSearch, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
 
 const loginSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: "Phone number must be 10 digits." }),
@@ -28,6 +30,7 @@ export default function LoginPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -37,8 +40,16 @@ export default function LoginPage() {
     },
   });
 
+  const handleFormChange = () => {
+    if (setupError) {
+        setSetupError(null);
+    }
+  }
+
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
+    setSetupError(null);
+
     if (!auth || !firestore) {
       toast({
         title: 'Error',
@@ -53,18 +64,25 @@ export default function LoginPage() {
       toast({ title: 'Login Successful', description: "Welcome back!" });
       router.push('/');
     } catch (error: any) {
-      toast({
-        title: 'Login Failed',
-        description: error.message || 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
+        if (error.message.includes('Email/Password sign-in provider is not enabled')) {
+            setSetupError(error.message);
+        } else {
+            toast({
+                title: 'Login Failed',
+                description: error.message || 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+        }
     } finally {
       setIsLoading(false);
     }
   };
 
+  const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const authUrl = `https://console.firebase.google.com/project/${firebaseProjectId}/authentication/sign-in-method`;
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
        <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-3 mb-4">
@@ -77,6 +95,23 @@ export default function LoginPage() {
           <CardDescription>Enter your credentials to access your account.</CardDescription>
         </CardHeader>
         <CardContent>
+        {setupError && (
+             <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Action Required: Enable Sign-In Method</AlertTitle>
+                <AlertDescription>
+                    To complete the initial setup, you must enable the 'Email/Password' provider in your Firebase project.
+                    <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
+                        <Link href={authUrl} target="_blank">
+                            Go to Firebase Console
+                            <ExternalLink className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                     <p className="text-xs text-center mt-2 text-muted-foreground">After enabling, try logging in again.</p>
+                </AlertDescription>
+            </Alert>
+        )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -86,7 +121,14 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="10-digit mobile number" {...field} />
+                      <Input 
+                        placeholder="10-digit mobile number" 
+                        {...field}
+                        onChange={(e) => {
+                            field.onChange(e);
+                            handleFormChange();
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -99,7 +141,15 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input 
+                        type="password" 
+                        placeholder="••••••••" 
+                        {...field} 
+                        onChange={(e) => {
+                            field.onChange(e);
+                            handleFormChange();
+                        }}
+                        />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

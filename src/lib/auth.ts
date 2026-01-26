@@ -22,19 +22,21 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
     const q = query(usersRef, where("phone", "==", phone));
     const querySnapshot = await getDocs(q);
 
-    // Case 1: Database is empty, this is the first-ever admin login.
+    // Case 1: Database is empty, and the user is trying the first-ever admin login.
     if (querySnapshot.empty && phone === '0000000000') {
         toast({
             title: 'First-Time Setup',
-            description: 'Admin user not found. Creating admin and seeding database...',
+            description: 'Admin user not found. Attempting to create admin and seed database...',
         });
 
         const adminEmail = 'admin@docdataextract.app';
-        const adminPassword = 'password';
+        // The default password for the very first admin login.
+        const adminPassword = 'password'; 
         
         let userCredential;
         try {
-            // First, try to create the admin user in Firebase Auth. This also signs them in.
+            // First, create the admin user in Firebase Auth. This also signs them in.
+            // This requires the 'Email/Password' provider to be enabled in the Firebase Console.
             userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
             toast({ title: "Admin Account Created", description: "Successfully created admin user in Firebase Auth." });
         } catch (error: any) {
@@ -49,6 +51,7 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
                     throw new Error(`Admin sign-in failed: ${signInError.message}`);
                 }
             } else if (error.code === 'auth/configuration-not-found') {
+                // This is a critical error for first-time setup. It is caught on the login page to show a helpful message.
                 throw new Error("Login failed: The Email/Password sign-in provider is not enabled in your Firebase project. Please go to the Firebase console, navigate to Authentication > Sign-in method, and enable 'Email/Password'.");
             } else {
                 // For other errors (e.g., weak password), fail the process.
@@ -56,37 +59,36 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
             }
         }
         
-        // With the admin user now authenticated, seed the database.
+        // With the admin user now authenticated, seed the Firestore database.
         try {
             await seedDatabase(firestore);
             toast({ title: "Database Seeded", description: "Initial data has been created." });
             return userCredential;
         } catch (seedError: any) {
+            console.error("Database seeding failed: ", seedError);
             throw new Error("Admin login succeeded, but database seeding failed. Check console for errors.");
         }
     }
 
-    // Case 2: User not found in (non-empty) database
+    // Case 2: User not found in a database that is NOT empty.
     if (querySnapshot.empty) {
         throw new Error('User with this phone number not found in the database.');
     }
 
-    // Case 3: Regular user login
+    // Case 3: Regular user login (admin or otherwise).
     const userDoc = querySnapshot.docs[0];
     const userData = userDoc.data() as UserProfile;
-    const { userKey, role } = userData;
+    const { userKey } = userData;
 
-    const finalPassword = (role === 'Admin' && phone === '0000000000') ? 'password' : password;
-
-    if (!finalPassword) {
-        throw new Error('Password is required for non-admin users.');
+    if (!password) {
+        throw new Error('Password is required.');
     }
 
+    // The user's email is their unique userKey + the app domain.
     const email = `${userKey}@docdataextract.app`;
 
     try {
-        // For regular logins, we assume the user already exists in Auth.
-        return await signInWithEmailAndPassword(auth, email, finalPassword);
+        return await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
              throw new Error("Invalid credentials. Please ensure the user exists in Firebase Auth and the password is correct.");
