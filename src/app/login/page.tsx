@@ -189,12 +189,11 @@ export default function LoginPage() {
         <Alert className="mt-4 max-w-sm">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>First-Time Setup Required</AlertTitle>
-            <AlertDescription>
-            The database has not been initialized. Please run{' '}
-            <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
-                npm run db:seed
-            </code>
-            {' '}in your terminal to set up the database and admin user.
+            <AlertDescription className="space-y-2">
+              <p>The database has not been initialized. Please go to the seed page to set up the database and admin user.</p>
+              <Button asChild className="w-full">
+                  <Link href="/seed">Go to Seed Page</Link>
+              </Button>
             </AlertDescription>
         </Alert>
       )}
