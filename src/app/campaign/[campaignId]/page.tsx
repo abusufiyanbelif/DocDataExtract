@@ -439,6 +439,9 @@ export default function CampaignDetailsPage() {
             <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
                 <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
             </Button>
+             <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
+            </Button>
         </div>
 
         <Card>

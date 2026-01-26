@@ -215,6 +215,60 @@
         "name",
         "status"
       ]
+    },
+    "Donation": {
+      "title": "Donation",
+      "description": "A donation made towards a campaign.",
+      "type": "object",
+      "properties": {
+        "donorName": {
+          "type": "string",
+          "description": "The name of the donor."
+        },
+        "donorPhone": {
+          "type": "string",
+          "description": "The donor's 10-digit phone number."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The donation amount in Rupees."
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Zakat",
+            "Sadqa",
+            "Interest",
+            "Lillah",
+            "General"
+          ],
+          "description": "The type of donation."
+        },
+        "donationDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The date the donation was made."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Verified",
+            "Pending"
+          ],
+          "description": "The verification status of the donation."
+        },
+        "screenshotUrl": {
+          "type": "string",
+          "description": "URL of the uploaded donation screenshot."
+        }
+      },
+      "required": [
+        "donorName",
+        "amount",
+        "type",
+        "donationDate",
+        "status"
+      ]
     }
   },
   "auth": {
@@ -240,6 +294,12 @@
         "$ref": "#/backend/entities/Beneficiary"
       },
       "description": "Stores the list of beneficiaries for a specific campaign."
+    },
+    "/campaigns/{campaignId}/donations/{donationId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Donation"
+      },
+      "description": "Stores donation records for a specific campaign."
     }
   }
 }

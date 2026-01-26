@@ -1,0 +1,336 @@
+'use client';
+import { useState, useMemo } from 'react';
+import { useParams } from 'next/navigation';
+import Image from 'next/image';
+import { useFirestore, useCollection, useDoc } from '@/firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import type { Donation, Campaign } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/use-user-profile';
+import { DocuExtractHeader } from '@/components/docu-extract-header';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { DonationForm, type DonationFormData } from '@/components/donation-form';
+import { Skeleton } from '@/components/ui/skeleton';
+
+export default function DonationsPage() {
+  const params = useParams();
+  const campaignId = params.campaignId as string;
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
+  
+  const campaignDocRef = useMemo(() => {
+    if (!firestore || !campaignId) return null;
+    return doc(firestore, 'campaigns', campaignId);
+  }, [firestore, campaignId]);
+  const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
+  
+  const donationsCollectionRef = useMemo(() => {
+    if (!firestore || !campaignId) return null;
+    return collection(firestore, `campaigns/${campaignId}/donations`);
+  }, [firestore, campaignId]);
+  const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
+
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [donationToDelete, setDonationToDelete] = useState<string | null>(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [imageToView, setImageToView] = useState<string | null>(null);
+  
+  const isAdmin = userProfile?.role === 'Admin';
+
+  const handleAdd = () => {
+    if (!isAdmin) return;
+    setEditingDonation(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (donation: Donation) => {
+    if (!isAdmin) return;
+    setEditingDonation(donation);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    if (!isAdmin) return;
+    setDonationToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleViewImage = (url: string) => {
+    setImageToView(url);
+    setIsImageViewerOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (donationToDelete && firestore && campaignId && isAdmin) {
+        const docRef = doc(firestore, `campaigns/${campaignId}/donations`, donationToDelete);
+        try {
+            await deleteDoc(docRef);
+            toast({ title: 'Success', description: 'Donation deleted.' });
+        } catch (error) {
+            console.error("Error deleting donation:", error);
+            toast({ title: 'Error', description: 'Could not delete donation.', variant: 'destructive' });
+        } finally {
+            setDonationToDelete(null);
+            setIsDeleteDialogOpen(false);
+        }
+    }
+  };
+  
+  const handleFormSubmit = async (data: DonationFormData) => {
+    if (!firestore || !campaignId || !isAdmin) return;
+
+    // This is a placeholder for file upload logic.
+    // In a real app, you'd upload the file to Firebase Storage and get a URL.
+    let screenshotUrl = editingDonation?.screenshotUrl || '';
+    if (data.screenshotFile) {
+        toast({
+            title: "File Upload (Placeholder)",
+            description: `In a real app, '${data.screenshotFile.name}' would be uploaded to Firebase Storage.`,
+        });
+        screenshotUrl = `https://picsum.photos/seed/${data.screenshotFile.name}/400/600`;
+    }
+
+    const donationData = {
+        donorName: data.donorName,
+        donorPhone: data.donorPhone,
+        amount: data.amount,
+        type: data.type,
+        donationDate: data.donationDate,
+        status: data.status,
+        screenshotUrl: screenshotUrl,
+    };
+
+    try {
+        if (editingDonation) {
+            const docRef = doc(firestore, `campaigns/${campaignId}/donations`, editingDonation.id);
+            await updateDoc(docRef, donationData);
+            toast({ title: 'Success', description: 'Donation updated.' });
+        } else {
+            const collectionRef = collection(firestore, `campaigns/${campaignId}/donations`);
+            await addDoc(collectionRef, {
+                ...donationData,
+                createdAt: serverTimestamp(),
+            });
+            toast({ title: 'Success', description: 'Donation added.' });
+        }
+    } catch (error) {
+        console.error("Error saving donation:", error);
+        toast({ title: 'Error', description: 'Could not save donation.', variant: 'destructive' });
+    } finally {
+        setIsFormOpen(false);
+        setEditingDonation(null);
+    }
+  };
+  
+  const totalDonationAmount = useMemo(() => {
+    return donations.reduce((acc, d) => acc + (d.amount || 0), 0);
+  }, [donations]);
+
+  const isLoading = isCampaignLoading || areDonationsLoading || isProfileLoading;
+
+  if (isLoading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <DocuExtractHeader />
+      <main className="container mx-auto p-4 md:p-8">
+        <div className="mb-4">
+            <Button variant="outline" asChild>
+                <Link href="/campaign">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Campaigns
+                </Link>
+            </Button>
+        </div>
+        <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl font-bold">{campaign?.name}</h1>
+        </div>
+        
+        <div className="flex gap-2 border-b mb-4">
+            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
+            </Button>
+            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
+            </Button>
+            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
+                <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
+            </Button>
+        </div>
+
+        <Card>
+          <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <CardTitle>Donation List</CardTitle>
+            {isAdmin && (
+                <Button onClick={handleAdd}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Donation
+                </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          {isAdmin && <TableHead className="w-[50px] text-center">Actions</TableHead>}
+                          <TableHead>Donor Name</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead className="text-right">Amount (₹)</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Screenshot</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {areDonationsLoading ? (
+                        [...Array(3)].map((_, i) => (
+                           <TableRow key={i}>
+                                <TableCell colSpan={isAdmin ? 8 : 7}><Skeleton className="h-6 w-full" /></TableCell>
+                           </TableRow>
+                        ))
+                      ) : donations.length > 0 ? (
+                        donations.map((donation) => (
+                          <TableRow key={donation.id}>
+                              {isAdmin && (
+                                <TableCell className="text-center">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleEdit(donation)}>
+                                                <Edit className="mr-2 h-4 w-4" /> Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                              )}
+                              <TableCell className="font-medium">{donation.donorName}</TableCell>
+                              <TableCell>{donation.donorPhone}</TableCell>
+                              <TableCell className="text-right font-medium">₹{donation.amount.toFixed(2)}</TableCell>
+                              <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
+                              <TableCell>{donation.donationDate}</TableCell>
+                              <TableCell>
+                                  <Badge variant={donation.status === 'Verified' ? 'default' : 'outline'}>{donation.status}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                  {donation.screenshotUrl ? (
+                                    <Button variant="outline" size="sm" onClick={() => handleViewImage(donation.screenshotUrl)}>
+                                        <Eye className="mr-2 h-4 w-4" /> View
+                                    </Button>
+                                  ) : "N/A"}
+                              </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                            <TableCell colSpan={isAdmin ? 8 : 7} className="text-center h-24 text-muted-foreground">
+                                No donations recorded yet.
+                            </TableCell>
+                        </TableRow>
+                      )}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow>
+                        <TableCell colSpan={isAdmin ? 2 : 1} className="text-right font-bold">Total Donations</TableCell>
+                        <TableCell className="text-right font-bold">₹{totalDonationAmount.toFixed(2)}</TableCell>
+                        <TableCell colSpan={5}></TableCell>
+                    </TableRow>
+                  </TableFooter>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>{editingDonation ? 'Edit' : 'Add'} Donation</DialogTitle>
+            </DialogHeader>
+            <DonationForm
+                donation={editingDonation}
+                onSubmit={handleFormSubmit}
+                onCancel={() => setIsFormOpen(false)}
+            />
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the donation record.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                    onClick={handleDeleteConfirm} 
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                        Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+        <DialogContent className="max-w-3xl">
+            <DialogHeader>
+                <DialogTitle>Donation Screenshot</DialogTitle>
+            </DialogHeader>
+            {imageToView && (
+                <div className="relative h-[70vh] w-full mt-4">
+                    <Image src={imageToView} alt="Donation screenshot" layout="fill" objectFit="contain" />
+                </div>
+            )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

@@ -50,3 +50,14 @@ export interface UserProfile extends DocumentData {
   status: 'Active' | 'Inactive';
   permissions?: UserPermissions;
 }
+
+export interface Donation extends DocumentData {
+  id: string;
+  donorName: string;
+  donorPhone: string;
+  amount: number;
+  type: 'Zakat' | 'Sadqa' | 'Interest' | 'Lillah' | 'General';
+  donationDate: string;
+  status: 'Verified' | 'Pending';
+  screenshotUrl?: string;
+}
