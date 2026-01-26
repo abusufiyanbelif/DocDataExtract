@@ -15,8 +15,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 
@@ -27,11 +25,31 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, IndianRupee, Target, Users, Gift, Edit, Save } from 'lucide-react';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save } from 'lucide-react';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
 import { useToast } from '@/hooks/use-toast';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+const donationChartConfig = {
+    value: {
+        label: "Donations",
+        color: "hsl(var(--primary))",
+    },
+} satisfies ChartConfig;
+
+const beneficiaryStatusConfig = {
+    Given: { label: "Given", color: "hsl(var(--chart-1))" },
+    Pending: { label: "Pending", color: "hsl(var(--chart-2))" },
+    Hold: { label: "Hold", color: "hsl(var(--chart-3))" },
+    NeedMoreDetails: { label: "Need More Details", color: "hsl(var(--chart-4))" },
+} satisfies ChartConfig;
 
 export default function CampaignSummaryPage() {
     const params = useParams();
@@ -96,7 +114,8 @@ export default function CampaignSummaryPage() {
         const fundingProgress = fundingGoal > 0 ? (totalDonations / fundingGoal) * 100 : 0;
 
         const beneficiaryStatusData = beneficiaries.reduce((acc, b) => {
-            acc[b.status] = (acc[b.status] || 0) + 1;
+            const statusKey = b.status.replace(/\s+/g, '');
+            acc[statusKey] = (acc[statusKey] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
@@ -274,16 +293,32 @@ export default function CampaignSummaryPage() {
                             <CardHeader>
                                 <CardTitle>Donations by Type</CardTitle>
                             </CardHeader>
-                            <CardContent className="h-[300px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={summaryData?.donationChartData}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" />
-                                        <YAxis />
-                                        <Tooltip content={<ChartTooltipContent />} />
-                                        <Bar dataKey="value" name="Amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                            <CardContent>
+                                <ChartContainer config={donationChartConfig} className="h-[300px] w-full">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={summaryData?.donationChartData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
+                                            <CartesianGrid vertical={false} />
+                                            <XAxis
+                                                dataKey="name"
+                                                tickLine={false}
+                                                tickMargin={10}
+                                                axisLine={false}
+                                            />
+                                            <YAxis
+                                                tickFormatter={(value) => `₹${Number(value).toLocaleString()}`}
+                                            />
+                                            <ChartTooltip
+                                                cursor={false}
+                                                content={<ChartTooltipContent indicator="dot" />}
+                                            />
+                                            <Bar
+                                                dataKey="value"
+                                                fill="var(--color-value)"
+                                                radius={4}
+                                            />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </ChartContainer>
                             </CardContent>
                         </Card>
 
@@ -292,17 +327,33 @@ export default function CampaignSummaryPage() {
                                 <CardTitle>Beneficiary Status</CardTitle>
                             </CardHeader>
                             <CardContent className="h-[300px] flex items-center justify-center">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie data={summaryData?.beneficiaryChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                            {summaryData?.beneficiaryChartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip content={<ChartTooltipContent nameKey="name" />} />
-                                        <Legend />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                <ChartContainer
+                                    config={beneficiaryStatusConfig}
+                                    className="mx-auto aspect-square h-full"
+                                >
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <ChartTooltip
+                                                content={<ChartTooltipContent nameKey="name" />}
+                                            />
+                                            <Pie
+                                                data={summaryData?.beneficiaryChartData}
+                                                dataKey="value"
+                                                nameKey="name"
+                                                cx="50%"
+                                                cy="50%"
+                                                outerRadius={80}
+                                            >
+                                                {summaryData?.beneficiaryChartData.map((entry) => (
+                                                    <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
+                                                ))}
+                                            </Pie>
+                                            <ChartLegend
+                                                content={<ChartLegendContent nameKey="name" />}
+                                            />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </ChartContainer>
                             </CardContent>
                         </Card>
                     </div>
