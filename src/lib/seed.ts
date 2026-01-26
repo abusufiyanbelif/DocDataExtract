@@ -11,30 +11,31 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from 'firebase/auth';
-import { toast } from '@/hooks/use-toast';
 
-export const createAdminUser = async (auth: Auth) => {
+type Logger = (message: string) => void;
+
+export const createAdminUser = async (auth: Auth, log: Logger) => {
     const adminEmail = 'admin@docdataextract.app';
     const adminPassword = 'password';
     
-    toast({ title: "Step 1: Admin User", description: "Signing in as admin..." });
+    log("Step 1: Admin User Setup");
 
     try {
         // Attempt to sign in first, assuming the user might already exist from a previous attempt.
         await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
-        toast({ title: "Admin Sign-In Successful", description: "Admin auth account already exists. Ready to seed." });
+        log(" -> Admin auth account already exists. Sign-in successful.");
         return;
     } catch (error: any) {
         // If sign-in fails because the user doesn't exist, then create them.
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-            toast({ title: "Admin User", description: "Admin auth account not found. Creating a new one..." });
+            log(" -> Admin auth account not found. Creating a new one...");
             try {
                 await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
-                toast({ title: "Admin Account Created", description: "Successfully created and signed in as admin." });
+                log(" -> Successfully created and signed in as admin.");
             } catch (creationError: any) {
                 console.error("Could not create admin user:", creationError);
                 const message = `Could not create admin user in Auth: ${creationError.message}`;
-                toast({ title: 'Auth Error', description: message, variant: 'destructive' });
+                log(`ERROR: ${message}`);
                 throw new Error(message);
             }
         } else if (error.code === 'auth/configuration-not-found') {
@@ -43,17 +44,18 @@ export const createAdminUser = async (auth: Auth) => {
             // Any other sign-in error is critical.
             console.error("Failed to sign in admin user:", error);
             const message = `An unexpected error occurred during admin sign-in: ${error.message}.`;
-            toast({ title: 'Sign-In Failed', description: message, variant: 'destructive'});
+            log(`ERROR: ${message}`);
             throw new Error(message);
         }
     }
 }
 
 
-export const seedDatabase = async (firestore: Firestore) => {
+export const seedDatabase = async (firestore: Firestore, log: Logger) => {
   const batch = writeBatch(firestore);
   
-  toast({ title: "Step 2: Seeding Data", description: "Preparing sample data for Firestore..." });
+  log("Step 2: Seeding Firestore Data");
+  log(" -> Preparing sample data...");
 
   // Seed Users
   const adminUserDocRef = doc(collection(firestore, 'users'));
@@ -73,6 +75,8 @@ export const seedDatabase = async (firestore: Firestore) => {
     role: 'User',
     createdAt: serverTimestamp(),
   });
+
+  log(" -> User data prepared.");
 
   // Seed Campaign
   const campaignId = 'ration-kit-distribution-ramza-2026';
@@ -94,6 +98,7 @@ export const seedDatabase = async (firestore: Firestore) => {
     rationLists: initialRationLists,
     createdAt: serverTimestamp(),
   });
+  log(" -> Campaign data prepared.");
 
   // Seed Beneficiaries
   const initialBeneficiaries = [
@@ -107,15 +112,16 @@ export const seedDatabase = async (firestore: Firestore) => {
     const beneficiaryRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, id);
     batch.set(beneficiaryRef, { ...beneficiaryData, createdAt: serverTimestamp() });
   });
+  log(" -> Beneficiary data prepared.");
 
   try {
-    toast({ title: "Step 2: Seeding Data", description: "Writing data to the database... This may take a moment." });
+    log(" -> Writing data to the database... This may take a moment.");
     await batch.commit();
-    toast({ title: "Step 2: Seeding Data", description: "Database write successful!" });
+    log(" -> Database write successful!");
   } catch (error: any) {
     console.error('Error seeding database:', error);
     const message = `Could not write to Firestore: ${error.message}`;
-    toast({ title: 'Firestore Seeding Failed', description: message, variant: 'destructive'});
+    log(`ERROR: ${message}`);
     // Re-throw the error so the calling function knows it failed
     throw new Error(message);
   }

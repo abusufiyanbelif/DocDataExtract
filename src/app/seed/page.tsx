@@ -18,6 +18,7 @@ export default function SeedPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = useState(false);
+  const [seedingLog, setSeedingLog] = useState<string[]>([]);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [isSeeded, setIsSeeded] = useState<boolean | null>(null);
 
@@ -45,23 +46,31 @@ export default function SeedPage() {
       return;
     }
     setIsSeeding(true);
+    setSeedingLog([]);
     setSetupError(null);
+    
+    const log = (message: string) => {
+        setSeedingLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
+    };
+
     try {
-      await createAdminUser(auth);
-      await seedDatabase(firestore);
+      await createAdminUser(auth, log);
+      await seedDatabase(firestore, log);
+      log("Setup Complete! You'll now be redirected to the login page.");
       toast({
         title: 'Setup Complete!',
-        description: "Admin user created and database seeded. You'll now be redirected to the login page.",
+        description: "You'll be redirected to the login page shortly.",
         duration: 5000,
       });
-      router.push('/login');
+      setTimeout(() => router.push('/login'), 2000);
+
     } catch (error: any) {
        if (error.message.includes('auth/configuration-not-found')) {
             setSetupError(error.message);
         } else {
             toast({
                 title: 'Seeding Failed',
-                description: error.message || 'An unexpected error occurred.',
+                description: 'An error occurred during seeding. Check the progress log for details.',
                 variant: 'destructive',
             });
         }
@@ -156,9 +165,24 @@ export default function SeedPage() {
                         ) : (
                         <DatabaseZap className="mr-2 h-5 w-5" />
                         )}
-                        {isSeeding ? 'Initializing...' : 'Seed Database Now'}
+                        {isSeeding ? 'Seeding...' : 'Seed Database Now'}
                     </Button>
                     </div>
+
+                    {isSeeding && (
+                        <Card className="mt-4 bg-muted/50">
+                            <CardHeader>
+                                <CardTitle className="text-lg">Seeding Progress</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <pre className="text-sm font-mono bg-background p-4 rounded-md h-48 overflow-y-auto">
+                                    <code>
+                                        {seedingLog.join('\n')}
+                                    </code>
+                                </pre>
+                            </CardContent>
+                        </Card>
+                    )}
                 </>
             )}
           </CardContent>
