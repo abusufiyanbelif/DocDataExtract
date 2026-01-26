@@ -43,15 +43,12 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
                 try {
                     userCredential = await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
                 } catch (signInError: any) {
-                    console.error("Admin Sign-In failed after create failed:", signInError);
                     throw new Error("Admin password seems to be incorrect. Please check Firebase credentials.");
                 }
             } else if (error.code === 'auth/configuration-not-found') {
-                console.error("Admin Auth user creation failed:", error);
                 throw new Error("Login failed: The Email/Password sign-in provider is not enabled in your Firebase project. Please go to the Firebase console, navigate to Authentication > Sign-in method, and enable 'Email/Password'.");
             } else {
                 // For other errors (e.g., weak password), fail the process.
-                console.error("Admin Auth user creation failed:", error);
                 throw new Error(`Could not create admin user: ${error.message}`);
             }
         }
@@ -62,7 +59,6 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
             toast({ title: "Database Seeded", description: "Initial data has been created." });
             return userCredential;
         } catch (seedError: any) {
-            console.error("Database seeding failed:", seedError);
             throw new Error("Admin login succeeded, but database seeding failed. Check console for errors.");
         }
     }
@@ -92,7 +88,6 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
              throw new Error("Invalid credentials. Please ensure the user exists in Firebase Auth and the password is correct.");
         }
-        console.error("Firebase sign in error:", error);
         throw new Error('An error occurred during sign-in.');
     }
 };
