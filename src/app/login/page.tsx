@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
-import { signInWithUserKey } from '@/lib/auth';
+import { signInWithPhone } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Loader2, ScanSearch } from 'lucide-react';
 
 const loginSchema = z.object({
-  userKey: z.string().min(1, 'User Key is required'),
+  phone: z.string().regex(/^\d{10}$/, { message: "Phone number must be 10 digits." }),
   password: z.string().min(1, 'Password is required'),
 });
 
@@ -32,7 +32,7 @@ export default function LoginPage() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      userKey: '',
+      phone: '',
       password: '',
     },
   });
@@ -49,7 +49,7 @@ export default function LoginPage() {
       return;
     }
     try {
-      await signInWithUserKey(auth, firestore, data.userKey, data.password);
+      await signInWithPhone(auth, firestore, data.phone, data.password);
       toast({ title: 'Login Successful', description: "Welcome back!" });
       router.push('/');
     } catch (error: any) {
@@ -81,12 +81,12 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="userKey"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>User Key</FormLabel>
+                    <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. moosashaikh" {...field} />
+                      <Input placeholder="10-digit mobile number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

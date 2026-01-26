@@ -11,22 +11,27 @@ import {
     where, 
     getDocs 
 } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
 
-export const signInWithUserKey = async (auth: Auth, firestore: Firestore, userKey: string, password?: string) => {
+export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: string, password?: string) => {
     
-    // Find the user profile document in Firestore based on the userKey
+    // Find the user profile document in Firestore based on the phone number
     const usersRef = collection(firestore, 'users');
-    const q = query(usersRef, where("userKey", "==", userKey));
+    const q = query(usersRef, where("phone", "==", phone));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-        throw new Error('User not found.');
+        throw new Error('User with this phone number not found.');
     }
 
-    // In a real app, you would verify the password against a hash on the server.
-    // For this demo, we assume the password provided is correct and proceed to sign in with Firebase Auth.
-    // This is NOT secure and for demonstration purposes only.
-    if (!password) {
+    const userDoc = querySnapshot.docs[0];
+    const userData = userDoc.data() as UserProfile;
+    const { userKey, role } = userData;
+
+    // Use a default password for the admin user, otherwise use the provided password.
+    const finalPassword = role === 'Admin' ? 'password' : password;
+
+    if (!finalPassword) {
         throw new Error('Password is required.');
     }
 
@@ -36,11 +41,11 @@ export const signInWithUserKey = async (auth: Auth, firestore: Firestore, userKe
     try {
         // IMPORTANT: For this demo to work, you must manually create users in your
         // Firebase Authentication console with the email format `userKey@docdataextract.app`
-        // and the correct password.
-        return await signInWithEmailAndPassword(auth, email, password);
+        // and the correct password. For the admin, the password must be 'password'.
+        return await signInWithEmailAndPassword(auth, email, finalPassword);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-             throw new Error("Invalid user or password. Make sure the user is registered in Firebase Auth with the correct credentials.");
+             throw new Error("Invalid credentials. Please ensure the user exists in Firebase Auth and the password is correct.");
         }
         console.error("Firebase sign in error:", error);
         throw new Error('An error occurred during sign-in.');

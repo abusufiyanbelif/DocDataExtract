@@ -191,7 +191,7 @@ export default function UsersPage() {
 
         toast({
             title: 'Database Seeded',
-            description: "Sample data added. IMPORTANT: To log in as 'admin' or 'sampleuser', you must create them in Firebase Authentication with emails like 'admin@docdataextract.app'.",
+            description: "Sample data added. To log in, create these users in Firebase Auth with the email format 'userKey@docdataextract.app'. The admin's password is 'password'. For other users, set any password.",
             duration: 9000,
         });
 
