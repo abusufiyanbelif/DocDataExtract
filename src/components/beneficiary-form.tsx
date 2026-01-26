@@ -21,20 +21,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import type { Beneficiary } from '@/app/campaign/ration-kit-distribution-ramza-2026/beneficiaries/page';
+import type { Beneficiary, RationList, RationItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
-
-interface RationItem {
-  id: string;
-  name: string;
-  quantity: string;
-  price: number;
-  notes: string;
-}
-
-type RationList = {
-  [members: string]: RationItem[];
-}
+import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -294,6 +283,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
             <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? 'Saving...' : 'Save Beneficiary'}
             </Button>
         </div>
