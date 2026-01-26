@@ -2,33 +2,21 @@
 
 import { LogOut, ScanSearch } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth, useUser, useFirestore, useDoc } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Button } from './ui/button';
-import { useMemo } from 'react';
-import { doc } from 'firebase/firestore';
-import type { UserProfile } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 
 
 export function DocuExtractHeader() {
   const { user } = useUser();
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
-  
-  const userProfileRef = useMemo(() => {
-    if (!firestore || !user) return null;
-    // NOTE: This assumes your `users` collection documents are keyed by the Firebase Auth UID.
-    // When you create a user in Firebase Auth, you get a UID. You should create a document
-    // in the `users` collection with that UID as the document ID.
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-
-  const { data: userProfile, isLoading } = useDoc<UserProfile>(userProfileRef);
+  const { userProfile, isLoading } = useUserProfile();
 
   const handleLogout = async () => {
     if (auth) {
