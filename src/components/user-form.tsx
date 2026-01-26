@@ -32,8 +32,6 @@ import { Loader2 } from 'lucide-react';
 
 const permissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()).optional()).optional();
 
-export type UserFormData = z.infer<typeof baseSchema>;
-
 const baseSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
@@ -41,9 +39,20 @@ const baseSchema = z.object({
   userKey: z.string().min(1, { message: 'User Key is required.'}),
   role: z.enum(['Admin', 'User']),
   status: z.enum(['Active', 'Inactive']),
-  password: z.string().optional(),
   permissions: permissionsSchema,
 });
+
+const createUserSchema = baseSchema.extend({
+  password: z.string().min(6, { message: 'Password is required and must be at least 6 characters.' }),
+});
+
+const editUserSchema = baseSchema.extend({
+    password: z.string().optional().refine(val => !val || val.length >= 6, {
+        message: 'If changing, the password must be at least 6 characters.',
+    }),
+});
+
+export type UserFormData = z.infer<typeof createUserSchema>;
 
 interface UserFormProps {
   user?: UserProfile | null;
@@ -58,30 +67,8 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isDefaultAdmin = user?.userKey === 'admin';
   const { toast } = useToast();
   
-  const formSchema = baseSchema.superRefine((data, ctx) => {
-    if (isEditing) {
-      // If editing and password is provided, it must be valid
-      if (data.password && data.password.length < 6) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['password'],
-          message: 'If changing, the password must be at least 6 characters.',
-        });
-      }
-    } else {
-      // If creating, password is required
-      if (!data.password || data.password.length < 6) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['password'],
-          message: 'Password is required and must be at least 6 characters.',
-        });
-      }
-    }
-  });
-
   const form = useForm<UserFormData>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(isEditing ? editUserSchema : createUserSchema),
     defaultValues: {
       name: user?.name || '',
       phone: user?.phone || '',
