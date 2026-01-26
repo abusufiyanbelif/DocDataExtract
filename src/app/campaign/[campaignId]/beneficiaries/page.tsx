@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useCollection, useDoc } from '@/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import type { Beneficiary, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TableFoot } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,11 +31,15 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
 import { BeneficiaryForm, type BeneficiaryFormData } from '@/components/beneficiary-form';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import * as XLSX from 'xlsx';
 
 export default function BeneficiariesPage() {
   const params = useParams();
@@ -59,6 +63,10 @@ export default function BeneficiariesPage() {
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [beneficiaryToDelete, setBeneficiaryToDelete] = useState<string | null>(null);
+
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const handleAdd = () => {
     setEditingBeneficiary(null);
@@ -119,6 +127,92 @@ export default function BeneficiariesPage() {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = [
+        'name', 'address', 'phone', 'members', 'earningMembers', 'male', 'female',
+        'idProofType', 'idNumber', 'referralBy', 'kitAmount', 'status'
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([headers]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Beneficiaries');
+    XLSX.writeFile(wb, 'beneficiary_import_template.xlsx');
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+        setSelectedFile(event.target.files[0]);
+    }
+  };
+
+  const handleImportBeneficiaries = async () => {
+    if (!selectedFile || !firestore || !campaignId) return;
+    setIsImporting(true);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = e.target?.result;
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+            if (json.length === 0) throw new Error("The file is empty.");
+
+            const requiredHeaders = ['name', 'address', 'phone', 'members', 'kitAmount', 'status'];
+            const actualHeaders = Object.keys(json[0]);
+            if (!requiredHeaders.every(h => actualHeaders.includes(h))) {
+                 throw new Error(`File is missing required headers. Required: ${requiredHeaders.join(', ')}`);
+            }
+            
+            const batch = writeBatch(firestore);
+            const beneficiariesRef = collection(firestore, `campaigns/${campaignId}/beneficiaries`);
+
+            json.forEach(row => {
+                const docRef = doc(beneficiariesRef);
+                const beneficiaryData: Omit<Beneficiary, 'id'> = {
+                    name: String(row.name || '').trim(),
+                    address: String(row.address || '').trim(),
+                    phone: String(row.phone || '').trim(),
+                    members: Number(row.members || 0),
+                    earningMembers: Number(row.earningMembers || 0),
+                    male: Number(row.male || 0),
+                    female: Number(row.female || 0),
+                    idProofType: String(row.idProofType || '').trim(),
+                    idNumber: String(row.idNumber || '').trim(),
+                    referralBy: String(row.referralBy || '').trim(),
+                    kitAmount: Number(row.kitAmount || 0),
+                    status: (row.status || 'Pending').trim(),
+                    addedDate: new Date().toISOString().split('T')[0],
+                    createdAt: serverTimestamp(),
+                };
+                
+                if (!beneficiaryData.name || !beneficiaryData.address) {
+                    console.warn("Skipping row with missing name or address:", row);
+                    return;
+                }
+
+                batch.set(docRef, beneficiaryData);
+            });
+
+            await batch.commit();
+            toast({ title: 'Success', description: `${json.length} beneficiaries imported successfully.` });
+
+        } catch (error: any) {
+            toast({ title: 'Import Failed', description: error.message || "An error occurred during import.", variant: 'destructive' });
+        } finally {
+            setIsImporting(false);
+            setIsImportOpen(false);
+            setSelectedFile(null);
+        }
+    };
+    reader.onerror = (error) => {
+        toast({ title: 'File Error', description: 'Could not read the file.', variant: 'destructive'});
+        setIsImporting(false);
+    }
+    reader.readAsArrayBuffer(selectedFile);
+  };
+
   const totalKitAmount = useMemo(() => {
     return beneficiaries.reduce((acc, b) => acc + (b.kitAmount || 0), 0);
   }, [beneficiaries]);
@@ -176,12 +270,22 @@ export default function BeneficiariesPage() {
         </div>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <CardTitle>Beneficiary List</CardTitle>
-            <Button onClick={handleAdd}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Beneficiary
-            </Button>
+            <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={handleDownloadTemplate}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Template
+                </Button>
+                <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import Beneficiaries
+                </Button>
+                <Button onClick={handleAdd}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Beneficiary
+                </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -307,6 +411,33 @@ export default function BeneficiariesPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Import Beneficiaries</DialogTitle>
+                <DialogDescription>
+                    Upload an Excel (.xlsx) file with beneficiary data. Make sure it follows the provided template format.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <Input
+                    id="import-file"
+                    type="file"
+                    accept=".xlsx, .csv"
+                    onChange={handleFileSelect}
+                />
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => { setIsImportOpen(false); setSelectedFile(null); }}>Cancel</Button>
+                <Button onClick={handleImportBeneficiaries} disabled={!selectedFile || isImporting}>
+                    {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Import
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
