@@ -29,15 +29,20 @@ export default function SeedPage() {
     };
 
     const createPlaceholderFile = async (path: string) => {
-        if (!storage) return;
+        if (!storage) {
+            const message = "Storage service is not available. Cannot create placeholder file.";
+            log(`ERROR: ${message}`);
+            throw new Error(message);
+        };
         try {
             const placeholderRef = storageRef(storage, `${path}/.placeholder`);
             await uploadString(placeholderRef, '', 'raw');
             log(` -> Storage path created: ${path}/`);
         } catch (error: any) {
-            if (error.code === 'storage/object-not-found' || error.code === 'storage/unauthorized') {
-                log(`WARNING: Could not create storage path '${path}/'. Please check your Storage security rules.`);
-            }
+            const message = `Could not create storage path '${path}/'. Please check your Storage security rules. Error: ${error.message} (Code: ${error.code})`;
+            log(`ERROR: ${message}`);
+            // Re-throw the error so the main seeding function can catch it and stop.
+            throw new Error(message);
         }
     }
 
@@ -335,5 +340,3 @@ export default function SeedPage() {
         </div>
     );
 }
-
-    
