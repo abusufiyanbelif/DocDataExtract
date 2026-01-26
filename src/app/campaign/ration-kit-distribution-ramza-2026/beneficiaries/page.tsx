@@ -184,6 +184,8 @@ export default function BeneficiariesPage() {
               <Table>
                   <TableHeader>
                       <TableRow>
+                          <TableHead className="w-[50px] text-center">Actions</TableHead>
+                          <TableHead className="w-[40px]">#</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Address</TableHead>
                           <TableHead>Phone</TableHead>
@@ -196,31 +198,12 @@ export default function BeneficiariesPage() {
                           <TableHead>Referred By</TableHead>
                           <TableHead className="text-right">Kit Amount</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {beneficiaries.map((beneficiary) => (
+                      {beneficiaries.map((beneficiary, index) => (
                           <TableRow key={beneficiary.id}>
-                              <TableCell className="font-medium">{beneficiary.name}</TableCell>
-                              <TableCell>{beneficiary.address}</TableCell>
-                              <TableCell>{beneficiary.phone}</TableCell>
-                              <TableCell className="text-center">{beneficiary.members}</TableCell>
-                              <TableCell className="text-center">{beneficiary.earningMembers}</TableCell>
-                              <TableCell className="text-center">{beneficiary.male}/{beneficiary.female}</TableCell>
-                              <TableCell>{beneficiary.addedDate}</TableCell>
-                              <TableCell>{beneficiary.idProofType}</TableCell>
-                              <TableCell>{beneficiary.idNumber}</TableCell>
-                              <TableCell>{beneficiary.referralBy}</TableCell>
-                              <TableCell className="text-right font-medium">${beneficiary.kitAmount.toFixed(2)}</TableCell>
-                              <TableCell>
-                                  <Badge variant={
-                                      beneficiary.status === 'Given' ? 'default' :
-                                      beneficiary.status === 'Pending' ? 'secondary' :
-                                      beneficiary.status === 'Hold' ? 'destructive' : 'outline'
-                                  }>{beneficiary.status}</Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-center">
                                   <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
                                           <Button variant="ghost" size="icon">
@@ -238,6 +221,25 @@ export default function BeneficiariesPage() {
                                           </DropdownMenuItem>
                                       </DropdownMenuContent>
                                   </DropdownMenu>
+                              </TableCell>
+                              <TableCell>{index + 1}</TableCell>
+                              <TableCell className="font-medium">{beneficiary.name}</TableCell>
+                              <TableCell>{beneficiary.address}</TableCell>
+                              <TableCell>{beneficiary.phone}</TableCell>
+                              <TableCell className="text-center">{beneficiary.members}</TableCell>
+                              <TableCell className="text-center">{beneficiary.earningMembers}</TableCell>
+                              <TableCell className="text-center">{beneficiary.male}/{beneficiary.female}</TableCell>
+                              <TableCell>{beneficiary.addedDate}</TableCell>
+                              <TableCell>{beneficiary.idProofType}</TableCell>
+                              <TableCell>{beneficiary.idNumber}</TableCell>
+                              <TableCell>{beneficiary.referralBy}</TableCell>
+                              <TableCell className="text-right font-medium">₹{beneficiary.kitAmount.toFixed(2)}</TableCell>
+                              <TableCell>
+                                  <Badge variant={
+                                      beneficiary.status === 'Given' ? 'default' :
+                                      beneficiary.status === 'Pending' ? 'secondary' :
+                                      beneficiary.status === 'Hold' ? 'destructive' : 'outline'
+                                  }>{beneficiary.status}</Badge>
                               </TableCell>
                           </TableRow>
                       ))}

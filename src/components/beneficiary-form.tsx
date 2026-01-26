@@ -215,7 +215,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
                 name="kitAmount"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Kit Amount ($)</FormLabel>
+                    <FormLabel>Kit Amount (₹)</FormLabel>
                     <FormControl>
                         <Input type="number" placeholder="e.g. 2500" {...field} />
                     </FormControl>
