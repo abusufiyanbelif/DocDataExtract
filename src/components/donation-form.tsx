@@ -33,7 +33,7 @@ const formSchema = z.object({
   type: z.enum(['Zakat', 'Sadqa', 'Interest', 'Lillah', 'General']),
   donationDate: z.string().min(1, { message: "Donation date is required."}),
   status: z.enum(['Verified', 'Pending']),
-  screenshotFile: z.instanceof(File).optional(),
+  screenshotFile: z.any().optional(),
 });
 
 export type DonationFormData = z.infer<typeof formSchema>;
@@ -62,12 +62,14 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   const screenshotFile = watch('screenshotFile');
 
   useEffect(() => {
-    if (screenshotFile) {
+    const fileList = screenshotFile as FileList | undefined;
+    if (fileList && fileList.length > 0) {
+        const file = fileList[0];
         const reader = new FileReader();
         reader.onloadend = () => {
             setPreview(reader.result as string);
         };
-        reader.readAsDataURL(screenshotFile);
+        reader.readAsDataURL(file);
     } else if (donation?.screenshotUrl) {
         setPreview(donation.screenshotUrl);
     } else {

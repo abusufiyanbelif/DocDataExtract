@@ -139,12 +139,13 @@ export default function BeneficiariesPage() {
     let idProofUrl = editingBeneficiary?.idProofUrl || '';
 
     try {
-        if (data.idProofFile) {
+        const fileList = data.idProofFile as FileList | undefined;
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0];
             toast({
                 title: "Uploading ID Proof...",
-                description: `Please wait while '${data.idProofFile.name}' is uploaded.`,
+                description: `Please wait while '${file.name}' is uploaded.`,
             });
-            const file = data.idProofFile;
             const filePath = `beneficiaries/${campaignId}/${docRef.id}_${file.name}`;
             const fileRef = storageRef(storage, filePath);
 

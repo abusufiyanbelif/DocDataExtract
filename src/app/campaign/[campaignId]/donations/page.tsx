@@ -115,12 +115,13 @@ export default function DonationsPage() {
     let screenshotUrl = editingDonation?.screenshotUrl || '';
     
     try {
-        if (data.screenshotFile) {
+        const fileList = data.screenshotFile as FileList | undefined;
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0];
             toast({
                 title: "Uploading Screenshot...",
-                description: `Please wait while '${data.screenshotFile.name}' is uploaded.`,
+                description: `Please wait while '${file.name}' is uploaded.`,
             });
-            const file = data.screenshotFile;
             const filePath = `donations/${campaignId}/${Date.now()}_${file.name}`;
             const fileRef = storageRef(storage, filePath);
 
@@ -128,24 +129,21 @@ export default function DonationsPage() {
             screenshotUrl = await getDownloadURL(uploadResult.ref);
         }
 
-        const donationData = {
-            donorName: data.donorName,
-            donorPhone: data.donorPhone,
-            amount: data.amount,
-            type: data.type,
-            donationDate: data.donationDate,
-            status: data.status,
-            screenshotUrl: screenshotUrl,
+        const { screenshotFile, ...donationData } = data;
+
+        const finalData = {
+          ...donationData,
+          screenshotUrl,
         };
     
         if (editingDonation) {
             const docRef = doc(firestore, `campaigns/${campaignId}/donations`, editingDonation.id);
-            await updateDoc(docRef, donationData);
+            await updateDoc(docRef, finalData);
             toast({ title: 'Success', description: 'Donation updated.' });
         } else {
             const collectionRef = collection(firestore, `campaigns/${campaignId}/donations`);
             await addDoc(collectionRef, {
-                ...donationData,
+                ...finalData,
                 uploadedBy: userProfile.name,
                 uploadedById: userProfile.id,
                 createdAt: serverTimestamp(),

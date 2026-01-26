@@ -40,7 +40,7 @@ const formSchema = z.object({
   referralBy: z.string().min(2, { message: "Referral is required." }),
   kitAmount: z.coerce.number().min(0, { message: "Amount cannot be negative."}),
   status: z.enum(['Given', 'Pending', 'Hold', 'Need More Details']),
-  idProofFile: z.instanceof(File).optional(),
+  idProofFile: z.any().optional(),
 });
 
 export type BeneficiaryFormData = z.infer<typeof formSchema>;
@@ -78,12 +78,14 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
   const membersValue = watch('members');
 
   useEffect(() => {
-    if (idProofFile) {
+    const fileList = idProofFile as FileList | undefined;
+    if (fileList && fileList.length > 0) {
+      const file = fileList[0];
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
       };
-      reader.readAsDataURL(idProofFile);
+      reader.readAsDataURL(file);
     } else if (beneficiary?.idProofUrl) {
       setPreview(beneficiary.idProofUrl);
     } else {
