@@ -44,7 +44,20 @@ type RationList = {
 }
 
 const initialRationLists: RationList = {
-    'General': [],
+    'General': [
+        { id: 'General-1', name: 'Rice', quantity: '10 kg', price: 600, notes: '@60/kg' },
+        { id: 'General-2', name: 'Wheat flour', quantity: '5 kg', price: 250, notes: 'Ashirvad' },
+        { id: 'General-3', name: 'Tea', quantity: '250 gm', price: 100, notes: 'Society mix' },
+        { id: 'General-4', name: 'Sugar', quantity: '2 kg', price: 88, notes: '@44/kg' },
+        { id: 'General-5', name: 'Groundnuts', quantity: '500 gm', price: 60, notes: '' },
+        { id: 'General-6', name: 'Khopra', quantity: '500 gm', price: 180, notes: '' },
+        { id: 'General-7', name: 'Tur Dal', quantity: '1 kg', price: 120, notes: '' },
+        { id: 'General-8', name: 'Masoor Dal', quantity: '1 kg', price: 90, notes: '' },
+        { id: 'General-9', name: 'Khimya Dates', quantity: '', price: 150, notes: '' },
+        { id: 'General-10', name: 'Edible Palm Oil', quantity: '2 packet', price: 220, notes: '' },
+        { id: 'General-11', name: 'Garam Masala', quantity: '150 gm', price: 180, notes: '' },
+        { id: 'General-12', name: 'Captain Cook Salt', quantity: '', price: 20, notes: '' },
+    ],
     '5': [
         { id: '5-1', name: 'Rice', quantity: '10 kg', price: 600, notes: '@60/kg' },
         { id: '5-2', name: 'Wheat flour', quantity: '5 kg', price: 250, notes: 'Ashirvad' },
