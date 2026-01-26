@@ -46,7 +46,6 @@ export default function LoginPage() {
     if (isSeeded !== null) return;
     if (!firestore) return;
     
-    // Check seeding status to conditionally show the prompt
     const checkSeedingStatus = async () => {
         try {
             const usersRef = collection(firestore, 'users');
@@ -55,7 +54,6 @@ export default function LoginPage() {
             setIsSeeded(!snapshot.empty);
         } catch (error) {
             console.error("Error checking seeding status:", error);
-            // Assume not seeded if there's an error, so the link is visible
             setIsSeeded(false);
         }
     };
@@ -176,13 +174,13 @@ export default function LoginPage() {
       {isSeeded === false && !setupError && (
         <Alert className="mt-4 max-w-sm">
             <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>First-time user?</AlertTitle>
+            <AlertTitle>First-Time Setup Required</AlertTitle>
             <AlertDescription>
-            If this is your first time setting up the app, you must{' '}
-            <Link href="/seed" className="font-bold text-primary underline">
-                seed the database
-            </Link>
-            {' '}before you can log in.
+            The database has not been initialized. Please run{' '}
+            <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold">
+                npm run db:seed
+            </code>
+            {' '}in your terminal to set up the database and admin user.
             </AlertDescription>
         </Alert>
       )}
