@@ -183,6 +183,14 @@
           "type": "string",
           "description": "The name of the campaign."
         },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the campaign's goals and purpose."
+        },
+        "targetAmount": {
+          "type": "number",
+          "description": "The fundraising goal for the campaign in Rupees."
+        },
         "startDate": {
           "type": "string",
           "format": "date",

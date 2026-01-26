@@ -1,18 +1,18 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, updateDoc } from 'firebase/firestore';
-import type { Campaign, RationItem, RationList } from '@/lib/types';
+import type { Campaign, RationItem } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Trash2, Download, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Download, Loader2, Edit, Save } from 'lucide-react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -34,7 +34,6 @@ import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CampaignDetailsPage() {
   const params = useParams();
@@ -50,16 +49,26 @@ export default function CampaignDetailsPage() {
 
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
 
+  const [editMode, setEditMode] = useState(false);
+  const [editableCampaign, setEditableCampaign] = useState<Campaign | null>(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newMemberCount, setNewMemberCount] = useState('');
+
+  useEffect(() => {
+    if (campaign && !editMode) {
+      setEditableCampaign(JSON.parse(JSON.stringify(campaign))); // Deep copy
+    }
+  }, [campaign, editMode]);
 
   const isAdmin = userProfile?.role === 'Admin';
   const isLoading = isCampaignLoading || isProfileLoading;
 
-  const updateCampaign = async (updatedData: Partial<Campaign>) => {
-    if (!campaignDocRef || !isAdmin) return;
+  const handleSave = async () => {
+    if (!campaignDocRef || !editableCampaign || !isAdmin) return;
     try {
-        await updateDoc(campaignDocRef, updatedData);
+        await updateDoc(campaignDocRef, editableCampaign);
+        toast({ title: 'Success', description: 'Campaign details saved.' });
+        setEditMode(false);
     } catch (error) {
         console.error("Failed to update campaign", error);
         toast({
@@ -70,22 +79,32 @@ export default function CampaignDetailsPage() {
     }
   };
 
+  const handleCancel = () => {
+      setEditMode(false);
+      // editableCampaign will be reset by the useEffect
+  };
+
+  const handleFieldChange = (field: keyof Campaign, value: any) => {
+    if (!editableCampaign) return;
+    setEditableCampaign(prev => prev ? { ...prev, [field]: value } : null);
+  };
+  
   const handleItemChange = (
     memberCount: string,
     itemId: string,
     field: keyof RationItem,
     value: string | number
   ) => {
-    if (!campaign || !isAdmin) return;
-    const newRationLists = { ...campaign.rationLists };
+    if (!editableCampaign) return;
+    const newRationLists = { ...editableCampaign.rationLists };
     newRationLists[memberCount] = newRationLists[memberCount].map(item =>
         item.id === itemId ? { ...item, [field]: value } : item
     );
-    updateCampaign({ rationLists: newRationLists });
+    handleFieldChange('rationLists', newRationLists);
   };
 
   const handleAddItem = (memberCount: string) => {
-    if (!campaign || !isAdmin) return;
+    if (!editableCampaign) return;
     const newItem: RationItem = {
       id: `${memberCount}-${Date.now()}`,
       name: '',
@@ -93,16 +112,16 @@ export default function CampaignDetailsPage() {
       price: 0,
       notes: '',
     };
-    const newRationLists = { ...campaign.rationLists };
+    const newRationLists = { ...editableCampaign.rationLists };
     newRationLists[memberCount] = [...(newRationLists[memberCount] || []), newItem];
-    updateCampaign({ rationLists: newRationLists });
+    handleFieldChange('rationLists', newRationLists);
   };
 
   const handleDeleteItem = (memberCount: string, itemId: string) => {
-    if (!campaign || !isAdmin) return;
-    const newRationLists = { ...campaign.rationLists };
+    if (!editableCampaign) return;
+    const newRationLists = { ...editableCampaign.rationLists };
     newRationLists[memberCount] = newRationLists[memberCount].filter(item => item.id !== itemId);
-    updateCampaign({ rationLists: newRationLists });
+    handleFieldChange('rationLists', newRationLists);
   };
 
   const calculateTotal = (items: RationItem[]) => {
@@ -270,7 +289,7 @@ export default function CampaignDetailsPage() {
   };
 
   const handleAddNewCategory = () => {
-    if (!campaign || !isAdmin) return;
+    if (!editableCampaign) return;
     if (!newMemberCount || isNaN(Number(newMemberCount)) || Number(newMemberCount) <= 0) {
         toast({
             title: 'Invalid Input',
@@ -280,7 +299,7 @@ export default function CampaignDetailsPage() {
         return;
     }
     const newCountStr = String(Math.floor(Number(newMemberCount)));
-    if (campaign.rationLists[newCountStr]) {
+    if (editableCampaign.rationLists[newCountStr]) {
         toast({
             title: 'Category Exists',
             description: `A category for ${newCountStr} members already exists.`,
@@ -289,23 +308,23 @@ export default function CampaignDetailsPage() {
         return;
     }
     
-    const newRationLists = { ...campaign.rationLists, [newCountStr]: [] };
-    updateCampaign({ rationLists: newRationLists });
+    const newRationLists = { ...editableCampaign.rationLists, [newCountStr]: [] };
+    handleFieldChange('rationLists', newRationLists);
     setNewMemberCount('');
     setIsAddCategoryOpen(false);
   };
   
   const memberCategories = useMemo(() => {
-    if (!campaign) return [];
-    return Object.keys(campaign.rationLists).sort((a, b) => {
+    if (!editableCampaign) return [];
+    return Object.keys(editableCampaign.rationLists).sort((a, b) => {
         if (a === 'General') return -1;
         if (b === 'General') return 1;
         return Number(b) - Number(a);
     });
-  }, [campaign]);
+  }, [editableCampaign]);
 
   const renderRationTable = (memberCount: string) => {
-    const items = campaign?.rationLists?.[memberCount] || [];
+    const items = editableCampaign?.rationLists?.[memberCount] || [];
     const total = calculateTotal(items);
 
     return (
@@ -320,7 +339,7 @@ export default function CampaignDetailsPage() {
                   <TableHead className="w-[15%]">Quantity</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead className="w-[120px] text-right">Price (₹)</TableHead>
-                  {isAdmin && <TableHead className="w-[50px] text-center">Action</TableHead>}
+                  {isAdmin && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -332,7 +351,7 @@ export default function CampaignDetailsPage() {
                         value={item.name || ''}
                         onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)}
                         placeholder="Item name"
-                        disabled={!isAdmin}
+                        disabled={!editMode || !isAdmin}
                       />
                     </TableCell>
                     <TableCell>
@@ -340,7 +359,7 @@ export default function CampaignDetailsPage() {
                         value={item.quantity || ''}
                         onChange={e => handleItemChange(memberCount, item.id, 'quantity', e.target.value)}
                         placeholder="e.g. 10 kg"
-                        disabled={!isAdmin}
+                        disabled={!editMode || !isAdmin}
                       />
                     </TableCell>
                     <TableCell>
@@ -348,7 +367,7 @@ export default function CampaignDetailsPage() {
                         value={item.notes || ''}
                         onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)}
                         placeholder="e.g. @60/kg"
-                        disabled={!isAdmin}
+                        disabled={!editMode || !isAdmin}
                       />
                     </TableCell>
                     <TableCell>
@@ -357,10 +376,10 @@ export default function CampaignDetailsPage() {
                         value={item.price || 0}
                         onChange={e => handleItemChange(memberCount, item.id, 'price', Number(e.target.value))}
                         className="text-right"
-                        disabled={!isAdmin}
+                        disabled={!editMode || !isAdmin}
                       />
                     </TableCell>
-                    {isAdmin && (
+                    {isAdmin && editMode && (
                         <TableCell className="text-center">
                         <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -374,12 +393,12 @@ export default function CampaignDetailsPage() {
                 <TableRow>
                   <TableCell colSpan={4} className="text-right font-bold">Total</TableCell>
                   <TableCell className="text-right font-bold">₹{total.toFixed(2)}</TableCell>
-                  {isAdmin && <TableCell></TableCell>}
+                  {isAdmin && editMode && <TableCell></TableCell>}
                 </TableRow>
               </TableFooter>
             </Table>
           </div>
-          {isAdmin && (
+          {isAdmin && editMode && (
             <div className="mt-4 flex justify-end">
                 <Button onClick={() => handleAddItem(memberCount)}>
                 <Plus className="mr-2 h-4 w-4" /> Add Item
@@ -391,7 +410,7 @@ export default function CampaignDetailsPage() {
     );
   };
   
-  if (isLoading) {
+  if (isLoading || !editableCampaign) {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -429,7 +448,7 @@ export default function CampaignDetailsPage() {
             </Button>
         </div>
         <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-bold">{campaign.name}</h1>
+            <h1 className="text-3xl font-bold">{editableCampaign.name}</h1>
         </div>
         
         <div className="flex flex-wrap gap-2 border-b mb-4">
@@ -459,10 +478,10 @@ export default function CampaignDetailsPage() {
                                 <Input
                                 id="startDate"
                                 type="date"
-                                value={campaign.startDate || ''}
-                                onChange={(e) => updateCampaign({ startDate: e.target.value })}
+                                value={editableCampaign.startDate || ''}
+                                onChange={(e) => handleFieldChange( 'startDate', e.target.value )}
                                 className="w-fit"
-                                disabled={!isAdmin}
+                                disabled={!editMode || !isAdmin}
                                 />
                             </div>
                              <div className="flex items-center gap-2">
@@ -470,10 +489,10 @@ export default function CampaignDetailsPage() {
                                 <Input
                                 id="endDate"
                                 type="date"
-                                value={campaign.endDate || ''}
-                                onChange={(e) => updateCampaign({ endDate: e.target.value })}
+                                value={editableCampaign.endDate || ''}
+                                onChange={(e) => handleFieldChange( 'endDate', e.target.value )}
                                 className="w-fit"
-                                disabled={!isAdmin}
+                                disabled={!editMode || !isAdmin}
                                 />
                             </div>
                         </div>
@@ -483,21 +502,21 @@ export default function CampaignDetailsPage() {
                                 <Input
                                 id="priceDate"
                                 type="date"
-                                value={campaign.priceDate || ''}
-                                onChange={(e) => updateCampaign({ priceDate: e.target.value })}
+                                value={editableCampaign.priceDate || ''}
+                                onChange={(e) => handleFieldChange( 'priceDate', e.target.value )}
                                 className="w-fit"
-                                disabled={!isAdmin}
+                                disabled={!editMode || !isAdmin}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
                                 <Label htmlFor="shopName" className="text-nowrap">Shop Name:</Label>
                                 <Input
                                 id="shopName"
-                                value={campaign.shopName || ''}
-                                onChange={(e) => updateCampaign({ shopName: e.target.value })}
+                                value={editableCampaign.shopName || ''}
+                                onChange={(e) => handleFieldChange( 'shopName', e.target.value )}
                                 className="w-fit"
                                 placeholder="Shop Name"
-                                disabled={!isAdmin}
+                                disabled={!editMode || !isAdmin}
                                 />
                             </div>
                         </div>
@@ -506,28 +525,42 @@ export default function CampaignDetailsPage() {
                                 <Label htmlFor="shopContact" className="text-nowrap">Shop Contact:</Label>
                                 <Input
                                 id="shopContact"
-                                value={campaign.shopContact || ''}
-                                onChange={(e) => updateCampaign({ shopContact: e.target.value })}
+                                value={editableCampaign.shopContact || ''}
+                                onChange={(e) => handleFieldChange( 'shopContact', e.target.value )}
                                 className="w-fit"
                                 placeholder="Contact Number"
-                                disabled={!isAdmin}
+                                disabled={!editMode || !isAdmin}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
                                 <Label htmlFor="shopAddress" className="text-nowrap">Shop Address:</Label>
                                 <Input
                                 id="shopAddress"
-                                value={campaign.shopAddress || ''}
-                                onChange={(e) => updateCampaign({ shopAddress: e.target.value })}
+                                value={editableCampaign.shopAddress || ''}
+                                onChange={(e) => handleFieldChange( 'shopAddress', e.target.value )}
                                 className="w-full max-w-xs"
                                 placeholder="Shop Address"
-                                disabled={!isAdmin}
+                                disabled={!editMode || !isAdmin}
                                 />
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className="flex gap-2 flex-wrap justify-end">
+                    {isAdmin && (
+                        !editMode ? (
+                            <Button onClick={() => setEditMode(true)}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit Details
+                            </Button>
+                        ) : (
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+                                <Button onClick={handleSave}>
+                                    <Save className="mr-2 h-4 w-4" /> Save
+                                </Button>
+                            </div>
+                        )
+                    )}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline">
@@ -541,7 +574,7 @@ export default function CampaignDetailsPage() {
                             <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    {isAdmin && (
+                    {isAdmin && editMode && (
                         <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="outline">
@@ -598,6 +631,7 @@ export default function CampaignDetailsPage() {
             ) : (
                 <div className="text-center text-muted-foreground py-10">
                     No ration categories defined for this campaign yet.
+                    {isAdmin && editMode && " Click 'Add Category' to begin."}
                 </div>
             )}
           </CardContent>

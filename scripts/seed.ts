@@ -102,6 +102,8 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
     };
     batch.set(campaignRef, {
         name: 'Ration Kit Distribution Ramza 2026',
+        description: 'A sample campaign for distributing ration kits to those in need during the holy month of Ramza.',
+        targetAmount: 100000,
         status: 'Active',
         startDate: '2026-03-01',
         endDate: '2026-03-31',

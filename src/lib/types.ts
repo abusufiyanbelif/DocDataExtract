@@ -16,6 +16,8 @@ export interface RationList {
 export interface Campaign extends DocumentData {
   id: string;
   name: string;
+  description?: string;
+  targetAmount?: number;
   startDate: string;
   endDate: string;
   status: 'Upcoming' | 'Active' | 'Completed';
