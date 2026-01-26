@@ -4,7 +4,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TableFoot } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
 import {
@@ -31,6 +31,66 @@ import {
 } from "@/components/ui/dialog";
 import { BeneficiaryForm, type BeneficiaryFormData } from '@/components/beneficiary-form';
 
+interface RationItem {
+  id: string;
+  name: string;
+  quantity: string;
+  price: number;
+  notes: string;
+}
+
+type RationList = {
+  [members: string]: RationItem[];
+}
+
+const initialRationLists: RationList = {
+    'General': [
+        { id: 'General-1', name: 'Rice', quantity: '10 kg', price: 600, notes: '@60/kg' },
+        { id: 'General-2', name: 'Wheat flour', quantity: '5 kg', price: 250, notes: 'Ashirvad' },
+        { id: 'General-3', name: 'Tea', quantity: '250 gm', price: 100, notes: 'Society mix' },
+        { id: 'General-4', name: 'Sugar', quantity: '2 kg', price: 88, notes: '@44/kg' },
+        { id: 'General-5', name: 'Groundnuts', quantity: '500 gm', price: 60, notes: '' },
+        { id: 'General-6', name: 'Khopra', quantity: '500 gm', price: 180, notes: '' },
+        { id: 'General-7', name: 'Tur Dal', quantity: '1 kg', price: 120, notes: '' },
+        { id: 'General-8', name: 'Masoor Dal', quantity: '1 kg', price: 90, notes: '' },
+        { id: 'General-9', name: 'Khimya Dates', quantity: '', price: 150, notes: '' },
+        { id: 'General-10', name: 'Edible Palm Oil', quantity: '2 packet', price: 220, notes: '' },
+        { id: 'General-11', name: 'Garam Masala', quantity: '150 gm', price: 180, notes: '' },
+        { id: 'General-12', name: 'Captain Cook Salt', quantity: '', price: 20, notes: '' },
+    ],
+    '5': [
+        { id: '5-1', name: 'Rice', quantity: '10 kg', price: 600, notes: '@60/kg' },
+        { id: '5-2', name: 'Wheat flour', quantity: '5 kg', price: 250, notes: 'Ashirvad' },
+        { id: '5-3', name: 'Tea', quantity: '250 gm', price: 100, notes: 'Society mix' },
+        { id: '5-4', name: 'Sugar', quantity: '2 kg', price: 88, notes: '@44/kg' },
+        { id: '5-5', name: 'Groundnuts', quantity: '500 gm', price: 60, notes: '' },
+        { id: '5-6', name: 'Khopra', quantity: '500 gm', price: 180, notes: '' },
+        { id: '5-7', name: 'Tur Dal', quantity: '1 kg', price: 120, notes: '' },
+        { id: '5-8', name: 'Masoor Dal', quantity: '1 kg', price: 90, notes: '' },
+        { id: '5-9', name: 'Khimya Dates', quantity: '', price: 150, notes: '' },
+        { id: '5-10', name: 'Edible Palm Oil', quantity: '2 packet', price: 220, notes: '' },
+        { id: '5-11', name: 'Garam Masala', quantity: '150 gm', price: 180, notes: '' },
+        { id: '5-12', name: 'Captain Cook Salt', quantity: '', price: 20, notes: '' },
+    ],
+    '3': [
+        { id: '3-1', name: 'Rice', quantity: '6 kg', price: 360, notes: '@60/kg' },
+        { id: '3-2', name: 'Wheat flour', quantity: '3 kg', price: 150, notes: 'Ashirvad' },
+        { id: '3-3', name: 'Tea', quantity: '150 gm', price: 60, notes: 'Society mix' },
+        { id: '3-4', name: 'Sugar', quantity: '1.5 kg', price: 66, notes: '@44/kg' },
+        { id: '3-5', name: 'Edible Palm Oil', quantity: '1 packet', price: 110, notes: '' },
+    ],
+    '2': [
+        { id: '2-1', name: 'Rice', quantity: '4 kg', price: 240, notes: '@60/kg' },
+        { id: '2-2', name: 'Wheat flour', quantity: '2 kg', price: 100, notes: 'Ashirvad' },
+        { id: '2-3', name: 'Sugar', quantity: '1 kg', price: 44, notes: '@44/kg' },
+        { id: '2-4', name: 'Edible Palm Oil', quantity: '1 packet', price: 110, notes: '' },
+    ],
+    '1': [
+        { id: '1-1', name: 'Rice', quantity: '2 kg', price: 120, notes: '@60/kg' },
+        { id: '1-2', name: 'Wheat flour', quantity: '1 kg', price: 50, notes: 'Ashirvad' },
+        { id: '1-3', name: 'Sugar', quantity: '0.5 kg', price: 22, notes: '@44/kg' },
+    ],
+};
 
 const initialBeneficiaries = [
     {
@@ -46,7 +106,7 @@ const initialBeneficiaries = [
         idProofType: 'Aadhaar',
         idNumber: 'XXXX XXXX 1234',
         referralBy: 'Local NGO',
-        kitAmount: 2500,
+        kitAmount: 2058,
         status: 'Given' as const,
     },
     {
@@ -62,7 +122,7 @@ const initialBeneficiaries = [
         idProofType: 'PAN',
         idNumber: 'ABCDE1234F',
         referralBy: 'Masjid Committee',
-        kitAmount: 2500,
+        kitAmount: 1000,
         status: 'Pending' as const,
     },
     {
@@ -78,7 +138,7 @@ const initialBeneficiaries = [
         idProofType: 'Other',
         idNumber: 'Voter ID',
         referralBy: 'Self',
-        kitAmount: 3000,
+        kitAmount: 2058,
         status: 'Hold' as const,
     },
     {
@@ -94,7 +154,7 @@ const initialBeneficiaries = [
         idProofType: 'Aadhaar',
         idNumber: 'YYYY YYYY 5678',
         referralBy: 'Local NGO',
-        kitAmount: 2500,
+        kitAmount: 696,
         status: 'Need More Details' as const,
     },
 ];
@@ -108,6 +168,7 @@ export default function BeneficiariesPage() {
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [beneficiaryToDelete, setBeneficiaryToDelete] = useState<string | null>(null);
+  const [rationLists] = useState<RationList>(initialRationLists);
 
   const handleAdd = () => {
     setEditingBeneficiary(null);
@@ -145,6 +206,8 @@ export default function BeneficiariesPage() {
     }
     setIsFormOpen(false);
   };
+
+  const totalKitAmount = beneficiaries.reduce((acc, b) => acc + b.kitAmount, 0);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -244,6 +307,13 @@ export default function BeneficiariesPage() {
                           </TableRow>
                       ))}
                   </TableBody>
+                  <TableFoot>
+                    <TableRow>
+                        <TableCell colSpan={12} className="text-right font-bold">Total Kit Amount Required</TableCell>
+                        <TableCell className="text-right font-bold">₹{totalKitAmount.toFixed(2)}</TableCell>
+                        <TableCell></TableCell>
+                    </TableRow>
+                  </TableFoot>
               </Table>
             </div>
           </CardContent>
@@ -259,6 +329,7 @@ export default function BeneficiariesPage() {
                 beneficiary={editingBeneficiary}
                 onSubmit={handleFormSubmit}
                 onCancel={() => setIsFormOpen(false)}
+                rationLists={rationLists}
             />
         </DialogContent>
       </Dialog>

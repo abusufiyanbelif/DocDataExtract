@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
 import {
   Form,
   FormControl,
@@ -21,6 +22,19 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { Beneficiary } from '@/app/campaign/ration-kit-distribution-ramza-2026/beneficiaries/page';
+import { cn } from '@/lib/utils';
+
+interface RationItem {
+  id: string;
+  name: string;
+  quantity: string;
+  price: number;
+  notes: string;
+}
+
+type RationList = {
+  [members: string]: RationItem[];
+}
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -43,9 +57,10 @@ interface BeneficiaryFormProps {
   beneficiary?: Beneficiary | null;
   onSubmit: (data: BeneficiaryFormData) => void;
   onCancel: () => void;
+  rationLists: RationList;
 }
 
-export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: BeneficiaryFormProps) {
+export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }: BeneficiaryFormProps) {
   const form = useForm<BeneficiaryFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,7 +79,29 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
     },
   });
 
-  const { formState: { isSubmitting } } = form;
+  const { formState: { isSubmitting }, watch, setValue } = form;
+
+  const membersValue = watch('members');
+
+  useEffect(() => {
+    const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + Number(item.price || 0), 0);
+    
+    if (membersValue > 0) {
+        const memberCountStr = String(membersValue);
+        let listToUse = rationLists[memberCountStr];
+
+        if (!listToUse && membersValue >= 5 && rationLists['General']) {
+            listToUse = rationLists['General'];
+        }
+
+        if (listToUse) {
+            const total = calculateTotal(listToUse);
+            setValue('kitAmount', total, { shouldValidate: true });
+        }
+    }
+  }, [membersValue, rationLists, setValue]);
+
+  const isKitAmountReadOnly = !!rationLists[String(membersValue)] || (membersValue >= 5 && !!rationLists['General']);
 
   return (
     <Form {...form}>
@@ -217,7 +254,13 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
                     <FormItem>
                     <FormLabel>Kit Amount (₹)</FormLabel>
                     <FormControl>
-                        <Input type="number" placeholder="e.g. 2500" {...field} />
+                        <Input
+                            type="number"
+                            placeholder="Auto-calculated or enter manually"
+                            {...field}
+                            readOnly={isKitAmountReadOnly}
+                            className={cn(isKitAmountReadOnly && "bg-muted/50 focus:ring-0 cursor-not-allowed")}
+                         />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
