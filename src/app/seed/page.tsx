@@ -6,6 +6,7 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'fire
 import { writeBatch, doc, collection, serverTimestamp, getDocs, query, where, limit } from 'firebase/firestore';
 import { modules, permissions } from '@/lib/modules';
 import { useToast } from '@/hooks/use-toast';
+import type { UserProfile } from '@/lib/types';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -72,52 +73,76 @@ export default function SeedPage() {
             }
         }
         
-        // Seed Users
-        log(" -> Checking for existing users...");
+        // --- User Seeding ---
+        log(" -> Checking for existing users to prevent duplicates...");
         const usersCollectionRef = collection(firestore, 'users');
-        
-        const adminQuery = query(usersCollectionRef, where('userKey', '==', 'admin'), limit(1));
-        const adminSnapshot = await getDocs(adminQuery);
+        const allUsersSnapshot = await getDocs(usersCollectionRef);
+        const allUsers = allUsersSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as UserProfile & {id: string});
 
-        if (adminSnapshot.empty) {
+        // Admin User Data
+        const adminData = {
+            name: 'Admin User',
+            phone: '0000000000',
+            loginId: 'admin',
+            userKey: 'admin',
+            role: 'Admin',
+            status: 'Active',
+            permissions: allPermissions,
+        };
+
+        // Check for admin user conflicts
+        const existingAdmin = allUsers.find(u => u.userKey === adminData.userKey);
+        if (existingAdmin) {
+            log(" -> Admin user (userKey: 'admin') already exists. Skipping.");
+        } else {
+            const conflict = allUsers.find(u => u.loginId === adminData.loginId || u.phone === adminData.phone || u.name === adminData.name);
+            if (conflict) {
+                let field = 'details';
+                if (conflict.loginId === adminData.loginId) field = `Login ID '${adminData.loginId}'`;
+                else if (conflict.phone === adminData.phone) field = `Phone '${adminData.phone}'`;
+                else if (conflict.name === adminData.name) field = `Name '${adminData.name}'`;
+                const message = `Cannot seed admin user: a different user already exists with the ${field}. Please resolve manually.`;
+                log(`ERROR: ${message}`);
+                throw new Error(message);
+            }
             log(" -> Admin user not found. Preparing to create...");
             const adminUserDocRef = doc(usersCollectionRef);
-            batch.set(adminUserDocRef, {
-                name: 'Admin User',
-                phone: '0000000000',
-                loginId: 'admin',
-                userKey: 'admin',
-                role: 'Admin',
-                status: 'Active',
-                permissions: allPermissions,
-                createdAt: serverTimestamp(),
-            });
+            batch.set(adminUserDocRef, { ...adminData, createdAt: serverTimestamp() });
             log(" -> Admin user data prepared.");
+        }
+
+        // Sample User Data
+        const sampleUserData = {
+            name: 'Sample User',
+            phone: '1111111111',
+            loginId: 'sampleuser',
+            userKey: 'sampleuser',
+            role: 'User',
+            status: 'Active',
+            permissions: {},
+        };
+
+        // Check for sample user conflicts
+        const existingSampleUser = allUsers.find(u => u.userKey === sampleUserData.userKey);
+        if (existingSampleUser) {
+            log(" -> Sample user (userKey: 'sampleuser') already exists. Skipping.");
         } else {
-            log(" -> Admin user already exists. Skipping.");
+            const conflict = allUsers.find(u => u.loginId === sampleUserData.loginId || u.phone === sampleUserData.phone || u.name === sampleUserData.name);
+            if (conflict) {
+                let field = 'details';
+                if (conflict.loginId === sampleUserData.loginId) field = `Login ID '${sampleUserData.loginId}'`;
+                else if (conflict.phone === sampleUserData.phone) field = `Phone '${sampleUserData.phone}'`;
+                else if (conflict.name === sampleUserData.name) field = `Name '${sampleUserData.name}'`;
+                const message = `Cannot seed sample user: a different user already exists with the ${field}. Please resolve manually.`;
+                log(`ERROR: ${message}`);
+                throw new Error(message);
+            }
+            log(" -> Sample user not found. Preparing to create...");
+            const sampleUserDocRef = doc(usersCollectionRef);
+            batch.set(sampleUserDocRef, { ...sampleUserData, createdAt: serverTimestamp() });
+            log(" -> Sample user data prepared.");
         }
         
-        const sampleUserQuery = query(usersCollectionRef, where('userKey', '==', 'sampleuser'), limit(1));
-        const sampleUserSnapshot = await getDocs(sampleUserQuery);
-
-        if (sampleUserSnapshot.empty) {
-             log(" -> Sample user not found. Preparing to create...");
-            const sampleUserDocRef = doc(usersCollectionRef);
-            batch.set(sampleUserDocRef, {
-                name: 'Sample User',
-                phone: '1111111111',
-                loginId: 'sampleuser',
-                userKey: 'sampleuser',
-                role: 'User',
-                status: 'Active',
-                permissions: {},
-                createdAt: serverTimestamp(),
-            });
-            log(" -> Sample user data prepared.");
-        } else {
-            log(" -> Sample user already exists. Skipping.");
-        }
-
         // Seed Campaign and related data idempotently
         const campaignId = 'ration-kit-distribution-ramza-2026';
         const campaignName = 'Ration Kit Distribution Ramza 2026';
@@ -155,7 +180,7 @@ export default function SeedPage() {
             const initialBeneficiaries = [
                 { id: '1', name: 'Saleem Khan', address: '123, Old City, Hyderabad', phone: '9876543210', members: 5, earningMembers: 1, male: 2, female: 3, addedDate: '2026-03-15', idProofType: 'Aadhaar', idNumber: 'XXXX XXXX 1234', referralBy: 'Local NGO', kitAmount: 2058, status: 'Given' },
                 { id: '2', name: 'Aisha Begum', address: '456, New Town, Hyderabad', phone: '9876543211', members: 4, earningMembers: 2, male: 2, female: 2, addedDate: '2026-03-16', idProofType: 'PAN', idNumber: 'ABCDE1234F', referralBy: 'Masjid Committee', kitAmount: 1000, status: 'Pending' },
-                { id: '3', name: 'Mohammed Ali', address: '789, Charminar, Hyderabad', phone: '9876543212', members: 6, earningMembers: 1, male: 3, female: 3, addedDate: '2026-03-17', idProofType: 'Other', idNumber: 'Voter ID', referralBy: 'Self', kitAmount: 2058, status: 'Hold' },
+                { id: '3', name: 'Mohammed Ali', address: '789, Charminar, Hyderabad', phone: '9876543212', members: 6, earningMembers: 1, male: 3, female: 3, addedDate: '2026-03-17', idProofType: 'Voter ID', idNumber: 'XYZ1234567', referralBy: 'Self', kitAmount: 2058, status: 'Hold' },
                 { id: '4', name: 'Fatima Sheikh', address: '101, Golconda, Hyderabad', phone: '9876543213', members: 3, earningMembers: 0, male: 1, female: 2, addedDate: '2026-03-18', idProofType: 'Aadhaar', idNumber: 'YYYY YYYY 5678', referralBy: 'Local NGO', kitAmount: 696, status: 'Need More Details' },
             ];
             initialBeneficiaries.forEach((beneficiary) => {
@@ -220,7 +245,9 @@ export default function SeedPage() {
             });
         } catch (e: any) {
             log('❌ Seeding script failed.');
-            log(e.message);
+            if (e.message) {
+              log(e.message);
+            }
             if (e.code === 'auth/configuration-not-found') {
                 toast({
                     title: 'Action Required',
