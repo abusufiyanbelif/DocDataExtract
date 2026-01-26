@@ -7,7 +7,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,6 +23,7 @@ const campaignSchema = z.object({
   status: z.enum(['Upcoming', 'Active', 'Completed']),
   startDate: z.string().min(1, 'Start date is required.'),
   endDate: z.string().min(1, 'End date is required.'),
+  targetAmount: z.coerce.number().min(0, 'Target amount must be a positive number.').optional(),
 }).refine(data => new Date(data.startDate) <= new Date(data.endDate), {
     message: "End date cannot be before the start date.",
     path: ["endDate"],
@@ -44,6 +45,7 @@ export default function CreateCampaignPage() {
       status: 'Upcoming',
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
+      targetAmount: 0,
     },
   });
 
@@ -56,6 +58,8 @@ export default function CreateCampaignPage() {
     try {
       const docRef = await addDoc(collection(firestore, 'campaigns'), {
         ...data,
+        targetAmount: data.targetAmount || 0,
+        description: '',
         createdAt: serverTimestamp(),
         priceDate: new Date().toISOString().split('T')[0],
         shopName: '',
@@ -135,6 +139,20 @@ export default function CreateCampaignPage() {
                       <FormControl>
                         <Input placeholder="e.g. Ration Kit Distribution Ramza 2027" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="targetAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target Amount (₹)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g. 100000" {...field} />
+                      </FormControl>
+                      <CardDescription>The fundraising goal for the campaign. This can be edited later.</CardDescription>
                       <FormMessage />
                     </FormItem>
                   )}

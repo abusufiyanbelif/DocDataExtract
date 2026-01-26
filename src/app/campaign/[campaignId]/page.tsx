@@ -55,10 +55,17 @@ export default function CampaignDetailsPage() {
   const [newMemberCount, setNewMemberCount] = useState('');
 
   useEffect(() => {
-    if (campaign && !editMode) {
+    if (campaign) {
       setEditableCampaign(JSON.parse(JSON.stringify(campaign))); // Deep copy
     }
-  }, [campaign, editMode]);
+  }, [campaign]);
+  
+  // Reset local state if edit mode is cancelled
+  useEffect(() => {
+    if (campaign && !editMode) {
+      setEditableCampaign(JSON.parse(JSON.stringify(campaign)));
+    }
+  }, [editMode, campaign])
 
   const isAdmin = userProfile?.role === 'Admin';
   const isLoading = isCampaignLoading || isProfileLoading;
@@ -66,7 +73,9 @@ export default function CampaignDetailsPage() {
   const handleSave = async () => {
     if (!campaignDocRef || !editableCampaign || !isAdmin) return;
     try {
-        await updateDoc(campaignDocRef, editableCampaign);
+        await updateDoc(campaignDocRef, {
+            ...editableCampaign
+        });
         toast({ title: 'Success', description: 'Campaign details saved.' });
         setEditMode(false);
     } catch (error) {
@@ -157,10 +166,10 @@ export default function CampaignDetailsPage() {
 
     if (format === 'csv') {
       let csvContent = `Ration Details\n`;
-      csvContent += `Price Date:,"${priceDate}"\n`;
-      csvContent += `Shop Name:,"${shopName}"\n`;
-      csvContent += `Shop Contact:,"${shopContact}"\n`;
-      csvContent += `Shop Address:,"${shopAddress}"\n\n`;
+      csvContent += `Price Date:,"${priceDate || ''}"\n`;
+      csvContent += `Shop Name:,"${shopName || ''}"\n`;
+      csvContent += `Shop Contact:,"${shopContact || ''}"\n`;
+      csvContent += `Shop Address:,"${shopAddress || ''}"\n\n`;
 
       sortedMemberCategories.forEach((memberCount) => {
           const items = rationLists[memberCount];
@@ -172,10 +181,10 @@ export default function CampaignDetailsPage() {
               items.forEach((item, index) => {
                   const row = [
                       index + 1,
-                      `"${item.name.replace(/"/g, '""')}"`,
-                      `"${item.quantity.replace(/"/g, '""')}"`,
-                      `"${item.notes.replace(/"/g, '""')}"`,
-                      item.price,
+                      `"${(item.name || '').replace(/"/g, '""')}"`,
+                      `"${(item.quantity || '').replace(/"/g, '""')}"`,
+                      `"${(item.notes || '').replace(/"/g, '""')}"`,
+                      item.price || 0,
                   ].join(',');
                   csvContent += row + '\n';
               });
@@ -243,8 +252,8 @@ export default function CampaignDetailsPage() {
         doc.text(`Ration Details`, 14, 15);
         
         doc.setFontSize(10);
-        doc.text(`Shop: ${shopName} | Contact: ${shopContact} | Address: ${shopAddress}`, 14, 22);
-        doc.text(`Price Date: ${priceDate}`, 14, 27);
+        doc.text(`Shop: ${shopName || ''} | Contact: ${shopContact || ''} | Address: ${shopAddress || ''}`, 14, 22);
+        doc.text(`Price Date: ${priceDate || ''}`, 14, 27);
 
         startY = 35;
         
@@ -257,7 +266,7 @@ export default function CampaignDetailsPage() {
                     item.name,
                     item.quantity,
                     item.notes,
-                    `₹${item.price.toFixed(2)}`,
+                    `₹${(item.price || 0).toFixed(2)}`,
                 ]);
 
                 tableBody.push([
@@ -472,30 +481,6 @@ export default function CampaignDetailsPage() {
                 <div>
                     <CardTitle>Ration Details</CardTitle>
                     <div className="text-sm text-muted-foreground mt-4 space-y-3">
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <div className="flex items-center gap-2">
-                                <Label htmlFor="startDate" className="text-nowrap">Start Date:</Label>
-                                <Input
-                                id="startDate"
-                                type="date"
-                                value={editableCampaign.startDate || ''}
-                                onChange={(e) => handleFieldChange( 'startDate', e.target.value )}
-                                className="w-fit"
-                                disabled={!editMode || !isAdmin}
-                                />
-                            </div>
-                             <div className="flex items-center gap-2">
-                                <Label htmlFor="endDate" className="text-nowrap">End Date:</Label>
-                                <Input
-                                id="endDate"
-                                type="date"
-                                value={editableCampaign.endDate || ''}
-                                onChange={(e) => handleFieldChange( 'endDate', e.target.value )}
-                                className="w-fit"
-                                disabled={!editMode || !isAdmin}
-                                />
-                            </div>
-                        </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                             <div className="flex items-center gap-2">
                                 <Label htmlFor="priceDate" className="text-nowrap">Price Date:</Label>

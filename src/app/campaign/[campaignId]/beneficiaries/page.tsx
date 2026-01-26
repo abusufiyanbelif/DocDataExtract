@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,10 +39,19 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { BeneficiaryForm, type BeneficiaryFormData } from '@/components/beneficiary-form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import * as XLSX from 'xlsx';
+
+type SortKey = keyof Beneficiary | 'srNo';
 
 export default function BeneficiariesPage() {
   const params = useParams();
@@ -74,6 +83,10 @@ export default function BeneficiariesPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
   
   const isAdmin = userProfile?.role === 'Admin';
 
@@ -248,12 +261,73 @@ export default function BeneficiariesPage() {
     }
     reader.readAsArrayBuffer(selectedFile);
   };
+  
+  const handleSort = (key: SortKey) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const filteredAndSortedBeneficiaries = useMemo(() => {
+    let sortableItems = [...beneficiaries];
+    
+    // Filtering
+    if (statusFilter !== 'All') {
+        sortableItems = sortableItems.filter(b => b.status === statusFilter);
+    }
+    if (searchTerm) {
+        const lowercasedTerm = searchTerm.toLowerCase();
+        sortableItems = sortableItems.filter(b => 
+            b.name.toLowerCase().includes(lowercasedTerm) ||
+            b.phone.toLowerCase().includes(lowercasedTerm) ||
+            b.address.toLowerCase().includes(lowercasedTerm)
+        );
+    }
+
+    // Sorting
+    if (sortConfig !== null) {
+        sortableItems.sort((a, b) => {
+            if (sortConfig.key === 'srNo') return 0; // Keep original order for srNo
+            const aValue = a[sortConfig.key] ?? '';
+            const bValue = b[sortConfig.key] ?? '';
+            
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
+            }
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+                 if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+            }
+            return 0;
+        });
+    }
+
+    return sortableItems;
+  }, [beneficiaries, searchTerm, statusFilter, sortConfig]);
 
   const totalKitAmount = useMemo(() => {
-    return beneficiaries.reduce((acc, b) => acc + (b.kitAmount || 0), 0);
-  }, [beneficiaries]);
+    return filteredAndSortedBeneficiaries.reduce((acc, b) => acc + (b.kitAmount || 0), 0);
+  }, [filteredAndSortedBeneficiaries]);
 
   const isLoading = isCampaignLoading || areBeneficiariesLoading || isProfileLoading;
+  
+  const SortableHeader = ({ sortKey, children }: { sortKey: SortKey, children: React.ReactNode }) => {
+    const isSorted = sortConfig?.key === sortKey;
+    return (
+        <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort(sortKey)}>
+            <div className="flex items-center gap-2">
+                {children}
+                {isSorted && (sortConfig?.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />)}
+            </div>
+        </TableHead>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -313,20 +387,42 @@ export default function BeneficiariesPage() {
 
         <Card>
           <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <CardTitle>Beneficiary List</CardTitle>
+            <div className="flex-1 space-y-2">
+                <CardTitle>Beneficiary List ({filteredAndSortedBeneficiaries.length})</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Input 
+                        placeholder="Search by name, phone, address..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="max-w-sm"
+                    />
+                     <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Statuses</SelectItem>
+                            <SelectItem value="Given">Given</SelectItem>
+                            <SelectItem value="Pending">Pending</SelectItem>
+                            <SelectItem value="Hold">Hold</SelectItem>
+                            <SelectItem value="Need More Details">Need More Details</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
             {isAdmin && (
                 <div className="flex flex-wrap gap-2">
                     <Button variant="outline" onClick={handleDownloadTemplate}>
                         <Download className="mr-2 h-4 w-4" />
-                        Download Template
+                        Template
                     </Button>
                     <Button variant="outline" onClick={() => setIsImportOpen(true)}>
                         <Upload className="mr-2 h-4 w-4" />
-                        Import Beneficiaries
+                        Import
                     </Button>
                     <Button onClick={handleAdd}>
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Beneficiary
+                        Add New
                     </Button>
                 </div>
             )}
@@ -337,20 +433,20 @@ export default function BeneficiariesPage() {
                   <TableHeader>
                       <TableRow>
                           {isAdmin && <TableHead className="w-[50px] text-center">Actions</TableHead>}
-                          <TableHead className="w-[40px]">#</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Address</TableHead>
-                          <TableHead>Phone</TableHead>
-                          <TableHead className="text-center">Members</TableHead>
-                          <TableHead className="text-center">Earning</TableHead>
-                          <TableHead className="text-center">M/F</TableHead>
-                          <TableHead>Added Date</TableHead>
+                          <SortableHeader sortKey="srNo">#</SortableHeader>
+                          <SortableHeader sortKey="name">Name</SortableHeader>
+                          <SortableHeader sortKey="address">Address</SortableHeader>
+                          <SortableHeader sortKey="phone">Phone</SortableHeader>
+                          <SortableHeader sortKey="members">Members</SortableHeader>
+                          <SortableHeader sortKey="earningMembers">Earning</SortableHeader>
+                          <SortableHeader sortKey="male">M/F</SortableHeader>
+                          <SortableHeader sortKey="addedDate">Added Date</SortableHeader>
                           <TableHead>ID Proof Type</TableHead>
                           <TableHead>ID Number</TableHead>
                           <TableHead>ID Proof</TableHead>
-                          <TableHead>Referred By</TableHead>
-                          <TableHead className="text-right">Kit Amount (₹)</TableHead>
-                          <TableHead>Status</TableHead>
+                          <SortableHeader sortKey="referralBy">Referred By</SortableHeader>
+                          <SortableHeader sortKey="kitAmount">Kit Amount (₹)</SortableHeader>
+                          <SortableHeader sortKey="status">Status</SortableHeader>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -361,7 +457,7 @@ export default function BeneficiariesPage() {
                            </TableRow>
                         ))
                       )}
-                      {!areBeneficiariesLoading && beneficiaries.map((beneficiary, index) => (
+                      {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.map((beneficiary, index) => (
                           <TableRow key={beneficiary.id}>
                               {isAdmin && (
                                 <TableCell className="text-center">
@@ -412,17 +508,17 @@ export default function BeneficiariesPage() {
                               </TableCell>
                           </TableRow>
                       ))}
-                      {!areBeneficiariesLoading && beneficiaries.length === 0 && (
+                      {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={isAdmin ? 15 : 14} className="text-center h-24 text-muted-foreground">
-                                No beneficiaries added yet.
+                                No beneficiaries found matching your criteria.
                             </TableCell>
                         </TableRow>
                       )}
                   </TableBody>
                   <TableFooter>
                     <TableRow>
-                        <TableCell colSpan={isAdmin ? 13 : 12} className="text-right font-bold">Total Kit Amount Required</TableCell>
+                        <TableCell colSpan={isAdmin ? 13 : 12} className="text-right font-bold">Filtered Total</TableCell>
                         <TableCell className="text-right font-bold">₹{totalKitAmount.toFixed(2)}</TableCell>
                         <TableCell></TableCell>
                     </TableRow>

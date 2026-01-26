@@ -25,7 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, HandCoins } from 'lucide-react';
 import {
   ChartContainer,
   ChartTooltip,
@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 
 const donationChartConfig = {
@@ -48,7 +49,7 @@ const beneficiaryStatusConfig = {
     Given: { label: "Given", color: "hsl(var(--chart-1))" },
     Pending: { label: "Pending", color: "hsl(var(--chart-2))" },
     Hold: { label: "Hold", color: "hsl(var(--chart-3))" },
-    NeedMoreDetails: { label: "Need More Details", color: "hsl(var(--chart-4))" },
+    "NeedMoreDetails": { label: "Need More Details", color: "hsl(var(--chart-4))" },
 } satisfies ChartConfig;
 
 export default function CampaignSummaryPage() {
@@ -60,8 +61,7 @@ export default function CampaignSummaryPage() {
 
     // State for edit mode and form fields
     const [editMode, setEditMode] = useState(false);
-    const [editableDescription, setEditableDescription] = useState('');
-    const [editableTargetAmount, setEditableTargetAmount] = useState<number | string>('');
+    const [editableCampaign, setEditableCampaign] = useState<Partial<Campaign>>({});
 
     // Data fetching
     const campaignDocRef = useMemo(() => firestore ? doc(firestore, 'campaigns', campaignId) : null, [firestore, campaignId]);
@@ -75,8 +75,12 @@ export default function CampaignSummaryPage() {
     // Populate form fields when campaign data loads
     useEffect(() => {
         if (campaign) {
-            setEditableDescription(campaign.description || '');
-            setEditableTargetAmount(campaign.targetAmount || '');
+            setEditableCampaign({
+                description: campaign.description || '',
+                targetAmount: campaign.targetAmount || 0,
+                startDate: campaign.startDate || '',
+                endDate: campaign.endDate || '',
+            });
         }
     }, [campaign]);
 
@@ -84,8 +88,10 @@ export default function CampaignSummaryPage() {
         if (!campaignDocRef || !userProfile || userProfile.role !== 'Admin') return;
         try {
             await updateDoc(campaignDocRef, {
-                description: editableDescription,
-                targetAmount: Number(editableTargetAmount) || 0,
+                description: editableCampaign.description || '',
+                targetAmount: Number(editableCampaign.targetAmount) || 0,
+                startDate: editableCampaign.startDate || '',
+                endDate: editableCampaign.endDate || '',
             });
             toast({ title: 'Success', description: 'Campaign summary updated.' });
             setEditMode(false);
@@ -97,20 +103,24 @@ export default function CampaignSummaryPage() {
 
     const handleCancel = () => {
         if (campaign) {
-            setEditableDescription(campaign.description || '');
-            setEditableTargetAmount(campaign.targetAmount || 0);
+            setEditableCampaign({
+                description: campaign.description || '',
+                targetAmount: campaign.targetAmount || 0,
+                startDate: campaign.startDate || '',
+                endDate: campaign.endDate || '',
+            });
         }
         setEditMode(false);
     };
 
     // Memoized calculations
     const summaryData = useMemo(() => {
-        if (!beneficiaries || !donations) return null;
+        if (!beneficiaries || !donations || !campaign) return null;
 
         const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
         const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + b.kitAmount, 0);
         
-        const fundingGoal = campaign?.targetAmount || totalKitAmountRequired;
+        const fundingGoal = campaign?.targetAmount || 0;
         const fundingProgress = fundingGoal > 0 ? (totalDonations / fundingGoal) * 100 : 0;
 
         const beneficiaryStatusData = beneficiaries.reduce((acc, b) => {
@@ -135,7 +145,8 @@ export default function CampaignSummaryPage() {
             beneficiaryChartData,
             donationChartData,
             totalBeneficiaries: beneficiaries.length,
-            targetAmount: campaign?.targetAmount,
+            targetAmount: campaign.targetAmount,
+            remainingToCollect: Math.max(0, (campaign.targetAmount || 0) - totalDonations),
         };
     }, [beneficiaries, donations, campaign]);
     
@@ -219,11 +230,12 @@ export default function CampaignSummaryPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div>
-                                <label className="text-sm font-medium text-muted-foreground">Description</label>
+                                <Label htmlFor="description" className="text-sm font-medium text-muted-foreground">Description</Label>
                                 {editMode ? (
                                     <Textarea
-                                        value={editableDescription}
-                                        onChange={(e) => setEditableDescription(e.target.value)}
+                                        id="description"
+                                        value={editableCampaign.description}
+                                        onChange={(e) => setEditableCampaign(p => ({...p, description: e.target.value}))}
                                         className="mt-1"
                                         rows={4}
                                     />
@@ -231,31 +243,71 @@ export default function CampaignSummaryPage() {
                                     <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
                                 )}
                             </div>
-                            <div>
-                                <label className="text-sm font-medium text-muted-foreground">Target Amount</label>
-                                {editMode ? (
-                                    <Input
-                                        type="number"
-                                        value={editableTargetAmount}
-                                        onChange={(e) => setEditableTargetAmount(e.target.value)}
-                                        className="mt-1"
-                                        placeholder="e.g. 100000"
-                                    />
-                                ) : (
-                                    <p className="mt-1 text-lg font-semibold">₹{summaryData?.targetAmount?.toFixed(2) ?? '0.00'}</p>
-                                )}
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-1">
+                                    <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Target Amount</Label>
+                                    {editMode ? (
+                                        <Input
+                                            id="targetAmount"
+                                            type="number"
+                                            value={editableCampaign.targetAmount}
+                                            onChange={(e) => setEditableCampaign(p => ({...p, targetAmount: e.target.value}))}
+                                            className="mt-1"
+                                            placeholder="e.g. 100000"
+                                        />
+                                    ) : (
+                                        <p className="mt-1 text-lg font-semibold">₹{campaign.targetAmount?.toLocaleString() ?? '0.00'}</p>
+                                    )}
+                                </div>
+                                 <div className="space-y-1">
+                                    <Label htmlFor="startDate" className="text-sm font-medium text-muted-foreground">Start Date</Label>
+                                    {editMode ? (
+                                        <Input
+                                            id="startDate"
+                                            type="date"
+                                            value={editableCampaign.startDate}
+                                            onChange={(e) => setEditableCampaign(p => ({...p, startDate: e.target.value}))}
+                                            className="mt-1"
+                                        />
+                                    ) : (
+                                        <p className="mt-1 text-lg font-semibold">{campaign.startDate}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="endDate" className="text-sm font-medium text-muted-foreground">End Date</Label>
+                                    {editMode ? (
+                                        <Input
+                                            id="endDate"
+                                            type="date"
+                                            value={editableCampaign.endDate}
+                                            onChange={(e) => setEditableCampaign(p => ({...p, endDate: e.target.value}))}
+                                            className="mt-1"
+                                        />
+                                    ) : (
+                                        <p className="mt-1 text-lg font-semibold">{campaign.endDate}</p>
+                                    )}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Donations Received</CardTitle>
                                 <Gift className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">₹{summaryData?.totalDonations.toFixed(2) ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.totalDonations.toLocaleString() ?? '0.00'}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Remaining to Collect</CardTitle>
+                                <HandCoins className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">₹{summaryData?.remainingToCollect.toLocaleString() ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -264,7 +316,7 @@ export default function CampaignSummaryPage() {
                                 <Target className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">₹{summaryData?.totalKitAmountRequired.toFixed(2) ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.totalKitAmountRequired.toLocaleString() ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -277,11 +329,11 @@ export default function CampaignSummaryPage() {
                             </CardContent>
                         </Card>
                         
-                        <Card className="col-span-1 lg:col-span-3">
+                        <Card className="col-span-1 lg:col-span-4">
                             <CardHeader>
                                 <CardTitle>Funding Progress (Based on Target Amount)</CardTitle>
                                 <CardDescription>
-                                    {summaryData?.fundingProgress.toFixed(2)}% of ₹{summaryData?.targetAmount?.toFixed(2) ?? '0.00'} funded
+                                    {summaryData?.fundingProgress.toFixed(2)}% of ₹{(summaryData?.targetAmount ?? 0).toLocaleString()} funded
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -295,34 +347,32 @@ export default function CampaignSummaryPage() {
                             </CardHeader>
                             <CardContent>
                                 <ChartContainer config={donationChartConfig} className="h-[300px] w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={summaryData?.donationChartData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
-                                            <CartesianGrid vertical={false} />
-                                            <XAxis
-                                                dataKey="name"
-                                                tickLine={false}
-                                                tickMargin={10}
-                                                axisLine={false}
-                                            />
-                                            <YAxis
-                                                tickFormatter={(value) => `₹${Number(value).toLocaleString()}`}
-                                            />
-                                            <ChartTooltip
-                                                cursor={false}
-                                                content={<ChartTooltipContent indicator="dot" />}
-                                            />
-                                            <Bar
-                                                dataKey="value"
-                                                fill="var(--color-value)"
-                                                radius={4}
-                                            />
-                                        </BarChart>
-                                    </ResponsiveContainer>
+                                    <BarChart data={summaryData?.donationChartData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
+                                        <CartesianGrid vertical={false} />
+                                        <XAxis
+                                            dataKey="name"
+                                            tickLine={false}
+                                            tickMargin={10}
+                                            axisLine={false}
+                                        />
+                                        <YAxis
+                                            tickFormatter={(value) => `₹${Number(value).toLocaleString()}`}
+                                        />
+                                        <ChartTooltip
+                                            cursor={false}
+                                            content={<ChartTooltipContent indicator="dot" />}
+                                        />
+                                        <Bar
+                                            dataKey="value"
+                                            fill="var(--color-value)"
+                                            radius={4}
+                                        />
+                                    </BarChart>
                                 </ChartContainer>
                             </CardContent>
                         </Card>
 
-                        <Card>
+                        <Card className="lg:col-span-2">
                             <CardHeader>
                                 <CardTitle>Beneficiary Status</CardTitle>
                             </CardHeader>
@@ -331,28 +381,26 @@ export default function CampaignSummaryPage() {
                                     config={beneficiaryStatusConfig}
                                     className="mx-auto aspect-square h-full"
                                 >
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <ChartTooltip
-                                                content={<ChartTooltipContent nameKey="name" />}
-                                            />
-                                            <Pie
-                                                data={summaryData?.beneficiaryChartData}
-                                                dataKey="value"
-                                                nameKey="name"
-                                                cx="50%"
-                                                cy="50%"
-                                                outerRadius={80}
-                                            >
-                                                {summaryData?.beneficiaryChartData.map((entry) => (
-                                                    <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
-                                                ))}
-                                            </Pie>
-                                            <ChartLegend
-                                                content={<ChartLegendContent nameKey="name" />}
-                                            />
-                                        </PieChart>
-                                    </ResponsiveContainer>
+                                    <PieChart>
+                                        <ChartTooltip
+                                            content={<ChartTooltipContent nameKey="name" />}
+                                        />
+                                        <Pie
+                                            data={summaryData?.beneficiaryChartData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={80}
+                                        >
+                                            {summaryData?.beneficiaryChartData.map((entry) => (
+                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
+                                            ))}
+                                        </Pie>
+                                        <ChartLegend
+                                            content={<ChartLegendContent nameKey="name" />}
+                                        />
+                                    </PieChart>
                                 </ChartContainer>
                             </CardContent>
                         </Card>
