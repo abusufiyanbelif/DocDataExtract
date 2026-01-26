@@ -31,6 +31,158 @@
         "userKey",
         "role"
       ]
+    },
+    "RationItem": {
+      "title": "Ration Item",
+      "description": "A single item in a ration kit, part of a campaign's ration list.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "A unique identifier for the ration item within its list."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the ration item."
+        },
+        "quantity": {
+          "type": "string",
+          "description": "The quantity of the item (e.g., '10 kg')."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the item in Rupees."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes for the item (e.g., brand, price per unit)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "price"
+      ]
+    },
+    "Beneficiary": {
+      "title": "Beneficiary",
+      "description": "An individual or family receiving benefits from a campaign.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The full name of the beneficiary."
+        },
+        "address": {
+          "type": "string",
+          "description": "The beneficiary's full residential address."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The beneficiary's 10-digit phone number."
+        },
+        "members": {
+          "type": "integer",
+          "description": "The number of members in the beneficiary's family."
+        },
+        "earningMembers": {
+          "type": "integer",
+          "description": "The number of earning members in the family."
+        },
+        "male": {
+          "type": "integer",
+          "description": "The number of male members in the family."
+        },
+        "female": {
+          "type": "integer",
+          "description": "The number of female members in the family."
+        },
+        "addedDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The date the beneficiary was added to the campaign."
+        },
+        "idProofType": {
+          "type": "string",
+          "description": "The type of ID proof provided (e.g., Aadhaar, PAN)."
+        },
+        "idNumber": {
+          "type": "string",
+          "description": "The ID number from the provided proof."
+        },
+        "referralBy": {
+          "type": "string",
+          "description": "The person or organization that referred the beneficiary."
+        },
+        "kitAmount": {
+          "type": "number",
+          "description": "The total amount of the ration kit provided, in Rupees."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Given",
+            "Pending",
+            "Hold",
+            "Need More Details"
+          ],
+          "description": "The current status of the beneficiary's ration kit."
+        }
+      },
+      "required": [
+        "name",
+        "address",
+        "phone",
+        "members",
+        "kitAmount",
+        "status"
+      ]
+    },
+    "Campaign": {
+      "title": "Campaign",
+      "description": "A campaign to distribute resources, such as ration kits.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the campaign."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the campaign (e.g., 'Upcoming', 'Active', 'Completed')."
+        },
+        "priceDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The date for which the ration prices are valid."
+        },
+        "shopName": {
+          "type": "string",
+          "description": "The name of the shop where items are purchased."
+        },
+        "shopContact": {
+          "type": "string",
+          "description": "The contact number for the shop."
+        },
+        "shopAddress": {
+          "type": "string",
+          "description": "The address of the shop."
+        },
+        "rationLists": {
+          "type": "object",
+          "description": "A map where keys are member counts (e.g., '5', 'General') and values are the corresponding lists of ration items.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/backend/entities/RationItem"
+            }
+          }
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ]
     }
   },
   "auth": {
@@ -44,6 +196,18 @@
         "$ref": "#/backend/entities/UserProfile"
       },
       "description": "Stores public profile information for each user."
+    },
+    "/campaigns/{campaignId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Campaign"
+      },
+      "description": "Stores details for each campaign, including ration lists and shop information."
+    },
+    "/campaigns/{campaignId}/beneficiaries/{beneficiaryId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Beneficiary"
+      },
+      "description": "Stores the list of beneficiaries for a specific campaign."
     }
   }
 }

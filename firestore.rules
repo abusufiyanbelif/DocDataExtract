@@ -12,5 +12,16 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if isSignedIn() && isOwner(userId);
     }
+
+    match /campaigns/{campaignId} {
+      // Allow any signed-in user to read, create, update, and delete campaigns.
+      allow read, write: if isSignedIn();
+
+      // Rules for the 'beneficiaries' subcollection
+      match /beneficiaries/{beneficiaryId} {
+        // Allow any signed-in user to manage beneficiaries within a campaign.
+        allow read, write: if isSignedIn();
+      }
+    }
   }
 }
