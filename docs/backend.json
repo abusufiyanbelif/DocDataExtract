@@ -276,6 +276,14 @@
         "screenshotUrl": {
           "type": "string",
           "description": "URL of the uploaded donation screenshot."
+        },
+        "uploadedBy": {
+          "type": "string",
+          "description": "Name of the user who recorded the donation."
+        },
+        "uploadedById": {
+          "type": "string",
+          "description": "ID of the user who recorded the donation."
         }
       },
       "required": [
@@ -283,7 +291,9 @@
         "amount",
         "type",
         "donationDate",
-        "status"
+        "status",
+        "uploadedBy",
+        "uploadedById"
       ]
     }
   },

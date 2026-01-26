@@ -110,7 +110,7 @@ export default function DonationsPage() {
   };
   
   const handleFormSubmit = async (data: DonationFormData) => {
-    if (!firestore || !storage || !campaignId || !isAdmin) return;
+    if (!firestore || !storage || !campaignId || !isAdmin || !userProfile) return;
 
     let screenshotUrl = editingDonation?.screenshotUrl || '';
     
@@ -146,6 +146,8 @@ export default function DonationsPage() {
             const collectionRef = collection(firestore, `campaigns/${campaignId}/donations`);
             await addDoc(collectionRef, {
                 ...donationData,
+                uploadedBy: userProfile.name,
+                uploadedById: userProfile.id,
                 createdAt: serverTimestamp(),
             });
             toast({ title: 'Success', description: 'Donation added.' });
@@ -189,7 +191,10 @@ export default function DonationsPage() {
             <h1 className="text-3xl font-bold">{campaign?.name}</h1>
         </div>
         
-        <div className="flex gap-2 border-b mb-4">
+        <div className="flex flex-wrap gap-2 border-b mb-4">
+            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
+            </Button>
             <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
                 <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
             </Button>
@@ -224,13 +229,14 @@ export default function DonationsPage() {
                           <TableHead>Date</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Screenshot</TableHead>
+                          <TableHead>Uploaded By</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
                       {areDonationsLoading ? (
                         [...Array(3)].map((_, i) => (
                            <TableRow key={i}>
-                                <TableCell colSpan={isAdmin ? 8 : 7}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={isAdmin ? 9 : 8}><Skeleton className="h-6 w-full" /></TableCell>
                            </TableRow>
                         ))
                       ) : donations.length > 0 ? (
@@ -270,11 +276,12 @@ export default function DonationsPage() {
                                     </Button>
                                   ) : "N/A"}
                               </TableCell>
+                              <TableCell>{donation.uploadedBy}</TableCell>
                           </TableRow>
                         ))
                       ) : (
                         <TableRow>
-                            <TableCell colSpan={isAdmin ? 8 : 7} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={isAdmin ? 9 : 8} className="text-center h-24 text-muted-foreground">
                                 No donations recorded yet.
                             </TableCell>
                         </TableRow>
@@ -284,7 +291,7 @@ export default function DonationsPage() {
                     <TableRow>
                         <TableCell colSpan={isAdmin ? 3 : 2} className="text-right font-bold">Total Donations</TableCell>
                         <TableCell className="text-right font-bold">₹{totalDonationAmount.toFixed(2)}</TableCell>
-                        <TableCell colSpan={4}></TableCell>
+                        <TableCell colSpan={5}></TableCell>
                     </TableRow>
                   </TableFooter>
               </Table>

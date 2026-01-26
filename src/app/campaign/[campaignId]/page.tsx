@@ -432,7 +432,10 @@ export default function CampaignDetailsPage() {
             <h1 className="text-3xl font-bold">{campaign.name}</h1>
         </div>
         
-        <div className="flex gap-2 border-b mb-4">
+        <div className="flex flex-wrap gap-2 border-b mb-4">
+            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
+            </Button>
             <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
                 <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
             </Button>
