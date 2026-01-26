@@ -15,15 +15,22 @@ import { toast } from '@/hooks/use-toast';
 
 export const createAdminUser = async (auth: Auth) => {
     const adminEmail = 'admin@docdataextract.app';
-    const adminPassword = 'password'; 
+    const adminPassword = 'password';
     try {
+        // This signs the user in automatically upon success
         await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
-        toast({ title: "Admin Account Created", description: "Successfully created admin user in Firebase Auth." });
+        toast({ title: "Admin Account Created", description: "Successfully created and signed in as admin." });
     } catch (error: any) {
         if (error.code === 'auth/email-already-in-use') {
-            // If the user already exists in auth, that's fine. We can proceed.
-            toast({ title: "Admin Exists", description: "Admin user already exists in Firebase Auth. Skipping creation." });
-            // We can optionally try to sign in to verify password, but for seeding it's not strictly necessary.
+            // If the user already exists, sign them in to proceed with seeding.
+            toast({ title: "Admin Exists", description: "Admin user already exists. Attempting to sign in to proceed with seeding..." });
+            try {
+                await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+                toast({ title: "Admin Sign-In Successful", description: "Ready to seed database." });
+            } catch (signInError: any) {
+                 console.error("Failed to sign in existing admin user:", signInError);
+                 throw new Error("The admin user already exists, but sign-in failed. Please check the password or reset it in the Firebase console if needed.");
+            }
         } else if (error.code === 'auth/configuration-not-found') {
             // This is a critical error for first-time setup.
             throw new Error("auth/configuration-not-found");
