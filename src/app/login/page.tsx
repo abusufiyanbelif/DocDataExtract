@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { signInWithUserKey } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,6 +25,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -38,17 +39,17 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
-    if (!auth) {
+    if (!auth || !firestore) {
       toast({
         title: 'Error',
-        description: 'Authentication service is not available. Please configure Firebase.',
+        description: 'Firebase service is not available. Please check your configuration.',
         variant: 'destructive',
       });
       setIsLoading(false);
       return;
     }
     try {
-      await signInWithUserKey(auth, data.userKey, data.password);
+      await signInWithUserKey(auth, firestore, data.userKey, data.password);
       toast({ title: 'Login Successful', description: "Welcome back!" });
       router.push('/');
     } catch (error: any) {

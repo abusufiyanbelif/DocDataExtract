@@ -2,19 +2,34 @@
 
 import { LogOut, ScanSearch } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore, useDoc } from '@/firebase';
 import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Button } from './ui/button';
-import { initialUsers } from '@/lib/users';
+import { useMemo } from 'react';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+import { Skeleton } from './ui/skeleton';
+
 
 export function DocuExtractHeader() {
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   
+  const userProfileRef = useMemo(() => {
+    if (!firestore || !user) return null;
+    // NOTE: This assumes your `users` collection documents are keyed by the Firebase Auth UID.
+    // When you create a user in Firebase Auth, you get a UID. You should create a document
+    // in the `users` collection with that UID as the document ID.
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile, isLoading } = useDoc<UserProfile>(userProfileRef);
+
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
@@ -26,11 +41,6 @@ export function DocuExtractHeader() {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
-
-  // In a real app, user details would come from a Firestore document.
-  // Here, we find the user in our mock data based on the email-like userKey.
-  const userKey = user?.email?.split('@')[0];
-  const userDetails = initialUsers.find(u => u.userKey === userKey);
 
   return (
     <header className="bg-card border-b p-4 shadow-sm">
@@ -47,18 +57,29 @@ export function DocuExtractHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar>
-                  <AvatarImage src={user.photoURL || ''} alt={userDetails?.name || 'User'} />
-                  <AvatarFallback>{getInitials(userDetails?.name)}</AvatarFallback>
+                  <AvatarImage src={user.photoURL || ''} alt={userProfile?.name || 'User'} />
+                  <AvatarFallback>
+                    {isLoading ? <Skeleton className="h-full w-full" /> : getInitials(userProfile?.name)}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userDetails?.name || 'User'}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user.email}
-                  </p>
+                  {isLoading ? (
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-3 w-32" />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium leading-none">{userProfile?.name || 'User'}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

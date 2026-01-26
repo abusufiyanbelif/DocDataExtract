@@ -1,12 +1,16 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,16 +35,19 @@ import {
 } from "@/components/ui/dialog";
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
-import { initialUsers, type User as UserType } from '@/lib/users';
-
-export type User = Omit<UserType, 'password'>;
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UsersPage() {
-  // We remove password from the state
-  const [users, setUsers] = useState<User[]>(initialUsers.map(({password, ...rest}) => rest));
+  const firestore = useFirestore();
+  const usersCollectionRef = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+  
+  const { data: users, isLoading } = useCollection<UserProfile>(usersCollectionRef);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const { toast } = useToast();
@@ -50,7 +57,7 @@ export default function UsersPage() {
     setIsFormOpen(true);
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = (user: UserProfile) => {
     setEditingUser(user);
     setIsFormOpen(true);
   };
@@ -60,19 +67,27 @@ export default function UsersPage() {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (userToDelete) {
-      setUsers(users.filter(u => u.id !== userToDelete));
-      setUserToDelete(null);
-      setIsDeleteDialogOpen(false);
-      toast({ title: 'User Deleted', description: 'The user has been successfully deleted.' });
+  const handleDeleteConfirm = async () => {
+    if (userToDelete && firestore) {
+        const docRef = doc(firestore, 'users', userToDelete);
+        try {
+            await deleteDoc(docRef);
+            toast({ title: 'User Deleted', description: 'The user has been successfully deleted.' });
+        } catch(error) {
+            console.error("Error deleting user:", error);
+            toast({ title: 'Error', description: 'Could not delete user.', variant: 'destructive' });
+        } finally {
+            setUserToDelete(null);
+            setIsDeleteDialogOpen(false);
+        }
     }
   };
   
-  const handleFormSubmit = (data: UserFormData) => {
-    const isNew = !editingUser;
+  const handleFormSubmit = async (data: UserFormData) => {
+    if (!firestore) return;
     
-    if (users.some(u => u.userKey === data.userKey && u.id !== editingUser?.id)) {
+    // Check for duplicate userKey on add
+    if (!editingUser && users.some(u => u.userKey === data.userKey)) {
         toast({
             title: 'User Key Exists',
             description: 'This User Key is already taken. Please choose another one.',
@@ -81,25 +96,31 @@ export default function UsersPage() {
         return;
     }
     
-    // In a real app, you would handle password updates securely.
-    // Here we just use the user data for the UI.
+    // The password is not stored in Firestore, it's only used for Firebase Auth user creation,
+    // which is currently a manual process as per the project setup.
     const { password, ...userData } = data;
 
-    if (isNew) {
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: userData.name,
-        phone: userData.phone,
-        userKey: userData.userKey,
-        role: userData.role,
-      };
-      setUsers([...users, newUser]);
-      toast({ title: 'User Added', description: 'A new user has been successfully added.' });
-    } else {
-      setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...userData } : u));
-      toast({ title: 'User Updated', description: 'The user details have been successfully updated.' });
+    try {
+        if (editingUser) {
+            const docRef = doc(firestore, 'users', editingUser.id);
+            await updateDoc(docRef, userData);
+            toast({ title: 'User Updated', description: 'The user details have been successfully updated.' });
+        } else {
+            // Note: This only creates the user profile in Firestore.
+            // The corresponding Firebase Auth user must be created manually in the Firebase console.
+            await addDoc(collection(firestore, 'users'), {
+                ...userData,
+                createdAt: serverTimestamp()
+            });
+            toast({ title: 'User Added', description: 'A new user has been successfully added.' });
+        }
+    } catch (error) {
+        console.error("Error saving user:", error);
+        toast({ title: 'Error', description: 'Could not save user.', variant: 'destructive' });
+    } finally {
+        setIsFormOpen(false);
+        setEditingUser(null);
     }
-    setIsFormOpen(false);
   };
 
   return (
@@ -137,7 +158,14 @@ export default function UsersPage() {
                       </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {users.map((user, index) => (
+                      {isLoading && (
+                        [...Array(3)].map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell colSpan={6}><Skeleton className="h-6 w-full" /></TableCell>
+                            </TableRow>
+                        ))
+                      )}
+                      {!isLoading && users.map((user, index) => (
                           <TableRow key={user.id}>
                               <TableCell className="text-center">
                                   <DropdownMenu>
@@ -167,6 +195,13 @@ export default function UsersPage() {
                               </TableCell>
                           </TableRow>
                       ))}
+                      {!isLoading && users.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                                No users found.
+                            </TableCell>
+                        </TableRow>
+                      )}
                   </TableBody>
               </Table>
             </div>

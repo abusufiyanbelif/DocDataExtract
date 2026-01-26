@@ -39,3 +39,11 @@ export interface Beneficiary extends DocumentData {
     kitAmount: number;
     status: 'Given' | 'Pending' | 'Hold' | 'Need More Details';
 }
+
+export interface UserProfile extends DocumentData {
+  id: string;
+  name: string;
+  phone: string;
+  userKey: string;
+  role: 'Admin' | 'User';
+}

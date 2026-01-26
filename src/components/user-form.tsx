@@ -22,7 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import type { User } from '@/app/users/page';
+import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 const baseSchema = z.object({
@@ -35,7 +35,7 @@ const baseSchema = z.object({
 export type UserFormData = z.infer<typeof baseSchema> & { password?: string };
 
 interface UserFormProps {
-  user?: User | null;
+  user?: UserProfile | null;
   onSubmit: (data: UserFormData) => void;
   onCancel: () => void;
 }
