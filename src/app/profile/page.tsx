@@ -1,0 +1,71 @@
+'use client';
+import { useUserProfile } from '@/hooks/use-user-profile';
+import { DocuExtractHeader } from '@/components/docu-extract-header';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
+function ProfileDetail({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) {
+    return (
+        <div className="flex items-start space-x-4">
+            <div className="text-muted-foreground mt-1">{icon}</div>
+            <div>
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="font-medium">{value}</p>
+            </div>
+        </div>
+    );
+}
+
+export default function ProfilePage() {
+    const { userProfile, isLoading } = useUserProfile();
+
+    if (isLoading) {
+        return (
+             <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    return (
+        <div className="min-h-screen bg-background text-foreground">
+            <DocuExtractHeader />
+            <main className="container mx-auto p-4 md:p-8">
+                <div className="mb-4">
+                    <Button variant="outline" asChild>
+                        <Link href="/">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Home
+                        </Link>
+                    </Button>
+                </div>
+                <Card className="max-w-2xl mx-auto">
+                    <CardHeader>
+                        <CardTitle>My Profile</CardTitle>
+                        <CardDescription>This is your personal information as it appears in the system.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {userProfile ? (
+                            <>
+                                <ProfileDetail icon={<User />} label="Full Name" value={userProfile.name} />
+                                <ProfileDetail icon={<Phone />} label="Phone Number" value={userProfile.phone} />
+                                <ProfileDetail icon={<KeyRound />} label="User Key" value={userProfile.userKey} />
+                                <ProfileDetail icon={<Shield />} label="Role" value={<Badge variant={userProfile.role === 'Admin' ? 'destructive' : 'secondary'}>{userProfile.role}</Badge>} />
+                                <ProfileDetail 
+                                    icon={userProfile.status === 'Active' ? <CheckCircle className="text-green-500" /> : <XCircle className="text-destructive" />} 
+                                    label="Status" 
+                                    value={<Badge variant={userProfile.status === 'Active' ? 'default' : 'outline'}>{userProfile.status}</Badge>} 
+                                />
+                            </>
+                        ) : (
+                             <p className="text-center text-muted-foreground">Could not load user profile.</p>
+                        )}
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
+    );
+}

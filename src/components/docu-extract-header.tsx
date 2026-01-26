@@ -1,6 +1,6 @@
 'use client';
 
-import { LogOut, ScanSearch } from 'lucide-react';
+import { LogOut, ScanSearch, User } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth, useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -71,7 +71,14 @@ export function DocuExtractHeader() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href="/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>My Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>

@@ -252,23 +252,23 @@ export default function UsersPage() {
                                           </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
-                                          <DropdownMenuItem onClick={() => handleEdit(user)}>
+                                          <DropdownMenuItem onClick={() => handleEdit(user)} className="cursor-pointer">
                                               <Edit className="mr-2 h-4 w-4" />
                                               Edit
                                           </DropdownMenuItem>
                                           <DropdownMenuSeparator />
                                             {user.status === 'Active' ? (
-                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)} disabled={user.userKey === 'admin' || user.id === userProfile?.id}>
+                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="cursor-pointer">
                                                     <UserX className="mr-2 h-4 w-4" />
                                                     Deactivate
                                                 </DropdownMenuItem>
                                             ) : (
-                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
+                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)} className="cursor-pointer">
                                                     <UserCheck className="mr-2 h-4 w-4" />
                                                     Activate
                                                 </DropdownMenuItem>
                                             )}
-                                          <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                          <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
                                               <Trash2 className="mr-2 h-4 w-4" />
                                               Delete
                                           </DropdownMenuItem>
