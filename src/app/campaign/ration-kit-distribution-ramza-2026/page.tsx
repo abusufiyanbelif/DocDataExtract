@@ -3,12 +3,24 @@
 import { useState } from 'react';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TableFoot } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Plus, Trash2, Download } from 'lucide-react';
 import Link from 'next/link';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+
 
 interface RationItem {
   id: string;
@@ -62,6 +74,9 @@ export default function CampaignDetailsPage() {
   const campaignId = 'ration-kit-distribution-ramza-2026';
   const [rationLists, setRationLists] = useState<RationList>(initialRationLists);
   const [priceDate, setPriceDate] = useState('2025-01-11');
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [newMemberCount, setNewMemberCount] = useState('');
+  const { toast } = useToast();
 
   const handleItemChange = (
     memberCount: string,
@@ -128,9 +143,36 @@ export default function CampaignDetailsPage() {
     document.body.removeChild(link);
   };
 
+  const handleAddNewCategory = () => {
+    if (!newMemberCount || isNaN(Number(newMemberCount)) || Number(newMemberCount) <= 0) {
+        toast({
+            title: 'Invalid Input',
+            description: 'Please enter a valid positive number for members.',
+            variant: 'destructive',
+        });
+        return;
+    }
+    const newCountStr = String(Math.floor(Number(newMemberCount)));
+    if (rationLists[newCountStr]) {
+        toast({
+            title: 'Category Exists',
+            description: `A category for ${newCountStr} members already exists.`,
+            variant: 'destructive',
+        });
+        return;
+    }
+    setRationLists(prev => ({
+        ...prev,
+        [newCountStr]: [],
+    }));
+    setNewMemberCount('');
+    setIsAddCategoryOpen(false);
+  };
+  
+  const memberCategories = Object.keys(rationLists).sort((a, b) => Number(b) - Number(a));
 
   const renderRationTable = (memberCount: string) => {
-    const items = rationLists[memberCount];
+    const items = rationLists[memberCount] || [];
     const total = calculateTotal(items);
 
     return (
@@ -233,7 +275,7 @@ export default function CampaignDetailsPage() {
 
         <Card>
           <CardHeader>
-             <div className="flex justify-between items-start">
+             <div className="flex justify-between items-start flex-wrap gap-4">
                 <div>
                     <CardTitle>Ration Details 2026</CardTitle>
                     <CardDescription className="flex items-center gap-2 mt-2">
@@ -246,24 +288,61 @@ export default function CampaignDetailsPage() {
                         />
                     </CardDescription>
                 </div>
-                <Button onClick={handleDownload} variant="outline">
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Prices
-                </Button>
+                <div className="flex gap-2 flex-wrap justify-end">
+                    <Button onClick={handleDownload} variant="outline">
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Prices
+                    </Button>
+                    <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Category
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle>Add New Member Category</DialogTitle>
+                                <DialogDescription>
+                                    Enter the number of family members for the new ration list.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="member-count" className="text-right">
+                                        Members
+                                    </Label>
+                                    <Input
+                                        id="member-count"
+                                        type="number"
+                                        value={newMemberCount}
+                                        onChange={(e) => setNewMemberCount(e.target.value)}
+                                        className="col-span-3"
+                                        placeholder="e.g. 4"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
+                                <Button type="submit" onClick={handleAddNewCategory}>Add Category</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
              </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="5" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="5">For 5 Members</TabsTrigger>
-                <TabsTrigger value="3">For 3 Members</TabsTrigger>
-                <TabsTrigger value="2">For 2 Members</TabsTrigger>
-                <TabsTrigger value="1">For 1 Member</TabsTrigger>
+            <Tabs defaultValue={memberCategories[0] || ''} className="w-full">
+              <TabsList className="h-auto flex-wrap justify-start">
+                {memberCategories.map(count => (
+                    <TabsTrigger key={count} value={count}>For {count} Members</TabsTrigger>
+                ))}
               </TabsList>
-              <TabsContent value="5" className="mt-4">{renderRationTable('5')}</TabsContent>
-              <TabsContent value="3" className="mt-4">{renderRationTable('3')}</TabsContent>
-              <TabsContent value="2" className="mt-4">{renderRationTable('2')}</TabsContent>
-              <TabsContent value="1" className="mt-4">{renderRationTable('1')}</TabsContent>
+              {memberCategories.map(count => (
+                <TabsContent key={count} value={count} className="mt-4">
+                    {renderRationTable(count)}
+                </TabsContent>
+              ))}
             </Tabs>
           </CardContent>
         </Card>
