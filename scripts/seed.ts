@@ -5,6 +5,7 @@ config();
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
+import { modules, permissions } from '@/lib/modules';
 
 // Firebase config is read from environment variables
 const firebaseConfig = {
@@ -54,6 +55,15 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
     log("Step 2: Seeding Firestore Data");
     log(" -> Preparing sample data...");
 
+    // Define full permissions for the Admin role
+    const allPermissions: any = {};
+    for (const mod of modules) {
+        allPermissions[mod.id] = {};
+        for (const perm of permissions) {
+            allPermissions[mod.id][perm] = true;
+        }
+    }
+
     // Seed Users
     const adminUserDocRef = doc(collection(firestore, 'users'));
     batch.set(adminUserDocRef, {
@@ -62,6 +72,7 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
         userKey: 'admin',
         role: 'Admin',
         status: 'Active',
+        permissions: allPermissions,
         createdAt: serverTimestamp(),
     });
 
@@ -72,6 +83,7 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
         userKey: 'sampleuser',
         role: 'User',
         status: 'Active',
+        permissions: {},
         createdAt: serverTimestamp(),
     });
 
@@ -128,8 +140,8 @@ const run = async () => {
     log('Starting database seeding script...');
 
     if (!firebaseConfig.apiKey || !firebaseConfig.projectId || firebaseConfig.apiKey.includes('your-api-key')) {
-    console.error('\\nERROR: Firebase configuration is missing.');
-    console.error('Please copy the values from your Firebase project console into your .env file.\\n');
+    console.error('\nERROR: Firebase configuration is missing.');
+    console.error('Please copy the values from your Firebase project console into your .env file.\n');
     return;
     }
     
@@ -142,7 +154,7 @@ const run = async () => {
     await seedDatabase(firestore, log);
     log('✅ Seeding script completed successfully.');
     } catch (e) {
-    console.error('\\n❌ Seeding script failed.');
+    console.error('\n❌ Seeding script failed.');
     console.error(e);
     }
 };

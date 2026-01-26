@@ -276,9 +276,9 @@ export default function DonationsPage() {
                   </TableBody>
                   <TableFooter>
                     <TableRow>
-                        <TableCell colSpan={isAdmin ? 2 : 1} className="text-right font-bold">Total Donations</TableCell>
+                        <TableCell colSpan={isAdmin ? 3 : 2} className="text-right font-bold">Total Donations</TableCell>
                         <TableCell className="text-right font-bold">₹{totalDonationAmount.toFixed(2)}</TableCell>
-                        <TableCell colSpan={5}></TableCell>
+                        <TableCell colSpan={4}></TableCell>
                     </TableRow>
                   </TableFooter>
               </Table>

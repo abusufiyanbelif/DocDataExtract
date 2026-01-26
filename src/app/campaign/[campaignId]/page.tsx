@@ -372,9 +372,9 @@ export default function CampaignDetailsPage() {
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 4 : 3} className="text-right font-bold">Total</TableCell>
+                  <TableCell colSpan={4} className="text-right font-bold">Total</TableCell>
                   <TableCell className="text-right font-bold">₹{total.toFixed(2)}</TableCell>
-                  <TableCell></TableCell>
+                  {isAdmin && <TableCell></TableCell>}
                 </TableRow>
               </TableFooter>
             </Table>
