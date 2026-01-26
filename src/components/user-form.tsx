@@ -28,7 +28,6 @@ import { modules, permissions } from '@/lib/modules';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from './ui/separator';
-import { ScrollArea } from './ui/scroll-area';
 
 const permissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()).optional()).optional();
 
@@ -37,6 +36,7 @@ const baseSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
   userKey: z.string().min(3, { message: "User Key must be at least 3 characters." }).regex(/^[a-z0-9_]+$/, { message: 'User Key can only contain lowercase letters, numbers, and underscores.' }),
   role: z.enum(['Admin', 'User']),
+  status: z.enum(['Active', 'Inactive']),
   permissions: permissionsSchema,
 });
 
@@ -50,6 +50,7 @@ interface UserFormProps {
 
 export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
   const isEditing = !!user;
+  const isDefaultAdmin = user?.userKey === 'admin';
   const { toast } = useToast();
 
   const formSchema = baseSchema.extend({
@@ -65,6 +66,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
       phone: user?.phone || '',
       userKey: user?.userKey || '',
       role: user?.role || 'User',
+      status: user?.status || 'Active',
       password: '',
       permissions: user?.permissions || {},
     },
@@ -163,30 +165,56 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
         
         <Separator />
 
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="User">User</SelectItem>
-                  <SelectItem value="Admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                'Admin' has all permissions. 'User' can have custom permissions.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Role</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin}>
+                    <FormControl>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                    <SelectItem value="User">User</SelectItem>
+                    <SelectItem value="Admin">Admin</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormDescription>
+                    {isDefaultAdmin ? 'The default admin role cannot be changed.' : "'Admin' has all permissions."}
+                </FormDescription>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Status</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin}>
+                    <FormControl>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a status" />
+                    </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormDescription>
+                    Inactive users cannot log in.
+                </FormDescription>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
 
         <div className="space-y-2">
             <FormLabel>Module Permissions</FormLabel>

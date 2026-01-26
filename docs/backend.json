@@ -25,6 +25,14 @@
           ],
           "description": "The user's role. 'Admin' has all permissions by default."
         },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Active",
+            "Inactive"
+          ],
+          "description": "The current status of the user account."
+        },
         "permissions": {
           "type": "object",
           "description": "Granular permissions for each module. Applies to all roles, but 'Admin' will have all fields set to true.",
@@ -51,7 +59,8 @@
       "required": [
         "name",
         "userKey",
-        "role"
+        "role",
+        "status"
       ]
     },
     "RationItem": {

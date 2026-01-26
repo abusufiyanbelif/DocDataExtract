@@ -47,5 +47,6 @@ export interface UserProfile extends DocumentData {
   phone: string;
   userKey: string;
   role: 'Admin' | 'User';
+  status: 'Active' | 'Inactive';
   permissions?: UserPermissions;
 }

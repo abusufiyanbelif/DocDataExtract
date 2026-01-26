@@ -39,6 +39,11 @@ export const signInWithLoginId = async (auth: Auth, firestore: Firestore, loginI
     }
 
     const userData = userDoc.data() as UserProfile;
+    
+    if (userData.status === 'Inactive') {
+        throw new Error('This account has been deactivated. Please contact an administrator.');
+    }
+
     const { userKey } = userData;
 
     if (!password) {

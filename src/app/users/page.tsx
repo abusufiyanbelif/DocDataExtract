@@ -12,11 +12,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, ShieldAlert, UserCheck, UserX } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -71,6 +72,28 @@ export default function UsersPage() {
   const handleDeleteClick = (id: string) => {
     setUserToDelete(id);
     setIsDeleteDialogOpen(true);
+  };
+  
+  const handleToggleStatus = async (userToUpdate: UserProfile) => {
+    if (!firestore || !userProfile || userProfile.role !== 'Admin') return;
+    if (userToUpdate.userKey === 'admin') {
+        toast({ title: 'Action Forbidden', description: 'The default admin user cannot be deactivated.', variant: 'destructive' });
+        return;
+    }
+    if (userToUpdate.id === userProfile.id) {
+        toast({ title: 'Action Forbidden', description: 'You cannot deactivate your own account.', variant: 'destructive' });
+        return;
+    }
+
+    const newStatus = userToUpdate.status === 'Active' ? 'Inactive' : 'Active';
+    const docRef = doc(firestore, 'users', userToUpdate.id);
+    try {
+        await updateDoc(docRef, { status: newStatus });
+        toast({ title: 'Status Updated', description: `${userToUpdate.name}'s account is now ${newStatus}.` });
+    } catch (error) {
+        console.error("Error updating status:", error);
+        toast({ title: 'Error', description: 'Could not update user status.', variant: 'destructive' });
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -215,6 +238,7 @@ export default function UsersPage() {
                           <TableHead>Phone</TableHead>
                           <TableHead>User Key</TableHead>
                           <TableHead>Role</TableHead>
+                          <TableHead>Status</TableHead>
                       </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -232,7 +256,19 @@ export default function UsersPage() {
                                               <Edit className="mr-2 h-4 w-4" />
                                               Edit
                                           </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                          <DropdownMenuSeparator />
+                                            {user.status === 'Active' ? (
+                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)} disabled={user.userKey === 'admin' || user.id === userProfile?.id}>
+                                                    <UserX className="mr-2 h-4 w-4" />
+                                                    Deactivate
+                                                </DropdownMenuItem>
+                                            ) : (
+                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
+                                                    <UserCheck className="mr-2 h-4 w-4" />
+                                                    Activate
+                                                </DropdownMenuItem>
+                                            )}
+                                          <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
                                               <Trash2 className="mr-2 h-4 w-4" />
                                               Delete
                                           </DropdownMenuItem>
@@ -246,11 +282,14 @@ export default function UsersPage() {
                               <TableCell>
                                 <Badge variant={user.role === 'Admin' ? 'destructive' : 'secondary'}>{user.role}</Badge>
                               </TableCell>
+                              <TableCell>
+                                <Badge variant={user.status === 'Active' ? 'default' : 'outline'}>{user.status}</Badge>
+                              </TableCell>
                           </TableRow>
                       ))}
                       {users.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                                 No users found. The database may be empty.
                             </TableCell>
                         </TableRow>

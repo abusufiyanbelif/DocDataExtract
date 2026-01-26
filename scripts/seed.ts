@@ -61,6 +61,7 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
         phone: '0000000000',
         userKey: 'admin',
         role: 'Admin',
+        status: 'Active',
         createdAt: serverTimestamp(),
     });
 
@@ -70,6 +71,7 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
         phone: '1111111111',
         userKey: 'sampleuser',
         role: 'User',
+        status: 'Active',
         createdAt: serverTimestamp(),
     });
 
