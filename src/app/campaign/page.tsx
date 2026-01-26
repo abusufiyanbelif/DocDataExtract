@@ -37,7 +37,8 @@ export default function CampaignPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Campaigns</CardTitle>
-            {userProfile?.role === 'Admin' && (
+            {isProfileLoading && <Skeleton className="h-10 w-44" />}
+            {!isProfileLoading && userProfile?.role === 'Admin' && (
               <Button asChild>
                 <Link href="/campaign/create">
                   <Plus className="mr-2 h-4 w-4" />

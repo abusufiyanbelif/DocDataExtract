@@ -43,7 +43,10 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
                 try {
                     userCredential = await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
                 } catch (signInError: any) {
-                    throw new Error("Admin password seems to be incorrect. Please check Firebase credentials.");
+                    if (signInError.code === 'auth/invalid-credential' || signInError.code === 'auth/wrong-password') {
+                        throw new Error("Admin user already exists in Firebase Auth, but the provided password ('password') is incorrect. Please verify the admin password in Firebase or delete the admin auth user to allow auto-recreation.");
+                    }
+                    throw new Error(`Admin sign-in failed: ${signInError.message}`);
                 }
             } else if (error.code === 'auth/configuration-not-found') {
                 throw new Error("Login failed: The Email/Password sign-in provider is not enabled in your Firebase project. Please go to the Firebase console, navigate to Authentication > Sign-in method, and enable 'Email/Password'.");
