@@ -3,6 +3,9 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 
 const campaigns = [
   {
@@ -24,8 +27,14 @@ export default function CampaignPage() {
       <DocuExtractHeader />
       <main className="container mx-auto p-4 md:p-8">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Campaigns</CardTitle>
+            <Button asChild>
+                <Link href="/campaign/create">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Campaign
+                </Link>
+            </Button>
           </CardHeader>
           <CardContent>
             <Table>
