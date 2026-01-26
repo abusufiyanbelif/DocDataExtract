@@ -1,19 +1,46 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
-import { useEffect } from 'react';
+import { useUser, useFirestore } from '@/firebase';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Progress } from './ui/progress';
 
 const publicPaths = ['/login'];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useUser();
+  const { user, isLoading: isAuthLoading } = useUser();
+  const firestore = useFirestore();
   const pathname = usePathname();
   const router = useRouter();
 
+  const [loadingMessage, setLoadingMessage] = useState('Initializing...');
+  const [progress, setProgress] = useState(0);
+
   useEffect(() => {
-    if (isLoading) return;
+    let unmounted = false;
+    
+    const updateProgress = (msg: string, val: number) => {
+        if (unmounted) return;
+        setLoadingMessage(msg);
+        setProgress(val);
+    }
+    
+    if (isAuthLoading || !firestore) {
+        updateProgress('Connecting to services...', 25);
+    } else {
+        updateProgress('Checking authentication...', 60);
+    }
+    
+    return () => { unmounted = true; }
+
+  }, [isAuthLoading, firestore])
+
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+
+    setProgress(100);
 
     const isPublicPath = publicPaths.includes(pathname);
 
@@ -22,23 +49,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else if (user && isPublicPath) {
       router.push('/');
     }
-  }, [user, isLoading, pathname, router]);
+  }, [user, isAuthLoading, pathname, router]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const isLoading = isAuthLoading || progress < 100;
   
-  const isPublic = publicPaths.includes(pathname);
-  if ((!user && !isPublic) || (user && isPublic)) {
-      return (
-          <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+  if (isLoading) {
+    const isPublic = publicPaths.includes(pathname);
+    if ((!user && !isPublic) || (user && isPublic)) {
+        return (
+          <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+            <div className="w-full max-w-xs text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+              <p className="text-muted-foreground mb-2">{loadingMessage}</p>
+              <Progress value={progress} className="w-full" />
+            </div>
           </div>
         );
+    }
   }
 
   return <>{children}</>;
