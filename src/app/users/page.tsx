@@ -158,7 +158,7 @@ export default function UsersPage() {
             });
             toast({ 
                 title: 'Success', 
-                description: `User '${data.name}' created. Manually create auth user with email '${data.userKey}@docdataextract.app'.`
+                description: `User '${data.name}' created. Manually create auth user with email '${data.userKey}@docdataextract.app' and password '${data.password}'.`
             });
         }
         setIsFormOpen(false);
