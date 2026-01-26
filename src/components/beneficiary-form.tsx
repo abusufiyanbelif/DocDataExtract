@@ -3,10 +3,12 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -38,6 +40,7 @@ const formSchema = z.object({
   referralBy: z.string().min(2, { message: "Referral is required." }),
   kitAmount: z.coerce.number().min(0, { message: "Amount cannot be negative."}),
   status: z.enum(['Given', 'Pending', 'Hold', 'Need More Details']),
+  idProofFile: z.instanceof(File).optional(),
 });
 
 export type BeneficiaryFormData = z.infer<typeof formSchema>;
@@ -68,9 +71,25 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     },
   });
 
-  const { formState: { isSubmitting }, watch, setValue } = form;
+  const { formState: { isSubmitting }, watch, setValue, register } = form;
+  const [preview, setPreview] = useState<string | null>(beneficiary?.idProofUrl || null);
+  const idProofFile = watch('idProofFile');
 
   const membersValue = watch('members');
+
+  useEffect(() => {
+    if (idProofFile) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(idProofFile);
+    } else if (beneficiary?.idProofUrl) {
+      setPreview(beneficiary.idProofUrl);
+    } else {
+        setPreview(null);
+    }
+  }, [idProofFile, beneficiary?.idProofUrl]);
 
   useEffect(() => {
     const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + Number(item.price || 0), 0);
@@ -279,6 +298,21 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             )}
             />
         </div>
+        
+        <FormItem>
+            <FormLabel>ID Proof Document</FormLabel>
+            <FormControl>
+                <Input type="file" accept="image/*" {...register('idProofFile')} />
+            </FormControl>
+            <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
+            <FormMessage />
+        </FormItem>
+        
+        {preview && (
+            <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
+                <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
+            </div>
+        )}
 
         <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>

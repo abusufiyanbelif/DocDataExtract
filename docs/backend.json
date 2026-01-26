@@ -159,6 +159,10 @@
             "Need More Details"
           ],
           "description": "The current status of the beneficiary's ration kit."
+        },
+        "idProofUrl": {
+          "type": "string",
+          "description": "URL of the uploaded ID proof document."
         }
       },
       "required": [

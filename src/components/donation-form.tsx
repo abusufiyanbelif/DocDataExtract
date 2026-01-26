@@ -3,6 +3,8 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import {
   Form,
   FormControl,
@@ -55,7 +57,23 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     },
   });
 
-  const { formState: { isSubmitting }, register } = form;
+  const { formState: { isSubmitting }, register, watch } = form;
+  const [preview, setPreview] = useState<string | null>(donation?.screenshotUrl || null);
+  const screenshotFile = watch('screenshotFile');
+
+  useEffect(() => {
+    if (screenshotFile) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setPreview(reader.result as string);
+        };
+        reader.readAsDataURL(screenshotFile);
+    } else if (donation?.screenshotUrl) {
+        setPreview(donation.screenshotUrl);
+    } else {
+        setPreview(null);
+    }
+  }, [screenshotFile, donation?.screenshotUrl]);
 
   return (
     <Form {...form}>
@@ -172,6 +190,12 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
             </FormDescription>
             <FormMessage />
         </FormItem>
+
+        {preview && (
+            <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
+                <Image src={preview} alt="Donation screenshot preview" fill style={{ objectFit: 'contain' }} />
+            </div>
+        )}
         
         <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>

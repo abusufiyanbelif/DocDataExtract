@@ -1,8 +1,10 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useCollection, useDoc } from '@/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import Image from 'next/image';
+import { useFirestore, useCollection, useDoc, useStorage } from '@/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, setDoc } from 'firebase/firestore';
 import type { Beneficiary, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -12,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +48,7 @@ export default function BeneficiariesPage() {
   const params = useParams();
   const campaignId = params.campaignId as string;
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
@@ -65,6 +68,8 @@ export default function BeneficiariesPage() {
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [beneficiaryToDelete, setBeneficiaryToDelete] = useState<string | null>(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [imageToView, setImageToView] = useState<string | null>(null);
 
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -90,6 +95,11 @@ export default function BeneficiariesPage() {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleViewImage = (url: string) => {
+    setImageToView(url);
+    setIsImageViewerOpen(true);
+  };
+
   const handleDeleteConfirm = async () => {
     if (beneficiaryToDelete && firestore && campaignId && isAdmin) {
         const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiaryToDelete);
@@ -107,22 +117,43 @@ export default function BeneficiariesPage() {
   };
   
   const handleFormSubmit = async (data: BeneficiaryFormData) => {
-    if (!firestore || !campaignId || !isAdmin) return;
+    if (!firestore || !storage || !campaignId || !isAdmin) return;
+
+    const docRef = editingBeneficiary
+        ? doc(firestore, `campaigns/${campaignId}/beneficiaries`, editingBeneficiary.id)
+        : doc(collection(firestore, `campaigns/${campaignId}/beneficiaries`));
+
+    let idProofUrl = editingBeneficiary?.idProofUrl || '';
 
     try {
-        if (editingBeneficiary) {
-            const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, editingBeneficiary.id);
-            await updateDoc(docRef, data);
-            toast({ title: 'Success', description: 'Beneficiary updated.' });
-        } else {
-            const collectionRef = collection(firestore, `campaigns/${campaignId}/beneficiaries`);
-            await addDoc(collectionRef, {
-                ...data,
+        if (data.idProofFile) {
+            toast({
+                title: "Uploading ID Proof...",
+                description: `Please wait while '${data.idProofFile.name}' is uploaded.`,
+            });
+            const file = data.idProofFile;
+            const filePath = `beneficiaries/${campaignId}/${docRef.id}_${file.name}`;
+            const fileRef = storageRef(storage, filePath);
+
+            const uploadResult = await uploadBytes(fileRef, file);
+            idProofUrl = await getDownloadURL(uploadResult.ref);
+        }
+
+        const { idProofFile, ...beneficiaryData } = data;
+
+        const finalData = {
+            ...beneficiaryData,
+            idProofUrl,
+            ...(!editingBeneficiary && {
                 addedDate: new Date().toISOString().split('T')[0],
                 createdAt: serverTimestamp(),
-            });
-            toast({ title: 'Success', description: 'Beneficiary added.' });
-        }
+            }),
+        };
+        
+        await setDoc(docRef, finalData, { merge: true });
+
+        toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.` });
+
     } catch (error) {
         console.error("Error saving beneficiary:", error);
         toast({ title: 'Error', description: 'Could not save beneficiary.', variant: 'destructive' });
@@ -313,6 +344,7 @@ export default function BeneficiariesPage() {
                           <TableHead>Added Date</TableHead>
                           <TableHead>ID Proof Type</TableHead>
                           <TableHead>ID Number</TableHead>
+                          <TableHead>ID Proof</TableHead>
                           <TableHead>Referred By</TableHead>
                           <TableHead className="text-right">Kit Amount (₹)</TableHead>
                           <TableHead>Status</TableHead>
@@ -322,7 +354,7 @@ export default function BeneficiariesPage() {
                       {areBeneficiariesLoading && (
                         [...Array(3)].map((_, i) => (
                            <TableRow key={i}>
-                                <TableCell colSpan={isAdmin ? 14 : 13}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={isAdmin ? 15 : 14}><Skeleton className="h-6 w-full" /></TableCell>
                            </TableRow>
                         ))
                       )}
@@ -359,6 +391,13 @@ export default function BeneficiariesPage() {
                               <TableCell>{beneficiary.addedDate}</TableCell>
                               <TableCell>{beneficiary.idProofType}</TableCell>
                               <TableCell>{beneficiary.idNumber}</TableCell>
+                              <TableCell>
+                                  {beneficiary.idProofUrl ? (
+                                    <Button variant="outline" size="sm" onClick={() => handleViewImage(beneficiary.idProofUrl!)}>
+                                        <Eye className="mr-2 h-4 w-4" /> View
+                                    </Button>
+                                  ) : "N/A"}
+                              </TableCell>
                               <TableCell>{beneficiary.referralBy}</TableCell>
                               <TableCell className="text-right font-medium">₹{beneficiary.kitAmount.toFixed(2)}</TableCell>
                               <TableCell>
@@ -372,7 +411,7 @@ export default function BeneficiariesPage() {
                       ))}
                       {!areBeneficiariesLoading && beneficiaries.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={isAdmin ? 14 : 13} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={isAdmin ? 15 : 14} className="text-center h-24 text-muted-foreground">
                                 No beneficiaries added yet.
                             </TableCell>
                         </TableRow>
@@ -380,7 +419,7 @@ export default function BeneficiariesPage() {
                   </TableBody>
                   <TableFooter>
                     <TableRow>
-                        <TableCell colSpan={isAdmin ? 12 : 11} className="text-right font-bold">Total Kit Amount Required</TableCell>
+                        <TableCell colSpan={isAdmin ? 13 : 12} className="text-right font-bold">Total Kit Amount Required</TableCell>
                         <TableCell className="text-right font-bold">₹{totalKitAmount.toFixed(2)}</TableCell>
                         <TableCell></TableCell>
                     </TableRow>
@@ -447,6 +486,19 @@ export default function BeneficiariesPage() {
                     Import
                 </Button>
             </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+        <DialogContent className="max-w-3xl">
+            <DialogHeader>
+                <DialogTitle>ID Proof</DialogTitle>
+            </DialogHeader>
+            {imageToView && (
+                <div className="relative h-[70vh] w-full mt-4">
+                    <Image src={imageToView} alt="ID proof" fill className="object-contain" />
+                </div>
+            )}
         </DialogContent>
       </Dialog>
 

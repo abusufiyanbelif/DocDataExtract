@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useRef, type ChangeEvent, type MouseEvent } from 'react';
-import { UploadCloud, ZoomIn, ZoomOut, SearchX, X, File as FileIcon } from 'lucide-react';
+import { useState, type ChangeEvent } from 'react';
+import { UploadCloud, X, File as FileIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,30 +23,24 @@ export function FileUploader({
   const [previews, setPreviews] = useState<string[]>([]);
   const [fileNames, setFileNames] = useState<string[]>([]);
   const [activePreview, setActivePreview] = useState<string | null>(null);
-  const [scale, setScale] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const imageRef = useRef<HTMLDivElement>(null);
-  const startPos = useRef({ x: 0, y: 0 });
 
   const handleFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      const newPreviews: string[] = [];
-      const newFileNames: string[] = [];
       const filePromises = Array.from(files).map(file => {
-        return new Promise<string>((resolve) => {
+        return new Promise<{ dataUri: string, name: string }>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => {
-            newPreviews.push(reader.result as string);
-            newFileNames.push(file.name);
-            resolve(reader.result as string)
+            resolve({ dataUri: reader.result as string, name: file.name });
           };
           reader.readAsDataURL(file);
         });
       });
 
-      Promise.all(filePromises).then(dataUris => {
+      Promise.all(filePromises).then(results => {
+        const dataUris = results.map(r => r.dataUri);
+        const newFileNames = results.map(r => r.name);
+        
         if (multiple) {
             const allDataUris = [...previews, ...dataUris];
             const allFileNames = [...fileNames, ...newFileNames];
@@ -63,9 +57,6 @@ export function FileUploader({
             setActivePreview(dataUris[0]);
         }
       });
-      // Reset zoom/pan when new file is uploaded
-      setScale(1);
-      setPosition({ x: 0, y: 0 });
     }
   };
   
@@ -86,38 +77,6 @@ export function FileUploader({
     setFileNames([]);
     onFileSelect([]);
     setActivePreview(null);
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  };
-
-  const handleZoomIn = () => setScale(s => s * 1.2);
-  const handleZoomOut = () => setScale(s => s / 1.2);
-  const handleResetZoom = () => {
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  };
-  
-  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    if (scale <= 1 || (activePreview && activePreview.startsWith('data:application/pdf'))) return;
-    setIsDragging(true);
-    startPos.current = { x: e.clientX - position.x, y: e.clientY - position.y };
-    e.currentTarget.style.cursor = 'grabbing';
-  };
-  
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!isDragging || scale <= 1) return;
-    const x = e.clientX - startPos.current.x;
-    const y = e.clientY - startPos.current.y;
-    setPosition({ x, y });
-  };
-  
-  const handleMouseUp = (e: MouseEvent<HTMLDivElement>) => {
-    setIsDragging(false);
-    if (activePreview && activePreview.startsWith('data:application/pdf')) {
-        e.currentTarget.style.cursor = 'default';
-        return;
-    }
-    e.currentTarget.style.cursor = scale > 1 ? 'grab' : 'default';
   };
 
   const isPdf = (preview: string) => preview.startsWith('data:application/pdf');
@@ -126,43 +85,29 @@ export function FileUploader({
     return (
       <div className="flex flex-col items-center gap-4 w-full">
         <div 
-          className="relative w-full max-w-sm h-64 border-2 border-dashed rounded-lg overflow-hidden bg-secondary/20"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          ref={imageRef}
+          className="relative w-full max-w-sm h-64 border-2 border-dashed rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center"
         >
-          {activePreview && (
+          {activePreview ? (
             isPdf(activePreview) ? (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 text-center">
                 <FileIcon className="w-16 h-16" />
-                <p className="mt-2 text-sm font-medium">{fileNames[previews.indexOf(activePreview)]}</p>
+                <p className="mt-2 text-sm font-medium break-all">{fileNames[previews.indexOf(activePreview)]}</p>
               </div>
             ) : (
               <Image 
                 src={activePreview} 
                 alt="File preview" 
                 fill 
-                style={{ 
-                  objectFit: 'contain',
-                  transform: `scale(${scale}) translate(${position.x / scale}px, ${position.y / scale}px)`,
-                  cursor: scale > 1 ? 'grab' : 'default',
-                  transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-                }} 
+                style={{ objectFit: 'contain' }} 
                 data-ai-hint="document preview"
-                draggable="false"
               />
             )
+          ) : (
+             <p className="text-muted-foreground">No file selected for preview</p>
           )}
-           <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/70 p-1 rounded-md">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomIn} disabled={activePreview && isPdf(activePreview)}><ZoomIn /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut} disabled={activePreview && isPdf(activePreview)}><ZoomOut /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleResetZoom} disabled={activePreview && isPdf(activePreview)}><SearchX /></Button>
-          </div>
         </div>
 
-        {multiple && previews.length > 0 && (
+        {multiple && previews.length > 1 && (
           <div className="w-full flex flex-wrap gap-2 justify-center">
             {previews.map((preview, index) => (
               <Card 
@@ -173,7 +118,7 @@ export function FileUploader({
                 )}
                 onClick={() => setActivePreview(preview)}
               >
-                <CardContent className="p-0 relative w-full h-full flex items-center justify-center bg-secondary/20">
+                <CardContent className="p-0 relative w-full h-full flex items-center justify-center bg-secondary/20 rounded-md overflow-hidden">
                   {isPdf(preview) ? (
                     <FileIcon className="w-8 h-8 text-muted-foreground" />
                   ) : (
@@ -196,7 +141,7 @@ export function FileUploader({
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground">{multiple ? `${fileNames.length} files selected` : fileNames[0]}</p>
+        <p className="text-sm text-muted-foreground">{multiple ? `${fileNames.length} files selected` : (fileNames[0] || 'No file selected')}</p>
         <div className="flex gap-2">
             <label htmlFor="file-reupload" className={cn(buttonVariants({ variant: 'outline' }), "cursor-pointer")}>
                 {multiple ? 'Add more files' : 'Change file'}
