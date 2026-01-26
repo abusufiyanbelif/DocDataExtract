@@ -44,6 +44,7 @@ type RationList = {
 }
 
 const initialRationLists: RationList = {
+    'General': [],
     '5': [
         { id: '5-1', name: 'Rice', quantity: '10 kg', price: 600, notes: '@60/kg' },
         { id: '5-2', name: 'Wheat flour', quantity: '5 kg', price: 250, notes: 'Ashirvad' },
@@ -189,7 +190,7 @@ export default function CampaignDetailsPage() {
 
                 const ws = XLSX.utils.json_to_sheet(worksheetData);
                 ws['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 10 }];
-                XLSX.utils.book_append_sheet(wb, ws, `For ${memberCount} Members`);
+                XLSX.utils.book_append_sheet(wb, ws, memberCount === 'General' ? 'General' : `For ${memberCount} Members`);
             }
         });
 
@@ -200,7 +201,11 @@ export default function CampaignDetailsPage() {
 
         doc.text(`Ration Details - Price Date: ${priceDate}`, 14, 10);
 
-        const sortedMemberCategories = Object.keys(rationLists).sort((a, b) => Number(b) - Number(a));
+        const sortedMemberCategories = Object.keys(rationLists).sort((a, b) => {
+            if (a === 'General') return -1;
+            if (b === 'General') return 1;
+            return Number(b) - Number(a);
+        });
         
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
@@ -220,7 +225,7 @@ export default function CampaignDetailsPage() {
                 ]);
                 
                 (doc as any).autoTable({
-                    head: [[`For ${memberCount} Members`]],
+                    head: [[memberCount === 'General' ? 'General' : `For ${memberCount} Members`]],
                     startY: startY,
                     theme: 'plain',
                     styles: { fontStyle: 'bold', fontSize: 12 }
@@ -268,7 +273,11 @@ export default function CampaignDetailsPage() {
     setIsAddCategoryOpen(false);
   };
   
-  const memberCategories = Object.keys(rationLists).sort((a, b) => Number(b) - Number(a));
+  const memberCategories = Object.keys(rationLists).sort((a, b) => {
+    if (a === 'General') return -1;
+    if (b === 'General') return 1;
+    return Number(b) - Number(a);
+  });
 
   const renderRationTable = (memberCount: string) => {
     const items = rationLists[memberCount] || [];
@@ -445,7 +454,7 @@ export default function CampaignDetailsPage() {
             <Tabs defaultValue={memberCategories[0] || ''} className="w-full">
               <TabsList className="h-auto flex-wrap justify-start">
                 {memberCategories.map(count => (
-                    <TabsTrigger key={count} value={count}>For {count} Members</TabsTrigger>
+                    <TabsTrigger key={count} value={count}>{count === 'General' ? 'General' : `For ${count} Members`}</TabsTrigger>
                 ))}
               </TabsList>
               {memberCategories.map(count => (
