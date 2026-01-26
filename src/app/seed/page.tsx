@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useFirestore } from '@/firebase';
 import { seedDatabase, createAdminUser } from '@/lib/seed';
+import { signInWithLoginId } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -56,23 +57,31 @@ export default function SeedPage() {
     try {
       await createAdminUser(auth, log);
       await seedDatabase(firestore, log);
-      log("Setup Complete! You'll now be redirected to the login page.");
+
+      log("Step 3: Automatic Admin Login");
+      log(" -> Signing in with default admin credentials...");
+      await signInWithLoginId(auth, firestore, 'admin', 'password');
+      log(" -> Login successful!");
+
+      log("Setup Complete! You'll now be redirected to the homepage.");
       toast({
         title: 'Setup Complete!',
-        description: "You'll be redirected to the login page shortly.",
+        description: "You'll be automatically logged in and redirected to the homepage.",
         duration: 5000,
       });
-      setTimeout(() => router.push('/login'), 2000);
+      setTimeout(() => router.push('/'), 2000);
 
     } catch (error: any) {
        if (error.message.includes('auth/configuration-not-found')) {
             setSetupError(error.message);
         } else {
+            const errorMessage = error.message || 'An unknown error occurred.';
             toast({
                 title: 'Seeding Failed',
-                description: 'An error occurred during seeding. Check the progress log for details.',
+                description: `An error occurred during seeding: ${errorMessage}`,
                 variant: 'destructive',
             });
+            log(`ERROR: ${errorMessage}`);
         }
       setIsSeeding(false);
     }
@@ -124,7 +133,7 @@ export default function SeedPage() {
             ) : (
                 <>
                     <CardDescription>
-                      This tool performs the required one-time setup for the application. It solves the initial "chicken-and-egg" problem: you can't log in without a user in the database, and you can't create a user without being logged in. This tool creates the first admin user and populates the database with sample data.
+                      This tool performs the required one-time setup for the application. It solves the initial "chicken-and-egg" problem: you can't log in without a user in the database, and you can't create a user without being logged in. This tool creates the first admin user, populates the database, and automatically logs you in.
                     </CardDescription>
                     
                     {setupError && (
@@ -134,7 +143,7 @@ export default function SeedPage() {
                             <AlertDescription className="space-y-3">
                                 <div>
                                     <p className="font-bold">Why is this required?</p>
-                                    <p>Your app's normal login uses your database, just as you expect. However, to create the very first admin user and collections securely, the app must prove its identity to Firebase. Enabling the 'Email/Password' provider is the <span className="font-bold">one-time key</span> that authorizes this initial setup. It is not used for regular user logins.</p>
+                                    <p>To create the very first admin user securely, the app must prove its identity to Firebase. Enabling the 'Email/Password' provider is the <span className="font-bold">one-time key</span> that authorizes this initial setup. It is not used for regular user logins, which rely on the database.</p>
                                 </div>
                                 <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
                                     <Link href={authUrl} target="_blank">
