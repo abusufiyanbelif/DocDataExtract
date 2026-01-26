@@ -31,25 +31,14 @@ import {
 } from "@/components/ui/dialog";
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
+import { initialUsers, type User as UserType } from '@/lib/users';
 
+export type User = Omit<UserType, 'password'>;
 
-const initialUsers = [
-  { id: '0', name: 'Admin', phone: '0000000000', userKey: 'admin', role: 'Admin' as const },
-  { id: '1', name: 'Moosa Shaikh', phone: '8421708907', userKey: 'moosashaikh', role: 'User' as const },
-  { id: '2', name: 'Maaz Shaikh', phone: '9372145889', userKey: 'maazshaikh', role: 'User' as const },
-  { id: '3', name: 'Abu Rehan Bedrekar', phone: '7276224160', userKey: 'aburehanbedrekar', role: 'User' as const },
-  { id: '4', name: 'Abusufiya Belief', phone: '7887646583', userKey: 'abusufiyabelief', role: 'User' as const },
-  { id: '5', name: 'Nayyar Ahmed Karajgi', phone: '9028976036', userKey: 'nayyarahmedkarajgi', role: 'User' as const },
-  { id: '6', name: 'Arif Baig', phone: '9225747045', userKey: 'arifbaig', role: 'User' as const },
-  { id: '7', name: 'Mazhar Shaikh', phone: '8087669914', userKey: 'mazharshaikh', role: 'User' as const },
-  { id: '8', name: 'Mujahid Chabukswar', phone: '8087420544', userKey: 'mujahidchabukswar', role: 'User' as const },
-  { id: '9', name: 'Muddasir Bhairamadgi', phone: '7385557820', userKey: 'muddasirbhairamadgi', role: 'User' as const },
-];
-
-export type User = (typeof initialUsers)[number];
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  // We remove password from the state
+  const [users, setUsers] = useState<User[]>(initialUsers.map(({password, ...rest}) => rest));
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -83,7 +72,6 @@ export default function UsersPage() {
   const handleFormSubmit = (data: UserFormData) => {
     const isNew = !editingUser;
     
-    // Simple check for userKey uniqueness
     if (users.some(u => u.userKey === data.userKey && u.id !== editingUser?.id)) {
         toast({
             title: 'User Key Exists',
@@ -92,19 +80,23 @@ export default function UsersPage() {
         });
         return;
     }
+    
+    // In a real app, you would handle password updates securely.
+    // Here we just use the user data for the UI.
+    const { password, ...userData } = data;
 
     if (isNew) {
       const newUser: User = {
         id: Date.now().toString(),
-        name: data.name,
-        phone: data.phone,
-        userKey: data.userKey,
-        role: data.role,
+        name: userData.name,
+        phone: userData.phone,
+        userKey: userData.userKey,
+        role: userData.role,
       };
       setUsers([...users, newUser]);
       toast({ title: 'User Added', description: 'A new user has been successfully added.' });
     } else {
-      setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...data } : u));
+      setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...userData } : u));
       toast({ title: 'User Updated', description: 'The user details have been successfully updated.' });
     }
     setIsFormOpen(false);

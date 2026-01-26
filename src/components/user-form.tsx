@@ -25,15 +25,14 @@ import {
 import type { User } from '@/app/users/page';
 import { useToast } from '@/hooks/use-toast';
 
-const formSchema = z.object({
+const baseSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
   userKey: z.string().min(3, { message: "User Key must be at least 3 characters." }).regex(/^[a-z0-9_]+$/, { message: 'User Key can only contain lowercase letters, numbers, and underscores.' }),
   role: z.enum(['Admin', 'User']),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters.' }).optional().or(z.literal('')),
 });
 
-export type UserFormData = z.infer<typeof formSchema>;
+export type UserFormData = z.infer<typeof baseSchema> & { password?: string };
 
 interface UserFormProps {
   user?: User | null;
@@ -45,7 +44,13 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
   const isEditing = !!user;
   const { toast } = useToast();
 
-  const form = useForm<UserFormData>({
+  const formSchema = baseSchema.extend({
+      password: isEditing 
+          ? z.string().min(6, { message: "Password must be at least 6 characters." }).optional().or(z.literal(''))
+          : z.string().min(6, { message: "Password is required and must be at least 6 characters." })
+  });
+
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: user?.name || '',
@@ -112,7 +117,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
             <FormItem>
               <FormLabel>User Key</FormLabel>
               <FormControl>
-                <Input placeholder="auto-generated from name" {...field} readOnly={!isEditing} />
+                <Input placeholder="auto-generated from name" {...field} readOnly={isEditing} />
               </FormControl>
               <FormDescription>A unique key for the user. Cannot be changed after creation.</FormDescription>
               <FormMessage />

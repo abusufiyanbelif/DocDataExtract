@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile in the system.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The user's phone number."
+        },
+        "userKey": {
+          "type": "string",
+          "description": "A unique key for the user, used for login."
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "Admin",
+            "User"
+          ],
+          "description": "The user's role."
+        }
+      },
+      "required": [
+        "name",
+        "userKey",
+        "role"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "Email/Password"
+    ]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/backend/entities/UserProfile"
+      },
+      "description": "Stores public profile information for each user."
+    }
+  }
+}
