@@ -20,7 +20,7 @@ import Link from 'next/link';
 
 const loginSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: "Phone number must be 10 digits." }),
-  password: z.string().min(1, 'Password is required'),
+  password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
