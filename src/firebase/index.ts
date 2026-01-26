@@ -4,8 +4,8 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
 export function initializeFirebase(): { app: FirebaseApp; auth: Auth; firestore: Firestore; } {
-  if (!firebaseConfig.apiKey) {
-      throw new Error('Firebase config is not set. Please add NEXT_PUBLIC_FIREBASE_CONFIG to your environment variables.');
+  if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+      throw new Error('Firebase config is incomplete. Please ensure all NEXT_PUBLIC_FIREBASE_... environment variables are set.');
   }
 
   if (getApps().length) {
