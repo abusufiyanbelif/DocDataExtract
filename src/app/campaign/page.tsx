@@ -5,17 +5,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import type { Campaign } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { collection } from 'firebase/firestore';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+type SortKey = keyof Campaign | 'srNo';
 
 export default function CampaignPage() {
   const router = useRouter();
   const firestore = useFirestore();
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
 
   const campaignsCollectionRef = useMemo(() => {
     if (!firestore) return null;
@@ -29,8 +37,66 @@ export default function CampaignPage() {
     router.push(`/campaign/${campaignId}`);
   };
 
+  const handleSort = (key: SortKey) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const filteredAndSortedCampaigns = useMemo(() => {
+    let sortableItems = [...campaigns];
+    
+    // Filtering
+    if (statusFilter !== 'All') {
+        sortableItems = sortableItems.filter(c => c.status === statusFilter);
+    }
+    if (searchTerm) {
+        const lowercasedTerm = searchTerm.toLowerCase();
+        sortableItems = sortableItems.filter(c => 
+            c.name.toLowerCase().includes(lowercasedTerm)
+        );
+    }
+
+    // Sorting
+    if (sortConfig !== null) {
+        sortableItems.sort((a, b) => {
+            if (sortConfig.key === 'srNo') return 0;
+            const aValue = a[sortConfig.key] ?? '';
+            const bValue = b[sortConfig.key] ?? '';
+            
+            if (typeof aValue === 'number' && typeof bValue === 'number') {
+                return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
+            }
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+                 if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+            }
+            return 0;
+        });
+    }
+    return sortableItems;
+  }, [campaigns, searchTerm, statusFilter, sortConfig]);
+
   const isLoading = areCampaignsLoading || isProfileLoading;
   const isAdmin = userProfile?.role === 'Admin';
+  
+  const SortableHeader = ({ sortKey, children }: { sortKey: SortKey, children: React.ReactNode }) => {
+    const isSorted = sortConfig?.key === sortKey;
+    return (
+        <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort(sortKey)}>
+            <div className="flex items-center gap-2">
+                {children}
+                {isSorted && (sortConfig?.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />)}
+            </div>
+        </TableHead>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -45,8 +111,30 @@ export default function CampaignPage() {
           </Button>
         </div>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Ration Campaigns</CardTitle>
+          <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+             <div className="flex-1 space-y-2">
+                <CardTitle>Ration Campaigns</CardTitle>
+                 <div className="flex flex-wrap items-center gap-2">
+                    <Input 
+                        placeholder="Search by name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="max-w-sm"
+                        disabled={isLoading}
+                    />
+                     <Select value={statusFilter} onValueChange={setStatusFilter} disabled={isLoading}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Statuses</SelectItem>
+                            <SelectItem value="Upcoming">Upcoming</SelectItem>
+                            <SelectItem value="Active">Active</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
             {isLoading && <Skeleton className="h-10 w-44" />}
             {!isLoading && isAdmin && (
               <Button asChild>
@@ -61,41 +149,38 @@ export default function CampaignPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50%]">Campaign Name</TableHead>
-                  <TableHead>Start Date</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Status</TableHead>
+                  <SortableHeader sortKey="srNo">#</SortableHeader>
+                  <SortableHeader sortKey="name">Campaign Name</SortableHeader>
+                  <SortableHeader sortKey="startDate">Start Date</SortableHeader>
+                  <SortableHeader sortKey="endDate">End Date</SortableHeader>
+                  <SortableHeader sortKey="status">Status</SortableHeader>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading && (
-                  <>
-                    <TableRow>
-                      <TableCell><Skeleton className="h-6 w-3/4" /></TableCell>
+                  [...Array(3)].map((_, i) => (
+                    <TableRow key={i}>
                       <TableCell><Skeleton className="h-6 w-full" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-full" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-1/2" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-full" /></TableCell>
+                       <TableCell><Skeleton className="h-6 w-full" /></TableCell>
                     </TableRow>
-                     <TableRow>
-                      <TableCell><Skeleton className="h-6 w-2/3" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-full" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-full" /></TableCell>
-                      <TableCell><Skeleton className="h-6 w-1/2" /></TableCell>
-                    </TableRow>
-                  </>
+                  ))
                 )}
-                {!isLoading && campaigns.map((campaign) => (
+                {!isLoading && filteredAndSortedCampaigns.map((campaign, index) => (
                   <TableRow key={campaign.id} onClick={() => handleRowClick(campaign.id)} className="cursor-pointer">
+                    <TableCell>{index + 1}</TableCell>
                     <TableCell className="font-medium">{campaign.name}</TableCell>
                     <TableCell>{campaign.startDate}</TableCell>
                     <TableCell>{campaign.endDate}</TableCell>
                     <TableCell>{campaign.status}</TableCell>
                   </TableRow>
                 ))}
-                {!isLoading && campaigns.length === 0 && (
+                {!isLoading && filteredAndSortedCampaigns.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                            No campaigns found. {isAdmin && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
+                        <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+                           No campaigns found matching your criteria. {isAdmin && campaigns.length === 0 && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
                         </TableCell>
                     </TableRow>
                 )}

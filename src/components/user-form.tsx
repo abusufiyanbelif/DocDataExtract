@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Form,
   FormControl,
@@ -28,6 +28,7 @@ import { modules, permissions } from '@/lib/modules';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from './ui/separator';
+import { Loader2 } from 'lucide-react';
 
 const permissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()).optional()).optional();
 
@@ -47,18 +48,22 @@ interface UserFormProps {
   user?: UserProfile | null;
   onSubmit: (data: UserFormData) => void;
   onCancel: () => void;
+  isSubmitting: boolean;
+  isLoading: boolean;
 }
 
-export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
+export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: UserFormProps) {
   const isEditing = !!user;
   const isDefaultAdmin = user?.userKey === 'admin';
   const { toast } = useToast();
-
-  const formSchema = baseSchema.extend({
-      password: isEditing 
-          ? z.string().min(6, { message: "Password must be at least 6 characters." }).optional().or(z.literal(''))
-          : z.string().min(6, { message: "Password is required and must be at least 6 characters." })
-  });
+  
+  const formSchema = useMemo(() => {
+    return baseSchema.extend({
+        password: isEditing 
+            ? z.string().min(6, { message: "Password must be at least 6 characters." }).optional().or(z.literal(''))
+            : z.string().min(6, { message: "Password is required and must be at least 6 characters." })
+    });
+  }, [isEditing]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,7 +79,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
     },
   });
 
-  const { formState: { isSubmitting }, watch, setValue } = form;
+  const { watch, setValue } = form;
   const nameValue = watch('name');
   const roleValue = watch('role');
   
@@ -104,6 +109,8 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
         description: `${featureName} functionality will be implemented in a future update.`,
     });
   }
+  
+  const isFormDisabled = isSubmitting || isLoading;
 
   return (
     <Form {...form}>
@@ -115,7 +122,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
             <FormItem>
               <FormLabel>Full Name</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Moosa Shaikh" {...field} />
+                <Input placeholder="e.g. Moosa Shaikh" {...field} disabled={isFormDisabled} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -128,7 +135,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
             <FormItem>
               <FormLabel>Phone Number</FormLabel>
                 <FormControl>
-                    <Input placeholder="10-digit mobile number" {...field} />
+                    <Input placeholder="10-digit mobile number" {...field} disabled={isFormDisabled} />
                 </FormControl>
               <FormMessage />
             </FormItem>
@@ -142,7 +149,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
                 <FormItem>
                 <FormLabel>Login ID</FormLabel>
                 <FormControl>
-                    <Input placeholder="auto-generated from name" {...field} readOnly={isEditing} />
+                    <Input placeholder="auto-generated from name" {...field} readOnly={isEditing} disabled={isFormDisabled || isEditing} />
                 </FormControl>
                 <FormDescription>Used for signing in. Cannot be changed after creation.</FormDescription>
                 <FormMessage />
@@ -156,7 +163,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
                 <FormItem>
                 <FormLabel>User Key (System ID)</FormLabel>
                 <FormControl>
-                    <Input placeholder="System-generated" {...field} readOnly />
+                    <Input placeholder="System-generated" {...field} readOnly disabled={isFormDisabled} />
                 </FormControl>
                 <FormDescription>This is a system-generated unique ID. It cannot be changed.</FormDescription>
                 <FormMessage />
@@ -172,7 +179,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
               <FormLabel>Password</FormLabel>
               <div className="flex gap-2">
                 <FormControl>
-                  <Input type="password" placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} {...field} />
+                  <Input type="password" placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} {...field} disabled={isFormDisabled} />
                 </FormControl>
                 <Button type="button" variant="outline" onClick={() => handleFeatureNotReady('Password Reset')} disabled>Reset</Button>
               </div>
@@ -190,7 +197,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
             render={({ field }) => (
                 <FormItem>
                 <FormLabel>Role</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin || isFormDisabled}>
                     <FormControl>
                     <SelectTrigger>
                         <SelectValue placeholder="Select a role" />
@@ -214,7 +221,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
             render={({ field }) => (
                 <FormItem>
                 <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin || isFormDisabled}>
                     <FormControl>
                     <SelectTrigger>
                         <SelectValue placeholder="Select a status" />
@@ -261,7 +268,7 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
                                     <Checkbox
                                     checked={!!field.value}
                                     onCheckedChange={field.onChange}
-                                    disabled={roleValue === 'Admin'}
+                                    disabled={roleValue === 'Admin' || isFormDisabled}
                                     />
                                 </FormControl>
                                 </FormItem>
@@ -277,8 +284,9 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
         </div>
         
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isFormDisabled}>Cancel</Button>
+          <Button type="submit" disabled={isFormDisabled}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isSubmitting ? 'Saving...' : 'Save User'}
           </Button>
         </div>

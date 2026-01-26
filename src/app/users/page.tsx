@@ -58,6 +58,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAdd = () => {
     setEditingUser(null);
@@ -89,7 +90,7 @@ export default function UsersPage() {
     const docRef = doc(firestore, 'users', userToUpdate.id);
     try {
         await updateDoc(docRef, { status: newStatus });
-        toast({ title: 'Status Updated', description: `${userToUpdate.name}'s account is now ${newStatus}.` });
+        toast({ title: 'Success', description: `${userToUpdate.name}'s account is now ${newStatus}.` });
     } catch (error) {
         console.error("Error updating status:", error);
         toast({ title: 'Error', description: 'Could not update user status.', variant: 'destructive' });
@@ -101,7 +102,7 @@ export default function UsersPage() {
         const docRef = doc(firestore, 'users', userToDelete);
         try {
             await deleteDoc(docRef);
-            toast({ title: 'User Deleted', description: 'The user has been successfully deleted.' });
+            toast({ title: 'Success', description: 'The user has been successfully deleted.' });
         } catch(error) {
             console.error("Error deleting user:", error);
             toast({ title: 'Error', description: 'Could not delete user.', variant: 'destructive' });
@@ -113,14 +114,20 @@ export default function UsersPage() {
   };
   
   const handleFormSubmit = async (data: UserFormData) => {
-    if (!firestore) return;
+    if (!firestore) {
+        toast({ title: 'Error', description: 'Database connection not available.', variant: 'destructive' });
+        return;
+    };
+    setIsSubmitting(true);
     
+    // For new users, check if loginId already exists
     if (!editingUser && users.some(u => u.loginId === data.loginId)) {
         toast({
             title: 'Login ID Exists',
             description: 'This Login ID is already taken. Please choose another one.',
             variant: 'destructive',
         });
+        setIsSubmitting(false);
         return;
     }
     
@@ -140,24 +147,27 @@ export default function UsersPage() {
     try {
         if (editingUser) {
             const docRef = doc(firestore, 'users', editingUser.id);
-            await updateDoc(docRef, userData as any);
-            toast({ title: 'User Updated', description: 'The user details have been successfully updated.' });
+            // Don't update userKey or loginId for existing users
+            const { userKey, loginId, ...updateData } = userData;
+            await updateDoc(docRef, updateData as any);
+            toast({ title: 'Success', description: 'User details have been successfully updated.' });
         } else {
             await addDoc(collection(firestore, 'users'), {
                 ...userData,
                 createdAt: serverTimestamp()
             });
             toast({ 
-                title: 'User Profile Added', 
-                description: `IMPORTANT: To enable login for '${data.loginId}', you must now manually create this user in Firebase Authentication with the email '${data.userKey}@docdataextract.app' and the password you set.`
+                title: 'Success', 
+                description: `User '${data.name}' was created. You must now manually create this user in Firebase Authentication.`
             });
         }
-    } catch (error) {
-        console.error("Error saving user:", error);
-        toast({ title: 'Error', description: 'Could not save user.', variant: 'destructive' });
-    } finally {
         setIsFormOpen(false);
         setEditingUser(null);
+    } catch (error: any) {
+        console.error("Error saving user:", error);
+        toast({ title: 'Error', description: error.message || 'Could not save user.', variant: 'destructive' });
+    } finally {
+        setIsSubmitting(false);
     }
   };
   
@@ -221,7 +231,7 @@ export default function UsersPage() {
           <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
             <CardTitle>User Management</CardTitle>
             <div className="flex items-center gap-2">
-                <Button onClick={handleAdd}>
+                <Button onClick={handleAdd} disabled={areUsersLoading}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add User
                 </Button>
@@ -312,6 +322,8 @@ export default function UsersPage() {
                 user={editingUser}
                 onSubmit={handleFormSubmit}
                 onCancel={() => setIsFormOpen(false)}
+                isSubmitting={isSubmitting}
+                isLoading={areUsersLoading}
             />
         </DialogContent>
       </Dialog>
