@@ -34,7 +34,8 @@ const permissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean())
 const baseSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
-  userKey: z.string().min(3, { message: "User Key must be at least 3 characters." }).regex(/^[a-z0-9_]+$/, { message: 'User Key can only contain lowercase letters, numbers, and underscores.' }),
+  loginId: z.string().min(3, { message: "Login ID must be at least 3 characters." }).regex(/^[a-z0-9_.]+$/, { message: 'Login ID can only contain lowercase letters, numbers, underscores, and periods.' }),
+  userKey: z.string().min(1, { message: 'User Key is required.'}),
   role: z.enum(['Admin', 'User']),
   status: z.enum(['Active', 'Inactive']),
   permissions: permissionsSchema,
@@ -64,7 +65,8 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
     defaultValues: {
       name: user?.name || '',
       phone: user?.phone || '',
-      userKey: user?.userKey || '',
+      userKey: user?.userKey || 'user_' + Date.now(),
+      loginId: user?.loginId || '',
       role: user?.role || 'User',
       status: user?.status || 'Active',
       password: '',
@@ -75,11 +77,11 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
   const { formState: { isSubmitting }, watch, setValue } = form;
   const nameValue = watch('name');
   const roleValue = watch('role');
-
+  
   useEffect(() => {
     if (!isEditing && nameValue) {
-        const generatedKey = nameValue.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-        setValue('userKey', generatedKey, { shouldValidate: true });
+        const generatedId = nameValue.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9.]/g, '');
+        setValue('loginId', generatedId, { shouldValidate: true });
     }
   }, [nameValue, isEditing, setValue]);
   
@@ -132,20 +134,36 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="userKey"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>User Key</FormLabel>
-              <FormControl>
-                <Input placeholder="auto-generated from name" {...field} readOnly={isEditing} />
-              </FormControl>
-              <FormDescription>A unique key for the user. Cannot be changed after creation.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="loginId"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Login ID</FormLabel>
+                <FormControl>
+                    <Input placeholder="auto-generated from name" {...field} readOnly={isEditing} />
+                </FormControl>
+                <FormDescription>Used for signing in. Cannot be changed after creation.</FormDescription>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="userKey"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>User Key (System ID)</FormLabel>
+                <FormControl>
+                    <Input placeholder="System-generated" {...field} readOnly />
+                </FormControl>
+                <FormDescription>This is a system-generated unique ID. It cannot be changed.</FormDescription>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
         <FormField
           control={form.control}
           name="password"

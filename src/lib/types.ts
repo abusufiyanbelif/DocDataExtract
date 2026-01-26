@@ -50,6 +50,7 @@ export interface UserProfile extends DocumentData {
   id: string;
   name: string;
   phone: string;
+  loginId: string;
   userKey: string;
   role: 'Admin' | 'User';
   status: 'Active' | 'Inactive';

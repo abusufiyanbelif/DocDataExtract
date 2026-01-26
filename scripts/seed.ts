@@ -70,6 +70,7 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
     batch.set(adminUserDocRef, {
         name: 'Admin User',
         phone: '0000000000',
+        loginId: 'admin',
         userKey: 'admin',
         role: 'Admin',
         status: 'Active',
@@ -81,6 +82,7 @@ const seedDatabase = async (firestore: any, log: (message: string) => void) => {
     batch.set(sampleUserDocRef, {
         name: 'Sample User',
         phone: '1111111111',
+        loginId: 'sampleuser',
         userKey: 'sampleuser',
         role: 'User',
         status: 'Active',

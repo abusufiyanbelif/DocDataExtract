@@ -19,14 +19,14 @@ export const signInWithLoginId = async (auth: Auth, firestore: Firestore, loginI
     const usersRef = collection(firestore, 'users');
     let userDoc: DocumentSnapshot | null = null;
 
-    // First, query by userKey, which is the most common case for non-admin users
-    const userKeyQuery = query(usersRef, where("userKey", "==", loginId));
-    const userKeySnapshot = await getDocs(userKeyQuery);
+    // First, query by loginId
+    const loginIdQuery = query(usersRef, where("loginId", "==", loginId));
+    const loginIdSnapshot = await getDocs(loginIdQuery);
 
-    if (!userKeySnapshot.empty) {
-        userDoc = userKeySnapshot.docs[0];
+    if (!loginIdSnapshot.empty) {
+        userDoc = loginIdSnapshot.docs[0];
     } else {
-        // If not found by userKey, try querying by phone number
+        // If not found by loginId, try querying by phone number
         const phoneQuery = query(usersRef, where("phone", "==", loginId));
         const phoneSnapshot = await getDocs(phoneQuery);
         if (!phoneSnapshot.empty) {
@@ -35,7 +35,7 @@ export const signInWithLoginId = async (auth: Auth, firestore: Firestore, loginI
     }
 
     if (!userDoc) {
-        throw new Error('User not found. Please check your Phone Number or User Key.');
+        throw new Error('User not found. Please check your Login ID or Phone Number.');
     }
 
     const userData = userDoc.data() as UserProfile;

@@ -4,7 +4,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle, LogIn } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 function ProfileDetail({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) {
@@ -51,8 +51,9 @@ export default function ProfilePage() {
                         {userProfile ? (
                             <>
                                 <ProfileDetail icon={<User />} label="Full Name" value={userProfile.name} />
+                                <ProfileDetail icon={<LogIn />} label="Login ID" value={userProfile.loginId} />
                                 <ProfileDetail icon={<Phone />} label="Phone Number" value={userProfile.phone} />
-                                <ProfileDetail icon={<KeyRound />} label="User Key" value={userProfile.userKey} />
+                                <ProfileDetail icon={<KeyRound />} label="User Key (System ID)" value={userProfile.userKey} />
                                 <ProfileDetail icon={<Shield />} label="Role" value={<Badge variant={userProfile.role === 'Admin' ? 'destructive' : 'secondary'}>{userProfile.role}</Badge>} />
                                 <ProfileDetail 
                                     icon={userProfile.status === 'Active' ? <CheckCircle className="text-green-500" /> : <XCircle className="text-destructive" />} 

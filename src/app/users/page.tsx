@@ -115,10 +115,10 @@ export default function UsersPage() {
   const handleFormSubmit = async (data: UserFormData) => {
     if (!firestore) return;
     
-    if (!editingUser && users.some(u => u.userKey === data.userKey)) {
+    if (!editingUser && users.some(u => u.loginId === data.loginId)) {
         toast({
-            title: 'User Key Exists',
-            description: 'This User Key is already taken. Please choose another one.',
+            title: 'Login ID Exists',
+            description: 'This Login ID is already taken. Please choose another one.',
             variant: 'destructive',
         });
         return;
@@ -149,7 +149,7 @@ export default function UsersPage() {
             });
             toast({ 
                 title: 'User Profile Added', 
-                description: `IMPORTANT: To log in as '${data.userKey}', you must now manually create this user in Firebase Authentication with the email '${data.userKey}@docdataextract.app' and the password you set.`
+                description: `IMPORTANT: To enable login for '${data.loginId}', you must now manually create this user in Firebase Authentication with the email '${data.userKey}@docdataextract.app' and the password you set.`
             });
         }
     } catch (error) {
@@ -236,6 +236,7 @@ export default function UsersPage() {
                           <TableHead className="w-[40px]">#</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Phone</TableHead>
+                          <TableHead>Login ID</TableHead>
                           <TableHead>User Key</TableHead>
                           <TableHead>Role</TableHead>
                           <TableHead>Status</TableHead>
@@ -278,6 +279,7 @@ export default function UsersPage() {
                               <TableCell>{index + 1}</TableCell>
                               <TableCell className="font-medium">{user.name}</TableCell>
                               <TableCell>{user.phone}</TableCell>
+                              <TableCell>{user.loginId}</TableCell>
                               <TableCell>{user.userKey}</TableCell>
                               <TableCell>
                                 <Badge variant={user.role === 'Admin' ? 'destructive' : 'secondary'}>{user.role}</Badge>
@@ -289,7 +291,7 @@ export default function UsersPage() {
                       ))}
                       {users.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
                                 No users found. The database may be empty.
                             </TableCell>
                         </TableRow>

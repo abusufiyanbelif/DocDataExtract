@@ -19,7 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 
 const loginSchema = z.object({
-  loginId: z.string().min(3, 'Phone number or User Key is required.'),
+  loginId: z.string().min(3, 'Login ID or Phone Number is required.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
@@ -124,10 +124,10 @@ export default function LoginPage() {
                 name="loginId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number or User Key</FormLabel>
+                    <FormLabel>Login ID or Phone Number</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="e.g. 0000000000 or admin" 
+                        placeholder="e.g. your_login_id or 0000000000" 
                         {...field}
                       />
                     </FormControl>

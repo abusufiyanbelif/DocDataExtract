@@ -13,9 +13,13 @@
           "type": "string",
           "description": "The user's phone number."
         },
+        "loginId": {
+          "type": "string",
+          "description": "The user's unique login ID."
+        },
         "userKey": {
           "type": "string",
-          "description": "A unique key for the user, used for login."
+          "description": "A unique system-generated key for the user, used to link to the auth account. Cannot be edited."
         },
         "role": {
           "type": "string",
@@ -59,6 +63,7 @@
       "required": [
         "name",
         "phone",
+        "loginId",
         "userKey",
         "role",
         "status"
