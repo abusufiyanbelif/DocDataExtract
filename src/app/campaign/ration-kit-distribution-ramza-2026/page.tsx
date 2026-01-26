@@ -18,6 +18,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
@@ -117,30 +123,38 @@ export default function CampaignDetailsPage() {
     return items.reduce((sum, item) => sum + Number(item.price || 0), 0);
   };
   
-  const handleDownload = () => {
-    let csvContent = 'Member Count,Item Name,Quantity,Price (₹),Notes\n';
+  const handleDownload = (format: 'csv' | 'excel' | 'pdf') => {
+    if (format === 'csv') {
+      let csvContent = '#,Member Count,Item Name,Quantity,Price (₹),Notes\n';
 
-    Object.entries(rationLists).forEach(([memberCount, items]) => {
-      items.forEach(item => {
-        const row = [
-          memberCount,
-          `"${item.name.replace(/"/g, '""')}"`,
-          `"${item.quantity.replace(/"/g, '""')}"`,
-          item.price,
-          `"${item.notes.replace(/"/g, '""')}"`
-        ].join(',');
-        csvContent += row + '\n';
+      Object.entries(rationLists).forEach(([memberCount, items]) => {
+        items.forEach((item, index) => {
+          const row = [
+            index + 1,
+            memberCount,
+            `"${item.name.replace(/"/g, '""')}"`,
+            `"${item.quantity.replace(/"/g, '""')}"`,
+            item.price,
+            `"${item.notes.replace(/"/g, '""')}"`,
+          ].join(',');
+          csvContent += row + '\n';
+        });
       });
-    });
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `ration-details-${priceDate}.csv`;
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `ration-details-${priceDate}.csv`;
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+        toast({
+            title: 'Coming Soon!',
+            description: `The option to download as ${format.toUpperCase()} will be available shortly.`,
+        });
+    }
   };
 
   const handleAddNewCategory = () => {
@@ -182,6 +196,7 @@ export default function CampaignDetailsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]">#</TableHead>
                   <TableHead className="w-[30%]">Item Name</TableHead>
                   <TableHead className="w-[15%]">Quantity</TableHead>
                   <TableHead>Notes</TableHead>
@@ -190,8 +205,9 @@ export default function CampaignDetailsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map(item => (
+                {items.map((item, index) => (
                   <TableRow key={item.id}>
+                    <TableCell className="font-medium text-center">{index + 1}</TableCell>
                     <TableCell>
                       <Input
                         value={item.name}
@@ -231,7 +247,7 @@ export default function CampaignDetailsPage() {
               </TableBody>
               <TableFoot>
                 <TableRow>
-                  <TableCell colSpan={3} className="text-right font-bold">Total</TableCell>
+                  <TableCell colSpan={4} className="text-right font-bold">Total</TableCell>
                   <TableCell className="text-right font-bold">₹{total.toFixed(2)}</TableCell>
                   <TableCell></TableCell>
                 </TableRow>
@@ -289,10 +305,19 @@ export default function CampaignDetailsPage() {
                     </CardDescription>
                 </div>
                 <div className="flex gap-2 flex-wrap justify-end">
-                    <Button onClick={handleDownload} variant="outline">
-                        <Download className="mr-2 h-4 w-4" />
-                        Download Prices
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                <Download className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleDownload('csv')}>Download as CSV</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload('excel')}>Download as Excel</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline">
