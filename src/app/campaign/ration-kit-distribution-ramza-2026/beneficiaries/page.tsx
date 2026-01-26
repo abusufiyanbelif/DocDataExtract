@@ -196,7 +196,7 @@ export default function BeneficiariesPage() {
                           <TableHead>ID Proof Type</TableHead>
                           <TableHead>ID Number</TableHead>
                           <TableHead>Referred By</TableHead>
-                          <TableHead className="text-right">Kit Amount</TableHead>
+                          <TableHead className="text-right">Kit Amount (₹)</TableHead>
                           <TableHead>Status</TableHead>
                       </TableRow>
                   </TableHeader>
