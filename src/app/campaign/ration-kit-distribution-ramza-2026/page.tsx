@@ -434,7 +434,7 @@ export default function CampaignDetailsPage() {
              <div className="flex justify-between items-start flex-wrap gap-4">
                 <div>
                     <CardTitle>Ration Details 2026</CardTitle>
-                    <CardDescription as="div" className="mt-4 space-y-3">
+                    <div className="text-sm text-muted-foreground mt-4 space-y-3">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                             <div className="flex items-center gap-2">
                                 <Label htmlFor="priceDate" className="text-nowrap">Price Date:</Label>
@@ -479,7 +479,7 @@ export default function CampaignDetailsPage() {
                                 />
                             </div>
                         </div>
-                    </CardDescription>
+                    </div>
                 </div>
                 <div className="flex gap-2 flex-wrap justify-end">
                     <DropdownMenu>
