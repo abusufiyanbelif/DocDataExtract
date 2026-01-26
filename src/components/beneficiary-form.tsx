@@ -32,6 +32,7 @@ const formSchema = z.object({
   female: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
   idProof: z.string().min(3, { message: "ID proof is required." }),
   referralBy: z.string().min(2, { message: "Referral is required." }),
+  kitAmount: z.coerce.number().min(0, { message: "Amount cannot be negative."}),
   status: z.enum(['Given', 'Pending', 'Hold']),
 });
 
@@ -56,6 +57,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
       female: beneficiary?.female || 0,
       idProof: beneficiary?.idProof || '',
       referralBy: beneficiary?.referralBy || '',
+      kitAmount: beneficiary?.kitAmount || 0,
       status: beneficiary?.status || 'Pending',
     },
   });
@@ -191,29 +193,44 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
             )}
             />
         </div>
-        
-        <FormField
-          control={form.control}
-          name="status"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Status</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a status" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Given">Given</SelectItem>
-                  <SelectItem value="Hold">Hold</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="kitAmount"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Kit Amount ($)</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g. 2500" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Status</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select a status" />
+                    </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Given">Given</SelectItem>
+                    <SelectItem value="Hold">Hold</SelectItem>
+                    </SelectContent>
+                </Select>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
 
         <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>

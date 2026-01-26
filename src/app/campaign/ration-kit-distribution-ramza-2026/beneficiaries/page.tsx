@@ -45,6 +45,7 @@ const initialBeneficiaries = [
         addedDate: '2026-03-15',
         idProof: 'Aadhaar: XXXX XXXX 1234',
         referralBy: 'Local NGO',
+        kitAmount: 2500,
         status: 'Given' as const,
     },
     {
@@ -59,6 +60,7 @@ const initialBeneficiaries = [
         addedDate: '2026-03-16',
         idProof: 'PAN: ABCDE1234F',
         referralBy: 'Masjid Committee',
+        kitAmount: 2500,
         status: 'Pending' as const,
     },
     {
@@ -73,6 +75,7 @@ const initialBeneficiaries = [
         addedDate: '2026-03-17',
         idProof: 'Other: Voter ID',
         referralBy: 'Self',
+        kitAmount: 3000,
         status: 'Hold' as const,
     },
 ];
@@ -171,6 +174,7 @@ export default function BeneficiariesPage() {
                           <TableHead>Added Date</TableHead>
                           <TableHead>ID Proof</TableHead>
                           <TableHead>Referred By</TableHead>
+                          <TableHead className="text-right">Kit Amount</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -187,6 +191,7 @@ export default function BeneficiariesPage() {
                               <TableCell>{beneficiary.addedDate}</TableCell>
                               <TableCell>{beneficiary.idProof}</TableCell>
                               <TableCell>{beneficiary.referralBy}</TableCell>
+                              <TableCell className="text-right font-medium">${beneficiary.kitAmount.toFixed(2)}</TableCell>
                               <TableCell>
                                   <Badge variant={
                                       beneficiary.status === 'Given' ? 'default' :
