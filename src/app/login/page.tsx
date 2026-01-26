@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
 import { signInWithPhone } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
+import { collection, getDocs, limit, query } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +31,8 @@ export default function LoginPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
+  const [isSeeded, setIsSeeded] = useState<boolean | null>(null);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -39,8 +42,29 @@ export default function LoginPage() {
     },
   });
 
+  useEffect(() => {
+    if (!firestore) return;
+    
+    // Check seeding status to conditionally show the prompt
+    const checkSeedingStatus = async () => {
+        try {
+            const usersRef = collection(firestore, 'users');
+            const q = query(usersRef, limit(1));
+            const snapshot = await getDocs(q);
+            setIsSeeded(!snapshot.empty);
+        } catch (error) {
+            console.error("Error checking seeding status:", error);
+            // Assume not seeded if there's an error, so the link is visible
+            setIsSeeded(false);
+        }
+    };
+    checkSeedingStatus();
+  }, [firestore]);
+
+
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
+    setSetupError(null);
 
     if (!auth || !firestore) {
       toast({
@@ -56,15 +80,22 @@ export default function LoginPage() {
       toast({ title: 'Login Successful', description: "Welcome back!" });
       router.push('/');
     } catch (error: any) {
-      toast({
-          title: 'Login Failed',
-          description: error.message || 'An unexpected error occurred.',
-          variant: 'destructive',
-      });
+      if (error.message.includes('auth/configuration-not-found')) {
+            setSetupError(error.message);
+        } else {
+             toast({
+                title: 'Login Failed',
+                description: error.message || 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+        }
     } finally {
       setIsLoading(false);
     }
   };
+
+  const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const authUrl = `https://console.firebase.google.com/project/${firebaseProjectId}/authentication/sign-in-method`;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
@@ -123,17 +154,37 @@ export default function LoginPage() {
           </Form>
         </CardContent>
       </Card>
-      <Alert className="mt-4 max-w-sm">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>First-time user?</AlertTitle>
-        <AlertDescription>
-          If this is your first time setting up the app, you must{' '}
-          <Link href="/seed" className="font-bold text-primary underline">
-            seed the database
-          </Link>
-          {' '}before you can log in.
-        </AlertDescription>
-      </Alert>
+      
+      {setupError && (
+        <Alert variant="destructive" className="mt-4 max-w-sm">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Action Required: Enable Sign-In Method</AlertTitle>
+            <AlertDescription className="space-y-3">
+                <p>For the one-time initial setup, you must enable the 'Email/Password' provider in your Firebase project. This allows the app to create the first admin user.</p>
+                <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
+                    <Link href={authUrl} target="_blank">
+                        Go to Firebase Console to Enable
+                        <ExternalLink className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+                 <p className="text-xs text-center mt-2 text-muted-foreground">After enabling, please go to the seed page to initialize the database.</p>
+            </AlertDescription>
+        </Alert>
+      )}
+
+      {isSeeded === false && !setupError && (
+        <Alert className="mt-4 max-w-sm">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>First-time user?</AlertTitle>
+            <AlertDescription>
+            If this is your first time setting up the app, you must{' '}
+            <Link href="/seed" className="font-bold text-primary underline">
+                seed the database
+            </Link>
+            {' '}before you can log in.
+            </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }
