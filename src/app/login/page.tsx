@@ -30,8 +30,7 @@ export default function LoginPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [setupError, setSetupError] = useState<string | null>(null);
-
+  
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -40,15 +39,8 @@ export default function LoginPage() {
     },
   });
 
-  const handleFormChange = () => {
-    if (setupError) {
-        setSetupError(null);
-    }
-  }
-
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
-    setSetupError(null);
 
     if (!auth || !firestore) {
       toast({
@@ -64,22 +56,15 @@ export default function LoginPage() {
       toast({ title: 'Login Successful', description: "Welcome back!" });
       router.push('/');
     } catch (error: any) {
-        if (error.message.includes('Email/Password sign-in provider is not enabled')) {
-            setSetupError(error.message);
-        } else {
-            toast({
-                title: 'Login Failed',
-                description: error.message || 'An unexpected error occurred.',
-                variant: 'destructive',
-            });
-        }
+      toast({
+          title: 'Login Failed',
+          description: error.message || 'An unexpected error occurred.',
+          variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
-
-  const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const authUrl = `https://console.firebase.google.com/project/${firebaseProjectId}/authentication/sign-in-method`;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
@@ -95,23 +80,6 @@ export default function LoginPage() {
           <CardDescription>Enter your credentials to access your account.</CardDescription>
         </CardHeader>
         <CardContent>
-        {setupError && (
-             <Alert variant="destructive" className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Action Required: Enable Sign-In Method</AlertTitle>
-                <AlertDescription>
-                    For the one-time initial setup, you must enable the 'Email/Password' provider in your Firebase project. This allows the app to create the first admin user.
-                    <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
-                        <Link href={authUrl} target="_blank">
-                            Go to Firebase Console
-                            <ExternalLink className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                     <p className="text-xs text-center mt-2 text-muted-foreground">After enabling, please try logging in again.</p>
-                </AlertDescription>
-            </Alert>
-        )}
-
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -124,10 +92,6 @@ export default function LoginPage() {
                       <Input 
                         placeholder="10-digit mobile number" 
                         {...field}
-                        onChange={(e) => {
-                            field.onChange(e);
-                            handleFormChange();
-                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -145,10 +109,6 @@ export default function LoginPage() {
                         type="password" 
                         placeholder="••••••••" 
                         {...field} 
-                        onChange={(e) => {
-                            field.onChange(e);
-                            handleFormChange();
-                        }}
                         />
                     </FormControl>
                     <FormMessage />
@@ -163,6 +123,17 @@ export default function LoginPage() {
           </Form>
         </CardContent>
       </Card>
+      <Alert className="mt-4 max-w-sm">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>First-time user?</AlertTitle>
+        <AlertDescription>
+          If this is your first time setting up the app, you must{' '}
+          <Link href="/seed" className="font-bold text-primary underline">
+            seed the database
+          </Link>
+          {' '}before you can log in.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }

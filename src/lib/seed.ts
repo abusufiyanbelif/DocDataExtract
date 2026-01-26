@@ -6,7 +6,35 @@ import {
   writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
+import {
+  Auth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword
+} from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
+
+export const createAdminUser = async (auth: Auth) => {
+    const adminEmail = 'admin@docdataextract.app';
+    const adminPassword = 'password'; 
+    try {
+        await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
+        toast({ title: "Admin Account Created", description: "Successfully created admin user in Firebase Auth." });
+    } catch (error: any) {
+        if (error.code === 'auth/email-already-in-use') {
+            // If the user already exists in auth, that's fine. We can proceed.
+            toast({ title: "Admin Exists", description: "Admin user already exists in Firebase Auth. Skipping creation." });
+            // We can optionally try to sign in to verify password, but for seeding it's not strictly necessary.
+        } else if (error.code === 'auth/configuration-not-found') {
+            // This is a critical error for first-time setup.
+            throw new Error("auth/configuration-not-found");
+        } else {
+            // For other errors, fail the process.
+            console.error("Could not create admin user:", error);
+            throw new Error(`Could not create admin user in Auth: ${error.message}`);
+        }
+    }
+}
+
 
 export const seedDatabase = async (firestore: Firestore) => {
   const batch = writeBatch(firestore);
@@ -66,19 +94,9 @@ export const seedDatabase = async (firestore: Firestore) => {
 
   try {
     await batch.commit();
-    toast({
-      title: 'Database Seeded',
-      description: 'The database has been populated with default sample data.',
-      duration: 7000,
-    });
   } catch (error) {
     console.error('Error seeding database:', error);
-    toast({
-      title: 'Seeding Failed',
-      description: 'Could not seed the database. Check console for errors.',
-      variant: 'destructive',
-    });
     // Re-throw the error so the calling function knows it failed
-    throw error;
+    throw new Error(`Could not write to Firestore: ${error}`);
   }
 };
