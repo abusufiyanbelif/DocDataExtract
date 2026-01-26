@@ -8,7 +8,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ArrowLeft, DatabaseZap, Loader2, ShieldAlert, ExternalLink } from 'lucide-react';
+import { ArrowLeft, DatabaseZap, Loader2, ShieldAlert, ExternalLink, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function SeedPage() {
