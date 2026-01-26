@@ -28,10 +28,10 @@ export default function LandingPage() {
               Create a Story
             </Button>
           </Link>
-          <Link href="/ration-kit">
+          <Link href="/campaign">
             <Button size="lg" variant="outline" className="text-lg">
               <ShoppingBasket className="mr-2 h-5 w-5" />
-              Ration Kit
+              Campaign
             </Button>
           </Link>
         </div>
