@@ -1,0 +1,227 @@
+'use client';
+
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import type { Beneficiary } from '@/app/campaign/ration-kit-distribution-ramza-2026/beneficiaries/page';
+
+const formSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  address: z.string().min(5, { message: "Address is required." }),
+  phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
+  members: z.coerce.number().int().min(1, { message: "Must have at least 1 member." }),
+  earningMembers: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
+  male: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
+  female: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
+  idProof: z.string().min(3, { message: "ID proof is required." }),
+  referralBy: z.string().min(2, { message: "Referral is required." }),
+  status: z.enum(['Given', 'Pending', 'Hold']),
+});
+
+export type BeneficiaryFormData = z.infer<typeof formSchema>;
+
+interface BeneficiaryFormProps {
+  beneficiary?: Beneficiary | null;
+  onSubmit: (data: BeneficiaryFormData) => void;
+  onCancel: () => void;
+}
+
+export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: BeneficiaryFormProps) {
+  const form = useForm<BeneficiaryFormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: beneficiary?.name || '',
+      address: beneficiary?.address || '',
+      phone: beneficiary?.phone || '',
+      members: beneficiary?.members || 1,
+      earningMembers: beneficiary?.earningMembers || 0,
+      male: beneficiary?.male || 0,
+      female: beneficiary?.female || 0,
+      idProof: beneficiary?.idProof || '',
+      referralBy: beneficiary?.referralBy || '',
+      status: beneficiary?.status || 'Pending',
+    },
+  });
+
+  const { formState: { isSubmitting } } = form;
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. Saleem Khan" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <FormControl>
+                    <Input placeholder="10-digit mobile number" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+
+        <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Address</FormLabel>
+                <FormControl>
+                    <Input placeholder="Full residential address" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+        />
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <FormField
+            control={form.control}
+            name="members"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Members</FormLabel>
+                <FormControl>
+                    <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="earningMembers"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Earning</FormLabel>
+                <FormControl>
+                    <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="male"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Male</FormLabel>
+                <FormControl>
+                    <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+             <FormField
+            control={form.control}
+            name="female"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Female</FormLabel>
+                <FormControl>
+                    <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="idProof"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>ID Proof</FormLabel>
+                <FormControl>
+                    <Input placeholder="Aadhaar, PAN, etc." {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="referralBy"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Referred By</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. Local NGO" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a status" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Given">Given</SelectItem>
+                  <SelectItem value="Hold">Hold</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : 'Save Beneficiary'}
+            </Button>
+        </div>
+      </form>
+    </Form>
+  );
+}

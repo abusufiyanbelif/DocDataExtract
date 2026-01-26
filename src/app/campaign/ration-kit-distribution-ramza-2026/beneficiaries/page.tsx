@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +13,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { BeneficiaryForm, type BeneficiaryFormData } from '@/components/beneficiary-form';
 
 
-const beneficiaries = [
+const initialBeneficiaries = [
     {
         id: '1',
         name: 'Saleem Khan',
@@ -27,7 +45,7 @@ const beneficiaries = [
         addedDate: '2026-03-15',
         idProof: 'Aadhaar: XXXX XXXX 1234',
         referralBy: 'Local NGO',
-        status: 'Given',
+        status: 'Given' as const,
     },
     {
         id: '2',
@@ -41,7 +59,7 @@ const beneficiaries = [
         addedDate: '2026-03-16',
         idProof: 'PAN: ABCDE1234F',
         referralBy: 'Masjid Committee',
-        status: 'Pending',
+        status: 'Pending' as const,
     },
     {
         id: '3',
@@ -55,12 +73,57 @@ const beneficiaries = [
         addedDate: '2026-03-17',
         idProof: 'Other: Voter ID',
         referralBy: 'Self',
-        status: 'Hold',
+        status: 'Hold' as const,
     },
 ];
 
+export type Beneficiary = typeof initialBeneficiaries[0];
+
 export default function BeneficiariesPage() {
   const campaignId = 'ration-kit-distribution-ramza-2026';
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>(initialBeneficiaries);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [beneficiaryToDelete, setBeneficiaryToDelete] = useState<string | null>(null);
+
+  const handleAdd = () => {
+    setEditingBeneficiary(null);
+    setIsFormOpen(true);
+  };
+
+  const handleEdit = (beneficiary: Beneficiary) => {
+    setEditingBeneficiary(beneficiary);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setBeneficiaryToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (beneficiaryToDelete) {
+      setBeneficiaries(beneficiaries.filter(b => b.id !== beneficiaryToDelete));
+      setBeneficiaryToDelete(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+  
+  const handleFormSubmit = (data: BeneficiaryFormData) => {
+    if (editingBeneficiary) {
+      setBeneficiaries(beneficiaries.map(b => b.id === editingBeneficiary.id ? { ...b, ...data } : b));
+    } else {
+      const newBeneficiary: Beneficiary = {
+        ...data,
+        id: Date.now().toString(),
+        addedDate: new Date().toISOString().split('T')[0],
+      };
+      setBeneficiaries([...beneficiaries, newBeneficiary]);
+    }
+    setIsFormOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <DocuExtractHeader />
@@ -89,7 +152,7 @@ export default function BeneficiariesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Beneficiary List 2026</CardTitle>
-            <Button>
+            <Button onClick={handleAdd}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Beneficiary
             </Button>
@@ -138,11 +201,11 @@ export default function BeneficiariesPage() {
                                           </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
-                                          <DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleEdit(beneficiary)}>
                                               <Edit className="mr-2 h-4 w-4" />
                                               Edit
                                           </DropdownMenuItem>
-                                          <DropdownMenuItem className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                          <DropdownMenuItem onClick={() => handleDeleteClick(beneficiary.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
                                               <Trash2 className="mr-2 h-4 w-4" />
                                               Delete
                                           </DropdownMenuItem>
@@ -157,6 +220,38 @@ export default function BeneficiariesPage() {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-[625px]">
+            <DialogHeader>
+                <DialogTitle>{editingBeneficiary ? 'Edit' : 'Add'} Beneficiary</DialogTitle>
+            </DialogHeader>
+            <BeneficiaryForm
+                beneficiary={editingBeneficiary}
+                onSubmit={handleFormSubmit}
+                onCancel={() => setIsFormOpen(false)}
+            />
+        </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the beneficiary record.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                    onClick={handleDeleteConfirm} 
+                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                        Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
