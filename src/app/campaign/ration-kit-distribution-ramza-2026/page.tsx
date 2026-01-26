@@ -97,6 +97,9 @@ export default function CampaignDetailsPage() {
   const campaignId = 'ration-kit-distribution-ramza-2026';
   const [rationLists, setRationLists] = useState<RationList>(initialRationLists);
   const [priceDate, setPriceDate] = useState('2025-01-11');
+  const [shopName, setShopName] = useState('Example Kirana Store');
+  const [shopContact, setShopContact] = useState('1234567890');
+  const [shopAddress, setShopAddress] = useState('123 Main St, Hyderabad');
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newMemberCount, setNewMemberCount] = useState('');
   const { toast } = useToast();
@@ -151,25 +154,40 @@ export default function CampaignDetailsPage() {
       return;
     }
 
-    if (format === 'csv') {
-      let csvContent = '#,Member Count,Item Name,Quantity,Price (₹),Notes\n';
+    const sortedMemberCategories = Object.keys(rationLists).sort((a, b) => {
+        if (a === 'General') return -1;
+        if (b === 'General') return 1;
+        return Number(b) - Number(a);
+    });
 
-      Object.entries(rationLists).forEach(([memberCount, items]) => {
-        items.forEach((item, index) => {
-          const row = [
-            index + 1,
-            memberCount,
-            `"${item.name.replace(/"/g, '""')}"`,
-            `"${item.quantity.replace(/"/g, '""')}"`,
-            item.price,
-            `"${item.notes.replace(/"/g, '""')}"`,
-          ].join(',');
-          csvContent += row + '\n';
-        });
-        if (items.length > 0) {
-          const total = calculateTotal(items);
-          csvContent += ` ,${memberCount},,,Total,${total}\n`;
-        }
+    if (format === 'csv') {
+      let csvContent = `Ration Details\n`;
+      csvContent += `Price Date:,"${priceDate}"\n`;
+      csvContent += `Shop Name:,"${shopName}"\n`;
+      csvContent += `Shop Contact:,"${shopContact}"\n`;
+      csvContent += `Shop Address:,"${shopAddress}"\n\n`;
+
+      sortedMemberCategories.forEach((memberCount) => {
+          const items = rationLists[memberCount];
+          if (items.length > 0) {
+              const categoryTitle = memberCount === 'General' ? 'General' : `For ${memberCount} Members`;
+              csvContent += `"${categoryTitle}"\n`;
+              csvContent += '#,Item Name,Quantity,Notes,Price (₹)\n';
+
+              items.forEach((item, index) => {
+                  const row = [
+                      index + 1,
+                      `"${item.name.replace(/"/g, '""')}"`,
+                      `"${item.quantity.replace(/"/g, '""')}"`,
+                      `"${item.notes.replace(/"/g, '""')}"`,
+                      item.price,
+                  ].join(',');
+                  csvContent += row + '\n';
+              });
+
+              const total = calculateTotal(items);
+              csvContent += `,,,Total,${total}\n\n`;
+          }
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -180,45 +198,60 @@ export default function CampaignDetailsPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
     } else if (format === 'excel') {
         const wb = XLSX.utils.book_new();
 
-        Object.entries(rationLists).forEach(([memberCount, items]) => {
+        sortedMemberCategories.forEach((memberCount) => {
+            const items = rationLists[memberCount];
             if (items.length > 0) {
+                const categoryTitle = memberCount === 'General' ? 'General' : `For ${memberCount} Members`;
                 const total = calculateTotal(items);
-                const worksheetData = items.map((item, index) => ({
-                    '#': index + 1,
-                    'Item Name': item.name,
-                    'Quantity': item.quantity,
-                    'Notes': item.notes,
-                    'Price (₹)': item.price,
-                }));
-                worksheetData.push({
-                    '#': '',
-                    'Item Name': '',
-                    'Quantity': '',
-                    'Notes': 'Total',
-                    'Price (₹)': total,
-                });
 
-                const ws = XLSX.utils.json_to_sheet(worksheetData);
+                const header = ['#', 'Item Name', 'Quantity', 'Notes', 'Price (₹)'];
+                const body = items.map((item, index) => [
+                    index + 1,
+                    item.name,
+                    item.quantity,
+                    item.notes,
+                    item.price,
+                ]);
+
+                const table = [header, ...body, ['', '', '', 'Total', total]];
+
+                const ws = XLSX.utils.aoa_to_sheet([]);
+                
+                XLSX.utils.sheet_add_aoa(ws, [
+                    [`Shop Name:`, shopName],
+                    [`Shop Contact:`, shopContact],
+                    [`Shop Address:`, shopAddress],
+                    [`Price Date:`, priceDate],
+                    [], 
+                    [categoryTitle],
+                    [], 
+                ], { origin: 'A1' });
+
+                XLSX.utils.sheet_add_aoa(ws, table, { origin: 'A8' });
+
                 ws['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 10 }];
-                XLSX.utils.book_append_sheet(wb, ws, memberCount === 'General' ? 'General' : `For ${memberCount} Members`);
+                XLSX.utils.book_append_sheet(wb, ws, categoryTitle);
             }
         });
 
         XLSX.writeFile(wb, `ration-details-${priceDate}.xlsx`);
+
     } else if (format === 'pdf') {
         const doc = new jsPDF();
         let startY = 20;
 
-        doc.text(`Ration Details - Price Date: ${priceDate}`, 14, 10);
+        doc.setFontSize(14);
+        doc.text(`Ration Details`, 14, 15);
+        
+        doc.setFontSize(10);
+        doc.text(`Shop: ${shopName} | Contact: ${shopContact} | Address: ${shopAddress}`, 14, 22);
+        doc.text(`Price Date: ${priceDate}`, 14, 27);
 
-        const sortedMemberCategories = Object.keys(rationLists).sort((a, b) => {
-            if (a === 'General') return -1;
-            if (b === 'General') return 1;
-            return Number(b) - Number(a);
-        });
+        startY = 35;
         
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
@@ -401,14 +434,51 @@ export default function CampaignDetailsPage() {
              <div className="flex justify-between items-start flex-wrap gap-4">
                 <div>
                     <CardTitle>Ration Details 2026</CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-2">
-                        <span>Price Date:</span>
-                        <Input
-                        type="date"
-                        value={priceDate}
-                        onChange={(e) => setPriceDate(e.target.value)}
-                        className="w-fit"
-                        />
+                    <CardDescription as="div" className="mt-4 space-y-3">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="priceDate" className="text-nowrap">Price Date:</Label>
+                                <Input
+                                id="priceDate"
+                                type="date"
+                                value={priceDate}
+                                onChange={(e) => setPriceDate(e.target.value)}
+                                className="w-fit"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="shopName" className="text-nowrap">Shop Name:</Label>
+                                <Input
+                                id="shopName"
+                                value={shopName}
+                                onChange={(e) => setShopName(e.target.value)}
+                                className="w-fit"
+                                placeholder="Shop Name"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="shopContact" className="text-nowrap">Shop Contact:</Label>
+                                <Input
+                                id="shopContact"
+                                value={shopContact}
+                                onChange={(e) => setShopContact(e.target.value)}
+                                className="w-fit"
+                                placeholder="Contact Number"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Label htmlFor="shopAddress" className="text-nowrap">Shop Address:</Label>
+                                <Input
+                                id="shopAddress"
+                                value={shopAddress}
+                                onChange={(e) => setShopAddress(e.target.value)}
+                                className="w-full max-w-xs"
+                                placeholder="Shop Address"
+                                />
+                            </div>
+                        </div>
                     </CardDescription>
                 </div>
                 <div className="flex gap-2 flex-wrap justify-end">
