@@ -12,7 +12,7 @@ service cloud.firestore {
     match /users/{userId} {
       // Allow unauthenticated creation for seeding, but otherwise require auth.
       allow create: if request.auth == null || isSignedIn();
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isSignedIn() && isOwner(userId);
     }
 
