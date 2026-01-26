@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ScanSearch, ArrowRight, FileText, ShoppingBasket, Users } from 'lucide-react';
+import { ScanSearch, ArrowRight, FileText, ShoppingBasket, Users, ShieldCheck } from 'lucide-react';
 
 export default function LandingPage() {
   return (
@@ -38,6 +38,12 @@ export default function LandingPage() {
             <Button size="lg" variant="outline" className="text-lg">
               <Users className="mr-2 h-5 w-5" />
               Users
+            </Button>
+          </Link>
+           <Link href="/diagnostics">
+            <Button size="lg" variant="outline" className="text-lg">
+              <ShieldCheck className="mr-2 h-5 w-5" />
+              Diagnostics
             </Button>
           </Link>
         </div>
