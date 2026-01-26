@@ -70,18 +70,21 @@ export default function SeedPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <CardDescription>
-              This tool performs the required one-time setup for the application. It creates the initial administrator user and populates your Firestore database with sample data.
+              This tool performs the required one-time setup for the application. It solves the initial "chicken-and-egg" problem: you can't log in without a user in the database, and you can't create a user without being logged in. This tool creates the first admin user and populates the database with sample data.
             </CardDescription>
             
             {setupError && (
                  <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Action Required: Enable Sign-In Method</AlertTitle>
-                    <AlertDescription>
-                        For the one-time initial setup, you must enable the 'Email/Password' provider in your Firebase project. This allows the app to create the first admin user.
+                    <AlertTitle>One-Time Setup Step: Enable Sign-In Method</AlertTitle>
+                    <AlertDescription className="space-y-3">
+                        <div>
+                            <p className="font-bold">Why is this required?</p>
+                            <p>Your app's normal login uses your database, just as you expect. However, to create the very first admin user and collections securely, the app must prove its identity to Firebase. Enabling the 'Email/Password' provider is the <span className="font-bold">one-time key</span> that authorizes this initial setup. It is not used for regular user logins.</p>
+                        </div>
                         <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
                             <Link href={authUrl} target="_blank">
-                                Go to Firebase Console
+                                Go to Firebase Console to Enable
                                 <ExternalLink className="ml-2 h-4 w-4" />
                             </Link>
                         </Button>
