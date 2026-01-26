@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Campaign, RationItem, RationList } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -40,19 +41,23 @@ export default function CampaignDetailsPage() {
   const campaignId = params.campaignId as string;
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId) return null;
     return doc(firestore, 'campaigns', campaignId);
   }, [firestore, campaignId]);
 
-  const { data: campaign, isLoading } = useDoc<Campaign>(campaignDocRef);
+  const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
 
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newMemberCount, setNewMemberCount] = useState('');
 
+  const isAdmin = userProfile?.role === 'Admin';
+  const isLoading = isCampaignLoading || isProfileLoading;
+
   const updateCampaign = async (updatedData: Partial<Campaign>) => {
-    if (!campaignDocRef) return;
+    if (!campaignDocRef || !isAdmin) return;
     try {
         await updateDoc(campaignDocRef, updatedData);
     } catch (error) {
@@ -71,7 +76,7 @@ export default function CampaignDetailsPage() {
     field: keyof RationItem,
     value: string | number
   ) => {
-    if (!campaign) return;
+    if (!campaign || !isAdmin) return;
     const newRationLists = { ...campaign.rationLists };
     newRationLists[memberCount] = newRationLists[memberCount].map(item =>
         item.id === itemId ? { ...item, [field]: value } : item
@@ -80,7 +85,7 @@ export default function CampaignDetailsPage() {
   };
 
   const handleAddItem = (memberCount: string) => {
-    if (!campaign) return;
+    if (!campaign || !isAdmin) return;
     const newItem: RationItem = {
       id: `${memberCount}-${Date.now()}`,
       name: '',
@@ -94,7 +99,7 @@ export default function CampaignDetailsPage() {
   };
 
   const handleDeleteItem = (memberCount: string, itemId: string) => {
-    if (!campaign) return;
+    if (!campaign || !isAdmin) return;
     const newRationLists = { ...campaign.rationLists };
     newRationLists[memberCount] = newRationLists[memberCount].filter(item => item.id !== itemId);
     updateCampaign({ rationLists: newRationLists });
@@ -265,7 +270,7 @@ export default function CampaignDetailsPage() {
   };
 
   const handleAddNewCategory = () => {
-    if (!campaign) return;
+    if (!campaign || !isAdmin) return;
     if (!newMemberCount || isNaN(Number(newMemberCount)) || Number(newMemberCount) <= 0) {
         toast({
             title: 'Invalid Input',
@@ -315,7 +320,7 @@ export default function CampaignDetailsPage() {
                   <TableHead className="w-[15%]">Quantity</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead className="w-[120px] text-right">Price (₹)</TableHead>
-                  <TableHead className="w-[50px] text-center">Action</TableHead>
+                  {isAdmin && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -327,6 +332,7 @@ export default function CampaignDetailsPage() {
                         value={item.name}
                         onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)}
                         placeholder="Item name"
+                        disabled={!isAdmin}
                       />
                     </TableCell>
                     <TableCell>
@@ -334,6 +340,7 @@ export default function CampaignDetailsPage() {
                         value={item.quantity}
                         onChange={e => handleItemChange(memberCount, item.id, 'quantity', e.target.value)}
                         placeholder="e.g. 10 kg"
+                        disabled={!isAdmin}
                       />
                     </TableCell>
                     <TableCell>
@@ -341,6 +348,7 @@ export default function CampaignDetailsPage() {
                         value={item.notes}
                         onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)}
                         placeholder="e.g. @60/kg"
+                        disabled={!isAdmin}
                       />
                     </TableCell>
                     <TableCell>
@@ -349,30 +357,35 @@ export default function CampaignDetailsPage() {
                         value={item.price}
                         onChange={e => handleItemChange(memberCount, item.id, 'price', Number(e.target.value))}
                         className="text-right"
+                        disabled={!isAdmin}
                       />
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </TableCell>
+                    {isAdmin && (
+                        <TableCell className="text-center">
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                        </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
               <TableFoot>
                 <TableRow>
-                  <TableCell colSpan={4} className="text-right font-bold">Total</TableCell>
+                  <TableCell colSpan={isAdmin ? 4 : 3} className="text-right font-bold">Total</TableCell>
                   <TableCell className="text-right font-bold">₹{total.toFixed(2)}</TableCell>
                   <TableCell></TableCell>
                 </TableRow>
               </TableFoot>
             </Table>
           </div>
-          <div className="mt-4 flex justify-end">
-            <Button onClick={() => handleAddItem(memberCount)}>
-              <Plus className="mr-2 h-4 w-4" /> Add Item
-            </Button>
-          </div>
+          {isAdmin && (
+            <div className="mt-4 flex justify-end">
+                <Button onClick={() => handleAddItem(memberCount)}>
+                <Plus className="mr-2 h-4 w-4" /> Add Item
+                </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
@@ -443,6 +456,7 @@ export default function CampaignDetailsPage() {
                                 value={campaign.priceDate}
                                 onChange={(e) => updateCampaign({ priceDate: e.target.value })}
                                 className="w-fit"
+                                disabled={!isAdmin}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
@@ -453,6 +467,7 @@ export default function CampaignDetailsPage() {
                                 onChange={(e) => updateCampaign({ shopName: e.target.value })}
                                 className="w-fit"
                                 placeholder="Shop Name"
+                                disabled={!isAdmin}
                                 />
                             </div>
                         </div>
@@ -465,6 +480,7 @@ export default function CampaignDetailsPage() {
                                 onChange={(e) => updateCampaign({ shopContact: e.target.value })}
                                 className="w-fit"
                                 placeholder="Contact Number"
+                                disabled={!isAdmin}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
@@ -475,6 +491,7 @@ export default function CampaignDetailsPage() {
                                 onChange={(e) => updateCampaign({ shopAddress: e.target.value })}
                                 className="w-full max-w-xs"
                                 placeholder="Shop Address"
+                                disabled={!isAdmin}
                                 />
                             </div>
                         </div>
@@ -494,41 +511,43 @@ export default function CampaignDetailsPage() {
                             <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline">
-                                <Plus className="mr-2 h-4 w-4" />
-                                Add Category
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                                <DialogTitle>Add New Member Category</DialogTitle>
-                                <DialogDescription>
-                                    Enter the number of family members for the new ration list.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="member-count" className="text-right">
-                                        Members
-                                    </Label>
-                                    <Input
-                                        id="member-count"
-                                        type="number"
-                                        value={newMemberCount}
-                                        onChange={(e) => setNewMemberCount(e.target.value)}
-                                        className="col-span-3"
-                                        placeholder="e.g. 4"
-                                    />
+                    {isAdmin && (
+                        <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline">
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Add Category
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>Add New Member Category</DialogTitle>
+                                    <DialogDescription>
+                                        Enter the number of family members for the new ration list.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="member-count" className="text-right">
+                                            Members
+                                        </Label>
+                                        <Input
+                                            id="member-count"
+                                            type="number"
+                                            value={newMemberCount}
+                                            onChange={(e) => setNewMemberCount(e.target.value)}
+                                            className="col-span-3"
+                                            placeholder="e.g. 4"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                            <DialogFooter>
-                                <Button type="button" variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
-                                <Button type="submit" onClick={handleAddNewCategory}>Add Category</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                                <DialogFooter>
+                                    <Button type="button" variant="outline" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
+                                    <Button type="submit" onClick={handleAddNewCategory}>Add Category</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
                 </div>
              </div>
           </CardHeader>

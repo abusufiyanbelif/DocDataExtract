@@ -5,6 +5,7 @@ import { useFirestore, useCollection, useDoc } from '@/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import type { Beneficiary, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,7 @@ export default function BeneficiariesPage() {
   const campaignId = params.campaignId as string;
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId) return null;
@@ -67,24 +69,29 @@ export default function BeneficiariesPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  const isAdmin = userProfile?.role === 'Admin';
 
   const handleAdd = () => {
+    if (!isAdmin) return;
     setEditingBeneficiary(null);
     setIsFormOpen(true);
   };
 
   const handleEdit = (beneficiary: Beneficiary) => {
+    if (!isAdmin) return;
     setEditingBeneficiary(beneficiary);
     setIsFormOpen(true);
   };
 
   const handleDeleteClick = (id: string) => {
+    if (!isAdmin) return;
     setBeneficiaryToDelete(id);
     setIsDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (beneficiaryToDelete && firestore && campaignId) {
+    if (beneficiaryToDelete && firestore && campaignId && isAdmin) {
         const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiaryToDelete);
         try {
             await deleteDoc(docRef);
@@ -100,16 +107,14 @@ export default function BeneficiariesPage() {
   };
   
   const handleFormSubmit = async (data: BeneficiaryFormData) => {
-    if (!firestore || !campaignId) return;
+    if (!firestore || !campaignId || !isAdmin) return;
 
     try {
         if (editingBeneficiary) {
-            // Update
             const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, editingBeneficiary.id);
             await updateDoc(docRef, data);
             toast({ title: 'Success', description: 'Beneficiary updated.' });
         } else {
-            // Create
             const collectionRef = collection(firestore, `campaigns/${campaignId}/beneficiaries`);
             await addDoc(collectionRef, {
                 ...data,
@@ -145,7 +150,7 @@ export default function BeneficiariesPage() {
   };
 
   const handleImportBeneficiaries = async () => {
-    if (!selectedFile || !firestore || !campaignId) return;
+    if (!selectedFile || !firestore || !campaignId || !isAdmin) return;
     setIsImporting(true);
 
     const reader = new FileReader();
@@ -217,7 +222,7 @@ export default function BeneficiariesPage() {
     return beneficiaries.reduce((acc, b) => acc + (b.kitAmount || 0), 0);
   }, [beneficiaries]);
 
-  const isLoading = isCampaignLoading || areBeneficiariesLoading;
+  const isLoading = isCampaignLoading || areBeneficiariesLoading || isProfileLoading;
 
   if (isLoading) {
     return (
@@ -272,27 +277,29 @@ export default function BeneficiariesPage() {
         <Card>
           <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <CardTitle>Beneficiary List</CardTitle>
-            <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={handleDownloadTemplate}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Download Template
-                </Button>
-                <Button variant="outline" onClick={() => setIsImportOpen(true)}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import Beneficiaries
-                </Button>
-                <Button onClick={handleAdd}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Beneficiary
-                </Button>
-            </div>
+            {isAdmin && (
+                <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" onClick={handleDownloadTemplate}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download Template
+                    </Button>
+                    <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import Beneficiaries
+                    </Button>
+                    <Button onClick={handleAdd}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Beneficiary
+                    </Button>
+                </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <Table>
                   <TableHeader>
                       <TableRow>
-                          <TableHead className="w-[50px] text-center">Actions</TableHead>
+                          {isAdmin && <TableHead className="w-[50px] text-center">Actions</TableHead>}
                           <TableHead className="w-[40px]">#</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Address</TableHead>
@@ -312,31 +319,33 @@ export default function BeneficiariesPage() {
                       {areBeneficiariesLoading && (
                         [...Array(3)].map((_, i) => (
                            <TableRow key={i}>
-                                <TableCell colSpan={14}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={isAdmin ? 14 : 13}><Skeleton className="h-6 w-full" /></TableCell>
                            </TableRow>
                         ))
                       )}
                       {!areBeneficiariesLoading && beneficiaries.map((beneficiary, index) => (
                           <TableRow key={beneficiary.id}>
-                              <TableCell className="text-center">
-                                  <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                          <Button variant="ghost" size="icon">
-                                              <MoreHorizontal className="h-4 w-4" />
-                                          </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                          <DropdownMenuItem onClick={() => handleEdit(beneficiary)}>
-                                              <Edit className="mr-2 h-4 w-4" />
-                                              Edit
-                                          </DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleDeleteClick(beneficiary.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                              <Trash2 className="mr-2 h-4 w-4" />
-                                              Delete
-                                          </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                  </DropdownMenu>
-                              </TableCell>
+                              {isAdmin && (
+                                <TableCell className="text-center">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleEdit(beneficiary)}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDeleteClick(beneficiary.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                              )}
                               <TableCell>{index + 1}</TableCell>
                               <TableCell className="font-medium">{beneficiary.name}</TableCell>
                               <TableCell>{beneficiary.address}</TableCell>
@@ -360,7 +369,7 @@ export default function BeneficiariesPage() {
                       ))}
                       {!areBeneficiariesLoading && beneficiaries.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={14} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={isAdmin ? 14 : 13} className="text-center h-24 text-muted-foreground">
                                 No beneficiaries added yet.
                             </TableCell>
                         </TableRow>
@@ -368,7 +377,7 @@ export default function BeneficiariesPage() {
                   </TableBody>
                   <TableFoot>
                     <TableRow>
-                        <TableCell colSpan={12} className="text-right font-bold">Total Kit Amount Required</TableCell>
+                        <TableCell colSpan={isAdmin ? 12 : 11} className="text-right font-bold">Total Kit Amount Required</TableCell>
                         <TableCell className="text-right font-bold">₹{totalKitAmount.toFixed(2)}</TableCell>
                         <TableCell></TableCell>
                     </TableRow>

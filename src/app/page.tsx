@@ -31,18 +31,22 @@ export default function LandingPage() {
               Create a Story
             </Button>
           </Link>
-          <Link href="/campaign">
-            <Button size="lg" variant="outline" className="text-lg">
-              <ShoppingBasket className="mr-2 h-5 w-5" />
-              Campaign
-            </Button>
-          </Link>
-           <Link href="/users">
-            <Button size="lg" variant="outline" className="text-lg">
-              <Users className="mr-2 h-5 w-5" />
-              Users
-            </Button>
-          </Link>
+          {userProfile?.role === 'Admin' && (
+            <>
+              <Link href="/campaign">
+                <Button size="lg" variant="outline" className="text-lg">
+                  <ShoppingBasket className="mr-2 h-5 w-5" />
+                  Campaign
+                </Button>
+              </Link>
+              <Link href="/users">
+                <Button size="lg" variant="outline" className="text-lg">
+                  <Users className="mr-2 h-5 w-5" />
+                  Users
+                </Button>
+              </Link>
+            </>
+          )}
            <Link href="/diagnostics">
             <Button size="lg" variant="outline" className="text-lg">
               <ShieldCheck className="mr-2 h-5 w-5" />

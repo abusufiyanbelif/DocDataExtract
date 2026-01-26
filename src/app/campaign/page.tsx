@@ -7,16 +7,20 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useCollection } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import type { Campaign } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CampaignPage() {
   const router = useRouter();
-  const { data: campaigns, isLoading } = useCollection<Campaign>('campaigns');
+  const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>('campaigns');
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const handleRowClick = (campaignId: string) => {
     router.push(`/campaign/${campaignId}`);
   };
+
+  const isLoading = areCampaignsLoading || isProfileLoading;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -33,12 +37,14 @@ export default function CampaignPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Campaigns</CardTitle>
-            <Button asChild>
-              <Link href="/campaign/create">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Campaign
-              </Link>
-            </Button>
+            {userProfile?.role === 'Admin' && (
+              <Button asChild>
+                <Link href="/campaign/create">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Campaign
+                </Link>
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <Table>
@@ -70,7 +76,7 @@ export default function CampaignPage() {
                 {!isLoading && campaigns.length === 0 && (
                     <TableRow>
                         <TableCell colSpan={2} className="text-center text-muted-foreground">
-                            No campaigns found. <Link href="/campaign/create" className="text-primary underline">Create one now</Link>.
+                            No campaigns found. {userProfile?.role === 'Admin' && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
                         </TableCell>
                     </TableRow>
                 )}

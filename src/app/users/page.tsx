@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, ShieldAlert } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,19 +37,20 @@ import {
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function UsersPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const { isLoading: isCurrentUserLoading } = useUserProfile();
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const usersCollectionRef = useMemo(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
   }, [firestore]);
   
-  const { data: users, isLoading } = useCollection<UserProfile>(usersCollectionRef);
+  const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -124,6 +125,49 @@ export default function UsersPage() {
         setEditingUser(null);
     }
   };
+  
+  const isLoading = areUsersLoading || isProfileLoading;
+  
+  if (isLoading) {
+    return (
+        <div className="min-h-screen bg-background text-foreground">
+            <DocuExtractHeader />
+            <main className="container mx-auto p-4 md:p-8">
+                <Card>
+                    <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-40 w-full" />
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
+    )
+  }
+  
+  if (userProfile?.role !== 'Admin') {
+    return (
+        <div className="min-h-screen bg-background text-foreground">
+            <DocuExtractHeader />
+            <main className="container mx-auto p-4 md:p-8">
+                <div className="mb-4">
+                    <Button variant="outline" asChild>
+                        <Link href="/">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Home
+                        </Link>
+                    </Button>
+                </div>
+                <Alert variant="destructive">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Access Denied</AlertTitle>
+                    <AlertDescription>
+                    You do not have the required permissions to manage users.
+                    </AlertDescription>
+                </Alert>
+            </main>
+        </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -162,14 +206,7 @@ export default function UsersPage() {
                       </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {(isLoading || isCurrentUserLoading) && (
-                        [...Array(3)].map((_, i) => (
-                            <TableRow key={i}>
-                                <TableCell colSpan={6}><Skeleton className="h-6 w-full" /></TableCell>
-                            </TableRow>
-                        ))
-                      )}
-                      {!(isLoading || isCurrentUserLoading) && users.map((user, index) => (
+                      {users.map((user, index) => (
                           <TableRow key={user.id}>
                               <TableCell className="text-center">
                                   <DropdownMenu>
@@ -199,7 +236,7 @@ export default function UsersPage() {
                               </TableCell>
                           </TableRow>
                       ))}
-                      {!(isLoading || isCurrentUserLoading) && users.length === 0 && (
+                      {users.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                                 No users found. The database may be empty.
