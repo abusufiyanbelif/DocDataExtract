@@ -46,6 +46,9 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
                     console.error("Admin Sign-In failed after create failed:", signInError);
                     throw new Error("Admin password seems to be incorrect. Please check Firebase credentials.");
                 }
+            } else if (error.code === 'auth/configuration-not-found') {
+                console.error("Admin Auth user creation failed:", error);
+                throw new Error("Login failed: The Email/Password sign-in provider is not enabled in your Firebase project. Please go to the Firebase console, navigate to Authentication > Sign-in method, and enable 'Email/Password'.");
             } else {
                 // For other errors (e.g., weak password), fail the process.
                 console.error("Admin Auth user creation failed:", error);
