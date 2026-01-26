@@ -23,6 +23,7 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
     const querySnapshot = await getDocs(q);
 
     // Case 1: Database is empty, and the user is trying the first-ever admin login.
+    // This is the only time createUserWithEmailAndPassword is called.
     if (querySnapshot.empty && phone === '0000000000') {
         toast({
             title: 'First-Time Setup',
@@ -35,24 +36,23 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
         
         let userCredential;
         try {
-            // First, create the admin user in Firebase Auth. This also signs them in.
-            // This requires the 'Email/Password' provider to be enabled in the Firebase Console.
+            // This requires the 'Email/Password' provider to be enabled in the Firebase Console
+            // for the one-time creation of the admin user.
             userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
             toast({ title: "Admin Account Created", description: "Successfully created admin user in Firebase Auth." });
         } catch (error: any) {
-            // If it fails because the email already exists, just sign them in.
             if (error.code === 'auth/email-already-in-use') {
                 try {
                     userCredential = await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
                 } catch (signInError: any) {
                     if (signInError.code === 'auth/invalid-credential' || signInError.code === 'auth/wrong-password') {
-                        throw new Error("Admin user already exists in Firebase Auth, but the provided password ('password') is incorrect. Please verify the admin password in Firebase or delete the admin auth user to allow auto-recreation.");
+                        throw new Error("Admin user already exists in Firebase Auth, but the provided password ('password') is incorrect. Please verify the admin password or delete the admin auth user to allow auto-recreation.");
                     }
                     throw new Error(`Admin sign-in failed: ${signInError.message}`);
                 }
             } else if (error.code === 'auth/configuration-not-found') {
-                // This is a critical error for first-time setup. It is caught on the login page to show a helpful message.
-                throw new Error("Login failed: The Email/Password sign-in provider is not enabled in your Firebase project. Please go to the Firebase console, navigate to Authentication > Sign-in method, and enable 'Email/Password'.");
+                // This is a critical error for first-time setup, now handled on the login page.
+                throw new Error("Login failed: The Email/Password sign-in provider is not enabled in your Firebase project.");
             } else {
                 // For other errors (e.g., weak password), fail the process.
                 throw new Error(`Could not create admin user: ${error.message}`);

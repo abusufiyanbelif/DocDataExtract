@@ -100,14 +100,14 @@ export default function LoginPage() {
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Action Required: Enable Sign-In Method</AlertTitle>
                 <AlertDescription>
-                    To complete the initial setup, you must enable the 'Email/Password' provider in your Firebase project.
+                    For the one-time initial setup, you must enable the 'Email/Password' provider in your Firebase project. This allows the app to create the first admin user.
                     <Button asChild variant="secondary" size="sm" className="mt-3 w-full">
                         <Link href={authUrl} target="_blank">
                             Go to Firebase Console
                             <ExternalLink className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
-                     <p className="text-xs text-center mt-2 text-muted-foreground">After enabling, try logging in again.</p>
+                     <p className="text-xs text-center mt-2 text-muted-foreground">After enabling, please try logging in again.</p>
                 </AlertDescription>
             </Alert>
         )}
