@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TableFoot } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Download } from 'lucide-react';
 import Link from 'next/link';
 
 interface RationItem {
@@ -61,6 +61,7 @@ const initialRationLists: RationList = {
 export default function CampaignDetailsPage() {
   const campaignId = 'ration-kit-distribution-ramza-2026';
   const [rationLists, setRationLists] = useState<RationList>(initialRationLists);
+  const [priceDate, setPriceDate] = useState('2025-01-11');
 
   const handleItemChange = (
     memberCount: string,
@@ -100,6 +101,33 @@ export default function CampaignDetailsPage() {
   const calculateTotal = (items: RationItem[]) => {
     return items.reduce((sum, item) => sum + Number(item.price || 0), 0);
   };
+  
+  const handleDownload = () => {
+    let csvContent = 'Member Count,Item Name,Quantity,Price (₹),Notes\n';
+
+    Object.entries(rationLists).forEach(([memberCount, items]) => {
+      items.forEach(item => {
+        const row = [
+          memberCount,
+          `"${item.name.replace(/"/g, '""')}"`,
+          `"${item.quantity.replace(/"/g, '""')}"`,
+          item.price,
+          `"${item.notes.replace(/"/g, '""')}"`
+        ].join(',');
+        csvContent += row + '\n';
+      });
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `ration-details-${priceDate}.csv`;
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
 
   const renderRationTable = (memberCount: string) => {
     const items = rationLists[memberCount];
@@ -205,8 +233,24 @@ export default function CampaignDetailsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Ration Details 2026</CardTitle>
-            <CardDescription>Price Date: 11 Jan 2025</CardDescription>
+             <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle>Ration Details 2026</CardTitle>
+                    <CardDescription className="flex items-center gap-2 mt-2">
+                        <span>Price Date:</span>
+                        <Input
+                        type="date"
+                        value={priceDate}
+                        onChange={(e) => setPriceDate(e.target.value)}
+                        className="w-fit"
+                        />
+                    </CardDescription>
+                </div>
+                <Button onClick={handleDownload} variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Prices
+                </Button>
+             </div>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="5" className="w-full">
