@@ -6,14 +6,23 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Plus } from 'lucide-react';
-import { useCollection } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import type { Campaign } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
+import { collection } from 'firebase/firestore';
 
 export default function CampaignPage() {
   const router = useRouter();
-  const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>('campaigns');
+  const firestore = useFirestore();
+
+  const campaignsCollectionRef = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'campaigns');
+  }, [firestore]);
+
+  const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const handleRowClick = (campaignId: string) => {
