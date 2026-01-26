@@ -28,6 +28,7 @@ import { modules, permissions } from '@/lib/modules';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from './ui/separator';
+import { ScrollArea } from './ui/scroll-area';
 
 const permissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()).optional()).optional();
 
@@ -122,12 +123,9 @@ export function UserForm({ user, onSubmit, onCancel }: UserFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Phone Number</FormLabel>
-              <div className="flex gap-2">
                 <FormControl>
                     <Input placeholder="10-digit mobile number" {...field} />
                 </FormControl>
-                <Button type="button" variant="outline" onClick={() => handleFeatureNotReady('Change Phone Number')} disabled>Change</Button>
-              </div>
               <FormMessage />
             </FormItem>
           )}

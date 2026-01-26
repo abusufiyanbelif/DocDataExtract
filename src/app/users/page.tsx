@@ -263,7 +263,7 @@ export default function UsersPage() {
       </main>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>{editingUser ? 'Edit' : 'Add'} User</DialogTitle>
             </DialogHeader>
