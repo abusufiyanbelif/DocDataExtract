@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
-import { signInWithPhone } from '@/lib/auth';
+import { signInWithLoginId } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
 
@@ -19,7 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 
 const loginSchema = z.object({
-  phone: z.string().regex(/^\d{10}$/, { message: "Phone number must be 10 digits." }),
+  loginId: z.string().min(3, 'Phone number or User Key is required.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
 });
 
@@ -37,12 +37,13 @@ export default function LoginPage() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      phone: '',
+      loginId: '',
       password: '',
     },
   });
 
   useEffect(() => {
+    if (isSeeded !== null) return;
     if (!firestore) return;
     
     // Check seeding status to conditionally show the prompt
@@ -59,7 +60,7 @@ export default function LoginPage() {
         }
     };
     checkSeedingStatus();
-  }, [firestore]);
+  }, [firestore, isSeeded]);
 
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -76,7 +77,7 @@ export default function LoginPage() {
       return;
     }
     try {
-      await signInWithPhone(auth, firestore, data.phone, data.password);
+      await signInWithLoginId(auth, firestore, data.loginId, data.password);
       toast({ title: 'Login Successful', description: "Welcome back!" });
       router.push('/');
     } catch (error: any) {
@@ -115,13 +116,13 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="phone"
+                name="loginId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
+                    <FormLabel>Phone Number or User Key</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="10-digit mobile number" 
+                        placeholder="e.g. 0000000000 or admin" 
                         {...field}
                       />
                     </FormControl>

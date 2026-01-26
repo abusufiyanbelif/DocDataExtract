@@ -3,28 +3,41 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   Auth,
-  createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { 
     Firestore, 
     collection, 
     query, 
     where, 
-    getDocs 
+    getDocs,
+    DocumentSnapshot
 } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 
-export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: string, password?: string) => {
+export const signInWithLoginId = async (auth: Auth, firestore: Firestore, loginId: string, password?: string) => {
     
     const usersRef = collection(firestore, 'users');
-    const q = query(usersRef, where("phone", "==", phone));
-    const querySnapshot = await getDocs(q);
+    let userDoc: DocumentSnapshot | null = null;
 
-    if (querySnapshot.empty) {
-        throw new Error('User with this phone number not found. Have you seeded the database?');
+    // First, query by userKey, which is the most common case for non-admin users
+    const userKeyQuery = query(usersRef, where("userKey", "==", loginId));
+    const userKeySnapshot = await getDocs(userKeyQuery);
+
+    if (!userKeySnapshot.empty) {
+        userDoc = userKeySnapshot.docs[0];
+    } else {
+        // If not found by userKey, try querying by phone number
+        const phoneQuery = query(usersRef, where("phone", "==", loginId));
+        const phoneSnapshot = await getDocs(phoneQuery);
+        if (!phoneSnapshot.empty) {
+            userDoc = phoneSnapshot.docs[0];
+        }
     }
 
-    const userDoc = querySnapshot.docs[0];
+    if (!userDoc) {
+        throw new Error('User not found. Please check your Phone Number or User Key.');
+    }
+
     const userData = userDoc.data() as UserProfile;
     const { userKey } = userData;
 
