@@ -5,26 +5,29 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // NOTE: This function assumes the document ID is the user's auth UID.
+    // This is not currently the case, so isOwner() checks will fail.
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
     match /users/{userId} {
-      // Allow unauthenticated creation for seeding, but otherwise require auth.
+      // Allow creation during initial seed or by any authenticated user.
       allow create: if request.auth == null || isSignedIn();
+      // Allow all reads.
       allow read: if true;
-      allow write: if isSignedIn() && isOwner(userId);
+      // TEMPORARY: Allow any signed-in user to write to any user profile.
+      // This should be locked down to isOwner(userId) || isAdmin() later.
+      allow write: if isSignedIn();
     }
 
     match /campaigns/{campaignId} {
-      // Allow unauthenticated creation for seeding, but otherwise require auth.
-      allow create: if request.auth == null || isSignedIn();
-      allow read, update, delete: if isSignedIn();
+      // TEMPORARY: Allow any signed-in user to manage campaigns.
+      // This should be locked down to isAdmin() later.
+      allow read, write: if isSignedIn();
 
       match /beneficiaries/{beneficiaryId} {
-        // Allow unauthenticated creation for seeding, but otherwise require auth.
-        allow create: if request.auth == null || isSignedIn();
-        allow read, update, delete: if isSignedIn();
+        allow read, write: if isSignedIn();
       }
     }
   }

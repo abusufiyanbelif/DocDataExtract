@@ -3,6 +3,7 @@ import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   Auth,
+  createUserWithEmailAndPassword,
 } from 'firebase/auth';
 import { 
     Firestore, 
@@ -17,35 +18,45 @@ import { toast } from '@/hooks/use-toast';
 
 export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: string, password?: string) => {
     
-    // The security rules need to allow this read for login to work.
     const usersRef = collection(firestore, 'users');
     const q = query(usersRef, where("phone", "==", phone));
     const querySnapshot = await getDocs(q);
 
-    // Case 1: Database is empty and it's the first admin login
+    // Case 1: Database is empty, this is the first-ever admin login.
     if (querySnapshot.empty && phone === '0000000000') {
         toast({
             title: 'First-Time Setup',
-            description: 'Database is empty. Attempting to sign in as admin and seed database...',
+            description: 'Admin user not found. Creating admin and seeding database...',
         });
 
-        // First, prove identity by signing into Firebase Auth as admin
         const adminEmail = 'admin@docdataextract.app';
         const adminPassword = 'password';
         
         let userCredential;
         try {
-            userCredential = await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+            // First, try to create the admin user in Firebase Auth. This also signs them in.
+            userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
+            toast({ title: "Admin Account Created", description: "Successfully created admin user in Firebase Auth." });
         } catch (error: any) {
-             console.error("Admin Auth failed:", error);
-             throw new Error("Admin login failed. Please ensure 'admin@docdataextract.app' user is created in Firebase Authentication with the password 'password'.");
+            // If it fails because the email already exists, just sign them in.
+            if (error.code === 'auth/email-already-in-use') {
+                try {
+                    userCredential = await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+                } catch (signInError: any) {
+                    console.error("Admin Sign-In failed after create failed:", signInError);
+                    throw new Error("Admin password seems to be incorrect. Please check Firebase credentials.");
+                }
+            } else {
+                // For other errors (e.g., weak password), fail the process.
+                console.error("Admin Auth user creation failed:", error);
+                throw new Error(`Could not create admin user: ${error.message}`);
+            }
         }
         
-        // If auth is successful, seed the database
+        // With the admin user now authenticated, seed the database.
         try {
             await seedDatabase(firestore);
             toast({ title: "Database Seeded", description: "Initial data has been created." });
-            // Login is already complete.
             return userCredential;
         } catch (seedError: any) {
             console.error("Database seeding failed:", seedError);
@@ -58,13 +69,12 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
         throw new Error('User with this phone number not found in the database.');
     }
 
-    // Case 3: Regular login
+    // Case 3: Regular user login
     const userDoc = querySnapshot.docs[0];
     const userData = userDoc.data() as UserProfile;
     const { userKey, role } = userData;
 
-    // Use a default password for the admin user, otherwise use the provided password.
-    const finalPassword = role === 'Admin' ? 'password' : password;
+    const finalPassword = (role === 'Admin' && phone === '0000000000') ? 'password' : password;
 
     if (!finalPassword) {
         throw new Error('Password is required for non-admin users.');
@@ -73,6 +83,7 @@ export const signInWithPhone = async (auth: Auth, firestore: Firestore, phone: s
     const email = `${userKey}@docdataextract.app`;
 
     try {
+        // For regular logins, we assume the user already exists in Auth.
         return await signInWithEmailAndPassword(auth, email, finalPassword);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
