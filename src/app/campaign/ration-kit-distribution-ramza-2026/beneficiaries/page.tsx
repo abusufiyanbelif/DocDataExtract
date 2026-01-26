@@ -43,7 +43,8 @@ const initialBeneficiaries = [
         male: 2,
         female: 3,
         addedDate: '2026-03-15',
-        idProof: 'Aadhaar: XXXX XXXX 1234',
+        idProofType: 'Aadhaar',
+        idNumber: 'XXXX XXXX 1234',
         referralBy: 'Local NGO',
         kitAmount: 2500,
         status: 'Given' as const,
@@ -58,7 +59,8 @@ const initialBeneficiaries = [
         male: 2,
         female: 2,
         addedDate: '2026-03-16',
-        idProof: 'PAN: ABCDE1234F',
+        idProofType: 'PAN',
+        idNumber: 'ABCDE1234F',
         referralBy: 'Masjid Committee',
         kitAmount: 2500,
         status: 'Pending' as const,
@@ -73,14 +75,31 @@ const initialBeneficiaries = [
         male: 3,
         female: 3,
         addedDate: '2026-03-17',
-        idProof: 'Other: Voter ID',
+        idProofType: 'Other',
+        idNumber: 'Voter ID',
         referralBy: 'Self',
         kitAmount: 3000,
         status: 'Hold' as const,
     },
+    {
+        id: '4',
+        name: 'Fatima Sheikh',
+        address: '101, Golconda, Hyderabad',
+        phone: '9876543213',
+        members: 3,
+        earningMembers: 0,
+        male: 1,
+        female: 2,
+        addedDate: '2026-03-18',
+        idProofType: 'Aadhaar',
+        idNumber: 'YYYY YYYY 5678',
+        referralBy: 'Local NGO',
+        kitAmount: 2500,
+        status: 'Need More Details' as const,
+    },
 ];
 
-export type Beneficiary = typeof initialBeneficiaries[0];
+export type Beneficiary = (typeof initialBeneficiaries)[number];
 
 export default function BeneficiariesPage() {
   const campaignId = 'ration-kit-distribution-ramza-2026';
@@ -115,7 +134,7 @@ export default function BeneficiariesPage() {
   
   const handleFormSubmit = (data: BeneficiaryFormData) => {
     if (editingBeneficiary) {
-      setBeneficiaries(beneficiaries.map(b => b.id === editingBeneficiary.id ? { ...b, ...data } : b));
+      setBeneficiaries(beneficiaries.map(b => b.id === editingBeneficiary.id ? { ...editingBeneficiary, ...data } : b));
     } else {
       const newBeneficiary: Beneficiary = {
         ...data,
@@ -172,7 +191,8 @@ export default function BeneficiariesPage() {
                           <TableHead className="text-center">Earning</TableHead>
                           <TableHead className="text-center">M/F</TableHead>
                           <TableHead>Added Date</TableHead>
-                          <TableHead>ID Proof</TableHead>
+                          <TableHead>ID Proof Type</TableHead>
+                          <TableHead>ID Number</TableHead>
                           <TableHead>Referred By</TableHead>
                           <TableHead className="text-right">Kit Amount</TableHead>
                           <TableHead>Status</TableHead>
@@ -189,13 +209,15 @@ export default function BeneficiariesPage() {
                               <TableCell className="text-center">{beneficiary.earningMembers}</TableCell>
                               <TableCell className="text-center">{beneficiary.male}/{beneficiary.female}</TableCell>
                               <TableCell>{beneficiary.addedDate}</TableCell>
-                              <TableCell>{beneficiary.idProof}</TableCell>
+                              <TableCell>{beneficiary.idProofType}</TableCell>
+                              <TableCell>{beneficiary.idNumber}</TableCell>
                               <TableCell>{beneficiary.referralBy}</TableCell>
                               <TableCell className="text-right font-medium">${beneficiary.kitAmount.toFixed(2)}</TableCell>
                               <TableCell>
                                   <Badge variant={
                                       beneficiary.status === 'Given' ? 'default' :
-                                      beneficiary.status === 'Pending' ? 'secondary' : 'destructive'
+                                      beneficiary.status === 'Pending' ? 'secondary' :
+                                      beneficiary.status === 'Hold' ? 'destructive' : 'outline'
                                   }>{beneficiary.status}</Badge>
                               </TableCell>
                               <TableCell className="text-right">

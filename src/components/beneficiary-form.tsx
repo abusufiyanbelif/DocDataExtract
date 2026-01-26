@@ -30,10 +30,11 @@ const formSchema = z.object({
   earningMembers: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
   male: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
   female: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
-  idProof: z.string().min(3, { message: "ID proof is required." }),
+  idProofType: z.string().min(3, { message: "ID proof type is required." }),
+  idNumber: z.string().min(3, { message: "ID number is required." }),
   referralBy: z.string().min(2, { message: "Referral is required." }),
   kitAmount: z.coerce.number().min(0, { message: "Amount cannot be negative."}),
-  status: z.enum(['Given', 'Pending', 'Hold']),
+  status: z.enum(['Given', 'Pending', 'Hold', 'Need More Details']),
 });
 
 export type BeneficiaryFormData = z.infer<typeof formSchema>;
@@ -55,7 +56,8 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
       earningMembers: beneficiary?.earningMembers || 0,
       male: beneficiary?.male || 0,
       female: beneficiary?.female || 0,
-      idProof: beneficiary?.idProof || '',
+      idProofType: beneficiary?.idProofType || '',
+      idNumber: beneficiary?.idNumber || '',
       referralBy: beneficiary?.referralBy || '',
       kitAmount: beneficiary?.kitAmount || 0,
       status: beneficiary?.status || 'Pending',
@@ -168,10 +170,10 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
             control={form.control}
-            name="idProof"
+            name="idProofType"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>ID Proof</FormLabel>
+                <FormLabel>ID Proof Type</FormLabel>
                 <FormControl>
                     <Input placeholder="Aadhaar, PAN, etc." {...field} />
                 </FormControl>
@@ -179,6 +181,22 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
                 </FormItem>
             )}
             />
+            <FormField
+            control={form.control}
+            name="idNumber"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>ID Number</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. XXXX XXXX 1234" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField
             control={form.control}
             name="referralBy"
@@ -192,9 +210,6 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
                 </FormItem>
             )}
             />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
                 control={form.control}
                 name="kitAmount"
@@ -224,6 +239,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel }: Beneficiary
                     <SelectItem value="Pending">Pending</SelectItem>
                     <SelectItem value="Given">Given</SelectItem>
                     <SelectItem value="Hold">Hold</SelectItem>
+                    <SelectItem value="Need More Details">Need More Details</SelectItem>
                     </SelectContent>
                 </Select>
                 <FormMessage />
