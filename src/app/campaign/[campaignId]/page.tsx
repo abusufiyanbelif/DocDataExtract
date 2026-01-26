@@ -10,7 +10,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TableFoot } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Plus, Trash2, Download, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -370,13 +370,13 @@ export default function CampaignDetailsPage() {
                   </TableRow>
                 ))}
               </TableBody>
-              <TableFoot>
+              <TableFooter>
                 <TableRow>
                   <TableCell colSpan={isAdmin ? 4 : 3} className="text-right font-bold">Total</TableCell>
                   <TableCell className="text-right font-bold">₹{total.toFixed(2)}</TableCell>
                   <TableCell></TableCell>
                 </TableRow>
-              </TableFoot>
+              </TableFooter>
             </Table>
           </div>
           {isAdmin && (

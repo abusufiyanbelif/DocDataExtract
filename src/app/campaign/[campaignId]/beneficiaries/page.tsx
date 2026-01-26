@@ -10,7 +10,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as TableFoot } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download } from 'lucide-react';
 import {
@@ -375,13 +375,13 @@ export default function BeneficiariesPage() {
                         </TableRow>
                       )}
                   </TableBody>
-                  <TableFoot>
+                  <TableFooter>
                     <TableRow>
                         <TableCell colSpan={isAdmin ? 12 : 11} className="text-right font-bold">Total Kit Amount Required</TableCell>
                         <TableCell className="text-right font-bold">₹{totalKitAmount.toFixed(2)}</TableCell>
                         <TableCell></TableCell>
                     </TableRow>
-                  </TableFoot>
+                  </TableFooter>
               </Table>
             </div>
           </CardContent>

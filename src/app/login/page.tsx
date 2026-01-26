@@ -33,6 +33,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [isSeeded, setIsSeeded] = useState<boolean | null>(null);
+  const [isCheckingSeed, setIsCheckingSeed] = useState(true);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -43,8 +44,12 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (isSeeded !== null) return;
-    if (!firestore) return;
+    if (!firestore) {
+      if (!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
+        setIsCheckingSeed(false);
+      }
+      return;
+    };
     
     const checkSeedingStatus = async () => {
         try {
@@ -55,10 +60,12 @@ export default function LoginPage() {
         } catch (error) {
             console.error("Error checking seeding status:", error);
             setIsSeeded(false);
+        } finally {
+            setIsCheckingSeed(false);
         }
     };
     checkSeedingStatus();
-  }, [firestore, isSeeded]);
+  }, [firestore]);
 
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -171,7 +178,14 @@ export default function LoginPage() {
         </Alert>
       )}
 
-      {isSeeded === false && !setupError && (
+      {isCheckingSeed && (
+        <div className="mt-4 max-w-sm text-center">
+            <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Checking database status...</p>
+        </div>
+      )}
+
+      {isSeeded === false && !isCheckingSeed && !setupError && (
         <Alert className="mt-4 max-w-sm">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>First-Time Setup Required</AlertTitle>

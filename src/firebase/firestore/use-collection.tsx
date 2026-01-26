@@ -1,10 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, Query, DocumentData } from 'firebase/firestore';
-import { useFirestore } from '@/firebase/provider';
+import { onSnapshot, Query, DocumentData } from 'firebase/firestore';
 
-// This hook is for listening to a collection and does not support queries.
-// For queries, a separate hook `useCollectionQuery` or modification is needed.
 export function useCollection<T extends DocumentData>(
   ref: Query | null
 ) {
@@ -13,7 +10,7 @@ export function useCollection<T extends DocumentData>(
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!ref) {
+    if (!ref || !(ref as any).firestore) {
       setData([]);
       setIsLoading(false);
       return;
