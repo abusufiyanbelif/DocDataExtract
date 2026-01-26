@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 
 const campaigns = [
   {
@@ -26,6 +26,14 @@ export default function CampaignPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DocuExtractHeader />
       <main className="container mx-auto p-4 md:p-8">
+        <div className="mb-4">
+          <Button variant="outline" asChild>
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Home
+            </Link>
+          </Button>
+        </div>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Campaigns</CardTitle>

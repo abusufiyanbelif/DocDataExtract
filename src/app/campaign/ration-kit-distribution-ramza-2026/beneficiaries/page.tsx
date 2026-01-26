@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Edit, MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,6 +65,14 @@ export default function BeneficiariesPage() {
     <div className="min-h-screen bg-background text-foreground">
       <DocuExtractHeader />
       <main className="container mx-auto p-4 md:p-8">
+        <div className="mb-4">
+            <Button variant="outline" asChild>
+                <Link href="/campaign">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Campaigns
+                </Link>
+            </Button>
+        </div>
         <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-bold">Ration Kit Distribution Ramza 2026</h1>
         </div>
