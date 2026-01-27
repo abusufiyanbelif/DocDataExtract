@@ -6,24 +6,36 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle, LogIn, FileText, BadgeInfo, Hash, Eye } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle, LogIn, FileText, BadgeInfo, Hash, Eye, Edit, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { doc, writeBatch } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
-function ProfileDetail({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) {
+function ProfileDetail({ icon, label, value, children, isEditing }: { icon: React.ReactNode, label: string, value?: React.ReactNode, children?: React.ReactNode, isEditing?: boolean }) {
     return (
         <div className="flex items-start space-x-4">
             <div className="text-muted-foreground mt-1">{icon}</div>
-            <div>
+            <div className="w-full">
                 <p className="text-sm text-muted-foreground">{label}</p>
-                <div className="font-medium">{value}</div>
+                {isEditing ? children : <div className="font-medium">{value}</div>}
             </div>
         </div>
     );
 }
 
 export default function ProfilePage() {
-    const { userProfile, isLoading } = useUserProfile();
+    const { userProfile, isLoading, refetch } = useUserProfile();
+    const firestore = useFirestore();
+    const { toast } = useToast();
+
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [name, setName] = useState('');
+    const [phone, setPhone] = useState('');
+
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
     const [imageToView, setImageToView] = useState<string | null>(null);
 
@@ -31,6 +43,68 @@ export default function ProfilePage() {
         setImageToView(url);
         setIsImageViewerOpen(true);
     };
+
+    const handleEdit = () => {
+        if (userProfile) {
+            setName(userProfile.name);
+            setPhone(userProfile.phone);
+            setIsEditMode(true);
+        }
+    };
+
+    const handleCancel = () => {
+        setIsEditMode(false);
+    };
+
+    const handleSave = async () => {
+        if (!firestore || !userProfile) {
+            toast({ title: 'Error', description: 'Could not save profile.', variant: 'destructive'});
+            return;
+        }
+
+        const batch = writeBatch(firestore);
+        const userDocRef = doc(firestore, 'users', userProfile.id);
+
+        const updateData: {name?: string, phone?: string} = {};
+        if (name !== userProfile.name) updateData.name = name;
+        if (phone !== userProfile.phone) updateData.phone = phone;
+
+        if (Object.keys(updateData).length === 0) {
+            setIsEditMode(false);
+            return;
+        }
+
+        batch.update(userDocRef, updateData);
+
+        if (userProfile.phone !== phone) {
+            if (userProfile.phone) {
+                const oldLookupRef = doc(firestore, 'user_lookups', userProfile.phone);
+                batch.delete(oldLookupRef);
+            }
+            if (phone) {
+                const newLookupRef = doc(firestore, 'user_lookups', phone);
+                batch.set(newLookupRef, { userKey: userProfile.userKey });
+            }
+        }
+        
+        try {
+            await batch.commit();
+            toast({ title: 'Success', description: 'Profile updated successfully.', variant: 'success' });
+            setIsEditMode(false);
+            refetch();
+        } catch(serverError: any) {
+            if (serverError.code === 'permission-denied') {
+                 errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'update',
+                    requestResourceData: updateData,
+                }));
+            } else {
+                toast({ title: 'Error', description: 'Failed to update profile.', variant: 'destructive'});
+            }
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -54,15 +128,31 @@ export default function ProfilePage() {
                 </div>
                 <Card className="max-w-2xl mx-auto">
                     <CardHeader>
-                        <CardTitle>My Profile</CardTitle>
-                        <CardDescription>This is your personal information as it appears in the system.</CardDescription>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>My Profile</CardTitle>
+                                <CardDescription>This is your personal information as it appears in the system.</CardDescription>
+                            </div>
+                             {!isEditMode ? (
+                                <Button onClick={handleEdit}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                             ) : (
+                                <div className="flex gap-2">
+                                    <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
+                                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save</Button>
+                                </div>
+                             )}
+                        </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {userProfile ? (
                             <>
-                                <ProfileDetail icon={<User />} label="Full Name" value={userProfile.name} />
+                                <ProfileDetail icon={<User />} label="Full Name" value={userProfile.name} isEditing={isEditMode}>
+                                    <Input value={name} onChange={(e) => setName(e.target.value)} />
+                                </ProfileDetail>
                                 <ProfileDetail icon={<LogIn />} label="Login ID" value={userProfile.loginId} />
-                                <ProfileDetail icon={<Phone />} label="Phone Number" value={userProfile.phone} />
+                                <ProfileDetail icon={<Phone />} label="Phone Number" value={userProfile.phone} isEditing={isEditMode}>
+                                     <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+                                </ProfileDetail>
                                 <ProfileDetail icon={<KeyRound />} label="User Key (System ID)" value={userProfile.userKey} />
                                 <ProfileDetail icon={<Shield />} label="Role" value={<Badge variant={userProfile.role === 'Admin' ? 'destructive' : 'secondary'}>{userProfile.role}</Badge>} />
                                 <ProfileDetail 

@@ -11,6 +11,11 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
+    
+    function isOwnerOfUserKey(userKey) {
+        let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        return userData.userKey == userKey;
+    }
 
     // Get the requesting user's profile data from the 'users' collection
     function getUserData() {
@@ -46,7 +51,15 @@ service cloud.firestore {
 
     match /user_lookups/{lookupId} {
       allow read: if true;
-      allow write: if hasPermission(['users'], 'create') || hasPermission(['users'], 'update');
+      
+      // Allow write if user is admin OR if user is creating/updating their own lookup.
+      // This is necessary for self-service phone number updates.
+      allow create, update: if (hasPermission(['users'], 'create') || hasPermission(['users'], 'update')) ||
+                              (isSignedIn() && isOwnerOfUserKey(request.resource.data.userKey));
+                              
+      // Allow delete if user is admin OR if user is deleting their own lookup.
+      allow delete: if (hasPermission(['users'], 'delete')) ||
+                      (isSignedIn() && isOwnerOfUserKey(resource.data.userKey));
     }
 
     match /users/{userId} {
@@ -54,8 +67,12 @@ service cloud.firestore {
       allow list: if hasPermission(['users'], 'read');
       
       allow create: if hasPermission(['users'], 'create');
-      // A user can update their own profile. Users with 'update' permission can update any profile.
-      allow update: if hasPermission(['users'], 'update') || isOwner(userId);
+
+      // Admins can update any field.
+      // A user can only update their own name and phone number.
+      allow update: if hasPermission(['users'], 'update') || 
+                      (isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone']));
+                      
       allow delete: if hasPermission(['users'], 'delete');
     }
 

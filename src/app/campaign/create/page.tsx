@@ -1,9 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError, useCollection } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import type { Campaign } from '@/lib/types';
+
 
 const campaignSchema = z.object({
   name: z.string().min(3, 'Campaign name must be at least 3 characters.'),
@@ -39,6 +51,15 @@ export default function CreateCampaignPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
+  const [isDuplicateAlertOpen, setIsDuplicateAlertOpen] = useState(false);
+  const [campaignDataToCreate, setCampaignDataToCreate] = useState<CampaignFormValues | null>(null);
+
+  const campaignsCollectionRef = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'campaigns');
+  }, [firestore]);
+  const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
+
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
 
   const form = useForm<CampaignFormValues>({
@@ -53,14 +74,10 @@ export default function CreateCampaignPage() {
     },
   });
 
-  const onSubmit = (data: CampaignFormValues) => {
-    if (!firestore || !canCreate) {
-      toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
-      return;
-    }
+  const handleCreateCampaign = (data: CampaignFormValues) => {
+    if (!firestore || !canCreate) return;
     setIsLoading(true);
-    
-    const campaignsCollectionRef = collection(firestore, 'campaigns');
+
     const newCampaignData = {
       ...data,
       targetAmount: data.targetAmount || 0,
@@ -75,7 +92,7 @@ export default function CreateCampaignPage() {
       },
     };
 
-    addDoc(campaignsCollectionRef, newCampaignData)
+    addDoc(collection(firestore, 'campaigns'), newCampaignData)
       .then((docRef) => {
         toast({ title: 'Success', description: 'Campaign created successfully.', variant: 'success' });
         router.push(`/campaign/${docRef.id}/summary`);
@@ -83,7 +100,7 @@ export default function CreateCampaignPage() {
       .catch((serverError) => {
         if (serverError.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
-                path: campaignsCollectionRef.path,
+                path: 'campaigns',
                 operation: 'create',
                 requestResourceData: newCampaignData,
             });
@@ -99,10 +116,21 @@ export default function CreateCampaignPage() {
       })
       .finally(() => {
         setIsLoading(false);
+        setCampaignDataToCreate(null);
+        setIsDuplicateAlertOpen(false);
       });
+  }
+
+  const onSubmit = (data: CampaignFormValues) => {
+    if (campaigns.some(c => c.name.trim().toLowerCase() === data.name.trim().toLowerCase())) {
+        setCampaignDataToCreate(data);
+        setIsDuplicateAlertOpen(true);
+    } else {
+        handleCreateCampaign(data);
+    }
   };
 
-  if (isProfileLoading) {
+  if (isProfileLoading || areCampaignsLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -264,6 +292,27 @@ export default function CreateCampaignPage() {
           </CardContent>
         </Card>
       </main>
+
+       <AlertDialog open={isDuplicateAlertOpen} onOpenChange={setIsDuplicateAlertOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Duplicate Campaign Name</AlertDialogTitle>
+                <AlertDialogDescription>
+                    A campaign with this name already exists. Are you sure you want to create another one?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setCampaignDataToCreate(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => {
+                    if (campaignDataToCreate) {
+                        handleCreateCampaign(campaignDataToCreate);
+                    }
+                }}>
+                    Create Anyway
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
