@@ -122,9 +122,21 @@ service firebase.storage {
         
         if (!adminUserDocSnap.exists()) {
             log(" -> Admin user profile not found. Creating...");
-            await setDoc(adminUserDocRef, { ...adminData, createdAt: serverTimestamp() });
+            const newAdminData = { ...adminData, createdAt: serverTimestamp() };
+            try {
+                await setDoc(adminUserDocRef, newAdminData);
+            } catch (error: any) {
+                 if (error.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                        path: adminUserDocRef.path,
+                        operation: 'create',
+                        requestResourceData: newAdminData,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                }
+                throw error;
+            }
             log(" -> New admin user profile created.");
-            // Brief pause to allow Firestore to process the write before the next step which may depend on it.
             await new Promise(res => setTimeout(res, 1500)); 
         } else {
             log(" -> Admin user profile already exists.");
@@ -160,7 +172,18 @@ service firebase.storage {
         
         if(lookupsToWrite) {
             log(" -> Committing lookup changes to the database...");
-            await lookupBatch.commit();
+            try {
+                await lookupBatch.commit();
+            } catch (error: any) {
+                if (error.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                        path: 'user_lookups (batch write)',
+                        operation: 'write',
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                }
+                throw error;
+            }
             log(" -> Lookup changes committed.");
         } else {
             log(" -> All admin lookups are already correct.");
@@ -207,7 +230,18 @@ service firebase.storage {
         }
 
         if (migratedCount > 0) {
-            await batch.commit();
+            try {
+                await batch.commit();
+            } catch (error: any) {
+                if (error.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                        path: 'user_lookups (batch migration)',
+                        operation: 'write',
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                }
+                throw error;
+            }
             log(` -> Successfully processed and created lookups for ${migratedCount} user(s).`);
         } else {
              log(` -> No users required migration.`);
@@ -237,17 +271,13 @@ service firebase.storage {
             log('✅ Script completed successfully. Admin user and all existing users are configured correctly.');
             toast({ title: 'Success', description: 'Admin user verified and all existing users have been migrated for the new login system.', variant: 'default' });
         } catch (e: any) {
-            if (e.code === 'permission-denied') {
-                const permissionError = new FirestorePermissionError({
-                    path: 'Setup script batch write',
-                    operation: 'write',
-                } as SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-            }
+            // Contextual error is emitted by helper functions, this block just updates UI.
             const errorMessage = e.message || 'An unknown error occurred.';
             log(`❌ FAILED: ${errorMessage}`);
             setErrorOccurred(true);
-            if (!errorMessage.includes('permission')) {
+            
+            // Only show a generic toast if it wasn't a permission error (which shows its own toast via the listener).
+            if (e.name !== 'FirestorePermissionError' && e.code !== 'permission-denied') {
                  toast({ title: 'Script Failed', description: 'An error occurred. Check the logs for details.', variant: 'destructive' });
             }
         } finally {
