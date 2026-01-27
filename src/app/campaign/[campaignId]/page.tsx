@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore, useDoc } from '@/firebase';
+import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { Campaign, RationItem } from '@/lib/types';
@@ -70,22 +70,24 @@ export default function CampaignDetailsPage() {
   const isAdmin = userProfile?.role === 'Admin';
   const isLoading = isCampaignLoading || isProfileLoading;
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!campaignDocRef || !editableCampaign || !isAdmin) return;
-    try {
-        await updateDoc(campaignDocRef, {
-            ...editableCampaign
+    
+    const saveData = { ...editableCampaign };
+    
+    updateDoc(campaignDocRef, saveData)
+        .then(() => {
+            toast({ title: 'Success', description: 'Campaign details saved.' });
+            setEditMode(false);
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: campaignDocRef.path,
+                operation: 'update',
+                requestResourceData: saveData,
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
         });
-        toast({ title: 'Success', description: 'Campaign details saved.' });
-        setEditMode(false);
-    } catch (error) {
-        console.error("Failed to update campaign", error);
-        toast({
-            title: 'Update Failed',
-            description: 'Could not save changes to the campaign.',
-            variant: 'destructive',
-        });
-    }
   };
 
   const handleCancel = () => {

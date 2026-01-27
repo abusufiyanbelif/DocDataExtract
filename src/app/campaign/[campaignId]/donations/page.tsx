@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useDoc, useStorage } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where } from 'firebase/firestore';
 import type { Donation, Campaign } from '@/lib/types';
@@ -93,19 +93,24 @@ export default function DonationsPage() {
     setIsImageViewerOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (donationToDelete && firestore && isAdmin) {
         const docRef = doc(firestore, 'donations', donationToDelete);
-        try {
-            await deleteDoc(docRef);
-            toast({ title: 'Success', description: 'Donation deleted.', variant: 'default' });
-        } catch (error) {
-            console.error("Error deleting donation:", error);
-            toast({ title: 'Error', description: 'Could not delete donation.', variant: 'destructive' });
-        } finally {
-            setDonationToDelete(null);
-            setIsDeleteDialogOpen(false);
-        }
+        
+        deleteDoc(docRef)
+            .then(() => {
+                toast({ title: 'Success', description: 'Donation deleted.', variant: 'default' });
+            })
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'delete',
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            });
+
+        setDonationToDelete(null);
+        setIsDeleteDialogOpen(false);
     }
   };
   
@@ -131,30 +136,51 @@ export default function DonationsPage() {
 
         const { screenshotFile, ...donationData } = data;
 
-        const finalData = {
-          ...donationData,
-          screenshotUrl,
-        };
-    
         if (editingDonation) {
             const docRef = doc(firestore, 'donations', editingDonation.id);
-            await updateDoc(docRef, finalData);
-            toast({ title: 'Success', description: 'Donation updated.', variant: 'default' });
+            const finalData = { ...donationData, screenshotUrl };
+            
+            updateDoc(docRef, finalData)
+                .then(() => {
+                    toast({ title: 'Success', description: 'Donation updated.', variant: 'default' });
+                })
+                .catch(async (serverError) => {
+                    const permissionError = new FirestorePermissionError({
+                        path: docRef.path,
+                        operation: 'update',
+                        requestResourceData: finalData
+                    } satisfies SecurityRuleContext);
+                    errorEmitter.emit('permission-error', permissionError);
+                });
+
         } else {
             const collectionRef = collection(firestore, 'donations');
-            await addDoc(collectionRef, {
-                ...finalData,
+            const finalData = {
+                ...donationData,
+                screenshotUrl,
                 campaignId: campaignId,
                 campaignName: campaign.name,
                 uploadedBy: userProfile.name,
                 uploadedById: userProfile.id,
                 createdAt: serverTimestamp(),
-            });
-            toast({ title: 'Success', description: 'Donation added.', variant: 'default' });
+            };
+
+            addDoc(collectionRef, finalData)
+                .then(() => {
+                    toast({ title: 'Success', description: 'Donation added.', variant: 'default' });
+                })
+                .catch(async (serverError) => {
+                    const permissionError = new FirestorePermissionError({
+                        path: 'donations',
+                        operation: 'create',
+                        requestResourceData: finalData
+                    } satisfies SecurityRuleContext);
+                    errorEmitter.emit('permission-error', permissionError);
+                });
         }
     } catch (error) {
-        console.error("Error saving donation:", error);
-        toast({ title: 'Error', description: 'Could not save donation.', variant: 'destructive' });
+        console.error("Error during file upload:", error);
+        toast({ title: 'Error', description: 'Could not save donation screenshot.', variant: 'destructive' });
     } finally {
         setIsFormOpen(false);
         setEditingDonation(null);
@@ -347,5 +373,3 @@ export default function DonationsPage() {
     </div>
   );
 }
-
-    

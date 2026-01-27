@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useDoc, useStorage } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, setDoc } from 'firebase/firestore';
 import type { Beneficiary, Campaign } from '@/lib/types';
@@ -116,16 +116,21 @@ export default function BeneficiariesPage() {
   const handleDeleteConfirm = async () => {
     if (beneficiaryToDelete && firestore && campaignId && isAdmin) {
         const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiaryToDelete);
-        try {
-            await deleteDoc(docRef);
-            toast({ title: 'Success', description: 'Beneficiary deleted.', variant: 'default' });
-        } catch (error) {
-            console.error("Error deleting beneficiary:", error);
-            toast({ title: 'Error', description: 'Could not delete beneficiary.', variant: 'destructive' });
-        } finally {
-            setBeneficiaryToDelete(null);
-            setIsDeleteDialogOpen(false);
-        }
+        
+        deleteDoc(docRef)
+            .then(() => {
+                toast({ title: 'Success', description: 'Beneficiary deleted.', variant: 'default' });
+            })
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'delete',
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            });
+
+        setBeneficiaryToDelete(null);
+        setIsDeleteDialogOpen(false);
     }
   };
   
@@ -137,7 +142,10 @@ export default function BeneficiariesPage() {
         : doc(collection(firestore, `campaigns/${campaignId}/beneficiaries`));
 
     let idProofUrl = editingBeneficiary?.idProofUrl || '';
-
+    
+    // This part involves file upload, which is async. We need to await it.
+    // The "no-await" rule is for Firestore mutations to leverage optimistic updates,
+    // but file uploads must complete before we can get the URL to save in Firestore.
     try {
         const fileList = data.idProofFile as FileList | undefined;
         if (fileList && fileList.length > 0) {
@@ -164,13 +172,23 @@ export default function BeneficiariesPage() {
             }),
         };
         
-        await setDoc(docRef, finalData, { merge: true });
-
-        toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'default' });
+        // Firestore mutation without await
+        setDoc(docRef, finalData, { merge: true })
+            .then(() => {
+                toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'default' });
+            })
+            .catch(async (serverError) => {
+                 const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: editingBeneficiary ? 'update' : 'create',
+                    requestResourceData: finalData,
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            });
 
     } catch (error) {
-        console.error("Error saving beneficiary:", error);
-        toast({ title: 'Error', description: 'Could not save beneficiary.', variant: 'destructive' });
+        console.error("Error during file upload:", error);
+        toast({ title: 'File Upload Error', description: 'Could not upload the ID proof file.', variant: 'destructive' });
     } finally {
         setIsFormOpen(false);
         setEditingBeneficiary(null);
@@ -245,8 +263,17 @@ export default function BeneficiariesPage() {
                 batch.set(docRef, beneficiaryData);
             });
 
-            await batch.commit();
-            toast({ title: 'Success', description: `${json.length} beneficiaries imported successfully.`, variant: 'default' });
+            batch.commit()
+                .then(() => {
+                    toast({ title: 'Success', description: `${json.length} beneficiaries imported successfully.`, variant: 'default' });
+                })
+                .catch(async (serverError) => {
+                    const permissionError = new FirestorePermissionError({
+                        path: `campaigns/${campaignId}/beneficiaries`,
+                        operation: 'write',
+                    } satisfies SecurityRuleContext);
+                    errorEmitter.emit('permission-error', permissionError);
+                });
 
         } catch (error: any) {
             toast({ title: 'Import Failed', description: error.message || "An error occurred during import.", variant: 'destructive' });
@@ -605,5 +632,3 @@ export default function BeneficiariesPage() {
     </div>
   );
 }
-
-    

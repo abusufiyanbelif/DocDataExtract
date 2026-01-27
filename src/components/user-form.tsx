@@ -32,7 +32,7 @@ import { Loader2 } from 'lucide-react';
 
 const permissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()).optional()).optional();
 
-const baseSchema = z.object({
+const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
   loginId: z.string().min(3, { message: "Login ID must be at least 3 characters." }).regex(/^[a-z0-9_.]+$/, { message: 'Login ID can only contain lowercase letters, numbers, underscores, and periods.' }),
@@ -40,19 +40,27 @@ const baseSchema = z.object({
   role: z.enum(['Admin', 'User']),
   status: z.enum(['Active', 'Inactive']),
   permissions: permissionsSchema,
+  password: z.string().optional(),
+  _isEditing: z.boolean(),
+}).superRefine((data, ctx) => {
+    if (!data._isEditing && (!data.password || data.password.length < 6)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['password'],
+            message: 'Password is required and must be at least 6 characters for new users.',
+        });
+    }
+    if (data._isEditing && data.password && data.password.length < 6) {
+         ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['password'],
+            message: 'If changing, the password must be at least 6 characters.',
+        });
+    }
 });
 
-const createUserSchema = baseSchema.extend({
-  password: z.string().min(6, { message: 'Password is required and must be at least 6 characters.' }),
-});
 
-const editUserSchema = baseSchema.extend({
-    password: z.string().optional().refine(val => !val || val.length >= 6, {
-        message: 'If changing, the password must be at least 6 characters.',
-    }),
-});
-
-export type UserFormData = z.infer<typeof createUserSchema>;
+export type UserFormData = z.infer<typeof formSchema>;
 
 interface UserFormProps {
   user?: UserProfile | null;
@@ -68,7 +76,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const { toast } = useToast();
   
   const form = useForm<UserFormData>({
-    resolver: zodResolver(isEditing ? editUserSchema : createUserSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: user?.name || '',
       phone: user?.phone || '',
@@ -78,6 +86,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       status: user?.status || 'Active',
       password: '',
       permissions: user?.permissions || {},
+      _isEditing: isEditing,
     },
   });
 

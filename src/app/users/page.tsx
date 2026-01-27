@@ -1,6 +1,6 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
@@ -75,7 +75,7 @@ export default function UsersPage() {
     setIsDeleteDialogOpen(true);
   };
   
-  const handleToggleStatus = async (userToUpdate: UserProfile) => {
+  const handleToggleStatus = (userToUpdate: UserProfile) => {
     if (!firestore || !userProfile || userProfile.role !== 'Admin') return;
     if (userToUpdate.userKey === 'admin') {
         toast({ title: 'Action Forbidden', description: 'The default admin user cannot be deactivated.', variant: 'destructive' });
@@ -88,32 +88,44 @@ export default function UsersPage() {
 
     const newStatus = userToUpdate.status === 'Active' ? 'Inactive' : 'Active';
     const docRef = doc(firestore, 'users', userToUpdate.id);
-    try {
-        await updateDoc(docRef, { status: newStatus });
-        toast({ title: 'Success', description: `${userToUpdate.name}'s account is now ${newStatus}.` });
-    } catch (error) {
-        console.error("Error updating status:", error);
-        toast({ title: 'Error', description: 'Could not update user status.', variant: 'destructive' });
-    }
+    const updatedData = { status: newStatus };
+
+    updateDoc(docRef, updatedData)
+        .then(() => {
+            toast({ title: 'Success', description: `${userToUpdate.name}'s account is now ${newStatus}.` });
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'update',
+                requestResourceData: updatedData,
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        });
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (userToDelete && firestore) {
         const docRef = doc(firestore, 'users', userToDelete);
-        try {
-            await deleteDoc(docRef);
-            toast({ title: 'Success', description: 'The user has been successfully deleted.' });
-        } catch(error) {
-            console.error("Error deleting user:", error);
-            toast({ title: 'Error', description: 'Could not delete user.', variant: 'destructive' });
-        } finally {
-            setUserToDelete(null);
-            setIsDeleteDialogOpen(false);
-        }
+        
+        deleteDoc(docRef)
+            .then(() => {
+                toast({ title: 'Success', description: 'The user has been successfully deleted.' });
+            })
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'delete',
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            });
+
+        setUserToDelete(null);
+        setIsDeleteDialogOpen(false);
     }
   };
   
-  const handleFormSubmit = async (data: UserFormData) => {
+  const handleFormSubmit = (data: UserFormData) => {
     if (!firestore) {
         toast({ title: 'Error', description: 'Database connection not available.', variant: 'destructive' });
         return;
@@ -131,7 +143,7 @@ export default function UsersPage() {
         return;
     }
     
-    const { password, ...userData } = data;
+    const { password, _isEditing, ...userData } = data;
 
     if (userData.role === 'Admin') {
         const allPermissions: any = {};
@@ -144,30 +156,50 @@ export default function UsersPage() {
         userData.permissions = allPermissions;
     }
 
-    try {
-        if (editingUser) {
-            const docRef = doc(firestore, 'users', editingUser.id);
-            // Don't update userKey or loginId for existing users
-            const { userKey, loginId, ...updateData } = userData;
-            await updateDoc(docRef, updateData as any);
-            toast({ title: 'Success', description: 'User details have been successfully updated.' });
-        } else {
-            await addDoc(collection(firestore, 'users'), {
-                ...userData,
-                createdAt: serverTimestamp()
+    if (editingUser) {
+        const docRef = doc(firestore, 'users', editingUser.id);
+        // Don't update userKey or loginId for existing users
+        const { userKey, loginId, ...updateData } = userData;
+        
+        updateDoc(docRef, updateData as any)
+            .then(() => {
+                toast({ title: 'Success', description: 'User details have been successfully updated.' });
+                setIsFormOpen(false);
+                setEditingUser(null);
+            })
+            .catch(async (serverError) => {
+                 const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'update',
+                    requestResourceData: updateData,
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
-            toast({ 
-                title: 'Success', 
-                description: `User '${data.name}' created. Manually create auth user with email '${data.userKey}@docdataextract.app' and password '${data.password}'.`
+    } else {
+        const finalData = { ...userData, createdAt: serverTimestamp() };
+        addDoc(collection(firestore, 'users'), finalData)
+            .then(() => {
+                toast({ 
+                    title: 'Success', 
+                    description: `User '${data.name}' created. Manually create auth user with email '${data.userKey}@docdataextract.app' and password '${data.password}'.`
+                });
+                setIsFormOpen(false);
+                setEditingUser(null);
+            })
+            .catch(async (serverError) => {
+                 const permissionError = new FirestorePermissionError({
+                    path: 'users',
+                    operation: 'create',
+                    requestResourceData: finalData,
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setIsSubmitting(false);
             });
-        }
-        setIsFormOpen(false);
-        setEditingUser(null);
-    } catch (error: any) {
-        console.error("Error saving user:", error);
-        toast({ title: 'Error', description: error.message || 'Could not save user.', variant: 'destructive' });
-    } finally {
-        setIsSubmitting(false);
     }
   };
   

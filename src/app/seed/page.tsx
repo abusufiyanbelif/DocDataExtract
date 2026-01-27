@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth, useFirestore, useStorage }from '@/firebase';
+import { useAuth, useFirestore, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext }from '@/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
 import { writeBatch, doc, collection, serverTimestamp, getDocs, query, where, limit, getDoc } from 'firebase/firestore';
@@ -32,8 +32,8 @@ export default function SeedPage() {
     
     const createPlaceholderFile = async (path: string) => {
         if (!storage) throw new Error("Storage service not available.");
+        const placeholderRef = storageRef(storage, path);
         try {
-            const placeholderRef = storageRef(storage, path);
             await uploadBytes(placeholderRef, new Uint8Array());
             log(`   -> SUCCESS: Ensured storage path: gs://${placeholderRef.bucket}/${placeholderRef.fullPath}`);
         } catch (error: any) {
