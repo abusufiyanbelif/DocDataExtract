@@ -16,6 +16,7 @@ export interface RationList {
 export interface Campaign extends DocumentData {
   id: string;
   name: string;
+  category: 'Ration' | 'Relief' | 'General';
   description?: string;
   targetAmount?: number;
   startDate: string;

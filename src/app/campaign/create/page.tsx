@@ -10,7 +10,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const campaignSchema = z.object({
   name: z.string().min(3, 'Campaign name must be at least 3 characters.'),
+  category: z.enum(['Ration', 'Relief', 'General']),
   status: z.enum(['Upcoming', 'Active', 'Completed']),
   startDate: z.string().min(1, 'Start date is required.'),
   endDate: z.string().min(1, 'End date is required.'),
@@ -46,6 +47,7 @@ export default function CreateCampaignPage() {
     resolver: zodResolver(campaignSchema),
     defaultValues: {
       name: '',
+      category: 'Ration',
       status: 'Upcoming',
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
@@ -157,6 +159,28 @@ export default function CreateCampaignPage() {
                       <FormControl>
                         <Input placeholder="e.g. Ration Kit Distribution Ramza 2027" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Campaign Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Ration">Ration</SelectItem>
+                          <SelectItem value="Relief">Relief</SelectItem>
+                          <SelectItem value="General">General</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

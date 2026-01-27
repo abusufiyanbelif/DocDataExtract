@@ -23,6 +23,7 @@ export default function CampaignPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState('All');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
 
   const campaignsCollectionRef = useMemo(() => {
@@ -51,6 +52,9 @@ export default function CampaignPage() {
     // Filtering
     if (statusFilter !== 'All') {
         sortableItems = sortableItems.filter(c => c.status === statusFilter);
+    }
+    if (categoryFilter !== 'All') {
+        sortableItems = sortableItems.filter(c => c.category === categoryFilter);
     }
     if (searchTerm) {
         const lowercasedTerm = searchTerm.toLowerCase();
@@ -81,7 +85,7 @@ export default function CampaignPage() {
         });
     }
     return sortableItems;
-  }, [campaigns, searchTerm, statusFilter, sortConfig]);
+  }, [campaigns, searchTerm, statusFilter, categoryFilter, sortConfig]);
 
   const isLoading = areCampaignsLoading || isProfileLoading;
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
@@ -123,7 +127,7 @@ export default function CampaignPage() {
                         disabled={isLoading}
                     />
                      <Select value={statusFilter} onValueChange={setStatusFilter} disabled={isLoading}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-auto md:w-[180px]">
                             <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -131,6 +135,17 @@ export default function CampaignPage() {
                             <SelectItem value="Upcoming">Upcoming</SelectItem>
                             <SelectItem value="Active">Active</SelectItem>
                             <SelectItem value="Completed">Completed</SelectItem>
+                        </SelectContent>
+                    </Select>
+                     <Select value={categoryFilter} onValueChange={setCategoryFilter} disabled={isLoading}>
+                        <SelectTrigger className="w-auto md:w-[180px]">
+                            <SelectValue placeholder="Filter by category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Categories</SelectItem>
+                            <SelectItem value="Ration">Ration</SelectItem>
+                            <SelectItem value="Relief">Relief</SelectItem>
+                            <SelectItem value="General">General</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -151,6 +166,7 @@ export default function CampaignPage() {
                 <TableRow>
                   <SortableHeader sortKey="srNo">#</SortableHeader>
                   <SortableHeader sortKey="name">Campaign Name</SortableHeader>
+                  <SortableHeader sortKey="category">Category</SortableHeader>
                   <SortableHeader sortKey="startDate">Start Date</SortableHeader>
                   <SortableHeader sortKey="endDate">End Date</SortableHeader>
                   <SortableHeader sortKey="status">Status</SortableHeader>
@@ -164,6 +180,7 @@ export default function CampaignPage() {
                       <TableCell><Skeleton className="h-6 w-full" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-full" /></TableCell>
                       <TableCell><Skeleton className="h-6 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-full" /></TableCell>
                        <TableCell><Skeleton className="h-6 w-full" /></TableCell>
                     </TableRow>
                   ))
@@ -172,6 +189,7 @@ export default function CampaignPage() {
                   <TableRow key={campaign.id} onClick={() => handleRowClick(campaign.id)} className="cursor-pointer">
                     <TableCell>{index + 1}</TableCell>
                     <TableCell className="font-medium">{campaign.name}</TableCell>
+                    <TableCell>{campaign.category}</TableCell>
                     <TableCell>{campaign.startDate}</TableCell>
                     <TableCell>{campaign.endDate}</TableCell>
                     <TableCell>{campaign.status}</TableCell>
@@ -179,7 +197,7 @@ export default function CampaignPage() {
                 ))}
                 {!isLoading && filteredAndSortedCampaigns.length === 0 && (
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
                            No campaigns found matching your criteria. {canCreate && campaigns.length === 0 && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
                         </TableCell>
                     </TableRow>

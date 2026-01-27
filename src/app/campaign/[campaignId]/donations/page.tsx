@@ -235,7 +235,7 @@ export default function DonationsPage() {
             )}
             {canReadRation && (
               <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                  <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
+                  <Link href={`/campaign/${campaignId}`}>{campaign?.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
               </Button>
             )}
             {canReadBeneficiaries && (

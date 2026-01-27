@@ -502,7 +502,7 @@ export default function CampaignDetailsPage() {
             )}
             {canReadRation && (
               <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
-                  <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
+                  <Link href={`/campaign/${campaignId}`}>{editableCampaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
               </Button>
             )}
             {canReadBeneficiaries && (
@@ -521,57 +521,59 @@ export default function CampaignDetailsPage() {
           <CardHeader>
              <div className="flex justify-between items-start flex-wrap gap-4">
                 <div>
-                    <CardTitle>Ration Details</CardTitle>
-                    <div className="text-sm text-muted-foreground mt-4 space-y-3">
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <div className="flex items-center gap-2">
-                                <Label htmlFor="priceDate" className="text-nowrap">Price Date:</Label>
-                                <Input
-                                id="priceDate"
-                                type="date"
-                                value={editableCampaign.priceDate || ''}
-                                onChange={(e) => handleFieldChange( 'priceDate', e.target.value )}
-                                className="w-fit"
-                                disabled={!editMode || !canUpdate}
-                                />
+                    <CardTitle>{editableCampaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</CardTitle>
+                    {editableCampaign.category === 'Ration' && (
+                        <div className="text-sm text-muted-foreground mt-4 space-y-3">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="priceDate" className="text-nowrap">Price Date:</Label>
+                                    <Input
+                                    id="priceDate"
+                                    type="date"
+                                    value={editableCampaign.priceDate || ''}
+                                    onChange={(e) => handleFieldChange( 'priceDate', e.target.value )}
+                                    className="w-fit"
+                                    disabled={!editMode || !canUpdate}
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="shopName" className="text-nowrap">Shop Name:</Label>
+                                    <Input
+                                    id="shopName"
+                                    value={editableCampaign.shopName || ''}
+                                    onChange={(e) => handleFieldChange( 'shopName', e.target.value )}
+                                    className="w-fit"
+                                    placeholder="Shop Name"
+                                    disabled={!editMode || !canUpdate}
+                                    />
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Label htmlFor="shopName" className="text-nowrap">Shop Name:</Label>
-                                <Input
-                                id="shopName"
-                                value={editableCampaign.shopName || ''}
-                                onChange={(e) => handleFieldChange( 'shopName', e.target.value )}
-                                className="w-fit"
-                                placeholder="Shop Name"
-                                disabled={!editMode || !canUpdate}
-                                />
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="shopContact" className="text-nowrap">Shop Contact:</Label>
+                                    <Input
+                                    id="shopContact"
+                                    value={editableCampaign.shopContact || ''}
+                                    onChange={(e) => handleFieldChange( 'shopContact', e.target.value )}
+                                    className="w-fit"
+                                    placeholder="Contact Number"
+                                    disabled={!editMode || !canUpdate}
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="shopAddress" className="text-nowrap">Shop Address:</Label>
+                                    <Input
+                                    id="shopAddress"
+                                    value={editableCampaign.shopAddress || ''}
+                                    onChange={(e) => handleFieldChange( 'shopAddress', e.target.value )}
+                                    className="w-full max-w-xs"
+                                    placeholder="Shop Address"
+                                    disabled={!editMode || !canUpdate}
+                                    />
+                                </div>
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                            <div className="flex items-center gap-2">
-                                <Label htmlFor="shopContact" className="text-nowrap">Shop Contact:</Label>
-                                <Input
-                                id="shopContact"
-                                value={editableCampaign.shopContact || ''}
-                                onChange={(e) => handleFieldChange( 'shopContact', e.target.value )}
-                                className="w-fit"
-                                placeholder="Contact Number"
-                                disabled={!editMode || !canUpdate}
-                                />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Label htmlFor="shopAddress" className="text-nowrap">Shop Address:</Label>
-                                <Input
-                                id="shopAddress"
-                                value={editableCampaign.shopAddress || ''}
-                                onChange={(e) => handleFieldChange( 'shopAddress', e.target.value )}
-                                className="w-full max-w-xs"
-                                placeholder="Shop Address"
-                                disabled={!editMode || !canUpdate}
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
                 <div className="flex gap-2 flex-wrap justify-end">
                     {canUpdate && (
@@ -601,7 +603,7 @@ export default function CampaignDetailsPage() {
                             <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    {canUpdate && editMode && (
+                    {canUpdate && editMode && editableCampaign.category === 'Ration' && (
                         <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="outline">
@@ -642,23 +644,29 @@ export default function CampaignDetailsPage() {
              </div>
           </CardHeader>
           <CardContent>
-            {memberCategories.length > 0 ? (
-                <Tabs defaultValue={memberCategories[0]} className="w-full">
-                <TabsList className="h-auto flex-wrap justify-start">
+             {editableCampaign.category === 'Ration' ? (
+                memberCategories.length > 0 ? (
+                    <Tabs defaultValue={memberCategories[0]} className="w-full">
+                    <TabsList className="h-auto flex-wrap justify-start">
+                        {memberCategories.map(count => (
+                            <TabsTrigger key={count} value={count}>{count === 'General' ? 'General' : `For ${count} Members`}</TabsTrigger>
+                        ))}
+                    </TabsList>
                     {memberCategories.map(count => (
-                        <TabsTrigger key={count} value={count}>{count === 'General' ? 'General' : `For ${count} Members`}</TabsTrigger>
+                        <TabsContent key={count} value={count} className="mt-4">
+                            {renderRationTable(count)}
+                        </TabsContent>
                     ))}
-                </TabsList>
-                {memberCategories.map(count => (
-                    <TabsContent key={count} value={count} className="mt-4">
-                        {renderRationTable(count)}
-                    </TabsContent>
-                ))}
-                </Tabs>
+                    </Tabs>
+                ) : (
+                    <div className="text-center text-muted-foreground py-10">
+                        No ration categories defined for this campaign yet.
+                        {canUpdate && editMode && " Click 'Add Category' to begin."}
+                    </div>
+                )
             ) : (
-                <div className="text-center text-muted-foreground py-10">
-                    No ration categories defined for this campaign yet.
-                    {canUpdate && editMode && " Click 'Add Category' to begin."}
+                <div className="mt-4">
+                    {renderRationTable('General')}
                 </div>
             )}
           </CardContent>
