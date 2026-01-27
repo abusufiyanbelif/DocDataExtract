@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useFirestore, useUser, useAuth, useStorage } from '@/firebase';
 import { firebaseConfig } from '@/firebase/config';
 import { collection, query, limit, getDocs } from 'firebase/firestore';
-import { ref as storageRef, uploadString, deleteObject } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -115,7 +115,8 @@ export default function DiagnosticsPage() {
         if (user && storage && firebaseConfig.storageBucket) {
             const testFileRef = storageRef(storage, 'diagnostics/test.txt');
             try {
-                await uploadString(testFileRef, 'This is a test file for diagnostics.');
+                const testBlob = new Blob(['This is a test file for diagnostics.'], { type: 'text/plain' });
+                await uploadBytes(testFileRef, testBlob);
                 storageCheck.status = 'success';
                 storageCheck.details = 'Successfully wrote a file to Firebase Storage.';
                 // Clean up the test file

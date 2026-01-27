@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useFirestore, useUser, useStorage } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ref as storageRef, uploadString } from 'firebase/storage';
+import { ref as storageRef, uploadBytes } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -81,7 +81,7 @@ export default function CreateCampaignPage() {
       await Promise.all(
         placeholderPaths.map(path => {
             const placeholderRef = storageRef(storage, `${path}/.placeholder`);
-            return uploadString(placeholderRef, '', 'raw');
+            return uploadBytes(placeholderRef, new Uint8Array());
         })
       );
 
@@ -237,5 +237,3 @@ export default function CreateCampaignPage() {
     </div>
   );
 }
-
-    
