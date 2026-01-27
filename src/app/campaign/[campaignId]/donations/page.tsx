@@ -146,6 +146,22 @@ export default function DonationsPage() {
     if (editingDonation && !canUpdate) return;
     if (!editingDonation && !canCreate) return;
 
+    if (!editingDonation && data.donorPhone && data.donorName) {
+        const isDuplicate = donations.some(d => 
+            d.donorName.toLowerCase() === data.donorName.toLowerCase() && 
+            d.donorPhone === data.donorPhone &&
+            d.campaignId === campaignId
+        );
+        if (isDuplicate) {
+            toast({
+                title: 'Duplicate Entry',
+                description: 'A donation with the same name and phone number already exists for this campaign.',
+                variant: 'destructive',
+            });
+            return;
+        }
+    }
+
     const docRef = editingDonation
         ? doc(firestore, 'donations', editingDonation.id)
         : doc(collection(firestore, 'donations'));
@@ -333,7 +349,7 @@ export default function DonationsPage() {
                               <TableCell><Badge variant="outline">{donation.paymentType}</Badge></TableCell>
                               <TableCell>{donation.donationDate}</TableCell>
                               <TableCell>
-                                  <Badge variant={donation.status === 'Verified' ? 'default' : 'outline'}>{donation.status}</Badge>
+                                  <Badge variant={donation.status === 'Verified' ? 'default' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
                               </TableCell>
                               <TableCell>
                                   {donation.screenshotUrl ? (

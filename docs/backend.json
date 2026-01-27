@@ -354,7 +354,8 @@
           "type": "string",
           "enum": [
             "Verified",
-            "Pending"
+            "Pending",
+            "Canceled"
           ],
           "description": "The verification status of the donation."
         },

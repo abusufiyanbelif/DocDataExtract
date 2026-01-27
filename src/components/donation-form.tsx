@@ -28,13 +28,13 @@ import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  donorPhone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
+  donorPhone: z.string().length(10, { message: "Phone must be exactly 10 digits." }).optional().or(z.literal('')),
   referral: z.string().min(1, { message: "Referral is required." }),
   amount: z.coerce.number().min(1, { message: "Amount must be at least 1." }),
   type: z.enum(['Zakat', 'Sadqa', 'Interest', 'Lillah', 'General']),
   paymentType: z.enum(['Cash', 'Online']),
   donationDate: z.string().min(1, { message: "Donation date is required."}),
-  status: z.enum(['Verified', 'Pending']),
+  status: z.enum(['Verified', 'Pending', 'Canceled']),
   screenshotFile: z.any().optional(),
 });
 
@@ -214,6 +214,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                         <SelectContent>
                             <SelectItem value="Pending">Pending</SelectItem>
                             <SelectItem value="Verified">Verified</SelectItem>
+                            <SelectItem value="Canceled">Canceled</SelectItem>
                         </SelectContent>
                     </Select>
                     <FormMessage />

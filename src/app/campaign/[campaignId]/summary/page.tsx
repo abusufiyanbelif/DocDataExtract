@@ -25,7 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, HandCoins, Share2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, Wallet, Share2, Hourglass } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -150,11 +150,20 @@ export default function CampaignSummaryPage() {
     const summaryData = useMemo(() => {
         if (!beneficiaries || !donations || !campaign) return null;
 
-        const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
+        const donationsByStatus = donations.reduce((acc, d) => {
+            const status = d.status || 'Pending';
+            acc[status] = (acc[status] || 0) + d.amount;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const verifiedDonations = donationsByStatus['Verified'] || 0;
+        const pendingDonations = donationsByStatus['Pending'] || 0;
+
         const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + b.kitAmount, 0);
         
         const fundingGoal = campaign?.targetAmount || 0;
-        const fundingProgress = fundingGoal > 0 ? (totalDonations / fundingGoal) * 100 : 0;
+        const fundingProgress = fundingGoal > 0 ? (verifiedDonations / fundingGoal) * 100 : 0;
+        const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
 
         const beneficiaryStatusData = beneficiaries.reduce((acc, b) => {
             const statusKey = b.status.replace(/\s+/g, '');
@@ -164,22 +173,27 @@ export default function CampaignSummaryPage() {
 
         const beneficiaryChartData = Object.entries(beneficiaryStatusData).map(([name, value]) => ({ name, value }));
 
-        const donationTypeData = donations.reduce((acc, d) => {
-            acc[d.type] = (acc[d.type] || 0) + d.amount;
-            return acc;
-        }, {} as Record<string, number>);
+        // Base donation type chart on VERIFIED donations only
+        const donationTypeData = donations
+            .filter(d => d.status === 'Verified')
+            .reduce((acc, d) => {
+                acc[d.type] = (acc[d.type] || 0) + d.amount;
+                return acc;
+            }, {} as Record<string, number>);
 
         const donationChartData = Object.entries(donationTypeData).map(([name, value]) => ({ name, value }));
 
         return {
-            totalDonations,
+            verifiedDonations,
+            pendingDonations,
             totalKitAmountRequired,
             fundingProgress,
+            pendingProgress,
             beneficiaryChartData,
             donationChartData,
             totalBeneficiaries: beneficiaries.length,
             targetAmount: campaign.targetAmount,
-            remainingToCollect: Math.max(0, (campaign.targetAmount || 0) - totalDonations),
+            remainingToCollect: Math.max(0, (campaign.targetAmount || 0) - verifiedDonations),
         };
     }, [beneficiaries, donations, campaign]);
     
@@ -200,7 +214,7 @@ export default function CampaignSummaryPage() {
 
     ${campaign.description}
 
-    - Total Donations: ₹${summaryData.totalDonations.toLocaleString()}
+    - Verified Donations: ₹${summaryData.verifiedDonations.toLocaleString()}
     - Target Amount: ₹${(summaryData.targetAmount || 0).toLocaleString()}
     - Beneficiaries: ${summaryData.totalBeneficiaries}
 
@@ -413,20 +427,20 @@ export default function CampaignSummaryPage() {
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Donations Received</CardTitle>
-                                <Gift className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-sm font-medium">Verified Donations</CardTitle>
+                                <Gift className="h-4 w-4 text-green-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">₹{summaryData?.totalDonations.toLocaleString() ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.verifiedDonations.toLocaleString() ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Remaining to Collect</CardTitle>
-                                <HandCoins className="h-4 w-4 text-muted-foreground" />
+                                <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
+                                <Hourglass className="h-4 w-4 text-orange-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">₹{summaryData?.remainingToCollect.toLocaleString() ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.pendingDonations.toLocaleString() ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -450,19 +464,41 @@ export default function CampaignSummaryPage() {
                         
                         <Card className="col-span-1 lg:col-span-4">
                             <CardHeader>
-                                <CardTitle>Funding Progress (Based on Target Amount)</CardTitle>
+                                <CardTitle>Funding Progress</CardTitle>
                                 <CardDescription>
-                                    {summaryData?.fundingProgress.toFixed(2)}% of ₹{(summaryData?.targetAmount ?? 0).toLocaleString()} funded
+                                    ₹{summaryData?.verifiedDonations.toLocaleString() ?? 0} of ₹{(summaryData?.targetAmount ?? 0).toLocaleString()} funded from verified donations.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <Progress value={summaryData?.fundingProgress} />
+                                <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
+                                    <div 
+                                        className="h-full bg-green-500 transition-all"
+                                        style={{ width: `${summaryData?.fundingProgress || 0}%` }}
+                                    ></div>
+                                    <div 
+                                        className="absolute top-0 h-full bg-orange-500 transition-all"
+                                        style={{ 
+                                            left: `${summaryData?.fundingProgress || 0}%`, 
+                                            width: `${summaryData?.pendingProgress || 0}%`
+                                        }}
+                                    ></div>
+                                </div>
+                                <div className="mt-2 flex justify-between text-sm text-muted-foreground">
+                                    <div className="flex items-center">
+                                        <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                                        Verified
+                                    </div>
+                                    <div className="flex items-center">
+                                        <span className="h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
+                                        Pending
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
 
                         <Card className="lg:col-span-2">
                             <CardHeader>
-                                <CardTitle>Donations by Type</CardTitle>
+                                <CardTitle>Verified Donations by Type</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <ChartContainer config={donationChartConfig} className="h-[300px] w-full">

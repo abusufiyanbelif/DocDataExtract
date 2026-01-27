@@ -67,7 +67,7 @@ export interface Donation extends DocumentData {
   paymentType: 'Cash' | 'Online';
   referral: string;
   donationDate: string;
-  status: 'Verified' | 'Pending';
+  status: 'Verified' | 'Pending' | 'Canceled';
   screenshotUrl?: string;
   uploadedBy: string;
   uploadedById: string;
