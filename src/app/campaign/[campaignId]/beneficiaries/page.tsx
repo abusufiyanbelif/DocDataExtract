@@ -603,7 +603,7 @@ export default function BeneficiariesPage() {
       </main>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[625px]">
+        <DialogContent className="sm:max-w-[625px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>{editingBeneficiary ? 'Edit' : 'Add'} Beneficiary</DialogTitle>
             </DialogHeader>
