@@ -166,12 +166,12 @@ export default function CampaignSummaryPage() {
         const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
 
         const beneficiaryStatusData = beneficiaries.reduce((acc, b) => {
-            const statusKey = b.status.replace(/\s+/g, '');
-            acc[statusKey] = (acc[statusKey] || 0) + 1;
+            const status = b.status || 'Pending';
+            acc[status] = (acc[status] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
 
-        const beneficiaryChartData = Object.entries(beneficiaryStatusData).map(([name, value]) => ({ name, value }));
+        const beneficiaryChartData = Object.entries(beneficiaryStatusData).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
 
         // Base donation type chart on VERIFIED donations only
         const donationTypeData = donations
@@ -209,17 +209,26 @@ export default function CampaignSummaryPage() {
             return;
         }
 
+        const remainingToCollectText = summaryData.remainingToCollect > 0 
+            ? `*Remaining to Collect: ₹${summaryData.remainingToCollect.toLocaleString()}*`
+            : `*Goal Achieved! Thank you for your support!*`;
+
         const shareText = `
-    Campaign Summary: ${campaign.name}
+*Help Us Support the Community!*
 
-    ${campaign.description}
+*Campaign: ${campaign.name}*
+${campaign.description || ''}
 
-    - Verified Donations: ₹${summaryData.verifiedDonations.toLocaleString()}
-    - Target Amount: ₹${(summaryData.targetAmount || 0).toLocaleString()}
-    - Beneficiaries: ${summaryData.totalBeneficiaries}
+*Financial Summary:*
+Target Amount: ₹${(summaryData.targetAmount || 0).toLocaleString()}
+Verified Donations: ₹${summaryData.verifiedDonations.toLocaleString()}
+${remainingToCollectText}
 
-    Join us in making a difference!
-        `.trim();
+We are providing aid to *${summaryData.totalBeneficiaries} beneficiaries*.
+
+Please donate and share this message. Every contribution helps!
+        `.trim().replace(/^\s+/gm, '');
+
 
         const shareData = {
             title: `Campaign: ${campaign.name}`,
@@ -231,6 +240,7 @@ export default function CampaignSummaryPage() {
             try {
                 await navigator.share(shareData);
             } catch (err) {
+                // This error is common when the user cancels the share sheet, so we don't need to show a toast.
                 console.log('Share was cancelled or failed', err);
             }
         } else {
@@ -454,11 +464,22 @@ export default function CampaignSummaryPage() {
                         </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
+                                <CardTitle className="text-sm font-medium">Beneficiary Breakdown</CardTitle>
                                 <Users className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
+                                <div className="text-2xl font-bold mb-2">{summaryData?.totalBeneficiaries ?? 0} Total</div>
+                                <div className="space-y-1 text-sm">
+                                    {summaryData?.beneficiaryChartData.map((item) => (
+                                        <div key={item.name} className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: `var(--color-${item.name.replace(/\s+/g, '')})` }} />
+                                                <span>{item.name}</span>
+                                            </div>
+                                            <span className="font-medium text-foreground">{item.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </CardContent>
                         </Card>
                         
@@ -565,5 +586,7 @@ export default function CampaignSummaryPage() {
         </div>
     );
 }
+
+    
 
     
