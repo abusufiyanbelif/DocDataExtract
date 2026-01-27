@@ -3,8 +3,7 @@ import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useStorage } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { deleteDoc, doc } from 'firebase/firestore';
-import { updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, writeBatch } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -106,7 +105,7 @@ export default function UsersPage() {
         });
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!userToDelete || !firestore || !storage || !canDelete) {
         toast({ title: 'Permission Denied', description: 'You do not have permission to delete users.', variant: 'destructive'});
         return;
@@ -129,40 +128,63 @@ export default function UsersPage() {
         return;
     }
     
-    const docRef = doc(firestore, 'users', userToDelete);
-    const idProofUrl = userBeingDeleted.idProofUrl;
-    
     setIsDeleteDialogOpen(false);
     toast({ title: 'Deleting...', description: `Please wait while user '${userBeingDeleted.name}' is being deleted.`});
 
-    deleteDoc(docRef)
-        .then(async () => {
-            toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed.` });
+    try {
+        const batch = writeBatch(firestore);
 
-            if (idProofUrl) {
-                 await deleteObject(storageRef(storage, idProofUrl)).catch((error) => {
-                    if (error.code !== 'storage/object-not-found') {
-                        console.warn("Could not delete associated file from storage:", error);
-                        toast({
-                            title: "File Deletion Warning",
-                            description: "User was deleted, but could not remove the associated ID proof file from storage.",
-                            variant: 'destructive',
-                            duration: 7000
-                        });
-                    }
-                });
-            }
-        })
-        .catch((e) => {
+        // 1. Delete the main user document
+        const userDocRef = doc(firestore, 'users', userToDelete);
+        batch.delete(userDocRef);
+
+        // 2. Delete the lookup document for the loginId
+        if (userBeingDeleted.loginId) {
+            const loginIdLookupRef = doc(firestore, 'user_lookups', userBeingDeleted.loginId);
+            batch.delete(loginIdLookupRef);
+        }
+
+        // 3. Delete the lookup document for the phone number
+        if (userBeingDeleted.phone) {
+            const phoneLookupRef = doc(firestore, 'user_lookups', userBeingDeleted.phone);
+            batch.delete(phoneLookupRef);
+        }
+
+        await batch.commit();
+        toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed from the database.` });
+
+        // 4. Delete the ID proof from storage
+        if (userBeingDeleted.idProofUrl) {
+            await deleteObject(storageRef(storage, userBeingDeleted.idProofUrl)).catch((error) => {
+                if (error.code !== 'storage/object-not-found') {
+                    console.warn("Could not delete associated file from storage:", error);
+                    toast({
+                        title: "File Deletion Warning",
+                        description: "User was deleted, but could not remove the associated ID proof file from storage.",
+                        variant: 'destructive',
+                        duration: 7000
+                    });
+                }
+            });
+        }
+    } catch(e: any) {
+        if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
-                path: docRef.path,
+                path: `users/${userToDelete} and lookups`,
                 operation: 'delete',
             } satisfies SecurityRuleContext);
             errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => {
-            setUserToDelete(null);
-        });
+        } else {
+            console.error("User deletion failed:", e);
+            toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: e.message || "Could not delete user.",
+            });
+        }
+    } finally {
+        setUserToDelete(null);
+    }
   };
   
   const isLoading = areUsersLoading || isProfileLoading;

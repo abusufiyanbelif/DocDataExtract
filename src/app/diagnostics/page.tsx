@@ -86,24 +86,24 @@ export default function DiagnosticsPage() {
         setResults([...checks]);
         
         // 4. Firestore Connectivity & Permissions
-        const firestoreCheck: DiagnosticCheck = { name: 'Firestore Connectivity', status: 'pending', details: 'Attempting a test read from the "campaigns" collection...' };
+        const firestoreCheck: DiagnosticCheck = { name: 'Firestore Connectivity', status: 'pending', details: 'Attempting a public test read from the "user_lookups" collection...' };
         checks.push(firestoreCheck);
         setResults([...checks]);
         await new Promise(res => setTimeout(res, 300));
-        if (user && firestore) {
+        if (firestore) {
             try {
-                const campaignsRef = collection(firestore, 'campaigns');
-                const q = query(campaignsRef, limit(1));
+                const lookupsRef = collection(firestore, 'user_lookups');
+                const q = query(lookupsRef, limit(1));
                 await getDocs(q);
                 firestoreCheck.status = 'success';
-                firestoreCheck.details = 'Successfully connected and read from Firestore. Security rules for "campaigns" collection appear to be working for signed-in users.';
+                firestoreCheck.details = 'Successfully connected and performed a public read from Firestore. This confirms basic connectivity and that security rules allow public reads on "user_lookups".';
             } catch (error: any) {
                 firestoreCheck.status = 'failure';
-                firestoreCheck.details = `Firestore read failed. This could be a connectivity issue or a problem with Security Rules. Error: ${error.message}`;
+                firestoreCheck.details = `Firestore public read failed. This is likely a connectivity issue or a problem with your Security Rules for the "user_lookups" collection. Error: ${error.message}`;
             }
         } else {
             firestoreCheck.status = 'failure';
-            firestoreCheck.details = 'Cannot perform Firestore test without an authenticated user.';
+            firestoreCheck.details = 'Cannot perform Firestore test because the service is not initialized.';
         }
         setResults([...checks]);
 
