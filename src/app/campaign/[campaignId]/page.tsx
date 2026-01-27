@@ -37,6 +37,7 @@ import 'jspdf-autotable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 export default function CampaignDetailsPage() {
   const params = useParams();
@@ -718,10 +719,37 @@ export default function CampaignDetailsPage() {
             </DialogHeader>
             <ScrollArea className="h-72 w-full rounded-md border p-4">
                 <div className="space-y-4">
+                     {allUniqueItems.length > 0 && (
+                        <>
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="copy-all"
+                                    checked={
+                                        itemsToCopy.length === allUniqueItems.length
+                                            ? true
+                                            : itemsToCopy.length > 0
+                                            ? 'indeterminate'
+                                            : false
+                                    }
+                                    onCheckedChange={(checked) => {
+                                        setItemsToCopy(checked ? allUniqueItems : []);
+                                    }}
+                                />
+                                <label
+                                    htmlFor="copy-all"
+                                    className="text-sm font-bold leading-none"
+                                >
+                                    Select All
+                                </label>
+                            </div>
+                            <Separator />
+                        </>
+                    )}
                     {allUniqueItems.map(item => (
                         <div key={item.id} className="flex items-center space-x-2">
                             <Checkbox 
                                 id={`copy-${item.id}`}
+                                checked={itemsToCopy.some(i => i.id === item.id)}
                                 onCheckedChange={(checked) => {
                                     if (checked) {
                                         setItemsToCopy(prev => [...prev, item]);
