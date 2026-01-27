@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, errorEmitter, FirestorePermissionError, useStorage, useCollection, useUserProfile } from '@/firebase';
-import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -38,8 +38,8 @@ export default function CreateUserPage() {
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;
 
   const handleSave = async (data: UserFormData) => {
-    if (!firestore || !storage) {
-        toast({ title: 'Error', description: 'Database connection not available.', variant: 'destructive' });
+    if (!firestore || !storage || !canCreate) {
+        toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
         return;
     };
     setIsSubmitting(true);
@@ -75,7 +75,6 @@ export default function CreateUserPage() {
         userData.permissions = allPermissions;
     }
 
-    const docRef = doc(collection(firestore, 'users'));
     let idProofUrl = '';
     const email = `${data.userKey}@docdataextract.app`;
     const newPassword = data.password!;
@@ -85,7 +84,8 @@ export default function CreateUserPage() {
     const tempAuth = getAuth(tempApp);
 
     try {
-        await createUserWithEmailAndPassword(tempAuth, email, newPassword);
+        const userCredential = await createUserWithEmailAndPassword(tempAuth, email, newPassword);
+        const newUid = userCredential.user.uid;
         
         try {
             const fileList = idProofFile as FileList | undefined;
@@ -97,8 +97,8 @@ export default function CreateUserPage() {
                 });
                 
                 const fileExtension = file.name.split('.').pop() || 'jpg';
-                const finalFileName = `${docRef.id}_id_proof.${fileExtension}`;
-                const filePath = `users/${docRef.id}/${finalFileName}`;
+                const finalFileName = `${newUid}_id_proof.${fileExtension}`;
+                const filePath = `users/${newUid}/${finalFileName}`;
                 const fileRef = storageRef(storage, filePath);
 
                 const uploadResult = await uploadBytes(fileRef, file);
@@ -110,15 +110,30 @@ export default function CreateUserPage() {
         }
         
         const finalData = { ...userData, idProofUrl, createdAt: serverTimestamp() };
+        const batch = writeBatch(firestore);
 
-        setDoc(docRef, finalData)
+        // 1. Set the main user document with UID as the doc ID
+        const docRef = doc(firestore, 'users', newUid);
+        batch.set(docRef, finalData);
+
+        // 2. Create the lookup document for the loginId
+        const loginIdLookupRef = doc(firestore, 'user_lookups', data.loginId);
+        batch.set(loginIdLookupRef, { userKey: data.userKey });
+
+        // 3. Create the lookup document for the phone number
+        if (data.phone) {
+            const phoneLookupRef = doc(firestore, 'user_lookups', data.phone);
+            batch.set(phoneLookupRef, { userKey: data.userKey });
+        }
+        
+        await batch.commit()
             .then(() => {
                 toast({ title: 'Success', description: `User '${data.name}' created successfully.` });
                 router.push('/users');
             })
             .catch((serverError) => {
                 const permissionError = new FirestorePermissionError({
-                    path: 'users',
+                    path: 'users collection and user_lookups',
                     operation: 'create',
                     requestResourceData: finalData,
                 });

@@ -132,6 +132,20 @@
         "status"
       ]
     },
+    "UserLookup": {
+      "title": "User Lookup",
+      "description": "A public record for mapping a login ID or phone number to a user key.",
+      "type": "object",
+      "properties": {
+        "userKey": {
+          "type": "string",
+          "description": "The system-generated user key."
+        }
+      },
+      "required": [
+        "userKey"
+      ]
+    },
     "RationItem": {
       "title": "Ration Item",
       "description": "A single item in a ration kit, part of a campaign's ration list.",
@@ -431,6 +445,12 @@
     ]
   },
   "firestore": {
+    "/user_lookups/{lookupId}": {
+      "schema": {
+        "$ref": "#/backend/entities/UserLookup"
+      },
+      "description": "Publicly readable mapping of login IDs and phone numbers to user keys."
+    },
     "/users/{userId}": {
       "schema": {
         "$ref": "#/backend/entities/UserProfile"

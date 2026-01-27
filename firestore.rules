@@ -18,13 +18,27 @@ service cloud.firestore {
     }
 
     function isOwner(userId) {
+      // Check against the document's ID, which should be the user's UID
       return request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      // Check the role in the user's own profile doc
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+
+    match /user_lookups/{lookupId} {
+      // Anyone can read lookup data to find a user's key for login
+      allow read: if true;
+      // Only admins should be able to create/modify lookups
+      allow write: if isAdmin();
+    }
+
     match /users/{userId} {
-      allow create: if request.auth == null || isSignedIn();
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      // An admin can perform any action on any user
+      allow read, write: if isAdmin();
+      // A user can read and update their own profile. They cannot list all users or delete/create others.
+      allow get, update: if isOwner(userId);
     }
 
     match /campaigns/{campaignId} {

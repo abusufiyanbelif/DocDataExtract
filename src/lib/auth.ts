@@ -7,45 +7,27 @@ import {
 import { 
     Firestore, 
     collection, 
-    query, 
-    where, 
-    getDocs,
-    DocumentSnapshot
+    doc,
+    getDoc
 } from 'firebase/firestore';
-import type { UserProfile } from '@/lib/types';
 
 export const signInWithLoginId = async (auth: Auth, firestore: Firestore, loginId: string, password?: string) => {
     
-    const usersRef = collection(firestore, 'users');
-    let userDoc: DocumentSnapshot | null = null;
+    const lookupsRef = collection(firestore, 'user_lookups');
+    let userKey: string | null = null;
 
-    // First, query by loginId
-    const loginIdQuery = query(usersRef, where("loginId", "==", loginId));
-    const loginIdSnapshot = await getDocs(loginIdQuery);
+    // Attempt to find userKey from loginId or phone in the public lookup collection
+    const lookupDocRef = doc(lookupsRef, loginId);
+    const lookupDoc = await getDoc(lookupDocRef);
 
-    if (!loginIdSnapshot.empty) {
-        userDoc = loginIdSnapshot.docs[0];
-    } else {
-        // If not found by loginId, try querying by phone number
-        const phoneQuery = query(usersRef, where("phone", "==", loginId));
-        const phoneSnapshot = await getDocs(phoneQuery);
-        if (!phoneSnapshot.empty) {
-            userDoc = phoneSnapshot.docs[0];
-        }
+    if (lookupDoc.exists()) {
+        userKey = lookupDoc.data().userKey;
     }
 
-    if (!userDoc) {
+    if (!userKey) {
         throw new Error('User not found. Please check your Login ID or Phone Number.');
     }
-
-    const userData = userDoc.data() as UserProfile;
     
-    if (userData.status === 'Inactive') {
-        throw new Error('This account has been deactivated. Please contact an administrator.');
-    }
-
-    const { userKey } = userData;
-
     if (!password) {
         throw new Error('Password is required.');
     }
@@ -54,7 +36,18 @@ export const signInWithLoginId = async (auth: Auth, firestore: Firestore, loginI
     const email = `${userKey}@docdataextract.app`;
 
     try {
-        return await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+        // Post-login check to ensure the user is active.
+        const userDocRef = doc(firestore, 'users', userCredential.user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists() && userDocSnap.data().status === 'Inactive') {
+            await firebaseSignOut(auth); // Sign the user out immediately
+            throw new Error('This account has been deactivated. Please contact an administrator.');
+        }
+        
+        return userCredential;
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
              throw new Error("Invalid credentials. Please ensure the user exists in Firebase Auth and the password is correct.");
@@ -64,6 +57,10 @@ export const signInWithLoginId = async (auth: Auth, firestore: Firestore, loginI
         }
         if (error.code === 'auth/too-many-requests') {
             throw new Error("Access temporarily disabled due to too many failed login attempts. Please reset your password or try again later.");
+        }
+        // Re-throw our custom deactivation error
+        if (error.message.includes('deactivated')) {
+            throw error;
         }
         throw new Error('An error occurred during sign-in.');
     }

@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage, useUserProfile } from '@/firebase';
-import { updateDoc, doc } from 'firebase/firestore';
+import { updateDoc, doc, writeBatch } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { modules } from '@/lib/modules';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -25,7 +25,7 @@ export default function EditUserPage() {
   const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { isLoading: isProfileLoading } = useUserProfile();
+  const { userProfile: currentUserProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const userDocRef = useMemo(() => {
     if (!firestore || !userId || isProfileLoading) return null;
@@ -34,9 +34,11 @@ export default function EditUserPage() {
 
   const { data: user, isLoading: isUserLoading } = useDoc<UserProfile>(userDocRef);
 
+  const canUpdate = currentUserProfile?.role === 'Admin' || !!currentUserProfile?.permissions?.users?.update;
+
   const handleSave = async (data: UserFormData) => {
-    if (!firestore || !storage) {
-        toast({ title: 'Error', description: 'Database connection not available.', variant: 'destructive' });
+    if (!firestore || !storage || !user || !canUpdate) {
+        toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
         return;
     };
     setIsSubmitting(true);
@@ -91,7 +93,24 @@ export default function EditUserPage() {
     const { userKey, loginId, ...restOfUserData } = userData;
     const updateData = { ...restOfUserData, idProofUrl };
     
-    updateDoc(docRef, updateData as any)
+    const batch = writeBatch(firestore);
+    batch.update(docRef, updateData as any);
+    
+    // Handle phone number lookup update if it changed
+    if (user && user.phone !== data.phone) {
+        // Delete old lookup if it existed
+        if (user.phone) {
+            const oldPhoneLookupRef = doc(firestore, 'user_lookups', user.phone);
+            batch.delete(oldPhoneLookupRef);
+        }
+        // Create new lookup if new phone exists
+        if (data.phone) {
+            const newPhoneLookupRef = doc(firestore, 'user_lookups', data.phone);
+            batch.set(newPhoneLookupRef, { userKey: user.userKey });
+        }
+    }
+
+    await batch.commit()
         .then(() => {
             // NOTE: Password update logic would go here, but is not implemented.
             toast({ title: 'Success', description: 'User details have been successfully updated.' });
