@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where } from 'firebase/firestore';
 import type { Donation, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -101,24 +101,43 @@ export default function DonationsPage() {
   };
 
   const handleDeleteConfirm = () => {
-    if (donationToDelete && firestore && canDelete) {
-        const docRef = doc(firestore, 'donations', donationToDelete);
-        
-        deleteDoc(docRef)
-            .then(() => {
-                toast({ title: 'Success', description: 'Donation deleted.', variant: 'default' });
-            })
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'delete',
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-            });
+    if (!donationToDelete || !firestore || !storage || !canDelete) return;
 
-        setDonationToDelete(null);
-        setIsDeleteDialogOpen(false);
-    }
+    const donationData = donations.find(d => d.id === donationToDelete);
+    const docRef = doc(firestore, 'donations', donationToDelete);
+    
+    toast({ title: 'Deleting...', description: 'Please wait while the donation is being deleted.'});
+
+    const deleteFilePromise = donationData?.screenshotUrl
+        ? deleteObject(storageRef(storage, donationData.screenshotUrl))
+        : Promise.resolve();
+
+    deleteFilePromise.catch(error => {
+        if (error.code !== 'storage/object-not-found') {
+            console.warn("Could not delete associated file from storage:", error);
+            toast({
+                title: "File Deletion Warning",
+                description: "Could not remove the associated screenshot file. It may need to be removed manually.",
+                variant: 'destructive',
+                duration: 7000
+            });
+        }
+    });
+        
+    deleteDoc(docRef)
+        .then(() => {
+            toast({ title: 'Success', description: 'Donation deleted.', variant: 'default' });
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        });
+
+    setDonationToDelete(null);
+    setIsDeleteDialogOpen(false);
   };
   
   const handleFormSubmit = async (data: DonationFormData) => {
@@ -366,7 +385,7 @@ export default function DonationsPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the donation record.
+                    This action cannot be undone. This will permanently delete the donation record and its associated screenshot from storage.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

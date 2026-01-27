@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, setDoc } from 'firebase/firestore';
 import type { Beneficiary, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -120,25 +120,44 @@ export default function BeneficiariesPage() {
     setIsImageViewerOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
-    if (beneficiaryToDelete && firestore && campaignId && canDelete) {
-        const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiaryToDelete);
-        
-        deleteDoc(docRef)
-            .then(() => {
-                toast({ title: 'Success', description: 'Beneficiary deleted.', variant: 'default' });
-            })
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'delete',
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-            });
+  const handleDeleteConfirm = () => {
+    if (!beneficiaryToDelete || !firestore || !storage || !campaignId || !canDelete) return;
 
-        setBeneficiaryToDelete(null);
-        setIsDeleteDialogOpen(false);
-    }
+    const beneficiaryData = beneficiaries.find(b => b.id === beneficiaryToDelete);
+    const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiaryToDelete);
+
+    toast({ title: 'Deleting...', description: 'Please wait while the beneficiary is being deleted.'});
+
+    const deleteFilePromise = beneficiaryData?.idProofUrl
+        ? deleteObject(storageRef(storage, beneficiaryData.idProofUrl))
+        : Promise.resolve();
+
+    deleteFilePromise.catch(error => {
+        if (error.code !== 'storage/object-not-found') {
+            console.warn("Could not delete associated file from storage:", error);
+            toast({
+                title: "File Deletion Warning",
+                description: "Could not remove the associated ID proof file. It may need to be removed manually.",
+                variant: 'destructive',
+                duration: 7000
+            });
+        }
+    });
+    
+    deleteDoc(docRef)
+        .then(() => {
+            toast({ title: 'Success', description: 'Beneficiary deleted.', variant: 'default' });
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        });
+
+    setBeneficiaryToDelete(null);
+    setIsDeleteDialogOpen(false);
   };
   
   const handleFormSubmit = async (data: BeneficiaryFormData) => {
@@ -621,7 +640,7 @@ export default function BeneficiariesPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the beneficiary record.
+                    This action cannot be undone. This will permanently delete the beneficiary record and its associated ID proof file from storage.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
