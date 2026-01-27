@@ -10,7 +10,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Plus, Trash2, Download, Loader2, Edit, Save } from 'lucide-react';
 import Link from 'next/link';
@@ -341,6 +341,14 @@ export default function CampaignDetailsPage() {
     return (
       <Card>
         <CardContent className="pt-6">
+          <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+              <h4 className="text-lg font-bold">Total: <span className="font-mono">₹{total.toFixed(2)}</span></h4>
+              {canUpdate && editMode && (
+                  <Button onClick={() => handleAddItem(memberCount)}>
+                      <Plus className="mr-2 h-4 w-4" /> Add Item
+                  </Button>
+              )}
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -400,22 +408,8 @@ export default function CampaignDetailsPage() {
                   </TableRow>
                 ))}
               </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={4} className="text-right font-bold">Total</TableCell>
-                  <TableCell className="text-right font-bold">₹{total.toFixed(2)}</TableCell>
-                  {canUpdate && editMode && <TableCell></TableCell>}
-                </TableRow>
-              </TableFooter>
             </Table>
           </div>
-          {canUpdate && editMode && (
-            <div className="mt-4 flex justify-end">
-                <Button onClick={() => handleAddItem(memberCount)}>
-                <Plus className="mr-2 h-4 w-4" /> Add Item
-                </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     );

@@ -12,7 +12,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown } from 'lucide-react';
 import {
@@ -161,7 +161,7 @@ export default function BeneficiariesPage() {
   };
   
   const handleFormSubmit = async (data: BeneficiaryFormData) => {
-    if (!firestore || !storage || !campaignId) return;
+    if (!firestore || !storage || !campaignId || !userProfile) return;
     if (editingBeneficiary && !canUpdate) return;
     if (!editingBeneficiary && !canCreate) return;
 
@@ -480,47 +480,52 @@ export default function BeneficiariesPage() {
         </div>
 
         <Card>
-          <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex-1 space-y-2">
-                <CardTitle>Beneficiary List ({filteredAndSortedBeneficiaries.length})</CardTitle>
-                <div className="flex flex-wrap items-center gap-2">
-                    <Input 
-                        placeholder="Search by name, phone, address..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="max-w-sm"
-                    />
-                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-auto md:w-[180px]">
-                            <SelectValue placeholder="Filter by status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="All">All Statuses</SelectItem>
-                            <SelectItem value="Given">Given</SelectItem>
-                            <SelectItem value="Verified">Verified</SelectItem>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Hold">Hold</SelectItem>
-                            <SelectItem value="Need More Details">Need More Details</SelectItem>
-                        </SelectContent>
-                    </Select>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex-1 space-y-1.5">
+                    <CardTitle>Beneficiary List ({filteredAndSortedBeneficiaries.length})</CardTitle>
+                    <p className="text-muted-foreground">
+                        Total amount for filtered beneficiaries: <span className="font-bold text-foreground">₹{totalKitAmount.toFixed(2)}</span>
+                    </p>
                 </div>
+                {canCreate && (
+                    <div className="flex flex-wrap gap-2 shrink-0">
+                        <Button variant="outline" onClick={handleDownloadTemplate}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Template
+                        </Button>
+                        <Button variant="outline" onClick={() => setIsImportOpen(true)}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Import
+                        </Button>
+                        <Button onClick={handleAdd}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add New
+                        </Button>
+                    </div>
+                )}
             </div>
-            {canCreate && (
-                <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" onClick={handleDownloadTemplate}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Template
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsImportOpen(true)}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Import
-                    </Button>
-                    <Button onClick={handleAdd}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add New
-                    </Button>
-                </div>
-            )}
+            <div className="flex flex-wrap items-center gap-2 pt-4">
+                <Input 
+                    placeholder="Search by name, phone, address..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                />
+                 <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-auto md:w-[180px]">
+                        <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Statuses</SelectItem>
+                        <SelectItem value="Given">Given</SelectItem>
+                        <SelectItem value="Verified">Verified</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Hold">Hold</SelectItem>
+                        <SelectItem value="Need More Details">Need More Details</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -616,13 +621,6 @@ export default function BeneficiariesPage() {
                         </TableRow>
                       )}
                   </TableBody>
-                  <TableFooter>
-                    <TableRow>
-                        <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12} className="text-right font-bold">Filtered Total</TableCell>
-                        <TableCell className="text-right font-bold">₹{totalKitAmount.toFixed(2)}</TableCell>
-                        <TableCell></TableCell>
-                    </TableRow>
-                  </TableFooter>
               </Table>
             </div>
           </CardContent>

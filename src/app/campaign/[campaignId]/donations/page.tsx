@@ -12,7 +12,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye } from 'lucide-react';
 import {
@@ -260,8 +260,13 @@ export default function DonationsPage() {
         </div>
 
         <Card>
-          <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <CardTitle>Donation List</CardTitle>
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
+            <div className="flex-1 space-y-1.5">
+              <CardTitle>Donation List ({donations.length})</CardTitle>
+              <p className="text-muted-foreground">
+                  Total Donations: <span className="font-bold text-foreground">₹{totalDonationAmount.toFixed(2)}</span>
+              </p>
+            </div>
             {canCreate && (
                 <Button onClick={handleAdd}>
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -344,13 +349,6 @@ export default function DonationsPage() {
                         </TableRow>
                       )}
                   </TableBody>
-                  <TableFooter>
-                    <TableRow>
-                        <TableCell colSpan={(canUpdate || canDelete) ? 3 : 2} className="text-right font-bold">Total Donations</TableCell>
-                        <TableCell className="text-right font-bold">₹{totalDonationAmount.toFixed(2)}</TableCell>
-                        <TableCell colSpan={5}></TableCell>
-                    </TableRow>
-                  </TableFooter>
               </Table>
             </div>
           </CardContent>
