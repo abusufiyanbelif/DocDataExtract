@@ -90,7 +90,7 @@ export default function CreateCampaignPage() {
       );
 
       toast({ title: 'Success', description: 'Campaign and storage folders created successfully.', variant: 'default' });
-      router.push(`/campaign/${docRef.id}`);
+      router.push(`/campaign/${docRef.id}/summary`);
     } catch (error) {
       console.error('Error creating campaign:', error);
       toast({ title: 'Error', description: 'Could not create campaign.', variant: 'destructive' });

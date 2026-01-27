@@ -35,7 +35,7 @@ export default function CampaignPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const handleRowClick = (campaignId: string) => {
-    router.push(`/campaign/${campaignId}`);
+    router.push(`/campaign/${campaignId}/summary`);
   };
 
   const handleSort = (key: SortKey) => {
