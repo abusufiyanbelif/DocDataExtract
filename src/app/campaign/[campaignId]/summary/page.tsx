@@ -239,7 +239,6 @@ Please donate and share this message. Every contribution helps!
         const shareData = {
             title: `Campaign: ${campaign.name}`,
             text: shareText,
-            url: window.location.href,
         };
 
         if (navigator.share) {
