@@ -22,15 +22,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import type { UserProfile, UserPermissions } from '@/lib/types';
+import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { modules, permissions } from '@/lib/modules';
+import { modules } from '@/lib/modules';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from './ui/separator';
 import { Loader2 } from 'lucide-react';
-
-const permissionsSchema = z.record(z.string(), z.record(z.string(), z.boolean()).optional()).optional();
+import type { UserPermissions } from '@/lib/modules';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -39,12 +38,11 @@ const formSchema = z.object({
   userKey: z.string().min(1, { message: 'User Key is required.'}),
   role: z.enum(['Admin', 'User']),
   status: z.enum(['Active', 'Inactive']),
-  permissions: permissionsSchema,
+  permissions: z.any().optional(),
   password: z.string().optional(),
   _isEditing: z.boolean(),
 }).superRefine((data, ctx) => {
     if (data._isEditing) {
-        // For existing users, password is optional. But if provided, it must be valid.
         if (data.password && data.password.length > 0 && data.password.length < 6) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -53,7 +51,6 @@ const formSchema = z.object({
             });
         }
     } else {
-        // For new users, password is required.
         if (!data.password || data.password.length < 6) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -110,19 +107,27 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   
   useEffect(() => {
     if (roleValue === 'Admin') {
-        // Before switching to Admin, save the current permissions
         setPreAdminPermissions(getValues('permissions'));
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
-            for (const perm of permissions) {
+            for (const perm of mod.permissions) {
                 allPermissions[mod.id][perm] = true;
+            }
+            if (mod.subModules) {
+                 for (const subMod of mod.subModules) {
+                    allPermissions[mod.id][subMod.id] = {};
+                    for (const perm of subMod.permissions) {
+                        allPermissions[mod.id][subMod.id][perm] = true;
+                    }
+                }
             }
         }
         setValue('permissions', allPermissions);
     } else {
-        // If switching back to User, restore the previous permissions
-        setValue('permissions', preAdminPermissions);
+        if(getValues('role') !== 'Admin') {
+           setValue('permissions', preAdminPermissions);
+        }
     }
   }, [roleValue, setValue, getValues, preAdminPermissions]);
 
@@ -271,35 +276,66 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 <TableHeader>
                     <TableRow>
                     <TableHead className="w-[150px]">Module</TableHead>
-                    {permissions.map((perm) => (
-                        <TableHead key={perm} className="text-center capitalize">{perm}</TableHead>
-                    ))}
+                    <TableHead className="text-center">Create</TableHead>
+                    <TableHead className="text-center">Read</TableHead>
+                    <TableHead className="text-center">Update</TableHead>
+                    <TableHead className="text-center">Delete</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {modules.map((mod) => (
-                    <TableRow key={mod.id}>
-                        <TableCell className="font-medium">{mod.name}</TableCell>
-                        {permissions.map((perm) => (
-                        <TableCell key={perm} className="text-center">
-                            <FormField
-                            control={form.control}
-                            name={`permissions.${mod.id}.${perm}`}
-                            render={({ field }) => (
-                                <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                <FormControl>
-                                    <Checkbox
-                                    checked={!!field.value}
-                                    onCheckedChange={field.onChange}
-                                    disabled={roleValue === 'Admin' || isFormDisabled}
-                                    />
-                                </FormControl>
-                                </FormItem>
-                            )}
-                            />
-                        </TableCell>
-                        ))}
-                    </TableRow>
+                        <>
+                            <TableRow key={mod.id}>
+                                <TableCell className="font-medium">{mod.name}</TableCell>
+                                {['create', 'read', 'update', 'delete'].map(perm => (
+                                    <TableCell key={perm} className="text-center">
+                                        {(mod.permissions as readonly string[]).includes(perm) ? (
+                                            <FormField
+                                            control={form.control}
+                                            name={`permissions.${mod.id}.${perm}`}
+                                            render={({ field }) => (
+                                                <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                                <FormControl>
+                                                    <Checkbox
+                                                    checked={!!field.value}
+                                                    onCheckedChange={field.onChange}
+                                                    disabled={roleValue === 'Admin' || isFormDisabled}
+                                                    />
+                                                </FormControl>
+                                                </FormItem>
+                                            )}
+                                            />
+                                        ) : null}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                            {mod.subModules?.map(subMod => (
+                                <TableRow key={subMod.id}>
+                                    <TableCell className="pl-8 text-muted-foreground">{subMod.name}</TableCell>
+                                    {['create', 'read', 'update', 'delete'].map(perm => (
+                                        <TableCell key={perm} className="text-center">
+                                            {(subMod.permissions as readonly string[]).includes(perm) ? (
+                                                <FormField
+                                                control={form.control}
+                                                name={`permissions.${mod.id}.${subMod.id}.${perm}`}
+                                                render={({ field }) => (
+                                                    <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                                    <FormControl>
+                                                        <Checkbox
+                                                        checked={!!field.value}
+                                                        onCheckedChange={field.onChange}
+                                                        disabled={roleValue === 'Admin' || isFormDisabled}
+                                                        />
+                                                    </FormControl>
+                                                    </FormItem>
+                                                )}
+                                                />
+                                            ) : null}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </>
                     ))}
                 </TableBody>
                 </Table>

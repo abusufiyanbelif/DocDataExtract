@@ -39,24 +39,77 @@
         },
         "permissions": {
           "type": "object",
-          "description": "Granular permissions for each module. Applies to all roles, but 'Admin' will have all fields set to true.",
-          "additionalProperties": {
-            "type": "object",
-            "properties": {
-              "create": {
-                "type": "boolean"
-              },
-              "read": {
-                "type": "boolean"
-              },
-              "update": {
-                "type": "boolean"
-              },
-              "delete": {
-                "type": "boolean"
+          "description": "Granular permissions for the user.",
+          "properties": {
+            "users": {
+              "$ref": "#/backend/entities/CrudPermissions"
+            },
+            "campaigns": {
+              "type": "object",
+              "description": "Permissions for the Ration Campaigns module.",
+              "properties": {
+                "read": {
+                  "type": "boolean",
+                  "description": "Can view the list of campaigns."
+                },
+                "create": {
+                  "type": "boolean",
+                  "description": "Can create new campaigns."
+                },
+                "summary": {
+                  "type": "object",
+                  "properties": {
+                    "read": {
+                      "type": "boolean"
+                    },
+                    "update": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "ration": {
+                  "type": "object",
+                  "properties": {
+                    "read": {
+                      "type": "boolean"
+                    },
+                    "update": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "beneficiaries": {
+                  "$ref": "#/backend/entities/CrudPermissions"
+                },
+                "donations": {
+                  "$ref": "#/backend/entities/CrudPermissions"
+                }
               }
             },
-            "additionalProperties": false
+            "extractor": {
+              "type": "object",
+              "properties": {
+                "read": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "storyCreator": {
+              "type": "object",
+              "properties": {
+                "read": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "diagnostics": {
+              "type": "object",
+              "properties": {
+                "read": {
+                  "type": "boolean"
+                }
+              }
+            }
           }
         }
       },
@@ -172,11 +225,7 @@
       },
       "required": [
         "name",
-        "address",
-        "phone",
-        "members",
-        "kitAmount",
-        "status"
+        "referralBy"
       ]
     },
     "Campaign": {
@@ -318,6 +367,26 @@
         "campaignId",
         "campaignName"
       ]
+    },
+    "CrudPermissions": {
+      "title": "CRUD Permissions",
+      "description": "Defines full Create, Read, Update, Delete permissions.",
+      "type": "object",
+      "properties": {
+        "create": {
+          "type": "boolean"
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "update": {
+          "type": "boolean"
+        },
+        "delete": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "auth": {

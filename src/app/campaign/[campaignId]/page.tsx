@@ -67,11 +67,16 @@ export default function CampaignDetailsPage() {
     }
   }, [editMode, campaign])
 
-  const isAdmin = userProfile?.role === 'Admin';
+  const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
+  const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
+  const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
+  const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.update;
+
   const isLoading = isCampaignLoading || isProfileLoading;
 
   const handleSave = () => {
-    if (!campaignDocRef || !editableCampaign || !isAdmin) return;
+    if (!campaignDocRef || !editableCampaign || !canUpdate) return;
     
     const saveData = { ...editableCampaign };
     
@@ -350,7 +355,7 @@ export default function CampaignDetailsPage() {
                   <TableHead className="w-[15%]">Quantity</TableHead>
                   <TableHead>Notes</TableHead>
                   <TableHead className="w-[120px] text-right">Price (₹)</TableHead>
-                  {isAdmin && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
+                  {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -362,7 +367,7 @@ export default function CampaignDetailsPage() {
                         value={item.name || ''}
                         onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)}
                         placeholder="Item name"
-                        disabled={!editMode || !isAdmin}
+                        disabled={!editMode || !canUpdate}
                       />
                     </TableCell>
                     <TableCell>
@@ -370,7 +375,7 @@ export default function CampaignDetailsPage() {
                         value={item.quantity || ''}
                         onChange={e => handleItemChange(memberCount, item.id, 'quantity', e.target.value)}
                         placeholder="e.g. 10 kg"
-                        disabled={!editMode || !isAdmin}
+                        disabled={!editMode || !canUpdate}
                       />
                     </TableCell>
                     <TableCell>
@@ -378,7 +383,7 @@ export default function CampaignDetailsPage() {
                         value={item.notes || ''}
                         onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)}
                         placeholder="e.g. @60/kg"
-                        disabled={!editMode || !isAdmin}
+                        disabled={!editMode || !canUpdate}
                       />
                     </TableCell>
                     <TableCell>
@@ -387,10 +392,10 @@ export default function CampaignDetailsPage() {
                         value={item.price || 0}
                         onChange={e => handleItemChange(memberCount, item.id, 'price', Number(e.target.value))}
                         className="text-right"
-                        disabled={!editMode || !isAdmin}
+                        disabled={!editMode || !canUpdate}
                       />
                     </TableCell>
-                    {isAdmin && editMode && (
+                    {canUpdate && editMode && (
                         <TableCell className="text-center">
                         <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -404,12 +409,12 @@ export default function CampaignDetailsPage() {
                 <TableRow>
                   <TableCell colSpan={4} className="text-right font-bold">Total</TableCell>
                   <TableCell className="text-right font-bold">₹{total.toFixed(2)}</TableCell>
-                  {isAdmin && editMode && <TableCell></TableCell>}
+                  {canUpdate && editMode && <TableCell></TableCell>}
                 </TableRow>
               </TableFooter>
             </Table>
           </div>
-          {isAdmin && editMode && (
+          {canUpdate && editMode && (
             <div className="mt-4 flex justify-end">
                 <Button onClick={() => handleAddItem(memberCount)}>
                 <Plus className="mr-2 h-4 w-4" /> Add Item
@@ -463,18 +468,26 @@ export default function CampaignDetailsPage() {
         </div>
         
         <div className="flex flex-wrap gap-2 border-b mb-4">
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
-            </Button>
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
-                <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
-            </Button>
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
-            </Button>
-             <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
-            </Button>
+            {canReadSummary && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                  <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
+              </Button>
+            )}
+            {canReadRation && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
+                  <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
+              </Button>
+            )}
+            {canReadBeneficiaries && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                  <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
+              </Button>
+            )}
+             {canReadDonations && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                  <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
+              </Button>
+            )}
         </div>
 
         <Card>
@@ -492,7 +505,7 @@ export default function CampaignDetailsPage() {
                                 value={editableCampaign.priceDate || ''}
                                 onChange={(e) => handleFieldChange( 'priceDate', e.target.value )}
                                 className="w-fit"
-                                disabled={!editMode || !isAdmin}
+                                disabled={!editMode || !canUpdate}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
@@ -503,7 +516,7 @@ export default function CampaignDetailsPage() {
                                 onChange={(e) => handleFieldChange( 'shopName', e.target.value )}
                                 className="w-fit"
                                 placeholder="Shop Name"
-                                disabled={!editMode || !isAdmin}
+                                disabled={!editMode || !canUpdate}
                                 />
                             </div>
                         </div>
@@ -516,7 +529,7 @@ export default function CampaignDetailsPage() {
                                 onChange={(e) => handleFieldChange( 'shopContact', e.target.value )}
                                 className="w-fit"
                                 placeholder="Contact Number"
-                                disabled={!editMode || !isAdmin}
+                                disabled={!editMode || !canUpdate}
                                 />
                             </div>
                             <div className="flex items-center gap-2">
@@ -527,14 +540,14 @@ export default function CampaignDetailsPage() {
                                 onChange={(e) => handleFieldChange( 'shopAddress', e.target.value )}
                                 className="w-full max-w-xs"
                                 placeholder="Shop Address"
-                                disabled={!editMode || !isAdmin}
+                                disabled={!editMode || !canUpdate}
                                 />
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className="flex gap-2 flex-wrap justify-end">
-                    {isAdmin && (
+                    {canUpdate && (
                         !editMode ? (
                             <Button onClick={() => setEditMode(true)}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit Details
@@ -561,7 +574,7 @@ export default function CampaignDetailsPage() {
                             <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    {isAdmin && editMode && (
+                    {canUpdate && editMode && (
                         <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
                             <DialogTrigger asChild>
                                 <Button variant="outline">
@@ -618,7 +631,7 @@ export default function CampaignDetailsPage() {
             ) : (
                 <div className="text-center text-muted-foreground py-10">
                     No ration categories defined for this campaign yet.
-                    {isAdmin && editMode && " Click 'Add Category' to begin."}
+                    {canUpdate && editMode && " Click 'Add Category' to begin."}
                 </div>
             )}
           </CardContent>

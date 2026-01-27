@@ -88,22 +88,29 @@ export default function BeneficiariesPage() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
   
-  const isAdmin = userProfile?.role === 'Admin';
+  const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
+  const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
+  const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
+  const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
+
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.create;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.update;
+  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.delete;
 
   const handleAdd = () => {
-    if (!isAdmin) return;
+    if (!canCreate) return;
     setEditingBeneficiary(null);
     setIsFormOpen(true);
   };
 
   const handleEdit = (beneficiary: Beneficiary) => {
-    if (!isAdmin) return;
+    if (!canUpdate) return;
     setEditingBeneficiary(beneficiary);
     setIsFormOpen(true);
   };
 
   const handleDeleteClick = (id: string) => {
-    if (!isAdmin) return;
+    if (!canDelete) return;
     setBeneficiaryToDelete(id);
     setIsDeleteDialogOpen(true);
   };
@@ -114,7 +121,7 @@ export default function BeneficiariesPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (beneficiaryToDelete && firestore && campaignId && isAdmin) {
+    if (beneficiaryToDelete && firestore && campaignId && canDelete) {
         const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiaryToDelete);
         
         deleteDoc(docRef)
@@ -135,7 +142,9 @@ export default function BeneficiariesPage() {
   };
   
   const handleFormSubmit = async (data: BeneficiaryFormData) => {
-    if (!firestore || !storage || !campaignId || !isAdmin) return;
+    if (!firestore || !storage || !campaignId) return;
+    if (editingBeneficiary && !canUpdate) return;
+    if (!editingBeneficiary && !canCreate) return;
 
     const docRef = editingBeneficiary
         ? doc(firestore, `campaigns/${campaignId}/beneficiaries`, editingBeneficiary.id)
@@ -143,9 +152,6 @@ export default function BeneficiariesPage() {
 
     let idProofUrl = editingBeneficiary?.idProofUrl || '';
     
-    // This part involves file upload, which is async. We need to await it.
-    // The "no-await" rule is for Firestore mutations to leverage optimistic updates,
-    // but file uploads must complete before we can get the URL to save in Firestore.
     try {
         const fileList = data.idProofFile as FileList | undefined;
         if (fileList && fileList.length > 0) {
@@ -172,7 +178,6 @@ export default function BeneficiariesPage() {
             }),
         };
         
-        // Firestore mutation without await
         setDoc(docRef, finalData, { merge: true })
             .then(() => {
                 toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'default' });
@@ -213,7 +218,7 @@ export default function BeneficiariesPage() {
   };
 
   const handleImportBeneficiaries = async () => {
-    if (!selectedFile || !firestore || !campaignId || !isAdmin) return;
+    if (!selectedFile || !firestore || !campaignId || !canCreate) return;
     setIsImporting(true);
 
     const reader = new FileReader();
@@ -227,7 +232,7 @@ export default function BeneficiariesPage() {
 
             if (json.length === 0) throw new Error("The file is empty.");
 
-            const requiredHeaders = ['name', 'address', 'phone', 'members', 'kitAmount', 'status'];
+            const requiredHeaders = ['name', 'referralBy'];
             const actualHeaders = Object.keys(json[0]);
             if (!requiredHeaders.every(h => actualHeaders.includes(h))) {
                  throw new Error(`File is missing required headers. Required: ${requiredHeaders.join(', ')}`);
@@ -255,8 +260,8 @@ export default function BeneficiariesPage() {
                     createdAt: serverTimestamp(),
                 };
                 
-                if (!beneficiaryData.name || !beneficiaryData.address) {
-                    console.warn("Skipping row with missing name or address:", row);
+                if (!beneficiaryData.name || !beneficiaryData.referralBy) {
+                    console.warn("Skipping row with missing name or referral:", row);
                     return;
                 }
 
@@ -399,18 +404,26 @@ export default function BeneficiariesPage() {
         </div>
         
         <div className="flex flex-wrap gap-2 border-b mb-4">
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
-            </Button>
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
-            </Button>
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
-                <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
-            </Button>
-             <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
-            </Button>
+            {canReadSummary && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                  <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
+              </Button>
+            )}
+            {canReadRation && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                  <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
+              </Button>
+            )}
+            {canReadBeneficiaries && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
+                  <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
+              </Button>
+            )}
+             {canReadDonations && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                  <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
+              </Button>
+            )}
         </div>
 
         <Card>
@@ -425,7 +438,7 @@ export default function BeneficiariesPage() {
                         className="max-w-sm"
                     />
                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-auto md:w-[180px]">
                             <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -438,7 +451,7 @@ export default function BeneficiariesPage() {
                     </Select>
                 </div>
             </div>
-            {isAdmin && (
+            {canCreate && (
                 <div className="flex flex-wrap gap-2">
                     <Button variant="outline" onClick={handleDownloadTemplate}>
                         <Download className="mr-2 h-4 w-4" />
@@ -460,7 +473,7 @@ export default function BeneficiariesPage() {
               <Table>
                   <TableHeader>
                       <TableRow>
-                          {isAdmin && <TableHead className="w-[50px] text-center">Actions</TableHead>}
+                          {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center">Actions</TableHead>}
                           <SortableHeader sortKey="srNo">#</SortableHeader>
                           <SortableHeader sortKey="name">Name</SortableHeader>
                           <SortableHeader sortKey="address">Address</SortableHeader>
@@ -481,13 +494,13 @@ export default function BeneficiariesPage() {
                       {areBeneficiariesLoading && (
                         [...Array(3)].map((_, i) => (
                            <TableRow key={i}>
-                                <TableCell colSpan={isAdmin ? 15 : 14}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14}><Skeleton className="h-6 w-full" /></TableCell>
                            </TableRow>
                         ))
                       )}
                       {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.map((beneficiary, index) => (
                           <TableRow key={beneficiary.id}>
-                              {isAdmin && (
+                              {(canUpdate || canDelete) && (
                                 <TableCell className="text-center">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -496,14 +509,18 @@ export default function BeneficiariesPage() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => handleEdit(beneficiary)}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleDeleteClick(beneficiary.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
+                                            {canUpdate && (
+                                                <DropdownMenuItem onClick={() => handleEdit(beneficiary)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                            )}
+                                            {canDelete && (
+                                                <DropdownMenuItem onClick={() => handleDeleteClick(beneficiary.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>
@@ -538,7 +555,7 @@ export default function BeneficiariesPage() {
                       ))}
                       {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={isAdmin ? 15 : 14} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14} className="text-center h-24 text-muted-foreground">
                                 No beneficiaries found matching your criteria.
                             </TableCell>
                         </TableRow>
@@ -546,7 +563,7 @@ export default function BeneficiariesPage() {
                   </TableBody>
                   <TableFooter>
                     <TableRow>
-                        <TableCell colSpan={isAdmin ? 13 : 12} className="text-right font-bold">Filtered Total</TableCell>
+                        <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12} className="text-right font-bold">Filtered Total</TableCell>
                         <TableCell className="text-right font-bold">₹{totalKitAmount.toFixed(2)}</TableCell>
                         <TableCell></TableCell>
                     </TableRow>
@@ -566,7 +583,7 @@ export default function BeneficiariesPage() {
                 beneficiary={editingBeneficiary}
                 onSubmit={handleFormSubmit}
                 onCancel={() => setIsFormOpen(false)}
-                rationLists={campaign.rationLists}
+                rationLists={campaign?.rationLists || {}}
             />
         </DialogContent>
       </Dialog>

@@ -86,6 +86,12 @@ export default function CampaignSummaryPage() {
             });
         }
     }, [campaign]);
+    
+    const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
+    const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
+    const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
+    const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
+    const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.update;
 
     const handleSave = () => {
         if (!campaignDocRef || !userProfile || !canUpdate) return;
@@ -162,7 +168,6 @@ export default function CampaignSummaryPage() {
     }, [beneficiaries, donations, campaign]);
     
     const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading;
-    const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update;
 
     if (isLoading) {
         return (
@@ -220,18 +225,26 @@ export default function CampaignSummaryPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 border-b mb-4">
-                    <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
-                        <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
-                    </Button>
-                    <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                        <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
-                    </Button>
-                    <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                        <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
-                    </Button>
-                    <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                        <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
-                    </Button>
+                    {canReadSummary && (
+                      <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
+                          <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
+                      </Button>
+                    )}
+                    {canReadRation && (
+                      <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                          <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
+                      </Button>
+                    )}
+                    {canReadBeneficiaries && (
+                      <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                          <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
+                      </Button>
+                    )}
+                    {canReadDonations && (
+                      <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                          <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
+                      </Button>
+                    )}
                 </div>
 
                 <div className="space-y-6">

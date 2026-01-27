@@ -68,9 +68,14 @@ export default function DonationsPage() {
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [imageToView, setImageToView] = useState<string | null>(null);
   
-  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
-  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update;
-  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.delete;
+  const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
+  const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
+  const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
+  const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
+
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.create;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.update;
+  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.delete;
 
   const handleAdd = () => {
     if (!canCreate) return;
@@ -223,18 +228,26 @@ export default function DonationsPage() {
         </div>
         
         <div className="flex flex-wrap gap-2 border-b mb-4">
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
-            </Button>
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
-            </Button>
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
-            </Button>
-            <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
-                <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
-            </Button>
+             {canReadSummary && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                  <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
+              </Button>
+            )}
+            {canReadRation && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                  <Link href={`/campaign/${campaignId}`}>Ration Details</Link>
+              </Button>
+            )}
+            {canReadBeneficiaries && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
+                  <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
+              </Button>
+            )}
+            {canReadDonations && (
+              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
+                  <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
+              </Button>
+            )}
         </div>
 
         <Card>

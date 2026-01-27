@@ -1,9 +1,29 @@
+export const crudPermissions = ['create', 'read', 'update', 'delete'] as const;
+export const readUpdatePermissions = ['read', 'update'] as const;
+export const simpleReadPermission = ['read'] as const;
+
+export type CrudPermissions = typeof crudPermissions;
+export type ReadUpdatePermissions = typeof readUpdatePermissions;
+export type SimpleReadPermission = typeof simpleReadPermission;
+
+export const campaignSubModules = [
+  { id: 'summary', name: 'Summary', permissions: readUpdatePermissions },
+  { id: 'ration', name: 'Ration Details', permissions: readUpdatePermissions },
+  { id: 'beneficiaries', name: 'Beneficiary List', permissions: crudPermissions },
+  { id: 'donations', name: 'Donations', permissions: crudPermissions },
+] as const;
+
 export const modules = [
-  { id: 'users', name: 'User Management' },
-  { id: 'campaigns', name: 'Ration Campaigns' },
-  { id: 'extractor', name: 'Extractor' },
-  { id: 'storyCreator', name: 'Story Creator' },
-  { id: 'diagnostics', name: 'Diagnostics' },
+  { id: 'users', name: 'User Management', permissions: crudPermissions },
+  {
+    id: 'campaigns',
+    name: 'Ration Campaigns',
+    permissions: ['create', 'read'],
+    subModules: campaignSubModules,
+  },
+  { id: 'extractor', name: 'Extractor', permissions: simpleReadPermission },
+  { id: 'storyCreator', name: 'Story Creator', permissions: simpleReadPermission },
+  { id: 'diagnostics', name: 'Diagnostics', permissions: simpleReadPermission },
 ] as const;
 
 export const permissions = ['create', 'read', 'update', 'delete'] as const;
@@ -11,4 +31,12 @@ export const permissions = ['create', 'read', 'update', 'delete'] as const;
 export type ModuleId = typeof modules[number]['id'];
 export type Permission = typeof permissions[number];
 
-export type UserPermissions = Partial<Record<ModuleId, Partial<Record<Permission, boolean>>>>;
+type SubModulePermissions = {
+  [K in typeof campaignSubModules[number]['id']]?: Partial<Record<typeof campaignSubModules[number]['permissions'][number], boolean>>;
+};
+
+export type UserPermissions = Partial<
+  Record<Exclude<ModuleId, 'campaigns'>, Partial<Record<Permission, boolean>>>
+> & {
+  campaigns?: Partial<Record<'create' | 'read', boolean>> & SubModulePermissions;
+};
