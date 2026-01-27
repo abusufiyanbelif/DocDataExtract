@@ -239,38 +239,40 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             )}
             />
         </div>
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <div className="flex gap-2">
-                <div className="relative w-full">
-                    <FormControl>
-                        <Input 
-                            type={showPassword ? 'text' : 'password'} 
-                            placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} 
-                            {...field} value={field.value ?? ''} 
-                            disabled={isFormDisabled} 
-                        />
-                    </FormControl>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                        onClick={() => setShowPassword(!showPassword)}
-                    >
-                        {showPassword ? <EyeOff /> : <Eye />}
-                    </Button>
+        {!isEditing && (
+            <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Password</FormLabel>
+                <div className="flex gap-2">
+                    <div className="relative w-full">
+                        <FormControl>
+                            <Input 
+                                type={showPassword ? 'text' : 'password'} 
+                                placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} 
+                                {...field} value={field.value ?? ''} 
+                                disabled={isFormDisabled} 
+                            />
+                        </FormControl>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                            onClick={() => setShowPassword(!showPassword)}
+                        >
+                            {showPassword ? <EyeOff /> : <Eye />}
+                        </Button>
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => handleFeatureNotReady('Password Reset')} disabled>Reset</Button>
                 </div>
-                <Button type="button" variant="outline" onClick={() => handleFeatureNotReady('Password Reset')} disabled>Reset</Button>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        )}
 
         <Separator />
         

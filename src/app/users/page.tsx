@@ -132,41 +132,33 @@ export default function UsersPage() {
     toast({ title: 'Deleting...', description: `Please wait while user '${userBeingDeleted.name}' is being deleted.`});
 
     try {
+        if (userBeingDeleted.idProofUrl) {
+            await deleteObject(storageRef(storage, userBeingDeleted.idProofUrl)).catch((error) => {
+                if (error.code !== 'storage/object-not-found') {
+                    throw new Error(`Failed to delete ID proof from storage. Aborting deletion. Error: ${error.message}`);
+                }
+                 console.warn("ID proof file not found in storage, but proceeding with document deletion.");
+            });
+        }
+        
         const batch = writeBatch(firestore);
 
-        // 1. Delete the main user document
         const userDocRef = doc(firestore, 'users', userToDelete);
         batch.delete(userDocRef);
 
-        // 2. Delete the lookup document for the loginId
         if (userBeingDeleted.loginId) {
             const loginIdLookupRef = doc(firestore, 'user_lookups', userBeingDeleted.loginId);
             batch.delete(loginIdLookupRef);
         }
 
-        // 3. Delete the lookup document for the phone number
         if (userBeingDeleted.phone) {
             const phoneLookupRef = doc(firestore, 'user_lookups', userBeingDeleted.phone);
             batch.delete(phoneLookupRef);
         }
 
         await batch.commit();
-        toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed from the database.` });
+        toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed.` });
 
-        // 4. Delete the ID proof from storage
-        if (userBeingDeleted.idProofUrl) {
-            await deleteObject(storageRef(storage, userBeingDeleted.idProofUrl)).catch((error) => {
-                if (error.code !== 'storage/object-not-found') {
-                    console.warn("Could not delete associated file from storage:", error);
-                    toast({
-                        title: "File Deletion Warning",
-                        description: "User was deleted, but could not remove the associated ID proof file from storage.",
-                        variant: 'destructive',
-                        duration: 7000
-                    });
-                }
-            });
-        }
     } catch(e: any) {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
@@ -178,7 +170,7 @@ export default function UsersPage() {
             console.error("User deletion failed:", e);
             toast({
                 variant: "destructive",
-                title: "Uh oh! Something went wrong.",
+                title: "Deletion Failed",
                 description: e.message || "Could not delete user.",
             });
         }

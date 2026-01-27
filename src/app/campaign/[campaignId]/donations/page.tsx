@@ -113,22 +113,18 @@ export default function DonationsPage() {
     toast({ title: 'Deleting...', description: 'Please wait while the donation is being deleted.'});
 
     try {
-        await deleteDoc(docRef);
-        toast({ title: 'Success', description: 'Donation deleted.', variant: 'default' });
-
         if (screenshotUrl) {
             await deleteObject(storageRef(storage, screenshotUrl)).catch(error => {
                 if (error.code !== 'storage/object-not-found') {
-                    console.warn("Could not delete associated file from storage:", error);
-                    toast({
-                        title: "File Deletion Warning",
-                        description: "Could not remove the associated screenshot file. It may need to be removed manually.",
-                        variant: 'destructive',
-                        duration: 7000
-                    });
+                    throw new Error(`Failed to delete screenshot from storage. Aborting deletion. Error: ${error.message}`);
                 }
+                console.warn("Screenshot file not found in storage, but proceeding with document deletion.");
             });
         }
+        
+        await deleteDoc(docRef);
+        toast({ title: 'Success', description: 'Donation deleted successfully.', variant: 'default' });
+
     } catch(e: any) {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
@@ -139,7 +135,7 @@ export default function DonationsPage() {
         } else {
             toast({
               variant: "destructive",
-              title: "Uh oh! Something went wrong.",
+              title: "Deletion Failed",
               description: e.message || "Could not delete donation.",
             });
             console.error("Delete donation failed:", e);
