@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, setDoc } from 'firebase/firestore';
 import type { Donation, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -146,6 +146,10 @@ export default function DonationsPage() {
     if (editingDonation && !canUpdate) return;
     if (!editingDonation && !canCreate) return;
 
+    const docRef = editingDonation
+        ? doc(firestore, 'donations', editingDonation.id)
+        : doc(collection(firestore, 'donations'));
+
     let screenshotUrl = editingDonation?.screenshotUrl || '';
     
     try {
@@ -156,7 +160,12 @@ export default function DonationsPage() {
                 title: "Uploading Screenshot...",
                 description: `Please wait while '${file.name}' is uploaded.`,
             });
-            const filePath = `campaigns/${campaignId}/donations/${Date.now()}_${file.name}`;
+            
+            const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate ];
+            const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
+            const fileExtension = file.name.split('.').pop() || 'jpg';
+            const finalFileName = `${docRef.id}_${sanitizedBaseName}.${fileExtension}`;
+            const filePath = `campaigns/${campaignId}/donations/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 
             const uploadResult = await uploadBytes(fileRef, file);
@@ -164,49 +173,30 @@ export default function DonationsPage() {
         }
 
         const { screenshotFile, ...donationData } = data;
+        
+        const finalData = {
+            ...donationData,
+            screenshotUrl,
+            campaignId: campaignId,
+            campaignName: campaign.name,
+            uploadedBy: userProfile.name,
+            uploadedById: userProfile.id,
+            ...(!editingDonation && { createdAt: serverTimestamp() }),
+        };
 
-        if (editingDonation) {
-            const docRef = doc(firestore, 'donations', editingDonation.id);
-            const finalData = { ...donationData, screenshotUrl };
-            
-            updateDoc(docRef, finalData)
-                .then(() => {
-                    toast({ title: 'Success', description: 'Donation updated.', variant: 'default' });
-                })
-                .catch(async (serverError) => {
-                    const permissionError = new FirestorePermissionError({
-                        path: docRef.path,
-                        operation: 'update',
-                        requestResourceData: finalData
-                    } satisfies SecurityRuleContext);
-                    errorEmitter.emit('permission-error', permissionError);
-                });
+        setDoc(docRef, finalData, { merge: true })
+            .then(() => {
+                toast({ title: 'Success', description: `Donation ${editingDonation ? 'updated' : 'added'}.`, variant: 'default' });
+            })
+            .catch(async (serverError) => {
+                 const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: editingDonation ? 'update' : 'create',
+                    requestResourceData: finalData
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            });
 
-        } else {
-            const collectionRef = collection(firestore, 'donations');
-            const finalData = {
-                ...donationData,
-                screenshotUrl,
-                campaignId: campaignId,
-                campaignName: campaign.name,
-                uploadedBy: userProfile.name,
-                uploadedById: userProfile.id,
-                createdAt: serverTimestamp(),
-            };
-
-            addDoc(collectionRef, finalData)
-                .then(() => {
-                    toast({ title: 'Success', description: 'Donation added.', variant: 'default' });
-                })
-                .catch(async (serverError) => {
-                    const permissionError = new FirestorePermissionError({
-                        path: 'donations',
-                        operation: 'create',
-                        requestResourceData: finalData
-                    } satisfies SecurityRuleContext);
-                    errorEmitter.emit('permission-error', permissionError);
-                });
-        }
     } catch (error) {
         console.error("Error during file upload:", error);
         toast({ title: 'Error', description: 'Could not save donation screenshot.', variant: 'destructive' });

@@ -179,7 +179,13 @@ export default function BeneficiariesPage() {
                 title: "Uploading ID Proof...",
                 description: `Please wait while '${file.name}' is uploaded.`,
             });
-            const filePath = `campaigns/${campaignId}/beneficiaries/${docRef.id}_${file.name}`;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const fileNameParts = [ data.name, data.phone || 'no-phone', today, data.referralBy ];
+            const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
+            const fileExtension = file.name.split('.').pop() || 'jpg';
+            const finalFileName = `${docRef.id}_${sanitizedBaseName}.${fileExtension}`;
+            const filePath = `campaigns/${campaignId}/beneficiaries/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 
             const uploadResult = await uploadBytes(fileRef, file);
