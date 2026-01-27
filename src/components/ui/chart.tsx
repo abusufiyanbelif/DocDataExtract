@@ -339,15 +339,15 @@ function getPayloadConfigFromPayload(
     key in payload &&
     typeof payload[key as keyof typeof payload] === "string"
   ) {
-    configLabelKey = payload[key as keyof typeof payload] as string
+    configLabelKey = (payload[key as keyof typeof payload] as string).replace(/\s+/g, '');
   } else if (
     payloadPayload &&
     key in payloadPayload &&
     typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
   ) {
-    configLabelKey = payloadPayload[
+    configLabelKey = (payloadPayload[
       key as keyof typeof payloadPayload
-    ] as string
+    ] as string).replace(/\s+/g, '');
   }
 
   return configLabelKey in config
@@ -363,3 +363,5 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
+
+    

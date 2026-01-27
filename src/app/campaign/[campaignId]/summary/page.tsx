@@ -27,6 +27,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, HandCoins } from 'lucide-react';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -83,6 +90,7 @@ export default function CampaignSummaryPage() {
                 targetAmount: campaign.targetAmount || 0,
                 startDate: campaign.startDate || '',
                 endDate: campaign.endDate || '',
+                category: campaign.category || 'General',
             });
         }
     }, [campaign, editMode]);
@@ -101,6 +109,7 @@ export default function CampaignSummaryPage() {
             targetAmount: Number(editableCampaign.targetAmount) || 0,
             startDate: editableCampaign.startDate || '',
             endDate: editableCampaign.endDate || '',
+            category: editableCampaign.category || 'General',
         };
 
         updateDoc(campaignDocRef, saveData)
@@ -113,7 +122,7 @@ export default function CampaignSummaryPage() {
                     path: campaignDocRef.path,
                     operation: 'update',
                     requestResourceData: saveData,
-                } satisfies SecurityRuleContext);
+                });
                 errorEmitter.emit('permission-error', permissionError);
             });
     };
@@ -125,6 +134,7 @@ export default function CampaignSummaryPage() {
                 targetAmount: campaign.targetAmount || 0,
                 startDate: campaign.startDate || '',
                 endDate: campaign.endDate || '',
+                category: campaign.category || 'General',
             });
         }
         setEditMode(true);
@@ -272,7 +282,7 @@ export default function CampaignSummaryPage() {
                                     <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
                                 )}
                             </div>
-                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-1">
                                     <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Target Amount</Label>
                                     {editMode && canUpdate ? (
@@ -286,6 +296,26 @@ export default function CampaignSummaryPage() {
                                         />
                                     ) : (
                                         <p className="mt-1 text-lg font-semibold">₹{campaign.targetAmount?.toLocaleString() ?? '0.00'}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="category" className="text-sm font-medium text-muted-foreground">Category</Label>
+                                    {editMode && canUpdate ? (
+                                        <Select
+                                            value={editableCampaign.category}
+                                            onValueChange={(value) => setEditableCampaign(p => ({...p, category: value as any}))}
+                                        >
+                                            <SelectTrigger id="category" className="mt-1">
+                                                <SelectValue placeholder="Select a category" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Ration">Ration</SelectItem>
+                                                <SelectItem value="Relief">Relief</SelectItem>
+                                                <SelectItem value="General">General</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <p className="mt-1 text-lg font-semibold">{campaign.category}</p>
                                     )}
                                 </div>
                                  <div className="space-y-1">
@@ -423,7 +453,7 @@ export default function CampaignSummaryPage() {
                                             outerRadius={80}
                                         >
                                             {summaryData?.beneficiaryChartData.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
+                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
                                             ))}
                                         </Pie>
                                         <ChartLegend
@@ -439,3 +469,5 @@ export default function CampaignSummaryPage() {
         </div>
     );
 }
+
+    
