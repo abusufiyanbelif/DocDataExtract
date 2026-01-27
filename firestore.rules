@@ -37,8 +37,8 @@ service cloud.firestore {
     match /users/{userId} {
       // An admin can perform any action on any user
       allow read, write: if isAdmin();
-      // A user can read and update their own profile. They cannot list all users or delete/create others.
-      allow get, update: if isOwner(userId);
+      // A user can create, read, and update their own profile. They cannot list all users or delete others.
+      allow get, update, create: if isOwner(userId);
     }
 
     match /campaigns/{campaignId} {

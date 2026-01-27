@@ -28,9 +28,9 @@ export default function EditUserPage() {
   const { userProfile: currentUserProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const userDocRef = useMemo(() => {
-    if (!firestore || !userId || isProfileLoading) return null;
+    if (!firestore || !userId) return null;
     return doc(firestore, 'users', userId);
-  }, [firestore, userId, isProfileLoading]);
+  }, [firestore, userId]);
 
   const { data: user, isLoading: isUserLoading } = useDoc<UserProfile>(userDocRef);
 
@@ -42,10 +42,9 @@ export default function EditUserPage() {
         return;
     };
     setIsSubmitting(true);
-    
-    const { password, _isEditing, idProofFile, ...userData } = data;
 
-    if (userData.role === 'Admin') {
+    let permissionsToSave = data.permissions;
+    if (data.role === 'Admin') {
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
@@ -61,12 +60,12 @@ export default function EditUserPage() {
                 }
             }
         }
-        userData.permissions = allPermissions;
+        permissionsToSave = allPermissions;
     }
 
     let idProofUrl = user?.idProofUrl || '';
     try {
-        const fileList = idProofFile as FileList | undefined;
+        const fileList = data.idProofFile as FileList | undefined;
         if (fileList && fileList.length > 0) {
             const file = fileList[0];
             toast({
@@ -89,10 +88,18 @@ export default function EditUserPage() {
          return;
     }
 
-    const docRef = doc(firestore, 'users', userId);
-    const { userKey, loginId, ...restOfUserData } = userData;
-    const updateData = { ...restOfUserData, idProofUrl };
+    const updateData = {
+        name: data.name,
+        phone: data.phone,
+        role: data.role,
+        status: data.status,
+        permissions: permissionsToSave,
+        idProofType: data.idProofType,
+        idNumber: data.idNumber,
+        idProofUrl,
+    };
     
+    const docRef = doc(firestore, 'users', userId);
     const batch = writeBatch(firestore);
     batch.update(docRef, updateData as any);
     

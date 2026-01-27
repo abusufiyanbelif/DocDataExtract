@@ -30,9 +30,9 @@ export default function CreateUserPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const usersCollectionRef = useMemo(() => {
-    if (!firestore || isProfileLoading) return null;
+    if (!firestore) return null;
     return collection(firestore, 'users');
-  }, [firestore, isProfileLoading]);
+  }, [firestore]);
   const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
   
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;
@@ -53,10 +53,9 @@ export default function CreateUserPage() {
         setIsSubmitting(false);
         return;
     }
-    
-    const { password, _isEditing, idProofFile, ...userData } = data;
 
-    if (userData.role === 'Admin') {
+    let permissionsToSave = data.permissions;
+    if (data.role === 'Admin') {
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
@@ -72,7 +71,7 @@ export default function CreateUserPage() {
                 }
             }
         }
-        userData.permissions = allPermissions;
+        permissionsToSave = allPermissions;
     }
 
     let idProofUrl = '';
@@ -88,7 +87,7 @@ export default function CreateUserPage() {
         const newUid = userCredential.user.uid;
         
         try {
-            const fileList = idProofFile as FileList | undefined;
+            const fileList = data.idProofFile as FileList | undefined;
             if (fileList && fileList.length > 0) {
                 const file = fileList[0];
                 toast({
@@ -109,12 +108,25 @@ export default function CreateUserPage() {
              toast({ title: 'File Upload Error', description: 'Could not upload ID proof. User created without it.', variant: 'destructive' });
         }
         
-        const finalData = { ...userData, idProofUrl, createdAt: serverTimestamp() };
+        const dataToSave: Omit<UserProfile, 'id'> & { createdAt: any } = {
+            name: data.name,
+            phone: data.phone,
+            loginId: data.loginId,
+            userKey: data.userKey,
+            role: data.role,
+            status: data.status,
+            permissions: permissionsToSave,
+            idProofType: data.idProofType,
+            idNumber: data.idNumber,
+            idProofUrl,
+            createdAt: serverTimestamp()
+        };
+
         const batch = writeBatch(firestore);
 
         // 1. Set the main user document with UID as the doc ID
         const docRef = doc(firestore, 'users', newUid);
-        batch.set(docRef, finalData);
+        batch.set(docRef, dataToSave);
 
         // 2. Create the lookup document for the loginId
         const loginIdLookupRef = doc(firestore, 'user_lookups', data.loginId);
@@ -135,7 +147,7 @@ export default function CreateUserPage() {
                 const permissionError = new FirestorePermissionError({
                     path: 'users collection and user_lookups',
                     operation: 'create',
-                    requestResourceData: finalData,
+                    requestResourceData: dataToSave,
                 });
                 errorEmitter.emit('permission-error', permissionError);
                 console.error("Firestore write failed, but Auth user was created. Manual cleanup may be required for user:", email);
