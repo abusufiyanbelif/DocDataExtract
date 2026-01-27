@@ -56,6 +56,9 @@ export interface UserProfile extends DocumentData {
   role: 'Admin' | 'User';
   status: 'Active' | 'Inactive';
   permissions?: UserPermissions;
+  idProofType?: string;
+  idNumber?: string;
+  idProofUrl?: string;
 }
 
 export interface Donation extends DocumentData {

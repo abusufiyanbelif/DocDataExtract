@@ -1,11 +1,14 @@
 'use client';
+import { useState } from 'react';
+import Image from 'next/image';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle, LogIn } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle, LogIn, FileText, BadgeInfo, Hash, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 function ProfileDetail({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) {
     return (
@@ -21,6 +24,13 @@ function ProfileDetail({ icon, label, value }: { icon: React.ReactNode, label: s
 
 export default function ProfilePage() {
     const { userProfile, isLoading } = useUserProfile();
+    const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+    const [imageToView, setImageToView] = useState<string | null>(null);
+
+    const handleViewImage = (url: string) => {
+        setImageToView(url);
+        setIsImageViewerOpen(true);
+    };
 
     if (isLoading) {
         return (
@@ -60,6 +70,19 @@ export default function ProfilePage() {
                                     label="Status" 
                                     value={<Badge variant={userProfile.status === 'Active' ? 'default' : 'outline'}>{userProfile.status}</Badge>} 
                                 />
+                                {userProfile.idProofUrl && (
+                                    <ProfileDetail 
+                                        icon={<FileText />} 
+                                        label="ID Proof" 
+                                        value={
+                                            <Button variant="outline" size="sm" onClick={() => handleViewImage(userProfile.idProofUrl!)}>
+                                                <Eye className="mr-2 h-4 w-4" /> View Document
+                                            </Button>
+                                        } 
+                                    />
+                                )}
+                                {userProfile.idProofType && <ProfileDetail icon={<BadgeInfo />} label="ID Type" value={userProfile.idProofType} />}
+                                {userProfile.idNumber && <ProfileDetail icon={<Hash />} label="ID Number" value={userProfile.idNumber} />}
                             </>
                         ) : (
                              <p className="text-center text-muted-foreground">Could not load user profile.</p>
@@ -67,6 +90,19 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
             </main>
+
+            <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>ID Proof</DialogTitle>
+                    </DialogHeader>
+                    {imageToView && (
+                        <div className="relative h-[70vh] w-full mt-4">
+                            <Image src={imageToView} alt="ID proof" fill className="object-contain" />
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

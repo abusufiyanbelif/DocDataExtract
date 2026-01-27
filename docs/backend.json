@@ -37,6 +37,18 @@
           ],
           "description": "The current status of the user account."
         },
+        "idProofType": {
+          "type": "string",
+          "description": "The type of ID proof provided (e.g., Aadhaar, PAN)."
+        },
+        "idNumber": {
+          "type": "string",
+          "description": "The ID number from the provided proof."
+        },
+        "idProofUrl": {
+          "type": "string",
+          "description": "URL of the uploaded ID proof document."
+        },
         "permissions": {
           "type": "object",
           "description": "Granular permissions for the user.",
@@ -49,12 +61,10 @@
               "description": "Permissions for the Campaigns module.",
               "properties": {
                 "read": {
-                  "type": "boolean",
-                  "description": "Can view the list of campaigns."
+                  "type": "boolean"
                 },
                 "create": {
-                  "type": "boolean",
-                  "description": "Can create new campaigns."
+                  "type": "boolean"
                 },
                 "summary": {
                   "type": "object",

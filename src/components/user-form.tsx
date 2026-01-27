@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
 import {
   Form,
   FormControl,
@@ -28,7 +29,7 @@ import { modules } from '@/lib/modules';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from './ui/separator';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import type { UserPermissions } from '@/lib/modules';
 
 const formSchema = z.object({
@@ -38,6 +39,9 @@ const formSchema = z.object({
   userKey: z.string().min(1, { message: 'User Key is required.'}),
   role: z.enum(['Admin', 'User']),
   status: z.enum(['Active', 'Inactive']),
+  idProofType: z.string().optional(),
+  idNumber: z.string().optional(),
+  idProofFile: z.any().optional(),
   permissions: z.any().optional(),
   password: z.string().optional(),
   _isEditing: z.boolean(),
@@ -76,6 +80,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isEditing = !!user;
   const isDefaultAdmin = user?.userKey === 'admin';
   const { toast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
   
   const form = useForm<UserFormData>({
     resolver: zodResolver(formSchema),
@@ -87,15 +92,20 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       role: user?.role || 'User',
       status: user?.status || 'Active',
       password: '',
+      idProofType: user?.idProofType || '',
+      idNumber: user?.idNumber || '',
       permissions: user?.permissions || {},
       _isEditing: isEditing,
     },
   });
 
-  const { watch, setValue, getValues } = form;
+  const { watch, setValue, getValues, register } = form;
   const nameValue = watch('name');
   const roleValue = watch('role');
+  const idProofFile = watch('idProofFile');
   const prevRoleRef = useRef(roleValue);
+
+  const [preview, setPreview] = useState<string | null>(user?.idProofUrl || null);
 
   const [userPermissions, setUserPermissions] = useState<UserPermissions | undefined>(
     () => (user && user.role !== 'Admin' ? user.permissions : {})
@@ -139,6 +149,22 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     // Update the ref for the next render
     prevRoleRef.current = roleValue;
   }, [roleValue, setValue, getValues, userPermissions]);
+
+  useEffect(() => {
+    const fileList = idProofFile as FileList | undefined;
+    if (fileList && fileList.length > 0) {
+      const file = fileList[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (user?.idProofUrl) {
+      setPreview(user.idProofUrl);
+    } else {
+        setPreview(null);
+    }
+  }, [idProofFile, user?.idProofUrl]);
 
   const handleFeatureNotReady = (featureName: string) => {
     toast({
@@ -215,15 +241,77 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             <FormItem>
               <FormLabel>Password</FormLabel>
               <div className="flex gap-2">
-                <FormControl>
-                  <Input type="password" placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} {...field} value={field.value ?? ''} disabled={isFormDisabled} />
-                </FormControl>
+                <div className="relative w-full">
+                    <FormControl>
+                        <Input 
+                            type={showPassword ? 'text' : 'password'} 
+                            placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} 
+                            {...field} value={field.value ?? ''} 
+                            disabled={isFormDisabled} 
+                        />
+                    </FormControl>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? <EyeOff /> : <Eye />}
+                    </Button>
+                </div>
                 <Button type="button" variant="outline" onClick={() => handleFeatureNotReady('Password Reset')} disabled>Reset</Button>
               </div>
               <FormMessage />
             </FormItem>
           )}
         />
+
+        <Separator />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="idProofType"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>ID Proof Type</FormLabel>
+                <FormControl>
+                    <Input placeholder="Aadhaar, PAN, etc." {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="idNumber"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>ID Number</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. XXXX XXXX 1234" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+
+        <FormItem>
+            <FormLabel>ID Proof Document</FormLabel>
+            <FormControl>
+                <Input type="file" accept="image/*" {...register('idProofFile')} />
+            </FormControl>
+            <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
+            <FormMessage />
+        </FormItem>
+        
+        {preview && (
+            <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
+                <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
+            </div>
+        )}
         
         <Separator />
 

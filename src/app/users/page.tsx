@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useStorage } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { updateDoc } from 'firebase/firestore';
@@ -34,9 +34,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { collection } from 'firebase/firestore';
+import { deleteObject, ref as storageRef } from 'firebase/storage';
 
 export default function UsersPage() {
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -95,32 +97,50 @@ export default function UsersPage() {
   };
 
   const handleDeleteConfirm = () => {
-    if (userToDelete && firestore) {
-        const userBeingDeleted = users.find(u => u.id === userToDelete);
-        if (userBeingDeleted?.userKey === 'admin') {
-            toast({ title: 'Action Forbidden', description: 'The default admin user cannot be deleted.', variant: 'destructive' });
-            setUserToDelete(null);
-            setIsDeleteDialogOpen(false);
-            return;
-        }
+    if (!userToDelete || !firestore || !storage) return;
 
-        const docRef = doc(firestore, 'users', userToDelete);
-        
-        deleteDoc(docRef)
-            .then(() => {
-                toast({ title: 'Success', description: 'The user has been successfully deleted.' });
-            })
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'delete',
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-            });
+    const userBeingDeleted = users.find(u => u.id === userToDelete);
+    if (!userBeingDeleted) return;
 
+    if (userBeingDeleted?.userKey === 'admin') {
+        toast({ title: 'Action Forbidden', description: 'The default admin user cannot be deleted.', variant: 'destructive' });
         setUserToDelete(null);
         setIsDeleteDialogOpen(false);
+        return;
     }
+
+    const docRef = doc(firestore, 'users', userToDelete);
+
+    const deleteFilePromise = userBeingDeleted.idProofUrl
+        ? deleteObject(storageRef(storage, userBeingDeleted.idProofUrl))
+        : Promise.resolve();
+
+    deleteFilePromise.catch(error => {
+        if (error.code !== 'storage/object-not-found') {
+            console.warn("Could not delete associated file from storage:", error);
+            toast({
+                title: "File Deletion Warning",
+                description: "Could not remove the associated ID proof file. It may need to be removed manually.",
+                variant: 'destructive',
+                duration: 7000
+            });
+        }
+    });
+    
+    deleteDoc(docRef)
+        .then(() => {
+            toast({ title: 'Success', description: 'The user has been successfully deleted.' });
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        });
+
+    setUserToDelete(null);
+    setIsDeleteDialogOpen(false);
   };
   
   const isLoading = areUsersLoading || isProfileLoading;

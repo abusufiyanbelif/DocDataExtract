@@ -1,10 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
+import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firebaseConfig } from '@/firebase/config';
 import { modules, permissions } from '@/lib/modules';
 
@@ -22,6 +23,7 @@ import type { UserProfile } from '@/lib/types';
 export default function CreateUserPage() {
   const router = useRouter();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,7 +31,7 @@ export default function CreateUserPage() {
   const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
 
   const handleSave = async (data: UserFormData) => {
-    if (!firestore) {
+    if (!firestore || !storage) {
         toast({ title: 'Error', description: 'Database connection not available.', variant: 'destructive' });
         return;
     };
@@ -45,7 +47,7 @@ export default function CreateUserPage() {
         return;
     }
     
-    const { password, _isEditing, ...userData } = data;
+    const { password, _isEditing, idProofFile, ...userData } = data;
 
     if (userData.role === 'Admin') {
         const allPermissions: any = {};
@@ -66,7 +68,8 @@ export default function CreateUserPage() {
         userData.permissions = allPermissions;
     }
 
-    const finalData = { ...userData, createdAt: serverTimestamp() };
+    const docRef = doc(collection(firestore, 'users'));
+    let idProofUrl = '';
     const email = `${data.userKey}@docdataextract.app`;
     const newPassword = data.password!;
 
@@ -77,7 +80,31 @@ export default function CreateUserPage() {
     try {
         await createUserWithEmailAndPassword(tempAuth, email, newPassword);
         
-        addDoc(collection(firestore, 'users'), finalData)
+        try {
+            const fileList = idProofFile as FileList | undefined;
+            if (fileList && fileList.length > 0) {
+                const file = fileList[0];
+                toast({
+                    title: "Uploading ID Proof...",
+                    description: `Please wait while '${file.name}' is uploaded.`,
+                });
+                
+                const fileExtension = file.name.split('.').pop() || 'jpg';
+                const finalFileName = `${docRef.id}_id_proof.${fileExtension}`;
+                const filePath = `users/${docRef.id}/${finalFileName}`;
+                const fileRef = storageRef(storage, filePath);
+
+                const uploadResult = await uploadBytes(fileRef, file);
+                idProofUrl = await getDownloadURL(uploadResult.ref);
+            }
+        } catch (uploadError) {
+             console.error("Error during file upload:", uploadError);
+             toast({ title: 'File Upload Error', description: 'Could not upload ID proof. User created without it.', variant: 'destructive' });
+        }
+        
+        const finalData = { ...userData, idProofUrl, createdAt: serverTimestamp() };
+
+        setDoc(docRef, finalData)
             .then(() => {
                 toast({ title: 'Success', description: `User '${data.name}' created successfully.` });
                 router.push('/users');

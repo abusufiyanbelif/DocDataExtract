@@ -1,10 +1,11 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useFirestore, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
 import { updateDoc, doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { modules, permissions } from '@/lib/modules';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ export default function EditUserPage() {
   const userId = params.userId as string;
 
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -32,13 +34,13 @@ export default function EditUserPage() {
   const { data: user, isLoading: isUserLoading } = useDoc<UserProfile>(userDocRef);
 
   const handleSave = async (data: UserFormData) => {
-    if (!firestore) {
+    if (!firestore || !storage) {
         toast({ title: 'Error', description: 'Database connection not available.', variant: 'destructive' });
         return;
     };
     setIsSubmitting(true);
     
-    const { password, _isEditing, ...userData } = data;
+    const { password, _isEditing, idProofFile, ...userData } = data;
 
     if (userData.role === 'Admin') {
         const allPermissions: any = {};
@@ -51,11 +53,38 @@ export default function EditUserPage() {
         userData.permissions = allPermissions;
     }
 
+    let idProofUrl = user?.idProofUrl || '';
+    try {
+        const fileList = idProofFile as FileList | undefined;
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0];
+            toast({
+                title: "Uploading ID Proof...",
+                description: `Please wait while '${file.name}' is uploaded.`,
+            });
+            
+            const fileExtension = file.name.split('.').pop() || 'jpg';
+            const finalFileName = `${userId}_id_proof.${fileExtension}`;
+            const filePath = `users/${userId}/${finalFileName}`;
+            const fileRef = storageRef(storage, filePath);
+
+            const uploadResult = await uploadBytes(fileRef, file);
+            idProofUrl = await getDownloadURL(uploadResult.ref);
+        }
+    } catch (uploadError) {
+         console.error("Error during file upload:", uploadError);
+         toast({ title: 'File Upload Error', description: 'Could not upload ID proof file. Other details were not saved.', variant: 'destructive' });
+         setIsSubmitting(false);
+         return;
+    }
+
     const docRef = doc(firestore, 'users', userId);
-    const { userKey, loginId, ...updateData } = userData;
+    const { userKey, loginId, ...restOfUserData } = userData;
+    const updateData = { ...restOfUserData, idProofUrl };
     
     updateDoc(docRef, updateData as any)
         .then(() => {
+            // NOTE: Password update logic would go here, but is not implemented.
             toast({ title: 'Success', description: 'User details have been successfully updated.' });
             router.push('/users');
         })
