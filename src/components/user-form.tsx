@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Form,
   FormControl,
@@ -95,9 +95,12 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const { watch, setValue, getValues } = form;
   const nameValue = watch('name');
   const roleValue = watch('role');
+  const prevRoleRef = useRef(roleValue);
 
-  const [preAdminPermissions, setPreAdminPermissions] = useState<UserPermissions | undefined>(user?.permissions || {});
-  
+  const [userPermissions, setUserPermissions] = useState<UserPermissions | undefined>(
+    () => (user && user.role !== 'Admin' ? user.permissions : {})
+  );
+
   useEffect(() => {
     if (!isEditing && nameValue) {
         const generatedId = nameValue.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9.]/g, '');
@@ -105,36 +108,37 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     }
   }, [nameValue, isEditing, setValue]);
   
-  useEffect(() => {
-    if (roleValue === 'Admin') {
-        const currentPerms = getValues('permissions');
-        // Only save pre-admin perms if they haven't been wiped by a previous 'Admin' selection
-        if (Object.keys(currentPerms).length > 0) {
-            setPreAdminPermissions(currentPerms);
-        }
-
-        const allPermissions: any = {};
-        for (const mod of modules) {
-            allPermissions[mod.id] = {};
-            for (const perm of mod.permissions) {
-                allPermissions[mod.id][perm] = true;
-            }
-            if (mod.subModules) {
-                 for (const subMod of mod.subModules) {
-                    allPermissions[mod.id][subMod.id] = {};
-                    for (const perm of subMod.permissions) {
-                        allPermissions[mod.id][subMod.id][perm] = true;
-                    }
-                }
-            }
-        }
-        setValue('permissions', allPermissions);
-    } else {
-        if(form.getValues('role') !== 'Admin') {
-           setValue('permissions', preAdminPermissions || {});
-        }
+   useEffect(() => {
+    // When role changes FROM User TO Admin
+    if (roleValue === 'Admin' && prevRoleRef.current === 'User') {
+      setUserPermissions(getValues('permissions'));
     }
-  }, [roleValue, setValue, getValues, preAdminPermissions]);
+
+    // Apply permissions based on the current role
+    if (roleValue === 'Admin') {
+      const allPermissions: any = {};
+      for (const mod of modules) {
+        allPermissions[mod.id] = {};
+        for (const perm of mod.permissions) {
+          allPermissions[mod.id][perm] = true;
+        }
+        if (mod.subModules) {
+          for (const subMod of mod.subModules) {
+            allPermissions[mod.id][subMod.id] = {};
+            for (const perm of subMod.permissions) {
+              allPermissions[mod.id][subMod.id][perm] = true;
+            }
+          }
+        }
+      }
+      setValue('permissions', allPermissions, { shouldDirty: true });
+    } else { // Role is 'User'
+      setValue('permissions', userPermissions || {}, { shouldDirty: true });
+    }
+
+    // Update the ref for the next render
+    prevRoleRef.current = roleValue;
+  }, [roleValue, setValue, getValues, userPermissions]);
 
   const handleFeatureNotReady = (featureName: string) => {
     toast({
@@ -196,7 +200,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 <FormItem>
                 <FormLabel>User Key (System ID)</FormLabel>
                 <FormControl>
-                    <Input placeholder="System-generated" {...field} readOnly disabled={isFormDisabled} />
+                    <Input placeholder="System-generated" {...field} readOnly disabled={isFormDisabled || isEditing} />
                 </FormControl>
                 <FormDescription>This is a system-generated unique ID. It cannot be changed.</FormDescription>
                 <FormMessage />
