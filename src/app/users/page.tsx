@@ -1,8 +1,9 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useAuth, useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
 import { modules, permissions } from '@/lib/modules';
 
@@ -43,6 +44,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function UsersPage() {
   const firestore = useFirestore();
+  const auth = useAuth();
   const { toast } = useToast();
 
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
@@ -132,7 +134,6 @@ export default function UsersPage() {
     };
     setIsSubmitting(true);
     
-    // For new users, check if loginId already exists
     if (!editingUser && users.some(u => u.loginId === data.loginId)) {
         toast({
             title: 'Login ID Exists',
@@ -158,7 +159,6 @@ export default function UsersPage() {
 
     if (editingUser) {
         const docRef = doc(firestore, 'users', editingUser.id);
-        // Don't update userKey or loginId for existing users
         const { userKey, loginId, ...updateData } = userData;
         
         updateDoc(docRef, updateData as any)
@@ -180,22 +180,40 @@ export default function UsersPage() {
             });
     } else {
         const finalData = { ...userData, createdAt: serverTimestamp() };
-        addDoc(collection(firestore, 'users'), finalData)
+        const email = `${data.userKey}@docdataextract.app`;
+        const newPassword = data.password!;
+
+        if (!auth) {
+            toast({ title: 'Error', description: 'Authentication service not available.', variant: 'destructive' });
+            setIsSubmitting(false);
+            return;
+        }
+
+        createUserWithEmailAndPassword(auth, email, newPassword)
+            .then(userCredential => {
+                return addDoc(collection(firestore, 'users'), finalData);
+            })
             .then(() => {
-                toast({ 
-                    title: 'Success', 
-                    description: `User '${data.name}' created. Manually create auth user with email '${data.userKey}@docdataextract.app' and password '${data.password}'.`
-                });
+                toast({ title: 'Success', description: `User '${data.name}' created successfully.` });
                 setIsFormOpen(false);
                 setEditingUser(null);
             })
-            .catch(async (serverError) => {
-                 const permissionError = new FirestorePermissionError({
-                    path: 'users',
-                    operation: 'create',
-                    requestResourceData: finalData,
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
+            .catch(error => {
+                let errorMessage = "An unexpected error occurred during user creation.";
+                if (error.code) { // Firebase Auth errors have a 'code' property
+                    switch (error.code) {
+                        case 'auth/email-already-in-use':
+                            errorMessage = "This user key is already associated with an authentication account. Please choose a different name to generate a new Login ID.";
+                            break;
+                        case 'auth/weak-password':
+                            errorMessage = "The password is too weak. Please use at least 6 characters.";
+                            break;
+                        default:
+                            errorMessage = error.message;
+                            break;
+                    }
+                }
+                toast({ title: 'User Creation Failed', description: errorMessage, variant: 'destructive' });
             })
             .finally(() => {
                 setIsSubmitting(false);

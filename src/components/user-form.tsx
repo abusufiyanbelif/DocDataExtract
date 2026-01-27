@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Form,
   FormControl,
@@ -22,7 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, UserPermissions } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { modules, permissions } from '@/lib/modules';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -43,19 +43,24 @@ const formSchema = z.object({
   password: z.string().optional(),
   _isEditing: z.boolean(),
 }).superRefine((data, ctx) => {
-    if (!data._isEditing && (!data.password || data.password.length < 6)) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['password'],
-            message: 'Password is required and must be at least 6 characters for new users.',
-        });
-    }
-    if (data._isEditing && data.password && data.password.length < 6) {
-         ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['password'],
-            message: 'If changing, the password must be at least 6 characters.',
-        });
+    if (data._isEditing) {
+        // For existing users, password is optional. But if provided, it must be valid.
+        if (data.password && data.password.length > 0 && data.password.length < 6) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['password'],
+                message: 'If changing, the password must be at least 6 characters.',
+            });
+        }
+    } else {
+        // For new users, password is required.
+        if (!data.password || data.password.length < 6) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['password'],
+                message: 'Password is required and must be at least 6 characters for new users.',
+            });
+        }
     }
 });
 
@@ -90,9 +95,11 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     },
   });
 
-  const { watch, setValue } = form;
+  const { watch, setValue, getValues } = form;
   const nameValue = watch('name');
   const roleValue = watch('role');
+
+  const [preAdminPermissions, setPreAdminPermissions] = useState<UserPermissions | undefined>(user?.permissions || {});
   
   useEffect(() => {
     if (!isEditing && nameValue) {
@@ -103,6 +110,8 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   
   useEffect(() => {
     if (roleValue === 'Admin') {
+        // Before switching to Admin, save the current permissions
+        setPreAdminPermissions(getValues('permissions'));
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
@@ -111,8 +120,11 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             }
         }
         setValue('permissions', allPermissions);
+    } else {
+        // If switching back to User, restore the previous permissions
+        setValue('permissions', preAdminPermissions);
     }
-  }, [roleValue, setValue]);
+  }, [roleValue, setValue, getValues, preAdminPermissions]);
 
   const handleFeatureNotReady = (featureName: string) => {
     toast({
