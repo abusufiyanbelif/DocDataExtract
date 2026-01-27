@@ -45,11 +45,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 
 
-const donationChartConfig = {
-    value: {
-        label: "Donations",
-        color: "hsl(var(--primary))",
-    },
+const donationTypeChartConfig = {
+    Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
+    Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
+    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
+    Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
+    General: { label: "General", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
 const beneficiaryStatusConfig = {
@@ -70,6 +71,7 @@ export default function CampaignSummaryPage() {
     // State for edit mode and form fields
     const [editMode, setEditMode] = useState(false);
     const [editableCampaign, setEditableCampaign] = useState<Partial<Campaign>>({});
+    const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('Verified');
 
     // Data fetching
     const campaignDocRef = useMemo(() => firestore ? doc(firestore, 'campaigns', campaignId) : null, [firestore, campaignId]);
@@ -173,15 +175,19 @@ export default function CampaignSummaryPage() {
 
         const beneficiaryChartData = Object.entries(beneficiaryStatusData).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
 
-        // Base donation type chart on VERIFIED donations only
-        const donationTypeData = donations
-            .filter(d => d.status === 'Verified')
-            .reduce((acc, d) => {
-                acc[d.type] = (acc[d.type] || 0) + d.amount;
-                return acc;
-            }, {} as Record<string, number>);
+        const donationChartData = (() => {
+            let filteredDonations = donations;
+            if (donationChartFilter !== 'All') {
+                filteredDonations = donations.filter(d => d.status === donationChartFilter);
+            }
+            
+            const donationTypeData = filteredDonations.reduce((acc, d) => {
+                    acc[d.type] = (acc[d.type] || 0) + d.amount;
+                    return acc;
+                }, {} as Record<string, number>);
 
-        const donationChartData = Object.entries(donationTypeData).map(([name, value]) => ({ name, value }));
+            return Object.entries(donationTypeData).map(([name, value]) => ({ name, value }));
+        })();
 
         return {
             verifiedDonations,
@@ -195,7 +201,7 @@ export default function CampaignSummaryPage() {
             targetAmount: campaign.targetAmount,
             remainingToCollect: Math.max(0, (campaign.targetAmount || 0) - verifiedDonations),
         };
-    }, [beneficiaries, donations, campaign]);
+    }, [beneficiaries, donations, campaign, donationChartFilter]);
     
     const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading;
     
@@ -519,10 +525,23 @@ Please donate and share this message. Every contribution helps!
 
                         <Card className="lg:col-span-2">
                             <CardHeader>
-                                <CardTitle>Verified Donations by Type</CardTitle>
+                                <div className="flex justify-between items-center">
+                                <CardTitle>{donationChartFilter} Donations by Type</CardTitle>
+                                    <Select value={donationChartFilter} onValueChange={(value: any) => setDonationChartFilter(value)}>
+                                        <SelectTrigger className="w-[140px]">
+                                            <SelectValue placeholder="Filter status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="All">All</SelectItem>
+                                            <SelectItem value="Verified">Verified</SelectItem>
+                                            <SelectItem value="Pending">Pending</SelectItem>
+                                            <SelectItem value="Canceled">Canceled</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </CardHeader>
                             <CardContent>
-                                <ChartContainer config={donationChartConfig} className="h-[300px] w-full">
+                                <ChartContainer config={donationTypeChartConfig} className="h-[300px] w-full">
                                     <BarChart data={summaryData?.donationChartData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis
@@ -540,9 +559,12 @@ Please donate and share this message. Every contribution helps!
                                         />
                                         <Bar
                                             dataKey="value"
-                                            fill="var(--color-value)"
                                             radius={4}
-                                        />
+                                        >
+                                             {summaryData?.donationChartData.map((entry) => (
+                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
+                                            ))}
+                                        </Bar>
                                     </BarChart>
                                 </ChartContainer>
                             </CardContent>
@@ -586,7 +608,3 @@ Please donate and share this message. Every contribution helps!
         </div>
     );
 }
-
-    
-
-    

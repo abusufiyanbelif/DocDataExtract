@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import { useFirestore, useUser, useStorage } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,6 @@ type CampaignFormValues = z.infer<typeof campaignSchema>;
 export default function CreateCampaignPage() {
   const router = useRouter();
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
@@ -56,7 +54,7 @@ export default function CreateCampaignPage() {
   });
 
   const onSubmit = async (data: CampaignFormValues) => {
-    if (!firestore || !storage || !canCreate) {
+    if (!firestore || !canCreate) {
       toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
       return;
     }
@@ -76,20 +74,7 @@ export default function CreateCampaignPage() {
         },
       });
 
-      const campaignId = docRef.id;
-      const placeholderPaths = [
-        `campaigns/${campaignId}/beneficiaries/.placeholder`,
-        `campaigns/${campaignId}/donations/.placeholder`
-      ];
-
-      await Promise.all(
-        placeholderPaths.map(path => {
-            const placeholderRef = storageRef(storage, path);
-            return uploadBytes(placeholderRef, new Uint8Array());
-        })
-      );
-
-      toast({ title: 'Success', description: 'Campaign and storage folders created successfully.', variant: 'default' });
+      toast({ title: 'Success', description: 'Campaign created successfully.', variant: 'default' });
       router.push(`/campaign/${docRef.id}/summary`);
     } catch (error) {
       console.error('Error creating campaign:', error);
