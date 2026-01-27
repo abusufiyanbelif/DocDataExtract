@@ -3,8 +3,8 @@ import '../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Seed Database - DocDataExtract AB',
-  description: 'Initialize the database with sample data.',
+  title: 'Setup & Data Migration - DocDataExtract AB',
+  description: 'Initialize and migrate the database.',
 };
 
 export default function SeedLayout({

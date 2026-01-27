@@ -5,7 +5,7 @@ import { useAuth, useFirestore, useStorage, errorEmitter, FirestorePermissionErr
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, User } from 'firebase/auth';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
 import { writeBatch, doc, collection, serverTimestamp, getDocs, query, where, limit, getDoc } from 'firebase/firestore';
-import { modules, permissions } from '@/lib/modules';
+import { modules } from '@/lib/modules';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/lib/types';
 
@@ -171,16 +171,63 @@ service firebase.storage {
         log(" -> Database integrity check successful!");
     }
     
+    const migrateExistingUsers = async () => {
+        if (!firestore) throw new Error("Firestore service not available.");
+        log("Step 3: Migrating existing user data for new login system.");
+        log(" -> This will create lookup entries for each user. No user data will be deleted.");
+
+        const usersRef = collection(firestore, 'users');
+        const usersSnapshot = await getDocs(usersRef);
+
+        if (usersSnapshot.empty) {
+            log(" -> No existing users found to migrate. Skipping.");
+            return;
+        }
+
+        const batch = writeBatch(firestore);
+        let migratedCount = 0;
+
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data() as UserProfile;
+            const { userKey, loginId, phone } = userData;
+
+            if (userKey === 'admin') continue; // Skip admin, it's handled separately
+
+            if (!userKey || !loginId) {
+                log(`   -> ⚠️ WARNING: Skipping user ${userDoc.id} (${userData.name || 'No Name'}) due to missing 'userKey' or 'loginId'.`);
+                continue;
+            }
+
+            // Create/update loginId lookup
+            const loginIdLookupRef = doc(firestore, 'user_lookups', loginId);
+            batch.set(loginIdLookupRef, { userKey });
+
+            // Create/update phone lookup
+            if (phone) {
+                const phoneLookupRef = doc(firestore, 'user_lookups', phone);
+                batch.set(phoneLookupRef, { userKey });
+            }
+            migratedCount++;
+        }
+
+        if (migratedCount > 0) {
+            await batch.commit();
+            log(` -> Successfully processed and created lookups for ${migratedCount} user(s).`);
+        } else {
+             log(` -> No users required migration.`);
+        }
+    }
+    
     const handleSeed = async () => {
         setIsSeeding(true);
         setErrorOccurred(false);
         setLogs([]);
-        log('Starting database integrity script for Admin User...');
+        log('Starting setup and data migration script...');
 
         if (!auth || !firestore || !storage) {
             log('❌ ERROR: Firebase services are not available. Please check your configuration.');
             setErrorOccurred(true);
-            toast({ title: 'Seeding Failed', description: 'Firebase services are not available.', variant: 'destructive', });
+            toast({ title: 'Script Failed', description: 'Firebase services are not available.', variant: 'destructive', });
             setIsSeeding(false);
             return;
         }
@@ -189,12 +236,14 @@ service firebase.storage {
             const adminAuthUser = await createAdminUser();
             await testStoragePermissions();
             await ensureAdminIntegrity(adminAuthUser);
-            log('✅ Script completed successfully. Admin user is configured correctly.');
-            toast({ title: 'Success', description: 'Admin user has been verified and configured correctly.', variant: 'default' });
+            await migrateExistingUsers();
+
+            log('✅ Script completed successfully. Admin user and all existing users are configured correctly.');
+            toast({ title: 'Success', description: 'Admin user verified and all existing users have been migrated for the new login system.', variant: 'default' });
         } catch (e: any) {
             if (e.code === 'permission-denied') {
                 const permissionError = new FirestorePermissionError({
-                    path: 'Admin integrity script batch write',
+                    path: 'Setup script batch write',
                     operation: 'write',
                 } as SecurityRuleContext);
                 errorEmitter.emit('permission-error', permissionError);
@@ -203,7 +252,7 @@ service firebase.storage {
             log(`❌ FAILED: ${errorMessage}`);
             setErrorOccurred(true);
             if (!errorMessage.includes('permission')) {
-                 toast({ title: 'Verification Failed', description: 'An error occurred. Check the logs for details.', variant: 'destructive' });
+                 toast({ title: 'Script Failed', description: 'An error occurred. Check the logs for details.', variant: 'destructive' });
             }
         } finally {
             setIsSeeding(false);
@@ -224,14 +273,14 @@ service firebase.storage {
                 </div>
                 <Card className="max-w-4xl mx-auto">
                     <CardHeader>
-                        <CardTitle>Admin User Verification</CardTitle>
-                        <CardDescription>This page runs a script to ensure the primary Admin user is configured correctly in the database. This is necessary for login and is safe to run multiple times.</CardDescription>
+                        <CardTitle>Setup & Data Migration</CardTitle>
+                        <CardDescription>This script verifies the primary Admin user and migrates all existing user data to be compatible with the latest login system. It is safe to run this multiple times and will not delete any user profiles.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex flex-col sm:flex-row gap-4">
                             <Button onClick={handleSeed} disabled={isSeeding}>
                                 {isSeeding ? ( <Loader2 className="mr-2 h-4 w-4 animate-spin" /> ) : ( <PlayCircle className="mr-2 h-4 w-4" /> )}
-                                Verify Admin User
+                                Run Setup & Migration
                             </Button>
                              <Button variant="secondary" asChild>
                                 <Link href="/diagnostics">
@@ -244,7 +293,7 @@ service firebase.storage {
                             <Alert variant="destructive">
                                 <AlertTitle>Script Failed</AlertTitle>
                                 <AlertDescription>
-                                    An error occurred during the verification process. Please review the logs below. If the error is related to permissions, the log may contain a link and instructions to fix your security rules.
+                                    An error occurred during the process. Please review the logs below. If the error is related to permissions, the log may contain a link and instructions to fix your security rules.
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -263,5 +312,3 @@ service firebase.storage {
         </div>
     );
 }
-
-    
