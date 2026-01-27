@@ -1,21 +1,18 @@
 'use client';
 import { useState, useMemo } from 'react';
-import { useAuth, useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeApp, deleteApp } from 'firebase/app';
-import { firebaseConfig } from '@/firebase/config';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { updateDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
-import { modules, permissions } from '@/lib/modules';
-
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, ShieldAlert, UserCheck, UserX } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldAlert, UserCheck, UserX } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,21 +30,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
-import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { collection } from 'firebase/firestore';
 
 export default function UsersPage() {
   const firestore = useFirestore();
-  const auth = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
@@ -58,20 +49,15 @@ export default function UsersPage() {
   
   const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAdd = () => {
-    setEditingUser(null);
-    setIsFormOpen(true);
+    router.push('/users/create');
   };
 
   const handleEdit = (user: UserProfile) => {
-    setEditingUser(user);
-    setIsFormOpen(true);
+    router.push(`/users/edit/${user.id}`);
   };
 
   const handleDeleteClick = (id: string) => {
@@ -110,6 +96,14 @@ export default function UsersPage() {
 
   const handleDeleteConfirm = () => {
     if (userToDelete && firestore) {
+        const userBeingDeleted = users.find(u => u.id === userToDelete);
+        if (userBeingDeleted?.userKey === 'admin') {
+            toast({ title: 'Action Forbidden', description: 'The default admin user cannot be deleted.', variant: 'destructive' });
+            setUserToDelete(null);
+            setIsDeleteDialogOpen(false);
+            return;
+        }
+
         const docRef = doc(firestore, 'users', userToDelete);
         
         deleteDoc(docRef)
@@ -126,96 +120,6 @@ export default function UsersPage() {
 
         setUserToDelete(null);
         setIsDeleteDialogOpen(false);
-    }
-  };
-  
-  const handleFormSubmit = async (data: UserFormData) => {
-    if (!firestore || !auth) {
-        toast({ title: 'Error', description: 'Database or Auth connection not available.', variant: 'destructive' });
-        return;
-    };
-    setIsSubmitting(true);
-    
-    if (!editingUser && users.some(u => u.loginId === data.loginId)) {
-        toast({
-            title: 'Login ID Exists',
-            description: 'This Login ID is already taken. Please choose another one.',
-            variant: 'destructive',
-        });
-        setIsSubmitting(false);
-        return;
-    }
-    
-    const { password, _isEditing, ...userData } = data;
-
-    if (userData.role === 'Admin') {
-        const allPermissions: any = {};
-        for (const mod of modules) {
-            allPermissions[mod.id] = {};
-            for (const perm of permissions) {
-                allPermissions[mod.id][perm] = true;
-            }
-        }
-        userData.permissions = allPermissions;
-    }
-
-    if (editingUser) {
-        const docRef = doc(firestore, 'users', editingUser.id);
-        const { userKey, loginId, ...updateData } = userData;
-        
-        updateDoc(docRef, updateData as any)
-            .then(() => {
-                toast({ title: 'Success', description: 'User details have been successfully updated.' });
-                setIsFormOpen(false);
-                setEditingUser(null);
-            })
-            .catch(async (serverError) => {
-                 const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'update',
-                    requestResourceData: updateData,
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-            })
-            .finally(() => {
-                setIsSubmitting(false);
-            });
-    } else {
-        const finalData = { ...userData, createdAt: serverTimestamp() };
-        const email = `${data.userKey}@docdataextract.app`;
-        const newPassword = data.password!;
-
-        const tempAppName = `temp-user-creation-${Date.now()}`;
-        const tempApp = initializeApp(firebaseConfig, tempAppName);
-        const tempAuth = getAuth(tempApp);
-
-        try {
-            await createUserWithEmailAndPassword(tempAuth, email, newPassword);
-            await addDoc(collection(firestore, 'users'), finalData);
-            
-            toast({ title: 'Success', description: `User '${data.name}' created successfully.` });
-            setIsFormOpen(false);
-            setEditingUser(null);
-        } catch (error: any) {
-            let errorMessage = "An unexpected error occurred during user creation.";
-            if (error.code) {
-                switch (error.code) {
-                    case 'auth/email-already-in-use':
-                        errorMessage = "This user key is already associated with an authentication account. This can happen if a user with this key was deleted from Firestore but not from Firebase Auth.";
-                        break;
-                    case 'auth/weak-password':
-                        errorMessage = "The password is too weak. Please use at least 6 characters.";
-                        break;
-                    default:
-                        errorMessage = error.message;
-                        break;
-                }
-            }
-            toast({ title: 'User Creation Failed', description: errorMessage, variant: 'destructive' });
-        } finally {
-            await deleteApp(tempApp);
-            setIsSubmitting(false);
-        }
     }
   };
   
@@ -372,28 +276,13 @@ export default function UsersPage() {
           </CardContent>
         </Card>
       </main>
-
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-                <DialogTitle>{editingUser ? 'Edit' : 'Add'} User</DialogTitle>
-            </DialogHeader>
-            <UserForm
-                user={editingUser}
-                onSubmit={handleFormSubmit}
-                onCancel={() => setIsFormOpen(false)}
-                isSubmitting={isSubmitting}
-                isLoading={areUsersLoading}
-            />
-        </DialogContent>
-      </Dialog>
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the user account profile.
+                    This action cannot be undone. This will permanently delete the user account profile. The authentication account will remain but will be inaccessible.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

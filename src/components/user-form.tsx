@@ -66,7 +66,7 @@ export type UserFormData = z.infer<typeof formSchema>;
 
 interface UserFormProps {
   user?: UserProfile | null;
-  onSubmit: (data: UserFormData) => void;
+  onSubmit: (data: UserFormData) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
   isLoading: boolean;
@@ -107,7 +107,12 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   
   useEffect(() => {
     if (roleValue === 'Admin') {
-        setPreAdminPermissions(getValues('permissions'));
+        const currentPerms = getValues('permissions');
+        // Only save pre-admin perms if they haven't been wiped by a previous 'Admin' selection
+        if (Object.keys(currentPerms).length > 0) {
+            setPreAdminPermissions(currentPerms);
+        }
+
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
@@ -125,8 +130,8 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         }
         setValue('permissions', allPermissions);
     } else {
-        if(getValues('role') !== 'Admin') {
-           setValue('permissions', preAdminPermissions);
+        if(form.getValues('role') !== 'Admin') {
+           setValue('permissions', preAdminPermissions || {});
         }
     }
   }, [roleValue, setValue, getValues, preAdminPermissions]);

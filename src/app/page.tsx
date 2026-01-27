@@ -60,7 +60,7 @@ export default function LandingPage() {
                   <Link href="/campaign">
                       <Button size="lg" variant="outline" className="text-lg">
                       <ShoppingBasket className="mr-2 h-5 w-5" />
-                      Ration Campaigns
+                      Campaigns
                       </Button>
                   </Link>
                 )}

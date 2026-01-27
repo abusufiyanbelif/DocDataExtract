@@ -3,11 +3,11 @@ import '../../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Create Campaign - DocDataExtract AB',
-  description: 'Create a new campaign.',
+  title: 'Create User - DocDataExtract AB',
+  description: 'Create a new user for the application.',
 };
 
-export default function CreateCampaignLayout({
+export default function CreateUserLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

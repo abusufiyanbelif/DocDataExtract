@@ -46,7 +46,7 @@
             },
             "campaigns": {
               "type": "object",
-              "description": "Permissions for the Ration Campaigns module.",
+              "description": "Permissions for the Campaigns module.",
               "properties": {
                 "read": {
                   "type": "boolean",
@@ -405,7 +405,7 @@
       "schema": {
         "$ref": "#/backend/entities/Campaign"
       },
-      "description": "Stores details for each campaign, including ration lists and shop information."
+      "description": "Stores details for each campaign."
     },
     "/campaigns/{campaignId}/beneficiaries/{beneficiaryId}": {
       "schema": {

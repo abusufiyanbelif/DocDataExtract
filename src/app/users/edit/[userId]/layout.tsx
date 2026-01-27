@@ -1,13 +1,13 @@
 import type {Metadata} from 'next';
-import '../../globals.css';
+import '../../../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Create Campaign - DocDataExtract AB',
-  description: 'Create a new campaign.',
+  title: 'Edit User - DocDataExtract AB',
+  description: 'Edit a user for the application.',
 };
 
-export default function CreateCampaignLayout({
+export default function EditUserLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

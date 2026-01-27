@@ -17,7 +17,7 @@ export const modules = [
   { id: 'users', name: 'User Management', permissions: crudPermissions },
   {
     id: 'campaigns',
-    name: 'Ration Campaigns',
+    name: 'Campaigns',
     permissions: ['create', 'read'],
     subModules: campaignSubModules,
   },

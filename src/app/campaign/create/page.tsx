@@ -143,7 +143,7 @@ export default function CreateCampaignPage() {
         </div>
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle>Create New Ration Campaign</CardTitle>
+            <CardTitle>Create New Campaign</CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>

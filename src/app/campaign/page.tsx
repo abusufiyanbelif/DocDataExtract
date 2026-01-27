@@ -113,7 +113,7 @@ export default function CampaignPage() {
         <Card>
           <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
              <div className="flex-1 space-y-2">
-                <CardTitle>Ration Campaigns</CardTitle>
+                <CardTitle>Campaigns</CardTitle>
                  <div className="flex flex-wrap items-center gap-2">
                     <Input 
                         placeholder="Search by name..."
