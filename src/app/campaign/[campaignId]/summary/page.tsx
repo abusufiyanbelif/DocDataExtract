@@ -75,17 +75,17 @@ export default function CampaignSummaryPage() {
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
     const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
     
-    // Populate form fields when campaign data loads
+    // Set editable campaign data when not in edit mode
     useEffect(() => {
-        if (campaign) {
-            setEditableCampaign({
+        if (campaign && !editMode) {
+             setEditableCampaign({
                 description: campaign.description || '',
                 targetAmount: campaign.targetAmount || 0,
                 startDate: campaign.startDate || '',
                 endDate: campaign.endDate || '',
             });
         }
-    }, [campaign]);
+    }, [campaign, editMode]);
     
     const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
     const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
@@ -117,8 +117,8 @@ export default function CampaignSummaryPage() {
                 errorEmitter.emit('permission-error', permissionError);
             });
     };
-
-    const handleCancel = () => {
+    
+    const handleEditClick = () => {
         if (campaign) {
             setEditableCampaign({
                 description: campaign.description || '',
@@ -127,7 +127,12 @@ export default function CampaignSummaryPage() {
                 endDate: campaign.endDate || '',
             });
         }
+        setEditMode(true);
+    };
+
+    const handleCancel = () => {
         setEditMode(false);
+        // The useEffect will reset the editableCampaign state to match the campaign data
     };
 
     // Memoized calculations
@@ -210,7 +215,7 @@ export default function CampaignSummaryPage() {
                     <h1 className="text-3xl font-bold">{campaign.name}</h1>
                     {canUpdate && (
                         !editMode ? (
-                            <Button onClick={() => setEditMode(true)}>
+                            <Button onClick={handleEditClick}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit Summary
                             </Button>
                         ) : (

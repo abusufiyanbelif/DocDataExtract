@@ -1,12 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useFirestore, useCollection, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { firebaseConfig } from '@/firebase/config';
-import type { UserProfile } from '@/lib/types';
 import { modules, permissions } from '@/lib/modules';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -16,6 +15,9 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection } from '@/firebase';
+import type { UserProfile } from '@/lib/types';
+
 
 export default function CreateUserPage() {
   const router = useRouter();
@@ -49,8 +51,16 @@ export default function CreateUserPage() {
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
-            for (const perm of permissions) {
+            for (const perm of mod.permissions) {
                 allPermissions[mod.id][perm] = true;
+            }
+            if (mod.subModules) {
+                 for (const subMod of mod.subModules) {
+                    allPermissions[mod.id][subMod.id] = {};
+                    for (const perm of subMod.permissions) {
+                        allPermissions[mod.id][subMod.id][perm] = true;
+                    }
+                }
             }
         }
         userData.permissions = allPermissions;
@@ -66,10 +76,23 @@ export default function CreateUserPage() {
 
     try {
         await createUserWithEmailAndPassword(tempAuth, email, newPassword);
-        await addDoc(collection(firestore, 'users'), finalData);
         
-        toast({ title: 'Success', description: `User '${data.name}' created successfully.` });
-        router.push('/users');
+        addDoc(collection(firestore, 'users'), finalData)
+            .then(() => {
+                toast({ title: 'Success', description: `User '${data.name}' created successfully.` });
+                router.push('/users');
+            })
+            .catch((serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: 'users',
+                    operation: 'create',
+                    requestResourceData: finalData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                console.error("Firestore write failed, but Auth user was created. Manual cleanup may be required for user:", email);
+                toast({ title: 'Database Error', description: 'User could not be saved to the database due to permissions. The auth account was created but is orphaned.', variant: 'destructive', duration: 10000 });
+            });
+
     } catch (error: any) {
         let errorMessage = "An unexpected error occurred during user creation.";
         if (error.code) {

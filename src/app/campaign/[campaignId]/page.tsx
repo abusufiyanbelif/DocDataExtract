@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CampaignDetailsPage() {
   const params = useParams();
@@ -54,13 +55,7 @@ export default function CampaignDetailsPage() {
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newMemberCount, setNewMemberCount] = useState('');
 
-  useEffect(() => {
-    if (campaign) {
-      setEditableCampaign(JSON.parse(JSON.stringify(campaign))); // Deep copy
-    }
-  }, [campaign]);
-  
-  // Reset local state if edit mode is cancelled
+  // Reset local state if edit mode is cancelled or if the base data changes while NOT in edit mode.
   useEffect(() => {
     if (campaign && !editMode) {
       setEditableCampaign(JSON.parse(JSON.stringify(campaign)));
@@ -428,8 +423,40 @@ export default function CampaignDetailsPage() {
   
   if (isLoading || !editableCampaign) {
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="min-h-screen bg-background text-foreground">
+            <DocuExtractHeader />
+            <main className="container mx-auto p-4 md:p-8">
+                <div className="mb-4">
+                    <Skeleton className="h-10 w-44" />
+                </div>
+                <Skeleton className="h-9 w-64 mb-4" />
+                <div className="flex flex-wrap gap-2 border-b mb-4">
+                    <Skeleton className="h-10 w-24" />
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-10 w-36" />
+                    <Skeleton className="h-10 w-28" />
+                </div>
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-start flex-wrap gap-4">
+                            <div>
+                                <Skeleton className="h-8 w-48 mb-4" />
+                                <div className="space-y-3">
+                                    <Skeleton className="h-6 w-96" />
+                                    <Skeleton className="h-6 w-80" />
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <Skeleton className="h-10 w-32" />
+                                <Skeleton className="h-10 w-32" />
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-64 w-full" />
+                    </CardContent>
+                </Card>
+            </main>
         </div>
     );
   }
