@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import {
   Form,
@@ -381,8 +381,8 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 </TableHeader>
                 <TableBody>
                     {modules.map((mod) => (
-                        <>
-                            <TableRow key={mod.id}>
+                        <React.Fragment key={mod.id}>
+                            <TableRow>
                                 <TableCell className="font-medium">{mod.name}</TableCell>
                                 {['create', 'read', 'update', 'delete'].map(perm => (
                                     <TableCell key={perm} className="text-center">
@@ -432,7 +432,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                     ))}
                                 </TableRow>
                             ))}
-                        </>
+                        </React.Fragment>
                     ))}
                 </TableBody>
                 </Table>
