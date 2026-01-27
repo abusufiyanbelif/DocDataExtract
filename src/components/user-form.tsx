@@ -1,3 +1,4 @@
+
 'use client';
 
 import { z } from 'zod';
@@ -409,25 +410,25 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         </TableCell>
                         {['create', 'read', 'update', 'delete'].map((perm) => (
                           <TableCell key={perm} className="text-center">
-                            {(mod.permissions as readonly string[]).includes(perm) ? (
-                              <FormField
-                                control={form.control}
-                                name={`permissions.${mod.id}.${perm}`}
-                                render={({ field }) => (
-                                  <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={!!field.value}
-                                        onCheckedChange={field.onChange}
-                                        disabled={
-                                          roleValue === 'Admin' || isFormDisabled
-                                        }
-                                      />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                            ) : null}
+                            <FormField
+                              control={form.control}
+                              name={`permissions.${mod.id}.${perm}`}
+                              render={({ field }) => (
+                                <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={!!field.value}
+                                      onCheckedChange={field.onChange}
+                                      disabled={
+                                        roleValue === 'Admin' ||
+                                        isFormDisabled ||
+                                        !(mod.permissions as readonly string[]).includes(perm)
+                                      }
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
                           </TableCell>
                         ))}
                       </TableRow>
@@ -440,28 +441,27 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             </TableCell>
                             {['create', 'read', 'update', 'delete'].map((perm) => (
                               <TableCell key={perm} className="text-center">
-                                {(subMod.permissions as readonly string[]).includes(
-                                  perm
-                                ) ? (
-                                  <FormField
-                                    control={form.control}
-                                    name={`permissions.${mod.id}.${subMod.id}.${perm}`}
-                                    render={({ field }) => (
-                                      <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                        <FormControl>
-                                          <Checkbox
-                                            checked={!!field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={
-                                              roleValue === 'Admin' ||
-                                              isFormDisabled
-                                            }
-                                          />
-                                        </FormControl>
-                                      </FormItem>
-                                    )}
-                                  />
-                                ) : null}
+                                <FormField
+                                  control={form.control}
+                                  name={`permissions.${mod.id}.${subMod.id}.${perm}`}
+                                  render={({ field }) => (
+                                    <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                      <FormControl>
+                                        <Checkbox
+                                          checked={!!field.value}
+                                          onCheckedChange={field.onChange}
+                                          disabled={
+                                            roleValue === 'Admin' ||
+                                            isFormDisabled ||
+                                            !(subMod.permissions as readonly string[]).includes(
+                                              perm
+                                            )
+                                          }
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
                               </TableCell>
                             ))}
                           </TableRow>
@@ -484,3 +484,5 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     </Form>
   );
 }
+
+    
