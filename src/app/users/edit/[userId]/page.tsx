@@ -1,7 +1,8 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage, useUserProfile } from '@/firebase';
+import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { updateDoc, doc, writeBatch } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { modules } from '@/lib/modules';
