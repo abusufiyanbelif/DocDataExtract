@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError, useStorage, useUserProfile } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -13,11 +13,12 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 export default function CreateUserPage() {
@@ -26,9 +27,16 @@ export default function CreateUserPage() {
   const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
-  const usersCollectionRef = collection(firestore!, 'users');
+  const usersCollectionRef = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
   const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
+  
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;
 
   const handleSave = async (data: UserFormData) => {
     if (!firestore || !storage) {
@@ -145,6 +153,41 @@ export default function CreateUserPage() {
   const handleCancel = () => {
     router.push('/users');
   };
+
+  const isLoading = areUsersLoading || isProfileLoading;
+  
+  if (isLoading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  if (!canCreate) {
+      return (
+        <div className="min-h-screen bg-background text-foreground">
+            <DocuExtractHeader />
+            <main className="container mx-auto p-4 md:p-8">
+                <div className="mb-4">
+                    <Button variant="outline" asChild>
+                        <Link href="/users">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Users
+                        </Link>
+                    </Button>
+                </div>
+                <Alert variant="destructive">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Access Denied</AlertTitle>
+                    <AlertDescription>
+                        You do not have the required permissions to create a new user.
+                    </AlertDescription>
+                </Alert>
+            </main>
+        </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
