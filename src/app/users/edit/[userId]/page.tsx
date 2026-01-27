@@ -1,7 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
+import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage, useUserProfile } from '@/firebase';
 import { updateDoc, doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { modules } from '@/lib/modules';
@@ -25,11 +25,12 @@ export default function EditUserPage() {
   const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isLoading: isProfileLoading } = useUserProfile();
   
   const userDocRef = useMemo(() => {
-    if (!firestore || !userId) return null;
+    if (!firestore || !userId || isProfileLoading) return null;
     return doc(firestore, 'users', userId);
-  }, [firestore, userId]);
+  }, [firestore, userId, isProfileLoading]);
 
   const { data: user, isLoading: isUserLoading } = useDoc<UserProfile>(userDocRef);
 
@@ -113,7 +114,9 @@ export default function EditUserPage() {
     router.push('/users');
   };
 
-  if (isUserLoading) {
+  const isLoading = isUserLoading || isProfileLoading;
+
+  if (isLoading) {
     return (
         <div className="min-h-screen bg-background text-foreground">
             <DocuExtractHeader />

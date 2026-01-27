@@ -1,8 +1,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useFirestore, errorEmitter, FirestorePermissionError, useStorage, useCollection, useUserProfile } from '@/firebase';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -17,7 +16,6 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection } from '@/firebase';
 import type { UserProfile } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -32,9 +30,9 @@ export default function CreateUserPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const usersCollectionRef = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || isProfileLoading) return null;
     return collection(firestore, 'users');
-  }, [firestore]);
+  }, [firestore, isProfileLoading]);
   const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
   
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;

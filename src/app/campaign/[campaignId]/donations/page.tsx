@@ -50,15 +50,15 @@ export default function DonationsPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId) return null;
+    if (!firestore || !campaignId || isProfileLoading) return null;
     return doc(firestore, 'campaigns', campaignId);
-  }, [firestore, campaignId]);
+  }, [firestore, campaignId, isProfileLoading]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const donationsCollectionRef = useMemo(() => {
-    if (!firestore || !campaignId) return null;
+    if (!firestore || !campaignId || isProfileLoading) return null;
     return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-  }, [firestore, campaignId]);
+  }, [firestore, campaignId, isProfileLoading]);
   const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);

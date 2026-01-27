@@ -74,12 +74,12 @@ export default function CampaignSummaryPage() {
     const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('Verified');
 
     // Data fetching
-    const campaignDocRef = useMemo(() => firestore ? doc(firestore, 'campaigns', campaignId) : null, [firestore, campaignId]);
-    const beneficiariesCollectionRef = useMemo(() => firestore ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId]);
+    const campaignDocRef = useMemo(() => (firestore && !isProfileLoading) ? doc(firestore, 'campaigns', campaignId) : null, [firestore, campaignId, isProfileLoading]);
+    const beneficiariesCollectionRef = useMemo(() => (firestore && !isProfileLoading) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId, isProfileLoading]);
     const donationsCollectionRef = useMemo(() => {
-        if (!firestore || !campaignId) return null;
+        if (!firestore || !campaignId || isProfileLoading) return null;
         return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-    }, [firestore, campaignId]);
+    }, [firestore, campaignId, isProfileLoading]);
 
     const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
