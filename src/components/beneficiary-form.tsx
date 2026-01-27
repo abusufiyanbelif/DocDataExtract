@@ -39,7 +39,7 @@ const formSchema = z.object({
   idNumber: z.string().optional(),
   referralBy: z.string().min(2, { message: "Referral is required." }),
   kitAmount: z.coerce.number().min(0),
-  status: z.enum(['Given', 'Pending', 'Hold', 'Need More Details']),
+  status: z.enum(['Given', 'Pending', 'Hold', 'Need More Details', 'Verified']),
   idProofFile: z.any().optional(),
 });
 
@@ -291,6 +291,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                     <SelectContent>
                     <SelectItem value="Pending">Pending</SelectItem>
                     <SelectItem value="Given">Given</SelectItem>
+                    <SelectItem value="Verified">Verified</SelectItem>
                     <SelectItem value="Hold">Hold</SelectItem>
                     <SelectItem value="Need More Details">Need More Details</SelectItem>
                     </SelectContent>

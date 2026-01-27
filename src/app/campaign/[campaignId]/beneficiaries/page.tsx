@@ -181,7 +181,7 @@ export default function BeneficiariesPage() {
             });
             
             const today = new Date().toISOString().split('T')[0];
-            const fileNameParts = [ data.name, data.phone || 'no-phone', today, data.referralBy ];
+            const fileNameParts = [ data.name, data.phone || 'no-phone', today, 'referby', data.referralBy ];
             const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
             const fileExtension = file.name.split('.').pop() || 'jpg';
             const finalFileName = `${docRef.id}_${sanitizedBaseName}.${fileExtension}`;
@@ -268,7 +268,7 @@ export default function BeneficiariesPage() {
             
             const validBeneficiaries: Omit<Beneficiary, 'id'>[] = [];
             const invalidRows: number[] = [];
-            const validStatuses = ['Given', 'Pending', 'Hold', 'Need More Details'];
+            const validStatuses = ['Given', 'Pending', 'Hold', 'Need More Details', 'Verified'];
 
             json.forEach((row, index) => {
                 const name = String(row.name || '').trim();
@@ -497,6 +497,7 @@ export default function BeneficiariesPage() {
                         <SelectContent>
                             <SelectItem value="All">All Statuses</SelectItem>
                             <SelectItem value="Given">Given</SelectItem>
+                            <SelectItem value="Verified">Verified</SelectItem>
                             <SelectItem value="Pending">Pending</SelectItem>
                             <SelectItem value="Hold">Hold</SelectItem>
                             <SelectItem value="Need More Details">Need More Details</SelectItem>
@@ -600,6 +601,7 @@ export default function BeneficiariesPage() {
                               <TableCell>
                                   <Badge variant={
                                       beneficiary.status === 'Given' ? 'default' :
+                                      beneficiary.status === 'Verified' ? 'default' :
                                       beneficiary.status === 'Pending' ? 'secondary' :
                                       beneficiary.status === 'Hold' ? 'destructive' : 'outline'
                                   }>{beneficiary.status}</Badge>

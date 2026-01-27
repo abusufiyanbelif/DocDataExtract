@@ -57,6 +57,7 @@ const beneficiaryStatusConfig = {
     Pending: { label: "Pending", color: "hsl(var(--chart-2))" },
     Hold: { label: "Hold", color: "hsl(var(--chart-3))" },
     "NeedMoreDetails": { label: "Need More Details", color: "hsl(var(--chart-4))" },
+    "Verified": { label: "Verified", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
 export default function CampaignSummaryPage() {

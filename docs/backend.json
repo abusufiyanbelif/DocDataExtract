@@ -214,7 +214,8 @@
             "Given",
             "Pending",
             "Hold",
-            "Need More Details"
+            "Need More Details",
+            "Verified"
           ],
           "description": "The current status of the beneficiary's ration kit."
         },

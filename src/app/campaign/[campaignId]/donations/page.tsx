@@ -161,7 +161,7 @@ export default function DonationsPage() {
                 description: `Please wait while '${file.name}' is uploaded.`,
             });
             
-            const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate ];
+            const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate, 'referby', userProfile.name ];
             const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
             const fileExtension = file.name.split('.').pop() || 'jpg';
             const finalFileName = `${docRef.id}_${sanitizedBaseName}.${fileExtension}`;

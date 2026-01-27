@@ -43,7 +43,7 @@ export interface Beneficiary extends DocumentData {
     idNumber: string;
     referralBy: string;
     kitAmount: number;
-    status: 'Given' | 'Pending' | 'Hold' | 'Need More Details';
+    status: 'Given' | 'Pending' | 'Hold' | 'Need More Details' | 'Verified';
     idProofUrl?: string;
 }
 
