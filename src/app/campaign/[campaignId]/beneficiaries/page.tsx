@@ -86,6 +86,7 @@ export default function BeneficiariesPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [referralFilter, setReferralFilter] = useState('All');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
   
   const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
@@ -355,6 +356,12 @@ export default function BeneficiariesPage() {
     }
     setSortConfig({ key, direction });
   };
+
+  const uniqueReferrals = useMemo(() => {
+    if (!beneficiaries) return [];
+    const referrals = new Set(beneficiaries.map(b => b.referralBy).filter(Boolean));
+    return ['All', ...Array.from(referrals).sort()];
+  }, [beneficiaries]);
   
   const filteredAndSortedBeneficiaries = useMemo(() => {
     let sortableItems = [...beneficiaries];
@@ -363,12 +370,16 @@ export default function BeneficiariesPage() {
     if (statusFilter !== 'All') {
         sortableItems = sortableItems.filter(b => b.status === statusFilter);
     }
+    if (referralFilter !== 'All') {
+        sortableItems = sortableItems.filter(b => b.referralBy === referralFilter);
+    }
     if (searchTerm) {
         const lowercasedTerm = searchTerm.toLowerCase();
         sortableItems = sortableItems.filter(b => 
-            b.name.toLowerCase().includes(lowercasedTerm) ||
-            b.phone.toLowerCase().includes(lowercasedTerm) ||
-            b.address.toLowerCase().includes(lowercasedTerm)
+            (b.name || '').toLowerCase().includes(lowercasedTerm) ||
+            (b.phone || '').toLowerCase().includes(lowercasedTerm) ||
+            (b.address || '').toLowerCase().includes(lowercasedTerm) ||
+            (b.referralBy || '').toLowerCase().includes(lowercasedTerm)
         );
     }
 
@@ -395,7 +406,7 @@ export default function BeneficiariesPage() {
     }
 
     return sortableItems;
-  }, [beneficiaries, searchTerm, statusFilter, sortConfig]);
+  }, [beneficiaries, searchTerm, statusFilter, referralFilter, sortConfig]);
 
   const totalKitAmount = useMemo(() => {
     return filteredAndSortedBeneficiaries.reduce((acc, b) => acc + (b.kitAmount || 0), 0);
@@ -507,7 +518,7 @@ export default function BeneficiariesPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-4">
                 <Input 
-                    placeholder="Search by name, phone, address..."
+                    placeholder="Search by name, phone, address, referral..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="max-w-sm"
@@ -523,6 +534,18 @@ export default function BeneficiariesPage() {
                         <SelectItem value="Pending">Pending</SelectItem>
                         <SelectItem value="Hold">Hold</SelectItem>
                         <SelectItem value="Need More Details">Need More Details</SelectItem>
+                    </SelectContent>
+                </Select>
+                 <Select value={referralFilter} onValueChange={setReferralFilter}>
+                    <SelectTrigger className="w-auto md:w-[180px]">
+                        <SelectValue placeholder="Filter by referral" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {uniqueReferrals.map(referral => (
+                            <SelectItem key={referral} value={referral}>
+                                {referral === 'All' ? 'All Referrals' : referral}
+                            </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>
