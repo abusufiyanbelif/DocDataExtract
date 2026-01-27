@@ -228,60 +228,88 @@ export default function BeneficiariesPage() {
             const workbook = XLSX.read(data, { type: 'array' });
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
-            const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+            const json: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: false, defval: '' });
 
             if (json.length === 0) throw new Error("The file is empty.");
 
             const requiredHeaders = ['name', 'referralBy'];
-            const actualHeaders = Object.keys(json[0]);
+            const actualHeaders = Object.keys(json[0] || {});
             if (!requiredHeaders.every(h => actualHeaders.includes(h))) {
                  throw new Error(`File is missing required headers. Required: ${requiredHeaders.join(', ')}`);
             }
             
             const batch = writeBatch(firestore);
             const beneficiariesRef = collection(firestore, `campaigns/${campaignId}/beneficiaries`);
+            
+            const validBeneficiaries: Omit<Beneficiary, 'id'>[] = [];
+            const invalidRows: number[] = [];
+            const validStatuses = ['Given', 'Pending', 'Hold', 'Need More Details'];
 
-            json.forEach(row => {
-                const docRef = doc(beneficiariesRef);
+            json.forEach((row, index) => {
+                const name = String(row.name || '').trim();
+                const referralBy = String(row.referralBy || '').trim();
+                const members = Number(row.members || 0);
+                const earningMembers = Number(row.earningMembers || 0);
+                const male = Number(row.male || 0);
+                const female = Number(row.female || 0);
+                const kitAmount = Number(row.kitAmount || 0);
+                const status = String(row.status || 'Pending').trim();
+
+                if (!name || !referralBy || isNaN(members) || isNaN(earningMembers) || isNaN(male) || isNaN(female) || isNaN(kitAmount)) {
+                    invalidRows.push(index + 2); // +2 because index is 0-based and header is row 1
+                    return;
+                }
+                
                 const beneficiaryData: Omit<Beneficiary, 'id'> = {
-                    name: String(row.name || '').trim(),
+                    name,
                     address: String(row.address || '').trim(),
                     phone: String(row.phone || '').trim(),
-                    members: Number(row.members || 0),
-                    earningMembers: Number(row.earningMembers || 0),
-                    male: Number(row.male || 0),
-                    female: Number(row.female || 0),
+                    members,
+                    earningMembers,
+                    male,
+                    female,
                     idProofType: String(row.idProofType || '').trim(),
                     idNumber: String(row.idNumber || '').trim(),
-                    referralBy: String(row.referralBy || '').trim(),
-                    kitAmount: Number(row.kitAmount || 0),
-                    status: (row.status || 'Pending').trim(),
+                    referralBy,
+                    kitAmount,
+                    status: validStatuses.includes(status) ? status : 'Pending',
                     addedDate: new Date().toISOString().split('T')[0],
                     createdAt: serverTimestamp(),
                 };
-                
-                if (!beneficiaryData.name || !beneficiaryData.referralBy) {
-                    console.warn("Skipping row with missing name or referral:", row);
-                    return;
-                }
+                validBeneficiaries.push(beneficiaryData);
+            });
+            
+            if (validBeneficiaries.length === 0) {
+                throw new Error("No valid beneficiary data found in the file. Please check for missing names or referral info.");
+            }
 
-                batch.set(docRef, beneficiaryData);
+            validBeneficiaries.forEach(beneficiary => {
+                const docRef = doc(beneficiariesRef);
+                batch.set(docRef, beneficiary);
             });
 
-            batch.commit()
-                .then(() => {
-                    toast({ title: 'Success', description: `${json.length} beneficiaries imported successfully.`, variant: 'default' });
-                })
-                .catch(async (serverError) => {
-                    const permissionError = new FirestorePermissionError({
-                        path: `campaigns/${campaignId}/beneficiaries`,
-                        operation: 'write',
-                    } satisfies SecurityRuleContext);
-                    errorEmitter.emit('permission-error', permissionError);
-                });
+            await batch.commit();
+            
+            if (invalidRows.length > 0) {
+                 toast({ 
+                    title: 'Partial Import Success',
+                    description: `${validBeneficiaries.length} beneficiaries imported. ${invalidRows.length} rows were invalid and skipped (Rows: ${invalidRows.join(', ')}).`,
+                    variant: 'default',
+                    duration: 8000,
+                 });
+            } else {
+                toast({ title: 'Success', description: `${validBeneficiaries.length} beneficiaries imported successfully.`, variant: 'default' });
+            }
 
         } catch (error: any) {
-            toast({ title: 'Import Failed', description: error.message || "An error occurred during import.", variant: 'destructive' });
+             if (error.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: `campaigns/${campaignId}/beneficiaries`,
+                    operation: 'write',
+                }));
+            } else {
+                toast({ title: 'Import Failed', description: error.message || "An error occurred during import.", variant: 'destructive' });
+            }
         } finally {
             setIsImporting(false);
             setIsImportOpen(false);
