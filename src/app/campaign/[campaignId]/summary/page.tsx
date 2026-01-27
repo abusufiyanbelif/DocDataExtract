@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore, useDoc, useCollection } from '@/firebase';
+import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, collection, updateDoc, query, where } from 'firebase/firestore';
 import Link from 'next/link';
@@ -87,21 +87,29 @@ export default function CampaignSummaryPage() {
         }
     }, [campaign]);
 
-    const handleSave = async () => {
-        if (!campaignDocRef || !userProfile || userProfile.role !== 'Admin') return;
-        try {
-            await updateDoc(campaignDocRef, {
-                description: editableCampaign.description || '',
-                targetAmount: Number(editableCampaign.targetAmount) || 0,
-                startDate: editableCampaign.startDate || '',
-                endDate: editableCampaign.endDate || '',
+    const handleSave = () => {
+        if (!campaignDocRef || !userProfile || !canUpdate) return;
+        
+        const saveData = {
+            description: editableCampaign.description || '',
+            targetAmount: Number(editableCampaign.targetAmount) || 0,
+            startDate: editableCampaign.startDate || '',
+            endDate: editableCampaign.endDate || '',
+        };
+
+        updateDoc(campaignDocRef, saveData)
+            .then(() => {
+                toast({ title: 'Success', description: 'Campaign summary updated.' });
+                setEditMode(false);
+            })
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: campaignDocRef.path,
+                    operation: 'update',
+                    requestResourceData: saveData,
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
             });
-            toast({ title: 'Success', description: 'Campaign summary updated.' });
-            setEditMode(false);
-        } catch (error) {
-            console.error(error);
-            toast({ title: 'Error', description: 'Failed to update summary.', variant: 'destructive' });
-        }
     };
 
     const handleCancel = () => {
@@ -154,7 +162,7 @@ export default function CampaignSummaryPage() {
     }, [beneficiaries, donations, campaign]);
     
     const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading;
-    const isAdmin = userProfile?.role === 'Admin';
+    const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update;
 
     if (isLoading) {
         return (
@@ -195,7 +203,7 @@ export default function CampaignSummaryPage() {
                 </div>
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                     <h1 className="text-3xl font-bold">{campaign.name}</h1>
-                    {isAdmin && (
+                    {canUpdate && (
                         !editMode ? (
                             <Button onClick={() => setEditMode(true)}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit Summary
@@ -234,7 +242,7 @@ export default function CampaignSummaryPage() {
                         <CardContent className="space-y-4">
                             <div>
                                 <Label htmlFor="description" className="text-sm font-medium text-muted-foreground">Description</Label>
-                                {editMode ? (
+                                {editMode && canUpdate ? (
                                     <Textarea
                                         id="description"
                                         value={editableCampaign.description}
@@ -249,12 +257,12 @@ export default function CampaignSummaryPage() {
                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-1">
                                     <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Target Amount</Label>
-                                    {editMode ? (
+                                    {editMode && canUpdate ? (
                                         <Input
                                             id="targetAmount"
                                             type="number"
                                             value={editableCampaign.targetAmount}
-                                            onChange={(e) => setEditableCampaign(p => ({...p, targetAmount: e.target.value}))}
+                                            onChange={(e) => setEditableCampaign(p => ({...p, targetAmount: e.target.value as any}))}
                                             className="mt-1"
                                             placeholder="e.g. 100000"
                                         />
@@ -264,7 +272,7 @@ export default function CampaignSummaryPage() {
                                 </div>
                                  <div className="space-y-1">
                                     <Label htmlFor="startDate" className="text-sm font-medium text-muted-foreground">Start Date</Label>
-                                    {editMode ? (
+                                    {editMode && canUpdate ? (
                                         <Input
                                             id="startDate"
                                             type="date"
@@ -278,7 +286,7 @@ export default function CampaignSummaryPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <Label htmlFor="endDate" className="text-sm font-medium text-muted-foreground">End Date</Label>
-                                    {editMode ? (
+                                    {editMode && canUpdate ? (
                                         <Input
                                             id="endDate"
                                             type="date"

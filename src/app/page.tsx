@@ -12,6 +12,10 @@ export default function LandingPage() {
 
   const canViewCampaigns = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.read;
   const canViewUsers = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.read;
+  const canViewExtractor = userProfile?.role === 'Admin' || !!userProfile?.permissions?.extractor?.read;
+  const canViewStoryCreator = userProfile?.role === 'Admin' || !!userProfile?.permissions?.storyCreator?.read;
+  const canViewDiagnostics = userProfile?.role === 'Admin' || !!userProfile?.permissions?.diagnostics?.read;
+
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -26,26 +30,32 @@ export default function LandingPage() {
             Effortlessly scan images and documents to extract text, or synthesize multiple documents into a single story.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/extractor">
-                <Button size="lg" className="text-lg">
-                Start Extracting
-                <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-            </Link>
-            <Link href="/story-creator">
-                <Button size="lg" variant="outline" className="text-lg">
-                <FileText className="mr-2 h-5 w-5" />
-                Create a Story
-                </Button>
-            </Link>
             {isLoading && (
                 <>
                 <Skeleton className="h-11 w-48" />
-                <Skeleton className="h-11 w-28" />
+                <Skeleton className="h-11 w-48" />
+                <Skeleton className="h-11 w-48" />
+                <Skeleton className="h-11 w-36" />
                 </>
             )}
             {!isLoading && (
               <>
+                {canViewExtractor && (
+                    <Link href="/extractor">
+                        <Button size="lg" className="text-lg">
+                        Start Extracting
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                        </Button>
+                    </Link>
+                )}
+                {canViewStoryCreator && (
+                    <Link href="/story-creator">
+                        <Button size="lg" variant="outline" className="text-lg">
+                        <FileText className="mr-2 h-5 w-5" />
+                        Create a Story
+                        </Button>
+                    </Link>
+                )}
                 {canViewCampaigns && (
                   <Link href="/campaign">
                       <Button size="lg" variant="outline" className="text-lg">
@@ -62,14 +72,16 @@ export default function LandingPage() {
                       </Button>
                   </Link>
                 )}
+                {canViewDiagnostics && (
+                     <Link href="/diagnostics">
+                        <Button size="lg" variant="outline" className="text-lg">
+                        <ShieldCheck className="mr-2 h-5 w-5" />
+                        Diagnostics
+                        </Button>
+                    </Link>
+                )}
               </>
             )}
-            <Link href="/diagnostics">
-                <Button size="lg" variant="outline" className="text-lg">
-                <ShieldCheck className="mr-2 h-5 w-5" />
-                Diagnostics
-                </Button>
-            </Link>
             </div>
         </div>
       </main>

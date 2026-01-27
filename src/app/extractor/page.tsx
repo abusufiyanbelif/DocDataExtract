@@ -24,7 +24,7 @@ export default function ExtractorPage() {
           </Button>
         </div>
         <Tabs defaultValue="text" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto bg-primary/10">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 h-auto bg-primary/10">
             <TabsTrigger value="text" className="py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="mr-2 h-5 w-5" />
               General Text

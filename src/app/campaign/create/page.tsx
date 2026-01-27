@@ -39,6 +39,8 @@ export default function CreateCampaignPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
+  
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
 
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignSchema),
@@ -52,7 +54,7 @@ export default function CreateCampaignPage() {
   });
 
   const onSubmit = async (data: CampaignFormValues) => {
-    if (!firestore || !storage || userProfile?.role !== 'Admin') {
+    if (!firestore || !storage || !canCreate) {
       toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
       return;
     }
@@ -74,13 +76,13 @@ export default function CreateCampaignPage() {
 
       const campaignId = docRef.id;
       const placeholderPaths = [
-        `campaigns/${campaignId}/beneficiaries`,
-        `campaigns/${campaignId}/donations`
+        `campaigns/${campaignId}/beneficiaries/.placeholder`,
+        `campaigns/${campaignId}/donations/.placeholder`
       ];
 
       await Promise.all(
         placeholderPaths.map(path => {
-            const placeholderRef = storageRef(storage, `${path}/.placeholder`);
+            const placeholderRef = storageRef(storage, path);
             return uploadBytes(placeholderRef, new Uint8Array());
         })
       );
@@ -102,7 +104,7 @@ export default function CreateCampaignPage() {
     );
   }
 
-  if (!userProfile || userProfile.role !== 'Admin') {
+  if (!canCreate) {
     return (
         <div className="min-h-screen bg-background text-foreground">
             <DocuExtractHeader />

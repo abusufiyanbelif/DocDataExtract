@@ -68,22 +68,24 @@ export default function DonationsPage() {
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [imageToView, setImageToView] = useState<string | null>(null);
   
-  const isAdmin = userProfile?.role === 'Admin';
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update;
+  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.delete;
 
   const handleAdd = () => {
-    if (!isAdmin) return;
+    if (!canCreate) return;
     setEditingDonation(null);
     setIsFormOpen(true);
   };
 
   const handleEdit = (donation: Donation) => {
-    if (!isAdmin) return;
+    if (!canUpdate) return;
     setEditingDonation(donation);
     setIsFormOpen(true);
   };
 
   const handleDeleteClick = (id: string) => {
-    if (!isAdmin) return;
+    if (!canDelete) return;
     setDonationToDelete(id);
     setIsDeleteDialogOpen(true);
   };
@@ -94,7 +96,7 @@ export default function DonationsPage() {
   };
 
   const handleDeleteConfirm = () => {
-    if (donationToDelete && firestore && isAdmin) {
+    if (donationToDelete && firestore && canDelete) {
         const docRef = doc(firestore, 'donations', donationToDelete);
         
         deleteDoc(docRef)
@@ -115,7 +117,10 @@ export default function DonationsPage() {
   };
   
   const handleFormSubmit = async (data: DonationFormData) => {
-    if (!firestore || !storage || !campaignId || !campaign || !isAdmin || !userProfile) return;
+    if (!firestore || !storage || !campaignId || !campaign || !userProfile) return;
+    
+    if (editingDonation && !canUpdate) return;
+    if (!editingDonation && !canCreate) return;
 
     let screenshotUrl = editingDonation?.screenshotUrl || '';
     
@@ -235,7 +240,7 @@ export default function DonationsPage() {
         <Card>
           <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <CardTitle>Donation List</CardTitle>
-            {isAdmin && (
+            {canCreate && (
                 <Button onClick={handleAdd}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Donation
@@ -247,7 +252,7 @@ export default function DonationsPage() {
               <Table>
                   <TableHeader>
                       <TableRow>
-                          {isAdmin && <TableHead className="w-[50px] text-center">Actions</TableHead>}
+                          {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center">Actions</TableHead>}
                           <TableHead>Donor Name</TableHead>
                           <TableHead>Phone</TableHead>
                           <TableHead className="text-right">Amount (₹)</TableHead>
@@ -262,13 +267,13 @@ export default function DonationsPage() {
                       {areDonationsLoading ? (
                         [...Array(3)].map((_, i) => (
                            <TableRow key={i}>
-                                <TableCell colSpan={isAdmin ? 9 : 8}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={(canUpdate || canDelete) ? 9 : 8}><Skeleton className="h-6 w-full" /></TableCell>
                            </TableRow>
                         ))
                       ) : donations.length > 0 ? (
                         donations.map((donation) => (
                           <TableRow key={donation.id}>
-                              {isAdmin && (
+                              {(canUpdate || canDelete) && (
                                 <TableCell className="text-center">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -277,12 +282,16 @@ export default function DonationsPage() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => handleEdit(donation)}>
-                                                <Edit className="mr-2 h-4 w-4" /> Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                            </DropdownMenuItem>
+                                            {canUpdate && (
+                                                <DropdownMenuItem onClick={() => handleEdit(donation)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                                </DropdownMenuItem>
+                                            )}
+                                            {canDelete && (
+                                                <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                </DropdownMenuItem>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>
@@ -307,7 +316,7 @@ export default function DonationsPage() {
                         ))
                       ) : (
                         <TableRow>
-                            <TableCell colSpan={isAdmin ? 9 : 8} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={(canUpdate || canDelete) ? 9 : 8} className="text-center h-24 text-muted-foreground">
                                 No donations recorded yet.
                             </TableCell>
                         </TableRow>
@@ -315,7 +324,7 @@ export default function DonationsPage() {
                   </TableBody>
                   <TableFooter>
                     <TableRow>
-                        <TableCell colSpan={isAdmin ? 3 : 2} className="text-right font-bold">Total Donations</TableCell>
+                        <TableCell colSpan={(canUpdate || canDelete) ? 3 : 2} className="text-right font-bold">Total Donations</TableCell>
                         <TableCell className="text-right font-bold">₹{totalDonationAmount.toFixed(2)}</TableCell>
                         <TableCell colSpan={5}></TableCell>
                     </TableRow>

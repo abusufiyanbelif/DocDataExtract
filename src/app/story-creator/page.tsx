@@ -20,7 +20,7 @@ export default function StoryCreatorPage() {
             </Button>
         </div>
         <Tabs defaultValue="medical" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-auto bg-primary/10">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 h-auto bg-primary/10">
             <TabsTrigger value="medical" className="py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <HeartPulse className="mr-2 h-5 w-5" />
               Medical

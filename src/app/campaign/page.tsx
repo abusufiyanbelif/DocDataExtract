@@ -84,7 +84,7 @@ export default function CampaignPage() {
   }, [campaigns, searchTerm, statusFilter, sortConfig]);
 
   const isLoading = areCampaignsLoading || isProfileLoading;
-  const isAdmin = userProfile?.role === 'Admin';
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
   
   const SortableHeader = ({ sortKey, children }: { sortKey: SortKey, children: React.ReactNode }) => {
     const isSorted = sortConfig?.key === sortKey;
@@ -136,7 +136,7 @@ export default function CampaignPage() {
                 </div>
             </div>
             {isLoading && <Skeleton className="h-10 w-44" />}
-            {!isLoading && isAdmin && (
+            {!isLoading && canCreate && (
               <Button asChild>
                 <Link href="/campaign/create">
                   <Plus className="mr-2 h-4 w-4" />
@@ -180,7 +180,7 @@ export default function CampaignPage() {
                 {!isLoading && filteredAndSortedCampaigns.length === 0 && (
                     <TableRow>
                         <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
-                           No campaigns found matching your criteria. {isAdmin && campaigns.length === 0 && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
+                           No campaigns found matching your criteria. {canCreate && campaigns.length === 0 && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
                         </TableCell>
                     </TableRow>
                 )}
