@@ -14,6 +14,7 @@ service cloud.firestore {
 
     // Get the requesting user's profile data from the 'users' collection
     function getUserData() {
+      // Important: Use the request's auth uid, not a wildcard from the path
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
@@ -45,12 +46,17 @@ service cloud.firestore {
 
     match /user_lookups/{lookupId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if hasPermission(['users'], 'create') || hasPermission(['users'], 'update');
     }
 
     match /users/{userId} {
-      allow read, write: if isAdmin();
-      allow create, get, update: if isOwner(userId);
+      allow get: if hasPermission(['users'], 'read') || isOwner(userId);
+      allow list: if hasPermission(['users'], 'read');
+      
+      allow create: if hasPermission(['users'], 'create');
+      // A user can update their own profile. Users with 'update' permission can update any profile.
+      allow update: if hasPermission(['users'], 'update') || isOwner(userId);
+      allow delete: if hasPermission(['users'], 'delete');
     }
 
     match /campaigns/{campaignId} {
