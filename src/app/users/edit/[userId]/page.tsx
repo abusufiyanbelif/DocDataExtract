@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
 import { updateDoc, doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
-import { modules, permissions } from '@/lib/modules';
+import { modules } from '@/lib/modules';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -46,8 +46,16 @@ export default function EditUserPage() {
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
-            for (const perm of permissions) {
+            for (const perm of mod.permissions) {
                 allPermissions[mod.id][perm] = true;
+            }
+            if (mod.subModules) {
+                 for (const subMod of mod.subModules) {
+                    allPermissions[mod.id][subMod.id] = {};
+                    for (const perm of subMod.permissions) {
+                        allPermissions[mod.id][subMod.id][perm] = true;
+                    }
+                }
             }
         }
         userData.permissions = allPermissions;

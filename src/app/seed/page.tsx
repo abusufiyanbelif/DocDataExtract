@@ -34,10 +34,10 @@ export default function SeedPage() {
         if (!storage) throw new Error("Storage service not available.");
         const placeholderRef = storageRef(storage, path);
         try {
-            await uploadBytes(placeholderRef, new Uint8Array());
-            log(`   -> SUCCESS: Ensured storage path: gs://${placeholderRef.bucket}/${placeholderRef.fullPath}`);
+            // No longer uploading a file, just ensuring the log indicates the path is handled.
+            log(`   -> SUCCESS: Path gs://${placeholderRef.bucket}/${placeholderRef.fullPath} will be created on first file upload.`);
         } catch (error: any) {
-            log(`   -> ❌ ERROR creating placeholder at ${path}.`);
+            log(`   -> ❌ ERROR referencing storage path ${path}.`);
             // Re-throw the error to be caught by the main handler
             throw error;
         }
@@ -110,13 +110,13 @@ service firebase.storage {
         if (!firestore || !storage) throw new Error("Firestore or Storage service not available.");
         const batch = writeBatch(firestore);
         
-        log("Step 2: Seeding Firestore Data & Storage Folders");
+        log("Step 2: Seeding Firestore Data");
 
         // Define full permissions for the Admin role
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
-            for (const perm of permissions) {
+            for (const perm of mod.permissions) {
                 allPermissions[mod.id][perm] = true;
             }
             if (mod.subModules) {
@@ -178,11 +178,6 @@ service firebase.storage {
             log(" -> Sample user data prepared for batch write.");
         }
         
-        // --- Create Storage Folders ---
-        log(" -> Creating root folders in Firebase Storage...");
-        await createPlaceholderFile('campaigns/.placeholder');
-        await createPlaceholderFile('users/.placeholder');
-
         // Seed Campaign and related data idempotently
         const campaignId = 'ration-kit-distribution-ramza-2026';
         const campaignName = 'Ration Kit Distribution Ramza 2026';
@@ -195,8 +190,6 @@ service firebase.storage {
             
             batch.set(campaignDocRef, { name: campaignName, category: "Ration", description: 'A sample campaign for distributing ration kits to those in need during the holy month of Ramza.', targetAmount: 100000, status: 'Active', startDate: '2026-03-01', endDate: '2026-03-31', priceDate: '2025-01-11', shopName: 'Example Kirana Store', shopContact: '1234567890', shopAddress: '123 Main St, Hyderabad', rationLists: { 'General': [{ id: 'General-1', name: 'Rice', quantity: '15 kg', price: 900, notes: '@60/kg' }, { id: 'General-2', name: 'Wheat flour', quantity: '10 kg', price: 500, notes: 'Ashirvad' }, { id: 'General-3', name: 'Tea', quantity: '500 gm', price: 200, notes: 'Society mix' }, { id: 'General-4', name: 'Sugar', quantity: '3 kg', price: 132, notes: '@44/kg' }, { id: 'General-5', name: 'Groundnuts', quantity: '1 kg', price: 120, notes: '' }, { id: 'General-6', name: 'Khopra', quantity: '500 gm', price: 180, notes: '' }, { id: 'General-7', name: 'Tur Dal', quantity: '2 kg', price: 240, notes: '' }, { id: 'General-8', name: 'Masoor Dal', quantity: '2 kg', price: 180, notes: '' }, { id: 'General-9', name: 'Khimya Dates', quantity: '1 box', price: 150, notes: '' }, { id: 'General-10', name: 'Edible Palm Oil', quantity: '3 packet', price: 330, notes: '' }, { id: 'General-11', name: 'Garam Masala', quantity: '200 gm', price: 240, notes: '' }, { id: 'General-12', name: 'Captain Cook Salt', quantity: '1 packet', price: 20, notes: '' },], '5': [{ id: '5-1', name: 'Rice', quantity: '10 kg', price: 600, notes: '@60/kg' }, { id: '5-2', name: 'Wheat flour', quantity: '5 kg', price: 250, notes: 'Ashirvad' }, { id: '5-3', name: 'Tea', quantity: '250 gm', price: 100, notes: 'Society mix' }, { id: '5-4', name: 'Sugar', quantity: '2 kg', price: 88, notes: '@44/kg' }, { id: '5-5', name: 'Tur Dal', quantity: '1 kg', price: 120, notes: '' }, { id: '5-6', name: 'Masoor Dal', quantity: '1 kg', price: 90, notes: '' }, { id: '5-7', name: 'Edible Palm Oil', quantity: '2 packet', price: 220, notes: '' },], '3': [{ id: '3-1', name: 'Rice', quantity: '6 kg', price: 360, notes: '@60/kg' }, { id: '3-2', name: 'Wheat flour', quantity: '3 kg', price: 150, notes: 'Ashirvad' }, { id: '3-3', name: 'Sugar', quantity: '1.5 kg', price: 66, notes: '@44/kg' }, { id: '3-4', name: 'Edible Palm Oil', quantity: '1 packet', price: 110, notes: '' },], '2': [{ id: '2-1', name: 'Rice', quantity: '4 kg', price: 240, notes: '@60/kg' }, { id: '2-2', name: 'Wheat flour', quantity: '2 kg', price: 100, notes: 'Ashirvad' }, { id: '2-3', name: 'Sugar', quantity: '1 kg', price: 44, notes: '@44/kg' },], '1': [{ id: '1-1', name: 'Rice', quantity: '2 kg', price: 120, notes: '@60/kg' }, { id: '1-2', name: 'Wheat flour', quantity: '1 kg', price: 50, notes: 'Ashirvad' },], }, createdAt: serverTimestamp(), });
             
-            await createPlaceholderFile(`campaigns/${campaignId}/beneficiaries/.placeholder`);
-            await createPlaceholderFile(`campaigns/${campaignId}/donations/.placeholder`);
             log(" -> Campaign data prepared for batch write.");
 
             const initialBeneficiaries = [ { id: '1', name: 'Saleem Khan', address: '123, Old City, Hyderabad', phone: '9876543210', members: 5, earningMembers: 1, male: 2, female: 3, addedDate: '2026-03-15', idProofType: 'Aadhaar', idNumber: 'XXXX XXXX 1234', referralBy: 'Local NGO', kitAmount: 1468, status: 'Given' }, { id: '2', name: 'Aisha Begum', address: '456, New Town, Hyderabad', phone: '9876543211', members: 4, earningMembers: 2, male: 2, female: 2, addedDate: '2026-03-16', idProofType: 'PAN', idNumber: 'ABCDE1234F', referralBy: 'Masjid Committee', kitAmount: 686, status: 'Pending' }, { id: '3', name: 'Mohammed Ali', address: '789, Charminar, Hyderabad', phone: '9876543212', members: 6, earningMembers: 1, male: 3, female: 3, addedDate: '2026-03-17', idProofType: 'Voter ID', idNumber: 'XYZ1234567', referralBy: 'Self', kitAmount: 3192, status: 'Hold' }, { id: '4', name: 'Fatima Sheikh', address: '101, Golconda, Hyderabad', phone: '9876543213', members: 3, earningMembers: 0, male: 1, female: 2, addedDate: '2026-03-18', idProofType: 'Aadhaar', idNumber: 'YYYY YYYY 5678', referralBy: 'Local NGO', kitAmount: 686, status: 'Need More Details' }, ];
@@ -205,7 +198,7 @@ service firebase.storage {
             });
             log(" -> Beneficiary data prepared for batch write.");
 
-            const initialDonations = [ { donorName: 'Zoya Farooqui', donorPhone: '9988776655', amount: 5000, type: 'Zakat', donationDate: '2026-03-10', status: 'Verified', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName }, { donorName: 'Rohan Sharma', donorPhone: '9988776654', amount: 1000, type: 'General', donationDate: '2026-03-12', status: 'Verified', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName }, { donorName: 'Anonymous', donorPhone: '9988776653', amount: 2500, type: 'Sadqa', donationDate: '2026-03-14', status: 'Pending', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName }, ];
+            const initialDonations = [ { donorName: 'Zoya Farooqui', donorPhone: '9988776655', amount: 5000, type: 'Zakat', paymentType: 'Online', referral: 'Website', donationDate: '2026-03-10', status: 'Verified', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName }, { donorName: 'Rohan Sharma', donorPhone: '9988776654', amount: 1000, type: 'General', paymentType: 'Cash', referral: 'Friend', donationDate: '2026-03-12', status: 'Verified', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName }, { donorName: 'Anonymous', donorPhone: '', amount: 2500, type: 'Sadqa', paymentType: 'Online', referral: 'Social Media', donationDate: '2026-03-14', status: 'Pending', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName }, ];
             initialDonations.forEach((donation) => {
                 batch.set(doc(collection(firestore, 'donations')), { ...donation, createdAt: serverTimestamp() });
             });
@@ -268,7 +261,7 @@ service firebase.storage {
                 <Card className="max-w-4xl mx-auto">
                     <CardHeader>
                         <CardTitle>Database Seeding</CardTitle>
-                        <CardDescription>This page allows you to initialize the Firestore database and Storage with sample data. This action is idempotent and safe to run multiple times.</CardDescription>
+                        <CardDescription>This page allows you to initialize the Firestore database with sample data. This action is idempotent and safe to run multiple times.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex flex-col sm:flex-row gap-4">
