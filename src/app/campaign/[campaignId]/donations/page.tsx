@@ -129,12 +129,21 @@ export default function DonationsPage() {
                 }
             });
         }
-    } catch(e) {
-        const permissionError = new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'delete',
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
+    } catch(e: any) {
+        if (e.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            toast({
+              variant: "destructive",
+              title: "Uh oh! Something went wrong.",
+              description: e.message || "Could not delete donation.",
+            });
+            console.error("Delete donation failed:", e);
+        }
     } finally {
         setDonationToDelete(null);
     }
@@ -203,20 +212,30 @@ export default function DonationsPage() {
         setDoc(docRef, finalData, { merge: true })
             .then(() => {
                 toast({ title: 'Success', description: `Donation ${editingDonation ? 'updated' : 'added'}.`, variant: 'default' });
+                setIsFormOpen(false);
+                setEditingDonation(null);
             })
             .catch(async (serverError) => {
-                 const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: editingDonation ? 'update' : 'create',
-                    requestResourceData: finalData
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
+                if (serverError.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                        path: docRef.path,
+                        operation: editingDonation ? 'update' : 'create',
+                        requestResourceData: finalData
+                    } satisfies SecurityRuleContext);
+                    errorEmitter.emit('permission-error', permissionError);
+                } else {
+                    console.error("Error saving donation: ", serverError);
+                    toast({
+                        title: 'Error',
+                        description: `Could not save the donation. ${serverError.message}`,
+                        variant: 'destructive'
+                    });
+                }
             });
 
     } catch (error) {
         console.error("Error during file upload:", error);
         toast({ title: 'Error', description: 'Could not save donation screenshot.', variant: 'destructive' });
-    } finally {
         setIsFormOpen(false);
         setEditingDonation(null);
     }

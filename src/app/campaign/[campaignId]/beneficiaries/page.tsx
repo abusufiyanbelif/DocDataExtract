@@ -150,12 +150,21 @@ export default function BeneficiariesPage() {
                 }
             });
         }
-    } catch(e) {
-        const permissionError = new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'delete',
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
+    } catch(e: any) {
+        if (e.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'delete',
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            toast({
+              variant: "destructive",
+              title: "Uh oh! Something went wrong.",
+              description: e.message || "Could not delete beneficiary.",
+            });
+            console.error("Delete beneficiary failed:", e);
+        }
     } finally {
         setBeneficiaryToDelete(null);
     }
@@ -207,20 +216,30 @@ export default function BeneficiariesPage() {
         setDoc(docRef, finalData, { merge: true })
             .then(() => {
                 toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'default' });
+                 setIsFormOpen(false);
+                setEditingBeneficiary(null);
             })
             .catch(async (serverError) => {
-                 const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: editingBeneficiary ? 'update' : 'create',
-                    requestResourceData: finalData,
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
+                if (serverError.code === 'permission-denied') {
+                    const permissionError = new FirestorePermissionError({
+                        path: docRef.path,
+                        operation: editingBeneficiary ? 'update' : 'create',
+                        requestResourceData: finalData,
+                    } satisfies SecurityRuleContext);
+                    errorEmitter.emit('permission-error', permissionError);
+                } else {
+                    console.error("Error saving beneficiary: ", serverError);
+                    toast({
+                        title: 'Error',
+                        description: `Could not save the beneficiary. ${serverError.message}`,
+                        variant: 'destructive'
+                    });
+                }
             });
 
     } catch (error) {
         console.error("Error during file upload:", error);
         toast({ title: 'File Upload Error', description: 'Could not upload the ID proof file.', variant: 'destructive' });
-    } finally {
         setIsFormOpen(false);
         setEditingBeneficiary(null);
     }

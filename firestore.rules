@@ -1,56 +1,88 @@
 rules_version = '2';
 
-// In your Firebase console, navigate to Storage -> Rules and paste the following:
-//
-// service firebase.storage {
-//   match /b/{bucket}/o {
-//     // Allow read/write access for all authenticated users
-//     match /{allPaths=**} {
-//       allow read, write: if request.auth != null;
-//     }
-//   }
-// }
-
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // --- Helper Functions ---
     function isSignedIn() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      // Check against the document's ID, which should be the user's UID
       return request.auth.uid == userId;
     }
 
-    function isAdmin() {
-      // Check the role in the user's own profile doc
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    // Get the requesting user's profile data from the 'users' collection
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
+    function isAdmin() {
+      return isSignedIn() && getUserData().role == 'Admin';
+    }
+
+    // Check for a specific permission in the user's profile
+    function hasPermission(pathSegments, permission) {
+      // Admins have all permissions implicitly
+      if (isAdmin()) {
+        return true;
+      }
+      
+      let perms = getUserData().permissions;
+      // Traverse the permission path
+      for (let i = 0; i < pathSegments.length; i = i + 1) {
+        if (pathSegments[i] in perms) {
+          perms = perms[pathSegments[i]];
+        } else {
+          return false; // Path doesn't exist
+        }
+      }
+      // Check the final permission
+      return (permission in perms) && perms[permission] == true;
+    }
+    
+    // --- Collection Rules ---
+
     match /user_lookups/{lookupId} {
-      // Anyone can read lookup data to find a user's key for login
       allow read: if true;
-      // Only admins should be able to create/modify lookups
       allow write: if isAdmin();
     }
 
     match /users/{userId} {
-      // An admin can perform any action on any user
       allow read, write: if isAdmin();
-      // A user can create, read, and update their own profile. They cannot list all users or delete others.
-      allow get, update, create: if isOwner(userId);
+      allow create, get, update: if isOwner(userId);
     }
 
     match /campaigns/{campaignId} {
-      allow read, write: if isSignedIn();
+      // Anyone with any campaign read permission can list/get campaigns
+      allow read: if hasPermission(['campaigns'], 'read');
+      
+      // Creating a campaign
+      allow create: if hasPermission(['campaigns'], 'create');
+      
+      // Updating a campaign document itself requires specific permissions
+      // Summary update permission for campaign-level fields
+      // Ration update permission for ration-level fields
+      allow update: if 
+        hasPermission(['campaigns', 'summary'], 'update') ||
+        hasPermission(['campaigns', 'ration'], 'update');
+      
+      // Deleting a campaign
+      allow delete: if hasPermission(['campaigns'], 'delete');
 
       match /beneficiaries/{beneficiaryId} {
-        allow read, write: if isSignedIn();
+        allow read: if hasPermission(['campaigns', 'beneficiaries'], 'read');
+        allow create: if hasPermission(['campaigns', 'beneficiaries'], 'create');
+        allow update: if hasPermission(['campaigns', 'beneficiaries'], 'update');
+        allow delete: if hasPermission(['campaigns', 'beneficiaries'], 'delete');
       }
     }
 
     match /donations/{donationId} {
-      allow read, write: if isSignedIn();
+        allow read: if hasPermission(['campaigns', 'donations'], 'read');
+        allow create: if hasPermission(['campaigns', 'donations'], 'create');
+        allow update: if hasPermission(['campaigns', 'donations'], 'update');
+        allow delete: if hasPermission(['campaigns', 'donations'], 'delete');
     }
   }
 }
