@@ -234,10 +234,16 @@ service firebase.storage {
             log('✅ Seeding script completed successfully.');
             toast({ title: 'Seeding Successful', description: 'The database has been initialized with sample data.', variant: 'default' });
         } catch (e: any) {
+            if (e.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                    path: 'Seeding Script Batch Write',
+                    operation: 'write',
+                } as SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            }
             const errorMessage = e.message || 'An unknown error occurred.';
             log(`❌ FAILED: ${errorMessage}`);
             setErrorOccurred(true);
-            // The specific error toast is now handled inside the functions
             if (!errorMessage.includes('permission')) {
                  toast({ title: 'Seeding Failed', description: 'An error occurred. Check the logs for details.', variant: 'destructive' });
             }

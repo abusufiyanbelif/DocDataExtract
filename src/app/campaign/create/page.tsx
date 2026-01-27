@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useUser, useStorage } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -53,34 +53,44 @@ export default function CreateCampaignPage() {
     },
   });
 
-  const onSubmit = async (data: CampaignFormValues) => {
+  const onSubmit = (data: CampaignFormValues) => {
     if (!firestore || !canCreate) {
       toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
       return;
     }
     setIsLoading(true);
-    try {
-      const docRef = await addDoc(collection(firestore, 'campaigns'), {
-        ...data,
-        targetAmount: data.targetAmount || 0,
-        description: '',
-        createdAt: serverTimestamp(),
-        priceDate: new Date().toISOString().split('T')[0],
-        shopName: '',
-        shopContact: '',
-        shopAddress: '',
-        rationLists: {
-          'General': [],
-        },
-      });
+    
+    const campaignsCollectionRef = collection(firestore, 'campaigns');
+    const newCampaignData = {
+      ...data,
+      targetAmount: data.targetAmount || 0,
+      description: '',
+      createdAt: serverTimestamp(),
+      priceDate: new Date().toISOString().split('T')[0],
+      shopName: '',
+      shopContact: '',
+      shopAddress: '',
+      rationLists: {
+        'General': [],
+      },
+    };
 
-      toast({ title: 'Success', description: 'Campaign created successfully.', variant: 'default' });
-      router.push(`/campaign/${docRef.id}/summary`);
-    } catch (error) {
-      console.error('Error creating campaign:', error);
-      toast({ title: 'Error', description: 'Could not create campaign.', variant: 'destructive' });
-      setIsLoading(false);
-    }
+    addDoc(campaignsCollectionRef, newCampaignData)
+      .then((docRef) => {
+        toast({ title: 'Success', description: 'Campaign created successfully.', variant: 'default' });
+        router.push(`/campaign/${docRef.id}/summary`);
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: campaignsCollectionRef.path,
+            operation: 'create',
+            requestResourceData: newCampaignData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   if (isProfileLoading) {
