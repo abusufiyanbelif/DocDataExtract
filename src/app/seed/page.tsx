@@ -292,7 +292,7 @@ service firebase.storage {
             await migrateExistingUsers();
 
             log('✅ Script completed successfully. Admin user and all existing users are configured correctly.');
-            toast({ title: 'Success', description: 'Admin user verified and all existing users have been migrated for the new login system.', variant: 'default' });
+            toast({ title: 'Success', description: 'Admin user verified and all existing users have been migrated for the new login system.', variant: 'success' });
         } catch (e: any) {
             // Contextual error is emitted by helper functions, this block just updates UI.
             const errorMessage = e.message || 'An unknown error occurred.';

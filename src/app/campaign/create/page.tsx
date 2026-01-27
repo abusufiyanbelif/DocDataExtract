@@ -77,7 +77,7 @@ export default function CreateCampaignPage() {
 
     addDoc(campaignsCollectionRef, newCampaignData)
       .then((docRef) => {
-        toast({ title: 'Success', description: 'Campaign created successfully.', variant: 'default' });
+        toast({ title: 'Success', description: 'Campaign created successfully.', variant: 'success' });
         router.push(`/campaign/${docRef.id}/summary`);
       })
       .catch((serverError) => {

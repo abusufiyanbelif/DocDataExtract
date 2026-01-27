@@ -60,7 +60,7 @@ export default function LoginPage() {
     }
     try {
       await signInWithLoginId(auth, firestore, data.loginId, data.password);
-      toast({ title: 'Login Successful', description: "Welcome back!" });
+      toast({ title: 'Login Successful', description: "Welcome back!", variant: 'success' });
       router.push('/');
     } catch (error: any) {
       if (error.message.includes('auth/configuration-not-found')) {
