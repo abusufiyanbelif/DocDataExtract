@@ -53,27 +53,34 @@ export default function UsersPage() {
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.update;
+  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.delete;
 
   const handleAdd = () => {
+    if (!canCreate) return;
     router.push('/users/create');
   };
 
   const handleEdit = (user: UserProfile) => {
+    if (!canUpdate) return;
     router.push(`/users/edit/${user.id}`);
   };
 
   const handleDeleteClick = (id: string) => {
+    if (!canDelete) return;
     setUserToDelete(id);
     setIsDeleteDialogOpen(true);
   };
   
   const handleToggleStatus = (userToUpdate: UserProfile) => {
-    if (!firestore || !userProfile || userProfile.role !== 'Admin') return;
+    if (!firestore || !canUpdate) return;
     if (userToUpdate.userKey === 'admin') {
         toast({ title: 'Action Forbidden', description: 'The default admin user cannot be deactivated.', variant: 'destructive' });
         return;
     }
-    if (userToUpdate.id === userProfile.id) {
+    if (userToUpdate.id === userProfile?.id) {
         toast({ title: 'Action Forbidden', description: 'You cannot deactivate your own account.', variant: 'destructive' });
         return;
     }
@@ -185,10 +192,6 @@ export default function UsersPage() {
         </div>
     )
   }
-
-  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;
-  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.update;
-  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.delete;
 
   return (
     <div className="min-h-screen bg-background text-foreground">

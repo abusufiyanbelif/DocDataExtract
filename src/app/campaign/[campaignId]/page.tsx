@@ -437,7 +437,7 @@ export default function CampaignDetailsPage() {
                       <Input
                         type="number"
                         value={item.price || 0}
-                        onChange={e => handleItemChange(memberCount, item.id, 'price', Number(e.target.value))}
+                        onChange={e => handleItemChange(memberCount, item.id, 'price', parseFloat(e.target.value) || 0)}
                         className="text-right"
                         disabled={!editMode || !canUpdate}
                       />
