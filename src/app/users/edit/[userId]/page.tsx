@@ -5,7 +5,7 @@ import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorag
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { updateDoc, doc, writeBatch } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
-import { modules } from '@/lib/modules';
+import { modules, createAdminPermissions } from '@/lib/modules';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -44,25 +44,7 @@ export default function EditUserPage() {
     };
     setIsSubmitting(true);
 
-    let permissionsToSave = data.permissions;
-    if (data.role === 'Admin') {
-        const allPermissions: any = {};
-        for (const mod of modules) {
-            allPermissions[mod.id] = {};
-            for (const perm of mod.permissions) {
-                allPermissions[mod.id][perm] = true;
-            }
-            if (mod.subModules) {
-                 for (const subMod of mod.subModules) {
-                    allPermissions[mod.id][subMod.id] = {};
-                    for (const perm of subMod.permissions) {
-                        allPermissions[mod.id][subMod.id][perm] = true;
-                    }
-                }
-            }
-        }
-        permissionsToSave = allPermissions;
-    }
+    const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
 
     let idProofUrl = user?.idProofUrl || '';
     try {
@@ -118,9 +100,8 @@ export default function EditUserPage() {
         }
     }
 
-    await batch.commit()
+    batch.commit()
         .then(() => {
-            // NOTE: Password update logic would go here, but is not implemented.
             toast({ title: 'Success', description: 'User details have been successfully updated.' });
             router.push('/users');
         })

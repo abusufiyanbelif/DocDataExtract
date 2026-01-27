@@ -40,3 +40,22 @@ export type UserPermissions = Partial<
 > & {
   campaigns?: Partial<Record<Permission, boolean>> & SubModulePermissions;
 };
+
+export function createAdminPermissions(): UserPermissions {
+  const allPermissions: any = {};
+  for (const mod of modules) {
+    allPermissions[mod.id] = {};
+    for (const perm of mod.permissions) {
+      allPermissions[mod.id][perm] = true;
+    }
+    if (mod.subModules) {
+      for (const subMod of mod.subModules) {
+        allPermissions[mod.id][subMod.id] = {};
+        for (const perm of subMod.permissions) {
+          allPermissions[mod.id][subMod.id][perm] = true;
+        }
+      }
+    }
+  }
+  return allPermissions;
+}

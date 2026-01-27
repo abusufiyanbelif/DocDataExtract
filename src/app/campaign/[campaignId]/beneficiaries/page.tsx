@@ -121,7 +121,7 @@ export default function BeneficiariesPage() {
     setIsImageViewerOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!beneficiaryToDelete || !firestore || !storage || !campaignId || !canDelete) return;
 
     const beneficiaryData = beneficiaries.find(b => b.id === beneficiaryToDelete);
@@ -133,36 +133,41 @@ export default function BeneficiariesPage() {
     setIsDeleteDialogOpen(false);
     toast({ title: 'Deleting...', description: 'Please wait while the beneficiary is being deleted.'});
 
-    try {
-        if (idProofUrl) {
-            await deleteObject(storageRef(storage, idProofUrl)).catch(error => {
-                if (error.code !== 'storage/object-not-found') {
-                    throw new Error(`Failed to delete ID proof from storage. Aborting deletion. Error: ${error.message}`);
-                }
-                console.warn("ID proof file not found in storage, but proceeding with document deletion.");
+    const deleteDocument = () => {
+        deleteDoc(docRef)
+            .then(() => {
+                toast({ title: 'Success', description: 'Beneficiary deleted successfully.', variant: 'default' });
+            })
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'delete' });
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setBeneficiaryToDelete(null);
             });
-        }
-        
-        await deleteDoc(docRef);
-        toast({ title: 'Success', description: 'Beneficiary deleted successfully.', variant: 'default' });
+    };
 
-    } catch(e: any) {
-        if (e.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'delete',
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            toast({
-              variant: "destructive",
-              title: "Deletion Failed",
-              description: e.message || "Could not delete beneficiary.",
+    if (idProofUrl) {
+        deleteObject(storageRef(storage, idProofUrl))
+            .then(() => {
+                deleteDocument();
+            })
+            .catch(error => {
+                if (error.code === 'storage/object-not-found') {
+                    console.warn("ID proof file not found in storage, but proceeding with document deletion.");
+                    deleteDocument();
+                } else {
+                    toast({
+                      variant: "destructive",
+                      title: "Deletion Failed",
+                      description: `Could not delete ID proof from storage. Aborting. Error: ${error.message}`,
+                    });
+                    console.error("Storage deletion failed:", error);
+                    setBeneficiaryToDelete(null);
+                }
             });
-            console.error("Delete beneficiary failed:", e);
-        }
-    } finally {
-        setBeneficiaryToDelete(null);
+    } else {
+        deleteDocument();
     }
   };
   
@@ -328,33 +333,38 @@ export default function BeneficiariesPage() {
                 const docRef = doc(beneficiariesRef);
                 batch.set(docRef, beneficiary);
             });
-
-            await batch.commit();
             
-            if (invalidRows.length > 0) {
-                 toast({ 
-                    title: 'Partial Import Success',
-                    description: `${validBeneficiaries.length} beneficiaries imported. ${invalidRows.length} rows were invalid and skipped (Rows: ${invalidRows.join(', ')}).`,
-                    variant: 'default',
-                    duration: 8000,
-                 });
-            } else {
-                toast({ title: 'Success', description: `${validBeneficiaries.length} beneficiaries imported successfully.`, variant: 'default' });
-            }
+            batch.commit()
+                .then(() => {
+                    if (invalidRows.length > 0) {
+                         toast({ 
+                            title: 'Partial Import Success',
+                            description: `${validBeneficiaries.length} beneficiaries imported. ${invalidRows.length} rows were invalid and skipped (Rows: ${invalidRows.join(', ')}).`,
+                            variant: 'default',
+                            duration: 8000,
+                         });
+                    } else {
+                        toast({ title: 'Success', description: `${validBeneficiaries.length} beneficiaries imported successfully.`, variant: 'default' });
+                    }
+                })
+                .catch((serverError) => {
+                    const permissionError = new FirestorePermissionError({
+                        path: `campaigns/${campaignId}/beneficiaries`,
+                        operation: 'write',
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                })
+                .finally(() => {
+                    setIsImporting(false);
+                    setIsImportOpen(false);
+                    setSelectedFile(null);
+                });
 
         } catch (error: any) {
-             if (error.code === 'permission-denied') {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: `campaigns/${campaignId}/beneficiaries`,
-                    operation: 'write',
-                }));
-            } else {
-                toast({ title: 'Import Failed', description: error.message || "An error occurred during import.", variant: 'destructive' });
-            }
-        } finally {
-            setIsImporting(false);
-            setIsImportOpen(false);
-            setSelectedFile(null);
+             toast({ title: 'Import Failed', description: error.message || "An error occurred during import.", variant: 'destructive' });
+             setIsImporting(false);
+             setIsImportOpen(false);
+             setSelectedFile(null);
         }
     };
     reader.onerror = (error) => {

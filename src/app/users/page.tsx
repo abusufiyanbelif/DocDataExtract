@@ -105,7 +105,7 @@ export default function UsersPage() {
         });
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!userToDelete || !firestore || !storage || !canDelete) {
         toast({ title: 'Permission Denied', description: 'You do not have permission to delete users.', variant: 'destructive'});
         return;
@@ -131,16 +131,7 @@ export default function UsersPage() {
     setIsDeleteDialogOpen(false);
     toast({ title: 'Deleting...', description: `Please wait while user '${userBeingDeleted.name}' is being deleted.`});
 
-    try {
-        if (userBeingDeleted.idProofUrl) {
-            await deleteObject(storageRef(storage, userBeingDeleted.idProofUrl)).catch((error) => {
-                if (error.code !== 'storage/object-not-found') {
-                    throw new Error(`Failed to delete ID proof from storage. Aborting deletion. Error: ${error.message}`);
-                }
-                 console.warn("ID proof file not found in storage, but proceeding with document deletion.");
-            });
-        }
-        
+    const deleteDatabaseRecords = () => {
         const batch = writeBatch(firestore);
 
         const userDocRef = doc(firestore, 'users', userToDelete);
@@ -156,26 +147,43 @@ export default function UsersPage() {
             batch.delete(phoneLookupRef);
         }
 
-        await batch.commit();
-        toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed.` });
-
-    } catch(e: any) {
-        if (e.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: `users/${userToDelete} and lookups`,
-                operation: 'delete',
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            console.error("User deletion failed:", e);
-            toast({
-                variant: "destructive",
-                title: "Deletion Failed",
-                description: e.message || "Could not delete user.",
+        batch.commit()
+            .then(() => {
+                toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed.` });
+            })
+            .catch((serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: `users/${userToDelete} and lookups`,
+                    operation: 'delete',
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setUserToDelete(null);
             });
-        }
-    } finally {
-        setUserToDelete(null);
+    };
+
+    if (userBeingDeleted.idProofUrl) {
+        deleteObject(storageRef(storage, userBeingDeleted.idProofUrl))
+            .then(() => {
+                deleteDatabaseRecords();
+            })
+            .catch((error) => {
+                if (error.code === 'storage/object-not-found') {
+                    console.warn("ID proof file not found in storage, but proceeding with DB record deletion.");
+                    deleteDatabaseRecords();
+                } else {
+                    toast({
+                        variant: "destructive",
+                        title: "Deletion Failed",
+                        description: `Could not delete ID proof from storage. Aborting. Error: ${error.message}`,
+                    });
+                    console.error("Storage deletion failed:", error);
+                    setUserToDelete(null);
+                }
+            });
+    } else {
+        deleteDatabaseRecords();
     }
   };
   
@@ -334,7 +342,7 @@ export default function UsersPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the user account profile. The authentication account will remain but will be inaccessible.
+                    This action cannot be undone. This will permanently delete the user account profile and all associated lookup records. The authentication account will remain but will be inaccessible.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

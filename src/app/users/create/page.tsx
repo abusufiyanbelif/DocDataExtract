@@ -7,7 +7,7 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firebaseConfig } from '@/firebase/config';
-import { modules, permissions } from '@/lib/modules';
+import { modules, createAdminPermissions } from '@/lib/modules';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -54,25 +54,7 @@ export default function CreateUserPage() {
         return;
     }
 
-    let permissionsToSave = data.permissions;
-    if (data.role === 'Admin') {
-        const allPermissions: any = {};
-        for (const mod of modules) {
-            allPermissions[mod.id] = {};
-            for (const perm of mod.permissions) {
-                allPermissions[mod.id][perm] = true;
-            }
-            if (mod.subModules) {
-                 for (const subMod of mod.subModules) {
-                    allPermissions[mod.id][subMod.id] = {};
-                    for (const perm of subMod.permissions) {
-                        allPermissions[mod.id][subMod.id][perm] = true;
-                    }
-                }
-            }
-        }
-        permissionsToSave = allPermissions;
-    }
+    const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
 
     let idProofUrl = '';
     const email = `${data.userKey}@docdataextract.app`;

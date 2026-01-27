@@ -100,7 +100,7 @@ export default function DonationsPage() {
     setIsImageViewerOpen(true);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!donationToDelete || !firestore || !storage || !canDelete) return;
 
     const donationData = donations.find(d => d.id === donationToDelete);
@@ -112,36 +112,41 @@ export default function DonationsPage() {
     setIsDeleteDialogOpen(false);
     toast({ title: 'Deleting...', description: 'Please wait while the donation is being deleted.'});
 
-    try {
-        if (screenshotUrl) {
-            await deleteObject(storageRef(storage, screenshotUrl)).catch(error => {
-                if (error.code !== 'storage/object-not-found') {
-                    throw new Error(`Failed to delete screenshot from storage. Aborting deletion. Error: ${error.message}`);
-                }
-                console.warn("Screenshot file not found in storage, but proceeding with document deletion.");
+    const deleteDocument = () => {
+        deleteDoc(docRef)
+            .then(() => {
+                toast({ title: 'Success', description: 'Donation deleted successfully.', variant: 'default' });
+            })
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'delete' });
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                setDonationToDelete(null);
             });
-        }
-        
-        await deleteDoc(docRef);
-        toast({ title: 'Success', description: 'Donation deleted successfully.', variant: 'default' });
+    };
 
-    } catch(e: any) {
-        if (e.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'delete',
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            toast({
-              variant: "destructive",
-              title: "Deletion Failed",
-              description: e.message || "Could not delete donation.",
+    if (screenshotUrl) {
+        deleteObject(storageRef(storage, screenshotUrl))
+            .then(() => {
+                deleteDocument();
+            })
+            .catch(error => {
+                if (error.code === 'storage/object-not-found') {
+                    console.warn("Screenshot file not found in storage, but proceeding with document deletion.");
+                    deleteDocument();
+                } else {
+                    toast({
+                      variant: "destructive",
+                      title: "Deletion Failed",
+                      description: `Could not delete screenshot from storage. Aborting. Error: ${error.message}`,
+                    });
+                    console.error("Storage deletion failed:", error);
+                    setDonationToDelete(null);
+                }
             });
-            console.error("Delete donation failed:", e);
-        }
-    } finally {
-        setDonationToDelete(null);
+    } else {
+        deleteDocument();
     }
   };
   
@@ -312,8 +317,8 @@ export default function DonationsPage() {
                       <TableRow>
                           {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center">Actions</TableHead>}
                           <TableHead>#</TableHead>
-                          <TableHead>Donor Name</TableHead>
                           <TableHead>Status</TableHead>
+                          <TableHead>Donor Name</TableHead>
                           <TableHead>Phone</TableHead>
                           <TableHead>Referral</TableHead>
                           <TableHead className="text-right">Amount (₹)</TableHead>
@@ -358,10 +363,10 @@ export default function DonationsPage() {
                                 </TableCell>
                               )}
                               <TableCell>{index + 1}</TableCell>
-                              <TableCell className="font-medium">{donation.donorName}</TableCell>
                               <TableCell>
                                   <Badge variant={donation.status === 'Verified' ? 'default' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
                               </TableCell>
+                              <TableCell className="font-medium">{donation.donorName}</TableCell>
                               <TableCell>{donation.donorPhone}</TableCell>
                               <TableCell>{donation.referral}</TableCell>
                               <TableCell className="text-right font-medium">₹{donation.amount.toFixed(2)}</TableCell>
