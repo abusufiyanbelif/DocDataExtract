@@ -315,14 +315,15 @@ export default function DonationsPage() {
                   <TableHeader>
                       <TableRow>
                           {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center">Actions</TableHead>}
+                          <TableHead>#</TableHead>
                           <TableHead>Donor Name</TableHead>
+                          <TableHead>Status</TableHead>
                           <TableHead>Phone</TableHead>
                           <TableHead>Referral</TableHead>
                           <TableHead className="text-right">Amount (₹)</TableHead>
                           <TableHead>Type</TableHead>
                           <TableHead>Payment</TableHead>
                           <TableHead>Date</TableHead>
-                          <TableHead>Status</TableHead>
                           <TableHead>Screenshot</TableHead>
                           <TableHead>Uploaded By</TableHead>
                       </TableRow>
@@ -331,11 +332,11 @@ export default function DonationsPage() {
                       {areDonationsLoading ? (
                         [...Array(3)].map((_, i) => (
                            <TableRow key={i}>
-                                <TableCell colSpan={(canUpdate || canDelete) ? 11 : 10}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={(canUpdate || canDelete) ? 12 : 11}><Skeleton className="h-6 w-full" /></TableCell>
                            </TableRow>
                         ))
                       ) : donations.length > 0 ? (
-                        donations.map((donation) => (
+                        donations.map((donation, index) => (
                           <TableRow key={donation.id}>
                               {(canUpdate || canDelete) && (
                                 <TableCell className="text-center">
@@ -360,16 +361,17 @@ export default function DonationsPage() {
                                     </DropdownMenu>
                                 </TableCell>
                               )}
+                              <TableCell>{index + 1}</TableCell>
                               <TableCell className="font-medium">{donation.donorName}</TableCell>
+                              <TableCell>
+                                  <Badge variant={donation.status === 'Verified' ? 'default' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
+                              </TableCell>
                               <TableCell>{donation.donorPhone}</TableCell>
                               <TableCell>{donation.referral}</TableCell>
                               <TableCell className="text-right font-medium">₹{donation.amount.toFixed(2)}</TableCell>
                               <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
                               <TableCell><Badge variant="outline">{donation.paymentType}</Badge></TableCell>
                               <TableCell>{donation.donationDate}</TableCell>
-                              <TableCell>
-                                  <Badge variant={donation.status === 'Verified' ? 'default' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
-                              </TableCell>
                               <TableCell>
                                   {donation.screenshotUrl ? (
                                     <Button variant="outline" size="sm" onClick={() => handleViewImage(donation.screenshotUrl)}>
@@ -382,7 +384,7 @@ export default function DonationsPage() {
                         ))
                       ) : (
                         <TableRow>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 11 : 10} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={(canUpdate || canDelete) ? 12 : 11} className="text-center h-24 text-muted-foreground">
                                 No donations recorded yet.
                             </TableCell>
                         </TableRow>
