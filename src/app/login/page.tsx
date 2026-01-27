@@ -32,6 +32,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   const isFirebaseConfigured = !!firebaseConfig.projectId;
   
@@ -46,6 +47,7 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     setSetupError(null);
+    setLoginError(null);
 
     if (!auth || !firestore) {
       toast({
@@ -64,11 +66,7 @@ export default function LoginPage() {
       if (error.message.includes('auth/configuration-not-found')) {
             setSetupError(error.message);
         } else {
-             toast({
-                title: 'Login Failed',
-                description: error.message || 'An unexpected error occurred.',
-                variant: 'destructive',
-            });
+             setLoginError(error.message || 'An unexpected error occurred.');
         }
     } finally {
       setIsLoading(false);
@@ -162,6 +160,16 @@ export default function LoginPage() {
         </CardContent>
       </Card>
       
+      {loginError && (
+        <Alert variant="destructive" className="mt-4 max-w-sm">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Login Failed</AlertTitle>
+            <AlertDescription>
+                {loginError}
+            </AlertDescription>
+        </Alert>
+      )}
+
       {setupError && (
         <Alert variant="destructive" className="mt-4 max-w-sm">
             <AlertTriangle className="h-4 w-4" />

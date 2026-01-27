@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useAuth, useFirestore, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext }from '@/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, User } from 'firebase/auth';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
-import { writeBatch, doc, collection, serverTimestamp, getDocs, query, where, limit, getDoc } from 'firebase/firestore';
+import { writeBatch, doc, collection, serverTimestamp, getDocs, query, where, getDoc, setDoc } from 'firebase/firestore';
 import { modules } from '@/lib/modules';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/lib/types';
@@ -97,8 +97,6 @@ service firebase.storage {
     
     const ensureAdminIntegrity = async (adminAuthUser: User) => {
         if (!firestore) throw new Error("Firestore service not available.");
-        const batch = writeBatch(firestore);
-        
         log("Step 2: Verifying Admin User Data in Firestore");
 
         const allPermissions: any = {};
@@ -116,34 +114,25 @@ service firebase.storage {
                 }
             }
         }
-        const adminData = { name: 'Admin User', phone: '0000000000', loginId: 'admin', userKey: 'admin', role: 'Admin', status: 'Active', permissions: allPermissions, };
+        const adminData = { name: 'Admin User', phone: '0000000000', loginId: 'admin', userKey: 'admin', role: 'Admin', status: 'Active', permissions: allPermissions };
 
-        // --- Verify/Create User Profile ---
+        // --- Step 2a: Ensure User Profile Document Exists ---
         const adminUserDocRef = doc(firestore, 'users', adminAuthUser.uid);
         const adminUserDocSnap = await getDoc(adminUserDocRef);
         
         if (!adminUserDocSnap.exists()) {
-            log(" -> Admin user profile not found at the correct location. Checking for legacy profile...");
-            const legacyUserQuery = query(collection(firestore, 'users'), where('userKey', '==', 'admin'), limit(1));
-            const legacyUserSnap = await getDocs(legacyUserQuery);
-            
-            if (!legacyUserSnap.empty) {
-                const legacyDoc = legacyUserSnap.docs[0];
-                log(` -> Found legacy admin profile at doc ID '${legacyDoc.id}'. Migrating...`);
-                batch.set(adminUserDocRef, legacyDoc.data()); // Copy data to new doc
-                batch.delete(legacyDoc.ref); // Delete old doc
-                log(" -> Legacy profile migration prepared for batch write.");
-            } else {
-                log(" -> No admin profile found. Creating a new one...");
-                batch.set(adminUserDocRef, { ...adminData, createdAt: serverTimestamp() });
-                log(" -> New admin user profile prepared for batch write.");
-            }
+            log(" -> Admin user profile not found. Creating...");
+            await setDoc(adminUserDocRef, { ...adminData, createdAt: serverTimestamp() });
+            log(" -> New admin user profile created.");
+            // Brief pause to allow Firestore to process the write before the next step which may depend on it.
+            await new Promise(res => setTimeout(res, 1500)); 
         } else {
-            log(" -> Admin user profile already exists at the correct location.");
+            log(" -> Admin user profile already exists.");
         }
 
-        // --- Verify/Create Lookups ---
+        // --- Step 2b: Ensure Lookup Documents Exist ---
         log(" -> Verifying user lookups...");
+        const lookupBatch = writeBatch(firestore);
         const loginIdLookupRef = doc(firestore, 'user_lookups', adminData.loginId);
         const phoneLookupRef = doc(firestore, 'user_lookups', adminData.phone);
         
@@ -152,23 +141,30 @@ service firebase.storage {
             getDoc(phoneLookupRef)
         ]);
 
+        let lookupsToWrite = false;
         if (!loginIdLookupSnap.exists()) {
-            batch.set(loginIdLookupRef, { userKey: adminData.userKey });
-            log(` -> Created missing lookup for loginId: '${adminData.loginId}'.`);
+            lookupBatch.set(loginIdLookupRef, { userKey: adminData.userKey });
+            log(` -> Preparing to create missing lookup for loginId: '${adminData.loginId}'.`);
+            lookupsToWrite = true;
         } else {
             log(` -> Lookup for loginId '${adminData.loginId}' already exists.`);
         }
         
         if (!phoneLookupSnap.exists()) {
-            batch.set(phoneLookupRef, { userKey: adminData.userKey });
-            log(` -> Created missing lookup for phone: '${adminData.phone}'.`);
+            lookupBatch.set(phoneLookupRef, { userKey: adminData.userKey });
+            log(` -> Preparing to create missing lookup for phone: '${adminData.phone}'.`);
+            lookupsToWrite = true;
         } else {
             log(` -> Lookup for phone '${adminData.phone}' already exists.`);
         }
-
-        log(" -> Committing all changes to the database...");
-        await batch.commit();
-        log(" -> Database integrity check successful!");
+        
+        if(lookupsToWrite) {
+            log(" -> Committing lookup changes to the database...");
+            await lookupBatch.commit();
+            log(" -> Lookup changes committed.");
+        } else {
+            log(" -> All admin lookups are already correct.");
+        }
     }
     
     const migrateExistingUsers = async () => {
