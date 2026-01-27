@@ -25,7 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, HandCoins } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, HandCoins, Share2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -184,6 +184,58 @@ export default function CampaignSummaryPage() {
     }, [beneficiaries, donations, campaign]);
     
     const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading;
+    
+    const handleShare = async () => {
+        if (!campaign || !summaryData) {
+            toast({
+                title: 'Error',
+                description: 'Cannot share, summary data is not available.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        const shareText = `
+    Campaign Summary: ${campaign.name}
+
+    ${campaign.description}
+
+    - Total Donations: ₹${summaryData.totalDonations.toLocaleString()}
+    - Target Amount: ₹${(summaryData.targetAmount || 0).toLocaleString()}
+    - Beneficiaries: ${summaryData.totalBeneficiaries}
+
+    Join us in making a difference!
+        `.trim();
+
+        const shareData = {
+            title: `Campaign: ${campaign.name}`,
+            text: shareText,
+            url: window.location.href,
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                console.log('Share was cancelled or failed', err);
+            }
+        } else {
+            try {
+                await navigator.clipboard.writeText(shareText);
+                toast({
+                    title: 'Copied to Clipboard',
+                    description: 'Campaign summary has been copied successfully.',
+                });
+            } catch (err) {
+                toast({
+                    title: 'Copy Failed',
+                    description: 'Could not copy summary to clipboard.',
+                    variant: 'destructive',
+                });
+            }
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -224,20 +276,27 @@ export default function CampaignSummaryPage() {
                 </div>
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                     <h1 className="text-3xl font-bold">{campaign.name}</h1>
-                    {canUpdate && (
-                        !editMode ? (
-                            <Button onClick={handleEditClick}>
-                                <Edit className="mr-2 h-4 w-4" /> Edit Summary
+                    <div className="flex gap-2">
+                        {!editMode && (
+                            <Button onClick={handleShare} variant="outline">
+                                <Share2 className="mr-2 h-4 w-4" /> Share
                             </Button>
-                        ) : (
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-                                <Button onClick={handleSave}>
-                                    <Save className="mr-2 h-4 w-4" /> Save
+                        )}
+                        {canUpdate && (
+                            !editMode ? (
+                                <Button onClick={handleEditClick}>
+                                    <Edit className="mr-2 h-4 w-4" /> Edit Summary
                                 </Button>
-                            </div>
-                        )
-                    )}
+                            ) : (
+                                <div className="flex gap-2">
+                                    <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+                                    <Button onClick={handleSave}>
+                                        <Save className="mr-2 h-4 w-4" /> Save
+                                    </Button>
+                                </div>
+                            )
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2 border-b mb-4">
