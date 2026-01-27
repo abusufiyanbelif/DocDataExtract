@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth, useFirestore, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext }from '@/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, User } from 'firebase/auth';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
 import { writeBatch, doc, collection, serverTimestamp, getDocs, query, where, limit, getDoc } from 'firebase/firestore';
 import { modules, permissions } from '@/lib/modules';
@@ -63,22 +63,24 @@ service firebase.storage {
         }
     }
 
-    const createAdminUser = async () => {
+    const createAdminUser = async (): Promise<User> => {
         if (!auth) throw new Error("Auth service not available.");
         const adminEmail = 'admin@docdataextract.app';
         const adminPassword = 'password';
         
-        log("Step 1: Admin User Setup");
+        log("Step 1: Admin User Authentication Setup");
 
         try {
-            await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+            const userCredential = await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
             log(" -> Admin auth account already exists. Sign-in successful.");
+            return userCredential.user;
         } catch (error: any) {
             if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
                 log(" -> Admin auth account not found. Creating a new one...");
                 try {
-                    await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
+                    const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
                     log(" -> Successfully created admin user in Firebase Auth.");
+                    return userCredential.user;
                 } catch (creationError: any) {
                     throw new Error(`Could not create admin user in Auth: ${creationError.message}`);
                 }
@@ -93,13 +95,12 @@ service firebase.storage {
         }
     };
     
-    const seedDatabase = async () => {
-        if (!firestore || !storage) throw new Error("Firestore or Storage service not available.");
+    const ensureAdminIntegrity = async (adminAuthUser: User) => {
+        if (!firestore) throw new Error("Firestore service not available.");
         const batch = writeBatch(firestore);
         
-        log("Step 2: Seeding Firestore Data");
+        log("Step 2: Verifying Admin User Data in Firestore");
 
-        // Define full permissions for the Admin role
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
@@ -115,96 +116,66 @@ service firebase.storage {
                 }
             }
         }
-        
-        // --- User Seeding ---
-        log(" -> Checking for existing users to prevent duplicates...");
-        const usersCollectionRef = collection(firestore, 'users');
-        const allUsersSnapshot = await getDocs(usersCollectionRef);
-        const allUsers = allUsersSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as UserProfile & {id: string});
-
-        // Admin User Data
         const adminData = { name: 'Admin User', phone: '0000000000', loginId: 'admin', userKey: 'admin', role: 'Admin', status: 'Active', permissions: allPermissions, };
 
-        // Check for admin user conflicts
-        const adminExists = allUsers.some(u => u.userKey === adminData.userKey);
-        if (adminExists) {
-            log(" -> Admin user profile (userKey: 'admin') already exists in Firestore. Skipping.");
-        } else {
-             const conflict = allUsers.find(u => u.loginId === adminData.loginId || u.phone === adminData.phone || u.name === adminData.name);
-            if (conflict) {
-                let field = 'details';
-                if (conflict.loginId === adminData.loginId) field = `Login ID '${adminData.loginId}'`;
-                else if (conflict.phone === adminData.phone) field = `Phone '${adminData.phone}'`;
-                else if (conflict.name === adminData.name) field = `Name '${adminData.name}'`;
-                throw new Error(`Cannot seed admin user: a different user already exists with the ${field}. Please resolve manually.`);
+        // --- Verify/Create User Profile ---
+        const adminUserDocRef = doc(firestore, 'users', adminAuthUser.uid);
+        const adminUserDocSnap = await getDoc(adminUserDocRef);
+        
+        if (!adminUserDocSnap.exists()) {
+            log(" -> Admin user profile not found at the correct location. Checking for legacy profile...");
+            const legacyUserQuery = query(collection(firestore, 'users'), where('userKey', '==', 'admin'), limit(1));
+            const legacyUserSnap = await getDocs(legacyUserQuery);
+            
+            if (!legacyUserSnap.empty) {
+                const legacyDoc = legacyUserSnap.docs[0];
+                log(` -> Found legacy admin profile at doc ID '${legacyDoc.id}'. Migrating...`);
+                batch.set(adminUserDocRef, legacyDoc.data()); // Copy data to new doc
+                batch.delete(legacyDoc.ref); // Delete old doc
+                log(" -> Legacy profile migration prepared for batch write.");
+            } else {
+                log(" -> No admin profile found. Creating a new one...");
+                batch.set(adminUserDocRef, { ...adminData, createdAt: serverTimestamp() });
+                log(" -> New admin user profile prepared for batch write.");
             }
-            log(" -> Admin user profile not found. Preparing to create...");
-            const newAdminUserRef = doc(usersCollectionRef); // Create a new doc ref
-            batch.set(newAdminUserRef, { ...adminData, createdAt: serverTimestamp() });
-            log(" -> Admin user data prepared for batch write.");
+        } else {
+            log(" -> Admin user profile already exists at the correct location.");
         }
 
-        // Sample User Data
-        const sampleUserData = { name: 'Sample User', phone: '1111111111', loginId: 'sampleuser', userKey: 'sampleuser', role: 'User', status: 'Active', permissions: {}, };
+        // --- Verify/Create Lookups ---
+        log(" -> Verifying user lookups...");
+        const loginIdLookupRef = doc(firestore, 'user_lookups', adminData.loginId);
+        const phoneLookupRef = doc(firestore, 'user_lookups', adminData.phone);
         
-        const sampleUserExists = allUsers.some(u => u.userKey === sampleUserData.userKey);
-        if (sampleUserExists) {
-            log(" -> Sample user profile (userKey: 'sampleuser') already exists in Firestore. Skipping.");
+        const [loginIdLookupSnap, phoneLookupSnap] = await Promise.all([
+            getDoc(loginIdLookupRef),
+            getDoc(phoneLookupRef)
+        ]);
+
+        if (!loginIdLookupSnap.exists()) {
+            batch.set(loginIdLookupRef, { userKey: adminData.userKey });
+            log(` -> Created missing lookup for loginId: '${adminData.loginId}'.`);
         } else {
-            const conflict = allUsers.find(u => u.loginId === sampleUserData.loginId || u.phone === sampleUserData.phone || u.name === sampleUserData.name);
-            if (conflict) {
-                let field = 'details';
-                if (conflict.loginId === sampleUserData.loginId) field = `Login ID '${sampleUserData.loginId}'`;
-                else if (conflict.phone === sampleUserData.phone) field = `Phone '${sampleUserData.phone}'`;
-                else if (conflict.name === sampleUserData.name) field = `Name '${sampleUserData.name}'`;
-                throw new Error(`Cannot seed sample user: a different user already exists with the ${field}. Please resolve manually.`);
-            }
-            log(" -> Sample user profile not found. Preparing to create...");
-            const newSampleUserRef = doc(usersCollectionRef); // Create a new doc ref
-            batch.set(newSampleUserRef, { ...sampleUserData, createdAt: serverTimestamp() });
-            log(" -> Sample user data prepared for batch write.");
+            log(` -> Lookup for loginId '${adminData.loginId}' already exists.`);
         }
         
-        // Seed Campaign and related data idempotently
-        const campaignId = 'ration-kit-distribution-ramza-2026';
-        const campaignName = 'Ration Kit Distribution Ramza 2026';
-        const campaignDocRef = doc(firestore, 'campaigns', campaignId);
-        
-        const campaignDocSnapshot = await getDoc(campaignDocRef);
-        
-        if (!campaignDocSnapshot.exists()) {
-            log(" -> Sample campaign not found. Preparing to create campaign and related data...");
-            
-            batch.set(campaignDocRef, { name: campaignName, category: "Ration", description: 'A sample campaign for distributing ration kits to those in need during the holy month of Ramza.', targetAmount: 100000, status: 'Active', startDate: '2026-03-01', endDate: '2026-03-31', priceDate: '2025-01-11', shopName: 'Example Kirana Store', shopContact: '1234567890', shopAddress: '123 Main St, Hyderabad', rationLists: { 'General': [{ id: 'General-1', name: 'Rice', quantity: '15 kg', price: 900, notes: '@60/kg' }, { id: 'General-2', name: 'Wheat flour', quantity: '10 kg', price: 500, notes: 'Ashirvad' }, { id: 'General-3', name: 'Tea', quantity: '500 gm', price: 200, notes: 'Society mix' }, { id: 'General-4', name: 'Sugar', quantity: '3 kg', price: 132, notes: '@44/kg' }, { id: 'General-5', name: 'Groundnuts', quantity: '1 kg', price: 120, notes: '' }, { id: 'General-6', name: 'Khopra', quantity: '500 gm', price: 180, notes: '' }, { id: 'General-7', name: 'Tur Dal', quantity: '2 kg', price: 240, notes: '' }, { id: 'General-8', name: 'Masoor Dal', quantity: '2 kg', price: 180, notes: '' }, { id: 'General-9', name: 'Khimya Dates', quantity: '1 box', price: 150, notes: '' }, { id: 'General-10', name: 'Edible Palm Oil', quantity: '3 packet', price: 330, notes: '' }, { id: 'General-11', name: 'Garam Masala', quantity: '200 gm', price: 240, notes: '' }, { id: 'General-12', name: 'Captain Cook Salt', quantity: '1 packet', price: 20, notes: '' },], '5': [{ id: '5-1', name: 'Rice', quantity: '10 kg', price: 600, notes: '@60/kg' }, { id: '5-2', name: 'Wheat flour', quantity: '5 kg', price: 250, notes: 'Ashirvad' }, { id: '5-3', name: 'Tea', quantity: '250 gm', price: 100, notes: 'Society mix' }, { id: '5-4', name: 'Sugar', quantity: '2 kg', price: 88, notes: '@44/kg' }, { id: '5-5', name: 'Tur Dal', quantity: '1 kg', price: 120, notes: '' }, { id: '5-6', name: 'Masoor Dal', quantity: '1 kg', price: 90, notes: '' }, { id: '5-7', name: 'Edible Palm Oil', quantity: '2 packet', price: 220, notes: '' },], '3': [{ id: '3-1', name: 'Rice', quantity: '6 kg', price: 360, notes: '@60/kg' }, { id: '3-2', name: 'Wheat flour', quantity: '3 kg', price: 150, notes: 'Ashirvad' }, { id: '3-3', name: 'Sugar', quantity: '1.5 kg', price: 66, notes: '@44/kg' }, { id: '3-4', name: 'Edible Palm Oil', quantity: '1 packet', price: 110, notes: '' },], '2': [{ id: '2-1', name: 'Rice', quantity: '4 kg', price: 240, notes: '@60/kg' }, { id: '2-2', name: 'Wheat flour', quantity: '2 kg', price: 100, notes: 'Ashirvad' }, { id: '2-3', name: 'Sugar', quantity: '1 kg', price: 44, notes: '@44/kg' },], '1': [{ id: '1-1', name: 'Rice', quantity: '2 kg', price: 120, notes: '@60/kg' }, { id: '1-2', name: 'Wheat flour', quantity: '1 kg', price: 50, notes: 'Ashirvad' },], }, createdAt: serverTimestamp(), });
-            
-            log(" -> Campaign data prepared for batch write.");
-
-            const initialBeneficiaries = [ { id: '1', name: 'Saleem Khan', address: '123, Old City, Hyderabad', phone: '9876543210', members: 5, earningMembers: 1, male: 2, female: 3, addedDate: '2026-03-15', idProofType: 'Aadhaar', idNumber: 'XXXX XXXX 1234', referralBy: 'Local NGO', kitAmount: 1468, status: 'Given' }, { id: '2', name: 'Aisha Begum', address: '456, New Town, Hyderabad', phone: '9876543211', members: 4, earningMembers: 2, male: 2, female: 2, addedDate: '2026-03-16', idProofType: 'PAN', idNumber: 'ABCDE1234F', referralBy: 'Masjid Committee', kitAmount: 686, status: 'Pending' }, { id: '3', name: 'Mohammed Ali', address: '789, Charminar, Hyderabad', phone: '9876543212', members: 6, earningMembers: 1, male: 3, female: 3, addedDate: '2026-03-17', idProofType: 'Voter ID', idNumber: 'XYZ1234567', referralBy: 'Self', kitAmount: 3192, status: 'Hold' }, { id: '4', name: 'Fatima Sheikh', address: '101, Golconda, Hyderabad', phone: '9876543213', members: 3, earningMembers: 0, male: 1, female: 2, addedDate: '2026-03-18', idProofType: 'Aadhaar', idNumber: 'YYYY YYYY 5678', referralBy: 'Local NGO', kitAmount: 686, status: 'Need More Details' }, ];
-            initialBeneficiaries.forEach((beneficiary) => {
-                batch.set(doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiary.id), { ...beneficiary, createdAt: serverTimestamp() });
-            });
-            log(" -> Beneficiary data prepared for batch write.");
-
-            const initialDonations = [ { donorName: 'Zoya Farooqui', donorPhone: '9988776655', amount: 5000, type: 'Zakat', paymentType: 'Online', referral: 'Website', donationDate: '2026-03-10', status: 'Verified', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName }, { donorName: 'Rohan Sharma', donorPhone: '9988776654', amount: 1000, type: 'General', paymentType: 'Cash', referral: 'Friend', donationDate: '2026-03-12', status: 'Verified', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName }, { donorName: 'Anonymous', donorPhone: '', amount: 2500, type: 'Sadqa', paymentType: 'Online', referral: 'Social Media', donationDate: '2026-03-14', status: 'Pending', uploadedBy: 'Admin User', uploadedById: 'admin', campaignId: campaignId, campaignName: campaignName }, ];
-            initialDonations.forEach((donation) => {
-                batch.set(doc(collection(firestore, 'donations')), { ...donation, createdAt: serverTimestamp() });
-            });
-            log(" -> Donation data prepared for batch write.");
-
+        if (!phoneLookupSnap.exists()) {
+            batch.set(phoneLookupRef, { userKey: adminData.userKey });
+            log(` -> Created missing lookup for phone: '${adminData.phone}'.`);
         } else {
-            log(" -> Sample campaign and related data already exist. Skipping.");
+            log(` -> Lookup for phone '${adminData.phone}' already exists.`);
         }
 
         log(" -> Committing all changes to the database...");
         await batch.commit();
-        log(" -> Database write successful!");
-    };
+        log(" -> Database integrity check successful!");
+    }
     
     const handleSeed = async () => {
         setIsSeeding(true);
         setErrorOccurred(false);
         setLogs([]);
-        log('Starting database seeding script...');
+        log('Starting database integrity script for Admin User...');
 
         if (!auth || !firestore || !storage) {
             log('❌ ERROR: Firebase services are not available. Please check your configuration.');
@@ -215,15 +186,15 @@ service firebase.storage {
         }
 
         try {
-            await createAdminUser();
+            const adminAuthUser = await createAdminUser();
             await testStoragePermissions();
-            await seedDatabase();
-            log('✅ Seeding script completed successfully.');
-            toast({ title: 'Seeding Successful', description: 'The database has been initialized with sample data.', variant: 'default' });
+            await ensureAdminIntegrity(adminAuthUser);
+            log('✅ Script completed successfully. Admin user is configured correctly.');
+            toast({ title: 'Success', description: 'Admin user has been verified and configured correctly.', variant: 'default' });
         } catch (e: any) {
             if (e.code === 'permission-denied') {
                 const permissionError = new FirestorePermissionError({
-                    path: 'Seeding Script Batch Write',
+                    path: 'Admin integrity script batch write',
                     operation: 'write',
                 } as SecurityRuleContext);
                 errorEmitter.emit('permission-error', permissionError);
@@ -232,7 +203,7 @@ service firebase.storage {
             log(`❌ FAILED: ${errorMessage}`);
             setErrorOccurred(true);
             if (!errorMessage.includes('permission')) {
-                 toast({ title: 'Seeding Failed', description: 'An error occurred. Check the logs for details.', variant: 'destructive' });
+                 toast({ title: 'Verification Failed', description: 'An error occurred. Check the logs for details.', variant: 'destructive' });
             }
         } finally {
             setIsSeeding(false);
@@ -253,14 +224,14 @@ service firebase.storage {
                 </div>
                 <Card className="max-w-4xl mx-auto">
                     <CardHeader>
-                        <CardTitle>Database Seeding</CardTitle>
-                        <CardDescription>This page allows you to initialize the Firestore database with sample data. This action is idempotent and safe to run multiple times.</CardDescription>
+                        <CardTitle>Admin User Verification</CardTitle>
+                        <CardDescription>This page runs a script to ensure the primary Admin user is configured correctly in the database. This is necessary for login and is safe to run multiple times.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="flex flex-col sm:flex-row gap-4">
                             <Button onClick={handleSeed} disabled={isSeeding}>
                                 {isSeeding ? ( <Loader2 className="mr-2 h-4 w-4 animate-spin" /> ) : ( <PlayCircle className="mr-2 h-4 w-4" /> )}
-                                Seed Database
+                                Verify Admin User
                             </Button>
                              <Button variant="secondary" asChild>
                                 <Link href="/diagnostics">
@@ -271,9 +242,9 @@ service firebase.storage {
                         
                          {errorOccurred && (
                             <Alert variant="destructive">
-                                <AlertTitle>Seeding Failed</AlertTitle>
+                                <AlertTitle>Script Failed</AlertTitle>
                                 <AlertDescription>
-                                    An error occurred during the seeding process. Please review the logs below. If the error is related to permissions, the log will contain a link and instructions to fix your security rules.
+                                    An error occurred during the verification process. Please review the logs below. If the error is related to permissions, the log may contain a link and instructions to fix your security rules.
                                 </AlertDescription>
                             </Alert>
                         )}
