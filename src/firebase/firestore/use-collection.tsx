@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { onSnapshot, Query, DocumentData } from 'firebase/firestore';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 export function useCollection<T extends DocumentData>(
   ref: Query | null
@@ -28,7 +29,18 @@ export function useCollection<T extends DocumentData>(
         setIsLoading(false);
       }, 
       (err) => {
-        console.error(err);
+        if (err.code === 'permission-denied') {
+            // Firestore doesn't expose the query path directly, so we access an internal property.
+            // This is not ideal but necessary for providing a better debugging experience.
+            const path = (ref as any)._query?.path?.segments?.join('/') ?? 'unknown collection';
+            const permissionError = new FirestorePermissionError({
+                path: path,
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error(err);
+        }
         setError(err);
         setIsLoading(false);
       }
