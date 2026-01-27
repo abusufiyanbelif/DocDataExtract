@@ -29,7 +29,7 @@ import { modules } from '@/lib/modules';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from './ui/separator';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import type { UserPermissions } from '@/lib/modules';
 
 const formSchema = z.object({
@@ -81,6 +81,11 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isDefaultAdmin = user?.userKey === 'admin';
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [openModules, setOpenModules] = useState<Record<string, boolean>>({ campaigns: true });
+
+  const toggleModule = (moduleId: string) => {
+    setOpenModules((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }));
+  };
   
   const form = useForm<UserFormData>({
     resolver: zodResolver(formSchema),
@@ -372,7 +377,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 <Table>
                 <TableHeader>
                     <TableRow>
-                    <TableHead className="w-[150px]">Module</TableHead>
+                    <TableHead className="w-[200px]">Module</TableHead>
                     <TableHead className="text-center">Create</TableHead>
                     <TableHead className="text-center">Read</TableHead>
                     <TableHead className="text-center">Update</TableHead>
@@ -380,60 +385,87 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {modules.map((mod) => (
-                        <React.Fragment key={mod.id}>
-                            <TableRow>
-                                <TableCell className="font-medium">{mod.name}</TableCell>
-                                {['create', 'read', 'update', 'delete'].map(perm => (
-                                    <TableCell key={perm} className="text-center">
-                                        {(mod.permissions as readonly string[]).includes(perm) ? (
-                                            <FormField
-                                            control={form.control}
-                                            name={`permissions.${mod.id}.${perm}`}
-                                            render={({ field }) => (
-                                                <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                                <FormControl>
-                                                    <Checkbox
-                                                    checked={!!field.value}
-                                                    onCheckedChange={field.onChange}
-                                                    disabled={roleValue === 'Admin' || isFormDisabled}
-                                                    />
-                                                </FormControl>
-                                                </FormItem>
-                                            )}
-                                            />
-                                        ) : null}
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                            {mod.subModules?.map(subMod => (
-                                <TableRow key={subMod.id}>
-                                    <TableCell className="pl-8 text-muted-foreground">{subMod.name}</TableCell>
-                                    {['create', 'read', 'update', 'delete'].map(perm => (
-                                        <TableCell key={perm} className="text-center">
-                                            {(subMod.permissions as readonly string[]).includes(perm) ? (
-                                                <FormField
-                                                control={form.control}
-                                                name={`permissions.${mod.id}.${subMod.id}.${perm}`}
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                                    <FormControl>
-                                                        <Checkbox
-                                                        checked={!!field.value}
-                                                        onCheckedChange={field.onChange}
-                                                        disabled={roleValue === 'Admin' || isFormDisabled}
-                                                        />
-                                                    </FormControl>
-                                                    </FormItem>
-                                                )}
-                                                />
-                                            ) : null}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
+                  {modules.map((mod) => (
+                    <React.Fragment key={mod.id}>
+                      <TableRow>
+                        <TableCell className="font-medium">
+                          {mod.subModules ? (
+                            <div
+                              onClick={() => toggleModule(mod.id)}
+                              className="flex items-center gap-2 cursor-pointer"
+                            >
+                              <span>{mod.name}</span>
+                              <ChevronDown
+                                className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                                  openModules[mod.id] ? 'rotate-180' : ''
+                                }`}
+                              />
+                            </div>
+                          ) : (
+                            mod.name
+                          )}
+                        </TableCell>
+                        {['create', 'read', 'update', 'delete'].map((perm) => (
+                          <TableCell key={perm} className="text-center">
+                            {(mod.permissions as readonly string[]).includes(perm) ? (
+                              <FormField
+                                control={form.control}
+                                name={`permissions.${mod.id}.${perm}`}
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={!!field.value}
+                                        onCheckedChange={field.onChange}
+                                        disabled={
+                                          roleValue === 'Admin' || isFormDisabled
+                                        }
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            ) : null}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                      {mod.subModules &&
+                        openModules[mod.id] &&
+                        mod.subModules.map((subMod) => (
+                          <TableRow key={subMod.id} className="bg-muted/30 hover:bg-muted/50">
+                            <TableCell className="pl-12 text-muted-foreground">
+                              {subMod.name}
+                            </TableCell>
+                            {['create', 'read', 'update', 'delete'].map((perm) => (
+                              <TableCell key={perm} className="text-center">
+                                {(subMod.permissions as readonly string[]).includes(
+                                  perm
+                                ) ? (
+                                  <FormField
+                                    control={form.control}
+                                    name={`permissions.${mod.id}.${subMod.id}.${perm}`}
+                                    render={({ field }) => (
+                                      <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={!!field.value}
+                                            onCheckedChange={field.onChange}
+                                            disabled={
+                                              roleValue === 'Admin' ||
+                                              isFormDisabled
+                                            }
+                                          />
+                                        </FormControl>
+                                      </FormItem>
+                                    )}
+                                  />
+                                ) : null}
+                              </TableCell>
                             ))}
-                        </React.Fragment>
-                    ))}
+                          </TableRow>
+                        ))}
+                    </React.Fragment>
+                  ))}
                 </TableBody>
                 </Table>
             </div>
