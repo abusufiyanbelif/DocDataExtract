@@ -1,7 +1,8 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, errorEmitter, FirestorePermissionError, useStorage, useUserProfile } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -211,7 +212,7 @@ export default function CreateUserPage() {
                 onSubmit={handleSave}
                 onCancel={handleCancel}
                 isSubmitting={isSubmitting}
-                isLoading={areUsersLoading}
+                isLoading={isLoading}
             />
           </CardContent>
         </Card>
