@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Trash2, Download, Loader2, Edit, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Download, Loader2, Edit, Save, Copy } from 'lucide-react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -35,6 +35,8 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function CampaignDetailsPage() {
   const params = useParams();
@@ -54,6 +56,11 @@ export default function CampaignDetailsPage() {
   const [editableCampaign, setEditableCampaign] = useState<Campaign | null>(null);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [newMemberCount, setNewMemberCount] = useState('');
+
+  // Copy items state
+  const [isCopyItemsOpen, setIsCopyItemsOpen] = useState(false);
+  const [copyTargetCategory, setCopyTargetCategory] = useState<string | null>(null);
+  const [itemsToCopy, setItemsToCopy] = useState<RationItem[]>([]);
 
   // Reset local state if edit mode is cancelled or if the base data changes while NOT in edit mode.
   useEffect(() => {
@@ -334,6 +341,37 @@ export default function CampaignDetailsPage() {
     });
   }, [editableCampaign]);
 
+  const allUniqueItems = useMemo(() => {
+    if (!editableCampaign) return [];
+    const allItems = Object.values(editableCampaign.rationLists).flat();
+    const uniqueItemsMap = new Map<string, RationItem>();
+    allItems.forEach(item => {
+        if (item.name && !uniqueItemsMap.has(item.name.toLowerCase().trim())) {
+            uniqueItemsMap.set(item.name.toLowerCase().trim(), item);
+        }
+    });
+    return Array.from(uniqueItemsMap.values());
+  }, [editableCampaign]);
+
+  const handleConfirmCopy = () => {
+    if (!editableCampaign || !copyTargetCategory || itemsToCopy.length === 0) return;
+
+    const newItems = itemsToCopy.map((item, index) => ({
+        ...item,
+        id: `${copyTargetCategory}-${Date.now()}-${index}`,
+    }));
+
+    const newRationLists = { ...editableCampaign.rationLists };
+    const currentList = newRationLists[copyTargetCategory] || [];
+    newRationLists[copyTargetCategory] = [...currentList, ...newItems];
+
+    handleFieldChange('rationLists', newRationLists);
+
+    setIsCopyItemsOpen(false);
+    setCopyTargetCategory(null);
+    setItemsToCopy([]);
+  };
+
   const renderRationTable = (memberCount: string) => {
     const items = editableCampaign?.rationLists?.[memberCount] || [];
     const total = calculateTotal(items);
@@ -342,12 +380,17 @@ export default function CampaignDetailsPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-              <h4 className="text-lg font-bold">Total: <span className="font-mono">₹{total.toFixed(2)}</span></h4>
-              {canUpdate && editMode && (
-                  <Button onClick={() => handleAddItem(memberCount)}>
-                      <Plus className="mr-2 h-4 w-4" /> Add Item
-                  </Button>
-              )}
+            <h4 className="text-lg font-bold">Total: <span className="font-mono">₹{total.toFixed(2)}</span></h4>
+            {canUpdate && editMode && (
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => handleAddItem(memberCount)}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Item
+                </Button>
+                <Button variant="outline" onClick={() => { setCopyTargetCategory(memberCount); setItemsToCopy([]); setIsCopyItemsOpen(true); }}>
+                  <Copy className="mr-2 h-4 w-4" /> Copy Items
+                </Button>
+              </div>
+            )}
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -666,6 +709,43 @@ export default function CampaignDetailsPage() {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={isCopyItemsOpen} onOpenChange={setIsCopyItemsOpen}>
+        <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+                <DialogTitle>Copy Items to "{copyTargetCategory}" List</DialogTitle>
+                <DialogDescription>Select items from other lists to add them to the current list.</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="h-72 w-full rounded-md border p-4">
+                <div className="space-y-4">
+                    {allUniqueItems.map(item => (
+                        <div key={item.id} className="flex items-center space-x-2">
+                            <Checkbox 
+                                id={`copy-${item.id}`}
+                                onCheckedChange={(checked) => {
+                                    if (checked) {
+                                        setItemsToCopy(prev => [...prev, item]);
+                                    } else {
+                                        setItemsToCopy(prev => prev.filter(i => i.id !== item.id));
+                                    }
+                                }}
+                            />
+                            <label htmlFor={`copy-${item.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                {item.name} ({item.quantity} - ₹{item.price})
+                            </label>
+                        </div>
+                    ))}
+                    {allUniqueItems.length === 0 && <p className="text-muted-foreground text-center">No other items to copy.</p>}
+                </div>
+            </ScrollArea>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCopyItemsOpen(false)}>Cancel</Button>
+                <Button onClick={handleConfirmCopy} disabled={itemsToCopy.length === 0}>
+                    Add {itemsToCopy.length > 0 ? itemsToCopy.length : ''} Selected Item(s)
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
