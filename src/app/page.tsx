@@ -10,7 +10,14 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 export default function LandingPage() {
   const { userProfile, isLoading } = useUserProfile();
 
-  const canViewCampaigns = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.read;
+  const campaignPerms = userProfile?.permissions?.campaigns;
+  const canReadAnyCampaignSubmodule = 
+    !!campaignPerms?.summary?.read ||
+    !!campaignPerms?.ration?.read ||
+    !!campaignPerms?.beneficiaries?.read ||
+    !!campaignPerms?.donations?.read;
+
+  const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.read || canReadAnyCampaignSubmodule;
   const canViewUsers = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.read;
   const canViewExtractor = userProfile?.role === 'Admin' || !!userProfile?.permissions?.extractor?.read;
   const canViewStoryCreator = userProfile?.role === 'Admin' || !!userProfile?.permissions?.storyCreator?.read;

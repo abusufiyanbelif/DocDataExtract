@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Plus, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowLeft, Plus, ArrowUp, ArrowDown, ShieldAlert } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import type { Campaign } from '@/lib/types';
@@ -14,6 +14,7 @@ import { useMemo, useState } from 'react';
 import { collection } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type SortKey = keyof Campaign | 'srNo';
 
@@ -88,6 +89,14 @@ export default function CampaignPage() {
   }, [campaigns, searchTerm, statusFilter, categoryFilter, sortConfig]);
 
   const isLoading = areCampaignsLoading || isProfileLoading;
+  
+  const campaignPerms = userProfile?.permissions?.campaigns;
+  const canReadAnySubmodule = 
+    !!campaignPerms?.summary?.read ||
+    !!campaignPerms?.ration?.read ||
+    !!campaignPerms?.beneficiaries?.read ||
+    !!campaignPerms?.donations?.read;
+  const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.read || canReadAnySubmodule;
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
   
   const SortableHeader = ({ sortKey, children }: { sortKey: SortKey, children: React.ReactNode }) => {
@@ -101,6 +110,31 @@ export default function CampaignPage() {
         </TableHead>
     );
   };
+  
+  if (!isLoading && !canViewCampaigns) {
+    return (
+        <div className="min-h-screen bg-background text-foreground">
+            <DocuExtractHeader />
+            <main className="container mx-auto p-4 md:p-8">
+                <div className="mb-4">
+                    <Button variant="outline" asChild>
+                        <Link href="/">
+                            <ArrowLeft className="mr-2 h-4 w-4" />
+                            Back to Home
+                        </Link>
+                    </Button>
+                </div>
+                <Alert variant="destructive">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Access Denied</AlertTitle>
+                    <AlertDescription>
+                    You do not have the required permissions to view campaigns.
+                    </AlertDescription>
+                </Alert>
+            </main>
+        </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
