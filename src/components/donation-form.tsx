@@ -29,8 +29,10 @@ import { Loader2 } from 'lucide-react';
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
   donorPhone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
+  referral: z.string().min(1, { message: "Referral is required." }),
   amount: z.coerce.number().min(1, { message: "Amount must be at least 1." }),
   type: z.enum(['Zakat', 'Sadqa', 'Interest', 'Lillah', 'General']),
+  paymentType: z.enum(['Cash', 'Online']),
   donationDate: z.string().min(1, { message: "Donation date is required."}),
   status: z.enum(['Verified', 'Pending']),
   screenshotFile: z.any().optional(),
@@ -50,8 +52,10 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     defaultValues: {
       donorName: donation?.donorName || '',
       donorPhone: donation?.donorPhone || '',
+      referral: donation?.referral || '',
       amount: donation?.amount || 0,
       type: donation?.type || 'General',
+      paymentType: donation?.paymentType || 'Online',
       donationDate: donation?.donationDate || new Date().toISOString().split('T')[0],
       status: donation?.status || 'Pending',
     },
@@ -80,33 +84,48 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="donorName"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Donor Name</FormLabel>
+                    <FormControl>
+                        <Input placeholder="e.g. John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="donorPhone"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Donor Phone</FormLabel>
+                    <FormControl>
+                        <Input placeholder="10-digit mobile number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
         <FormField
             control={form.control}
-            name="donorName"
+            name="referral"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Donor Name</FormLabel>
+                <FormLabel>Referral</FormLabel>
                 <FormControl>
-                    <Input placeholder="e.g. John Doe" {...field} />
+                    <Input placeholder="Referred by..." {...field} />
                 </FormControl>
                 <FormMessage />
                 </FormItem>
             )}
         />
-        <FormField
-            control={form.control}
-            name="donorPhone"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Donor Phone</FormLabel>
-                <FormControl>
-                    <Input placeholder="10-digit mobile number" {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-        />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <FormField
                 control={form.control}
                 name="amount"
@@ -138,6 +157,27 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                             <SelectItem value="Sadqa">Sadqa</SelectItem>
                             <SelectItem value="Interest">Interest</SelectItem>
                             <SelectItem value="Lillah">Lillah</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="paymentType"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Payment</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Online">Online</SelectItem>
+                            <SelectItem value="Cash">Cash</SelectItem>
                         </SelectContent>
                     </Select>
                     <FormMessage />

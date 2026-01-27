@@ -64,6 +64,8 @@ export interface Donation extends DocumentData {
   donorPhone: string;
   amount: number;
   type: 'Zakat' | 'Sadqa' | 'Interest' | 'Lillah' | 'General';
+  paymentType: 'Cash' | 'Online';
+  referral: string;
   donationDate: string;
   status: 'Verified' | 'Pending';
   screenshotUrl?: string;

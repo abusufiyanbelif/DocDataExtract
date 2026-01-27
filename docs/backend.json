@@ -333,6 +333,18 @@
           ],
           "description": "The type of donation."
         },
+        "paymentType": {
+          "type": "string",
+          "enum": [
+            "Cash",
+            "Online"
+          ],
+          "description": "The method of payment for the donation."
+        },
+        "referral": {
+          "type": "string",
+          "description": "The person or entity that referred the donor."
+        },
         "donationDate": {
           "type": "string",
           "format": "date",
@@ -371,6 +383,8 @@
         "donorName",
         "amount",
         "type",
+        "paymentType",
+        "referral",
         "donationDate",
         "status",
         "uploadedBy",

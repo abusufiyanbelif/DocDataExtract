@@ -282,8 +282,10 @@ export default function DonationsPage() {
                           {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center">Actions</TableHead>}
                           <TableHead>Donor Name</TableHead>
                           <TableHead>Phone</TableHead>
+                          <TableHead>Referral</TableHead>
                           <TableHead className="text-right">Amount (₹)</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead>Payment</TableHead>
                           <TableHead>Date</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Screenshot</TableHead>
@@ -294,7 +296,7 @@ export default function DonationsPage() {
                       {areDonationsLoading ? (
                         [...Array(3)].map((_, i) => (
                            <TableRow key={i}>
-                                <TableCell colSpan={(canUpdate || canDelete) ? 9 : 8}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={(canUpdate || canDelete) ? 11 : 10}><Skeleton className="h-6 w-full" /></TableCell>
                            </TableRow>
                         ))
                       ) : donations.length > 0 ? (
@@ -325,8 +327,10 @@ export default function DonationsPage() {
                               )}
                               <TableCell className="font-medium">{donation.donorName}</TableCell>
                               <TableCell>{donation.donorPhone}</TableCell>
+                              <TableCell>{donation.referral}</TableCell>
                               <TableCell className="text-right font-medium">₹{donation.amount.toFixed(2)}</TableCell>
                               <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
+                              <TableCell><Badge variant="outline">{donation.paymentType}</Badge></TableCell>
                               <TableCell>{donation.donationDate}</TableCell>
                               <TableCell>
                                   <Badge variant={donation.status === 'Verified' ? 'default' : 'outline'}>{donation.status}</Badge>
@@ -343,7 +347,7 @@ export default function DonationsPage() {
                         ))
                       ) : (
                         <TableRow>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 9 : 8} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={(canUpdate || canDelete) ? 11 : 10} className="text-center h-24 text-muted-foreground">
                                 No donations recorded yet.
                             </TableCell>
                         </TableRow>
