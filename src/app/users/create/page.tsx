@@ -44,10 +44,10 @@ export default function CreateUserPage() {
     };
     setIsSubmitting(true);
     
-    if (users.some(u => u.loginId === data.loginId)) {
+    if (users.some(u => u.loginId === data.loginId || u.userKey === data.userKey)) {
         toast({
-            title: 'Login ID Exists',
-            description: 'This Login ID is already taken. Please choose another one.',
+            title: 'ID Exists',
+            description: 'This Login ID or User Key is already taken. Please choose another one.',
             variant: 'destructive',
         });
         setIsSubmitting(false);

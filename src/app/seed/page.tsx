@@ -99,6 +99,40 @@ service firebase.storage {
         if (!firestore) throw new Error("Firestore service not available.");
         log("Step 2: Verifying & Consolidating Admin User Data in Firestore");
 
+        const usersRef = collection(firestore, 'users');
+        
+        // --- Step 2a: Find and delete any duplicate/legacy admin documents ---
+        log(" -> Searching for legacy or duplicate admin documents...");
+        const adminQuery = query(usersRef, where('userKey', '==', 'admin'));
+        const adminQuerySnap = await getDocs(adminQuery);
+        const docsToDelete = adminQuerySnap.docs.filter(doc => doc.id !== adminAuthUser.uid);
+
+        if (docsToDelete.length > 0) {
+            log(` -> Found ${docsToDelete.length} duplicate/legacy admin document(s). Removing...`);
+            const deleteBatch = writeBatch(firestore);
+            docsToDelete.forEach(doc => {
+                log(`   -> Deleting document with ID: ${doc.id}`);
+                deleteBatch.delete(doc.ref);
+            });
+            try {
+                await deleteBatch.commit();
+                log(" -> Successfully removed duplicate documents.");
+            } catch (error: any) {
+                 if (error.code === 'permission-denied') {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({
+                        path: 'users collection (deleting duplicates)',
+                        operation: 'delete',
+                    }));
+                }
+                throw error;
+            }
+        } else {
+            log(" -> No duplicate admin documents found.");
+        }
+
+
+        // --- Step 2b: Ensure the primary admin user document is correct ---
+        log(" -> Verifying the primary admin user document...");
         const allPermissions: any = {};
         for (const mod of modules) {
             allPermissions[mod.id] = {};
@@ -114,97 +148,24 @@ service firebase.storage {
                 }
             }
         }
-        const canonicalAdminData = { name: 'Admin User', phone: '0000000000', loginId: 'admin', userKey: 'admin', role: 'Admin', status: 'Active', permissions: allPermissions };
-
-        // --- Step 2a: Find and consolidate admin user documents ---
-        const usersRef = collection(firestore, 'users');
-        const adminQuery = query(usersRef, where('userKey', '==', 'admin'));
-        const adminQuerySnap = await getDocs(adminQuery);
-
-        if (adminQuerySnap.size > 1) {
-            log(` -> Found ${adminQuerySnap.size} documents with userKey: 'admin'. Consolidating...`);
-            const batch = writeBatch(firestore);
-            const docsToDelete = adminQuerySnap.docs.filter(d => d.id !== adminAuthUser.uid);
-            
-            docsToDelete.forEach(d => {
-                log(`   -> Deleting duplicate/legacy admin document: ${d.id}`);
-                batch.delete(d.ref);
-            });
-            
-            try {
-                await batch.commit();
-                log(" -> Deleted duplicate admin documents.");
-            } catch(error: any) {
-                 if (error.code === 'permission-denied') {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({
-                        path: 'users collection (deleting duplicates)',
-                        operation: 'delete',
-                    }));
-                }
-                throw error;
-            }
-        }
-        
+        const canonicalAdminData: Omit<UserProfile, 'id'> = { name: 'Admin User', phone: '0000000000', loginId: 'admin', userKey: 'admin', role: 'Admin', status: 'Active', permissions: allPermissions };
         const adminUserDocRef = doc(firestore, 'users', adminAuthUser.uid);
-        const adminUserDocSnap = await getDoc(adminUserDocRef);
 
-        if (!adminUserDocSnap.exists()) {
-            const legacyAdmin = adminQuerySnap.docs.find(d => d.id !== adminAuthUser.uid);
-            const dataToSet = { ...canonicalAdminData, createdAt: serverTimestamp() };
-
-            if (legacyAdmin && adminQuerySnap.size <= 1) { // Check size to ensure we don't act on a doc we just marked for deletion
-                log(` -> Migrating legacy admin document from ${legacyAdmin.id} to ${adminAuthUser.uid}...`);
-                const batch = writeBatch(firestore);
-                batch.set(adminUserDocRef, dataToSet);
-                batch.delete(legacyAdmin.ref);
-                 try {
-                    await batch.commit();
-                    log(" -> Migration complete.");
-                } catch(error: any) {
-                    if (error.code === 'permission-denied') {
-                        errorEmitter.emit('permission-error', new FirestorePermissionError({
-                            path: `users/${legacyAdmin.id} and users/${adminAuthUser.uid}`,
-                            operation: 'write',
-                            requestResourceData: dataToSet
-                        }));
-                    }
-                    throw error;
-                }
-            } else {
-                log(" -> No admin user profile found. Creating...");
-                try {
-                    await setDoc(adminUserDocRef, dataToSet);
-                    log(" -> New admin user profile created.");
-                } catch (error: any) {
-                     if (error.code === 'permission-denied') {
-                        errorEmitter.emit('permission-error', new FirestorePermissionError({
-                            path: adminUserDocRef.path,
-                            operation: 'create',
-                            requestResourceData: dataToSet,
-                        }));
-                    }
-                    throw error;
-                }
+        try {
+            await setDoc(adminUserDocRef, { ...canonicalAdminData, createdAt: serverTimestamp() }, { merge: true });
+            log(" -> Primary admin document is created and/or up to date.");
+        } catch (error: any) {
+            if (error.code === 'permission-denied') {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: adminUserDocRef.path,
+                    operation: 'write',
+                    requestResourceData: canonicalAdminData,
+                }));
             }
-            await new Promise(res => setTimeout(res, 1500)); 
-        } else {
-            log(" -> Admin user profile exists with correct ID. Ensuring it is up to date.");
-             try {
-                await setDoc(adminUserDocRef, canonicalAdminData, { merge: true });
-            } catch (error: any) {
-                 if (error.code === 'permission-denied') {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({
-                        path: adminUserDocRef.path,
-                        operation: 'update',
-                        requestResourceData: canonicalAdminData,
-                    }));
-                }
-                throw error;
-            }
+            throw error;
         }
 
-
-        // --- Step 2b: Ensure Lookup Documents Exist ---
+        // --- Step 2c: Ensure Lookup Documents Exist ---
         log(" -> Verifying user lookups...");
         const lookupBatch = writeBatch(firestore);
         const loginIdLookupRef = doc(firestore, 'user_lookups', canonicalAdminData.loginId);
