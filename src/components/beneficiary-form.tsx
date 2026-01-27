@@ -29,16 +29,16 @@ import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  address: z.string().min(5, { message: "Address is required." }),
-  phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
-  members: z.coerce.number().int().min(1, { message: "Must have at least 1 member." }),
-  earningMembers: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
-  male: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
-  female: z.coerce.number().int().min(0, { message: "Cannot be negative." }),
-  idProofType: z.string().min(3, { message: "ID proof type is required." }),
-  idNumber: z.string().min(3, { message: "ID number is required." }),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  members: z.coerce.number().int().optional(),
+  earningMembers: z.coerce.number().int().optional(),
+  male: z.coerce.number().int().optional(),
+  female: z.coerce.number().int().optional(),
+  idProofType: z.string().optional(),
+  idNumber: z.string().optional(),
   referralBy: z.string().min(2, { message: "Referral is required." }),
-  kitAmount: z.coerce.number().min(0, { message: "Amount cannot be negative."}),
+  kitAmount: z.coerce.number().min(0),
   status: z.enum(['Given', 'Pending', 'Hold', 'Need More Details']),
   idProofFile: z.any().optional(),
 });
@@ -96,7 +96,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
   useEffect(() => {
     const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + Number(item.price || 0), 0);
     
-    if (membersValue > 0) {
+    if (membersValue && membersValue > 0) {
         const memberCountStr = String(membersValue);
         let listToUse = rationLists[memberCountStr];
 
@@ -111,7 +111,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     }
   }, [membersValue, rationLists, setValue]);
 
-  const isKitAmountReadOnly = !!rationLists[String(membersValue)] || (membersValue >= 5 && !!rationLists['General']);
+  const isKitAmountReadOnly = !!(membersValue && (rationLists[String(membersValue)] || (membersValue >= 5 && !!rationLists['General'])));
 
   return (
     <Form {...form}>
