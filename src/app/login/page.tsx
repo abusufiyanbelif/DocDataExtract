@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
 import { signInWithLoginId } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
-import { collection, getDocs, limit, query } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
 import { Button } from '@/components/ui/button';
@@ -33,8 +32,6 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
-  const [isSeeded, setIsSeeded] = useState<boolean | null>(null);
-  const [isCheckingSeed, setIsCheckingSeed] = useState(true);
 
   const isFirebaseConfigured = !!firebaseConfig.projectId;
   
@@ -45,31 +42,6 @@ export default function LoginPage() {
       password: '',
     },
   });
-
-  useEffect(() => {
-    if (!firestore) {
-      if (!isFirebaseConfigured) {
-        setIsCheckingSeed(false);
-      }
-      return;
-    };
-    
-    const checkSeedingStatus = async () => {
-        try {
-            const usersRef = collection(firestore, 'users');
-            const q = query(usersRef, limit(1));
-            const snapshot = await getDocs(q);
-            setIsSeeded(!snapshot.empty);
-        } catch (error) {
-            console.error("Error checking seeding status:", error);
-            setIsSeeded(false);
-        } finally {
-            setIsCheckingSeed(false);
-        }
-    };
-    checkSeedingStatus();
-  }, [firestore, isFirebaseConfigured]);
-
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
@@ -202,27 +174,6 @@ export default function LoginPage() {
                         <ExternalLink className="ml-2 h-4 w-4" />
                     </Link>
                 </Button>
-                 <p className="text-xs text-center mt-2 text-muted-foreground">After enabling, please go to the seed page to initialize the database.</p>
-            </AlertDescription>
-        </Alert>
-      )}
-
-      {isCheckingSeed && (
-        <div className="mt-4 max-w-sm text-center">
-            <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Checking database status...</p>
-        </div>
-      )}
-
-      {isSeeded === false && !isCheckingSeed && !setupError && (
-        <Alert className="mt-4 max-w-sm">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>First-Time Setup Required</AlertTitle>
-            <AlertDescription className="space-y-2">
-              <p>The database has not been initialized. Please go to the seed page to set up the database and admin user.</p>
-              <Button asChild className="w-full">
-                  <Link href="/seed">Go to Seed Page</Link>
-              </Button>
             </AlertDescription>
         </Alert>
       )}
