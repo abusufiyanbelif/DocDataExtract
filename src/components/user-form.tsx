@@ -210,7 +210,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
             control={form.control}
             name="loginId"
@@ -277,7 +277,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
 
         <Separator />
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
             control={form.control}
             name="idProofType"
@@ -323,7 +323,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         
         <Separator />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
             control={form.control}
             name="role"
@@ -376,7 +376,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
 
         <div className="space-y-2">
             <FormLabel>Module Permissions</FormLabel>
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
                 <Table>
                 <TableHeader>
                     <TableRow>

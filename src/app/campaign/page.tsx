@@ -149,7 +149,7 @@ export default function CampaignPage() {
           </Button>
         </div>
         <Card>
-          <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
              <div className="flex-1 space-y-2">
                 <CardTitle>Campaigns</CardTitle>
                  <div className="flex flex-wrap items-center gap-2">

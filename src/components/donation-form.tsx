@@ -84,7 +84,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
                 control={form.control}
                 name="donorName"
@@ -125,7 +125,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 </FormItem>
             )}
         />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <FormField
                 control={form.control}
                 name="amount"

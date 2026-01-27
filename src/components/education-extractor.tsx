@@ -186,7 +186,7 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
                 multiple={enableStoryCreator} 
             />
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button onClick={handleScanEducation} disabled={reportDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingEducation ? <Loader2 className="animate-spin" /> : `Analyze Document`}
               </Button>

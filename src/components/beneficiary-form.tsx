@@ -116,7 +116,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
             control={form.control}
             name="name"
@@ -159,7 +159,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             )}
         />
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <FormField
             control={form.control}
             name="members"
@@ -214,7 +214,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
             control={form.control}
             name="idProofType"
@@ -243,7 +243,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <FormField
             control={form.control}
             name="referralBy"

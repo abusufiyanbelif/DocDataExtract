@@ -62,7 +62,7 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
     const newTables = [...(result.tables || [])];
     const newRows = [...newTables[tableIndex].rows, Array(newTables[tableIndex].headers.length).fill('')];
     newTables[tableIndex] = { ...newTables[tableIndex], rows: newRows };
-    setResult({ ...result, tables: newTables });
+    setResult({ ...result, tables: newRows });
   };
   
   const handleDownload = (format: 'json' | 'csv') => {
@@ -163,7 +163,7 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
             {hasName && (
               <div className="space-y-3">
                 <h3 className="font-medium text-lg">Name</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {result.firstName && (
                         <div className="space-y-2">
                             <Label htmlFor="firstName">First Name</Label>
@@ -190,7 +190,7 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
             {hasAddress && (
               <div className="space-y-3">
                  <h3 className="font-medium text-lg">Address</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     {result.city && (
                         <div className="space-y-2">
                             <Label htmlFor="city">City</Label>
@@ -251,7 +251,7 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
             {result.tables?.map((table, tableIndex) => (
               <div key={tableIndex} className="space-y-2">
                 <h3 className="font-medium text-lg">{table.name}</h3>
-                <div className="border rounded-md">
+                <div className="border rounded-md overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>

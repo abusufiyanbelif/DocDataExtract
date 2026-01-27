@@ -128,7 +128,7 @@ export function TextExtractor() {
                 key={uploadType} 
             />
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button onClick={handleScanText} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingText ? <Loader2 className="animate-spin" /> : `Extract Text`}
               </Button>

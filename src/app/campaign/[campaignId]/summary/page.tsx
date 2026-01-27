@@ -371,7 +371,7 @@ Please donate and share this message. Every contribution helps!
                                     <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
                                 )}
                             </div>
-                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-1">
                                     <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Target Amount</Label>
                                     {editMode && canUpdate ? (
@@ -439,7 +439,7 @@ Please donate and share this message. Every contribution helps!
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Verified Donations</CardTitle>

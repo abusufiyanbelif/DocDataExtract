@@ -187,7 +187,7 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
                 multiple={enableStoryCreator} 
             />
 
-            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Button onClick={handleScanMedical} disabled={reportDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingMedical ? <Loader2 className="animate-spin" /> : `Analyze Report`}
               </Button>
