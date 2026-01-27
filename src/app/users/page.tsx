@@ -103,51 +103,58 @@ export default function UsersPage() {
         });
   };
 
-  const handleDeleteConfirm = () => {
-    if (!userToDelete || !firestore || !storage) return;
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete || !firestore || !storage || !canDelete) return;
 
     const userBeingDeleted = users.find(u => u.id === userToDelete);
     if (!userBeingDeleted) return;
 
-    if (userBeingDeleted?.userKey === 'admin') {
+    if (userBeingDeleted.userKey === 'admin') {
         toast({ title: 'Action Forbidden', description: 'The default admin user cannot be deleted.', variant: 'destructive' });
         setUserToDelete(null);
         setIsDeleteDialogOpen(false);
         return;
     }
 
+    if (userBeingDeleted.id === userProfile?.id) {
+        toast({ title: 'Action Forbidden', description: 'You cannot delete your own account.', variant: 'destructive' });
+        setUserToDelete(null);
+        setIsDeleteDialogOpen(false);
+        return;
+    }
+    
     const docRef = doc(firestore, 'users', userToDelete);
+    const idProofUrl = userBeingDeleted.idProofUrl;
+    
+    setIsDeleteDialogOpen(false);
+    toast({ title: 'Deleting...', description: `Please wait while user '${userBeingDeleted.name}' is being deleted.`});
 
-    const deleteFilePromise = userBeingDeleted.idProofUrl
-        ? deleteObject(storageRef(storage, userBeingDeleted.idProofUrl))
-        : Promise.resolve();
+    try {
+        await deleteDoc(docRef);
+        toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed.` });
 
-    deleteFilePromise.catch(error => {
-        if (error.code !== 'storage/object-not-found') {
-            console.warn("Could not delete associated file from storage:", error);
-            toast({
-                title: "File Deletion Warning",
-                description: "Could not remove the associated ID proof file. It may need to be removed manually.",
-                variant: 'destructive',
-                duration: 7000
+        if (idProofUrl) {
+            await deleteObject(storageRef(storage, idProofUrl)).catch((error) => {
+                 if (error.code !== 'storage/object-not-found') {
+                    console.warn("Could not delete associated file from storage:", error);
+                    toast({
+                        title: "File Deletion Warning",
+                        description: "User was deleted, but could not remove the associated ID proof file from storage.",
+                        variant: 'destructive',
+                        duration: 7000
+                    });
+                }
             });
         }
-    });
-    
-    deleteDoc(docRef)
-        .then(() => {
-            toast({ title: 'Success', description: 'The user has been successfully deleted.' });
-        })
-        .catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'delete',
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-        });
-
-    setUserToDelete(null);
-    setIsDeleteDialogOpen(false);
+    } catch (e) {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'delete',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+    } finally {
+        setUserToDelete(null);
+    }
   };
   
   const isLoading = areUsersLoading || isProfileLoading;

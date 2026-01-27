@@ -121,44 +121,44 @@ export default function BeneficiariesPage() {
     setIsImageViewerOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!beneficiaryToDelete || !firestore || !storage || !campaignId || !canDelete) return;
 
     const beneficiaryData = beneficiaries.find(b => b.id === beneficiaryToDelete);
+    if (!beneficiaryData) return;
+    
     const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiaryToDelete);
+    const idProofUrl = beneficiaryData.idProofUrl;
 
+    setIsDeleteDialogOpen(false);
     toast({ title: 'Deleting...', description: 'Please wait while the beneficiary is being deleted.'});
 
-    const deleteFilePromise = beneficiaryData?.idProofUrl
-        ? deleteObject(storageRef(storage, beneficiaryData.idProofUrl))
-        : Promise.resolve();
+    try {
+        await deleteDoc(docRef);
+        toast({ title: 'Success', description: 'Beneficiary deleted.', variant: 'default' });
 
-    deleteFilePromise.catch(error => {
-        if (error.code !== 'storage/object-not-found') {
-            console.warn("Could not delete associated file from storage:", error);
-            toast({
-                title: "File Deletion Warning",
-                description: "Could not remove the associated ID proof file. It may need to be removed manually.",
-                variant: 'destructive',
-                duration: 7000
+        if (idProofUrl) {
+            await deleteObject(storageRef(storage, idProofUrl)).catch(error => {
+                if (error.code !== 'storage/object-not-found') {
+                    console.warn("Could not delete associated file from storage:", error);
+                    toast({
+                        title: "File Deletion Warning",
+                        description: "Could not remove the associated ID proof file. It may need to be removed manually.",
+                        variant: 'destructive',
+                        duration: 7000
+                    });
+                }
             });
         }
-    });
-    
-    deleteDoc(docRef)
-        .then(() => {
-            toast({ title: 'Success', description: 'Beneficiary deleted.', variant: 'default' });
-        })
-        .catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'delete',
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-        });
-
-    setBeneficiaryToDelete(null);
-    setIsDeleteDialogOpen(false);
+    } catch(e) {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'delete',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+    } finally {
+        setBeneficiaryToDelete(null);
+    }
   };
   
   const handleFormSubmit = async (data: BeneficiaryFormData) => {

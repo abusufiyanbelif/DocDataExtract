@@ -30,19 +30,6 @@ export default function SeedPage() {
         setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${message}`]);
     };
     
-    const createPlaceholderFile = async (path: string) => {
-        if (!storage) throw new Error("Storage service not available.");
-        const placeholderRef = storageRef(storage, path);
-        try {
-            // No longer uploading a file, just ensuring the log indicates the path is handled.
-            log(`   -> SUCCESS: Path gs://${placeholderRef.bucket}/${placeholderRef.fullPath} will be created on first file upload.`);
-        } catch (error: any) {
-            log(`   -> ❌ ERROR referencing storage path ${path}.`);
-            // Re-throw the error to be caught by the main handler
-            throw error;
-        }
-    };
-    
     const testStoragePermissions = async () => {
         if (!storage) throw new Error("Storage service not available.");
         log(" -> Testing Storage write permissions...");

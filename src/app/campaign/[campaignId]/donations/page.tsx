@@ -100,44 +100,44 @@ export default function DonationsPage() {
     setIsImageViewerOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!donationToDelete || !firestore || !storage || !canDelete) return;
 
     const donationData = donations.find(d => d.id === donationToDelete);
+    if (!donationData) return;
+
     const docRef = doc(firestore, 'donations', donationToDelete);
+    const screenshotUrl = donationData.screenshotUrl;
     
+    setIsDeleteDialogOpen(false);
     toast({ title: 'Deleting...', description: 'Please wait while the donation is being deleted.'});
 
-    const deleteFilePromise = donationData?.screenshotUrl
-        ? deleteObject(storageRef(storage, donationData.screenshotUrl))
-        : Promise.resolve();
+    try {
+        await deleteDoc(docRef);
+        toast({ title: 'Success', description: 'Donation deleted.', variant: 'default' });
 
-    deleteFilePromise.catch(error => {
-        if (error.code !== 'storage/object-not-found') {
-            console.warn("Could not delete associated file from storage:", error);
-            toast({
-                title: "File Deletion Warning",
-                description: "Could not remove the associated screenshot file. It may need to be removed manually.",
-                variant: 'destructive',
-                duration: 7000
+        if (screenshotUrl) {
+            await deleteObject(storageRef(storage, screenshotUrl)).catch(error => {
+                if (error.code !== 'storage/object-not-found') {
+                    console.warn("Could not delete associated file from storage:", error);
+                    toast({
+                        title: "File Deletion Warning",
+                        description: "Could not remove the associated screenshot file. It may need to be removed manually.",
+                        variant: 'destructive',
+                        duration: 7000
+                    });
+                }
             });
         }
-    });
-        
-    deleteDoc(docRef)
-        .then(() => {
-            toast({ title: 'Success', description: 'Donation deleted.', variant: 'default' });
-        })
-        .catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'delete',
-            } satisfies SecurityRuleContext);
-            errorEmitter.emit('permission-error', permissionError);
-        });
-
-    setDonationToDelete(null);
-    setIsDeleteDialogOpen(false);
+    } catch(e) {
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'delete',
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+    } finally {
+        setDonationToDelete(null);
+    }
   };
   
   const handleFormSubmit = async (data: DonationFormData) => {
