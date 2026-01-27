@@ -18,7 +18,7 @@ export const modules = [
   {
     id: 'campaigns',
     name: 'Campaigns',
-    permissions: ['create', 'read'],
+    permissions: crudPermissions,
     subModules: campaignSubModules,
   },
   { id: 'extractor', name: 'Extractor', permissions: simpleReadPermission },
@@ -38,5 +38,5 @@ type SubModulePermissions = {
 export type UserPermissions = Partial<
   Record<Exclude<ModuleId, 'campaigns'>, Partial<Record<Permission, boolean>>>
 > & {
-  campaigns?: Partial<Record<'create' | 'read', boolean>> & SubModulePermissions;
+  campaigns?: Partial<Record<Permission, boolean>> & SubModulePermissions;
 };
