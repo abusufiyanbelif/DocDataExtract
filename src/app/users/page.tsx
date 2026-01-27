@@ -3,7 +3,9 @@ import { useState, useMemo } from 'react';
 import { useAuth, useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 import type { UserProfile } from '@/lib/types';
 import { modules, permissions } from '@/lib/modules';
 
@@ -127,9 +129,9 @@ export default function UsersPage() {
     }
   };
   
-  const handleFormSubmit = (data: UserFormData) => {
-    if (!firestore) {
-        toast({ title: 'Error', description: 'Database connection not available.', variant: 'destructive' });
+  const handleFormSubmit = async (data: UserFormData) => {
+    if (!firestore || !auth) {
+        toast({ title: 'Error', description: 'Database or Auth connection not available.', variant: 'destructive' });
         return;
     };
     setIsSubmitting(true);
@@ -183,41 +185,37 @@ export default function UsersPage() {
         const email = `${data.userKey}@docdataextract.app`;
         const newPassword = data.password!;
 
-        if (!auth) {
-            toast({ title: 'Error', description: 'Authentication service not available.', variant: 'destructive' });
-            setIsSubmitting(false);
-            return;
-        }
+        const tempAppName = `temp-user-creation-${Date.now()}`;
+        const tempApp = initializeApp(firebaseConfig, tempAppName);
+        const tempAuth = getAuth(tempApp);
 
-        createUserWithEmailAndPassword(auth, email, newPassword)
-            .then(userCredential => {
-                return addDoc(collection(firestore, 'users'), finalData);
-            })
-            .then(() => {
-                toast({ title: 'Success', description: `User '${data.name}' created successfully.` });
-                setIsFormOpen(false);
-                setEditingUser(null);
-            })
-            .catch(error => {
-                let errorMessage = "An unexpected error occurred during user creation.";
-                if (error.code) { // Firebase Auth errors have a 'code' property
-                    switch (error.code) {
-                        case 'auth/email-already-in-use':
-                            errorMessage = "This user key is already associated with an authentication account. Please choose a different name to generate a new Login ID.";
-                            break;
-                        case 'auth/weak-password':
-                            errorMessage = "The password is too weak. Please use at least 6 characters.";
-                            break;
-                        default:
-                            errorMessage = error.message;
-                            break;
-                    }
+        try {
+            await createUserWithEmailAndPassword(tempAuth, email, newPassword);
+            await addDoc(collection(firestore, 'users'), finalData);
+            
+            toast({ title: 'Success', description: `User '${data.name}' created successfully.` });
+            setIsFormOpen(false);
+            setEditingUser(null);
+        } catch (error: any) {
+            let errorMessage = "An unexpected error occurred during user creation.";
+            if (error.code) {
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = "This user key is already associated with an authentication account. This can happen if a user with this key was deleted from Firestore but not from Firebase Auth.";
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = "The password is too weak. Please use at least 6 characters.";
+                        break;
+                    default:
+                        errorMessage = error.message;
+                        break;
                 }
-                toast({ title: 'User Creation Failed', description: errorMessage, variant: 'destructive' });
-            })
-            .finally(() => {
-                setIsSubmitting(false);
-            });
+            }
+            toast({ title: 'User Creation Failed', description: errorMessage, variant: 'destructive' });
+        } finally {
+            await deleteApp(tempApp);
+            setIsSubmitting(false);
+        }
     }
   };
   
@@ -239,7 +237,7 @@ export default function UsersPage() {
     )
   }
   
-  if (userProfile?.role !== 'Admin') {
+  if (userProfile?.role !== 'Admin' && !userProfile?.permissions?.users?.read) {
     return (
         <div className="min-h-screen bg-background text-foreground">
             <DocuExtractHeader />
@@ -264,6 +262,10 @@ export default function UsersPage() {
     )
   }
 
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.update;
+  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.delete;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <DocuExtractHeader />
@@ -280,19 +282,21 @@ export default function UsersPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
             <CardTitle>User Management</CardTitle>
-            <div className="flex items-center gap-2">
-                <Button onClick={handleAdd} disabled={areUsersLoading}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add User
-                </Button>
-            </div>
+            {canCreate && (
+              <div className="flex items-center gap-2">
+                  <Button onClick={handleAdd} disabled={areUsersLoading}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add User
+                  </Button>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <Table>
                   <TableHeader>
                       <TableRow>
-                          <TableHead className="w-[50px] text-center">Actions</TableHead>
+                          {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center">Actions</TableHead>}
                           <TableHead className="w-[40px]">#</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Phone</TableHead>
@@ -305,37 +309,43 @@ export default function UsersPage() {
                   <TableBody>
                       {users.map((user, index) => (
                           <TableRow key={user.id}>
-                              <TableCell className="text-center">
-                                  <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                          <Button variant="ghost" size="icon">
-                                              <MoreHorizontal className="h-4 w-4" />
-                                          </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                          <DropdownMenuItem onClick={() => handleEdit(user)} className="cursor-pointer">
-                                              <Edit className="mr-2 h-4 w-4" />
-                                              Edit
-                                          </DropdownMenuItem>
-                                          <DropdownMenuSeparator />
-                                            {user.status === 'Active' ? (
+                              {(canUpdate || canDelete) && (
+                                <TableCell className="text-center">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            {canUpdate && (
+                                              <DropdownMenuItem onClick={() => handleEdit(user)} className="cursor-pointer">
+                                                  <Edit className="mr-2 h-4 w-4" />
+                                                  Edit
+                                              </DropdownMenuItem>
+                                            )}
+                                            {canUpdate && canDelete && <DropdownMenuSeparator />}
+                                            {canUpdate && user.status === 'Active' ? (
                                                 <DropdownMenuItem onClick={() => handleToggleStatus(user)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="cursor-pointer">
                                                     <UserX className="mr-2 h-4 w-4" />
                                                     Deactivate
                                                 </DropdownMenuItem>
-                                            ) : (
+                                            ) : canUpdate ? (
                                                 <DropdownMenuItem onClick={() => handleToggleStatus(user)} className="cursor-pointer">
                                                     <UserCheck className="mr-2 h-4 w-4" />
                                                     Activate
                                                 </DropdownMenuItem>
+                                            ) : null}
+                                            {canDelete && (
+                                              <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
+                                                  <Trash2 className="mr-2 h-4 w-4" />
+                                                  Delete
+                                              </DropdownMenuItem>
                                             )}
-                                          <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
-                                              <Trash2 className="mr-2 h-4 w-4" />
-                                              Delete
-                                          </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                  </DropdownMenu>
-                              </TableCell>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                              )}
                               <TableCell>{index + 1}</TableCell>
                               <TableCell className="font-medium">{user.name}</TableCell>
                               <TableCell>{user.phone}</TableCell>

@@ -10,6 +10,9 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 export default function LandingPage() {
   const { userProfile, isLoading } = useUserProfile();
 
+  const canViewCampaigns = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.read;
+  const canViewUsers = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.read;
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <DocuExtractHeader />
@@ -41,21 +44,25 @@ export default function LandingPage() {
                 <Skeleton className="h-11 w-28" />
                 </>
             )}
-            {!isLoading && userProfile?.role === 'Admin' && (
-                <>
-                <Link href="/campaign">
-                    <Button size="lg" variant="outline" className="text-lg">
-                    <ShoppingBasket className="mr-2 h-5 w-5" />
-                    Ration Campaigns
-                    </Button>
-                </Link>
-                <Link href="/users">
-                    <Button size="lg" variant="outline" className="text-lg">
-                    <Users className="mr-2 h-5 w-5" />
-                    Users
-                    </Button>
-                </Link>
-                </>
+            {!isLoading && (
+              <>
+                {canViewCampaigns && (
+                  <Link href="/campaign">
+                      <Button size="lg" variant="outline" className="text-lg">
+                      <ShoppingBasket className="mr-2 h-5 w-5" />
+                      Ration Campaigns
+                      </Button>
+                  </Link>
+                )}
+                {canViewUsers && (
+                  <Link href="/users">
+                      <Button size="lg" variant="outline" className="text-lg">
+                      <Users className="mr-2 h-5 w-5" />
+                      Users
+                      </Button>
+                  </Link>
+                )}
+              </>
             )}
             <Link href="/diagnostics">
                 <Button size="lg" variant="outline" className="text-lg">
