@@ -1,5 +1,6 @@
 import type {NextConfig} from 'next';
 
+// Added to invalidate cache and fix module resolution error.
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ['handlebars'],
