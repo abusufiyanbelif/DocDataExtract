@@ -15,6 +15,8 @@ import {
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
+const Form = FormProvider
+
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
@@ -48,10 +50,6 @@ const useFormField = () => {
 
   if (!fieldContext) {
     throw new Error("useFormField should be used within <FormField>")
-  }
-
-  if (!itemContext) {
-    throw new Error("useFormField should be used within a <FormItem>")
   }
 
   const { id } = itemContext
@@ -170,6 +168,7 @@ FormMessage.displayName = "FormMessage"
 
 export {
   useFormField,
+  Form,
   FormItem,
   FormLabel,
   FormControl,
