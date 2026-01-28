@@ -18,6 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { createAdminPermissions } from '@/lib/modules';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app';
+
 
 export default function SeedPage() {
   const firestore = useFirestore();
@@ -35,12 +38,12 @@ export default function SeedPage() {
     setError(null);
     setLogs([]);
 
-    addLog('🚀 Starting Initial Setup...');
-    addLog('This script will create the first administrator account if it does not exist.');
+    addLog('🚀 Starting Initial Setup & Deep Scan...');
+    addLog('This script will diagnose and repair the default administrator account.');
     addLog('---');
-    addLog('ℹ️ Required collections: users, user_lookups, campaigns, donations');
-    addLog('This process creates the first documents in the "users" and "user_lookups" collections, making them visible in your Firebase console.');
-    addLog('The "campaigns" and "donations" collections will be created automatically when you add data through the app.');
+    addLog('ℹ️ Required Collections: users, user_lookups, campaigns, donations');
+    addLog('  - "users" & "user_lookups" will be validated or created by this script.');
+    addLog('  - "campaigns" & "donations" are created by the app when you add data.');
     addLog('---');
 
 
@@ -52,56 +55,94 @@ export default function SeedPage() {
       return;
     }
     
-    // Dynamically import Firebase modules to improve page load performance
-    const { getAuth, createUserWithEmailAndPassword } = await import('firebase/auth');
-    const { initializeApp, deleteApp } = await import('firebase/app');
-
-    // Use a temporary, secondary Firebase App instance for creating the user.
-    // This avoids conflicts with the primary app's authentication state.
     const tempAppName = `seed-app-${Date.now()}`;
     let tempApp;
-
+    
     try {
-      addLog('Step 1: Checking if admin user already exists...');
-      
-      const adminEmail = 'baitulmalss.solapur@gmail.com';
-      const adminPhone = '9270946423';
-      const adminUserKey = 'admin';
-      const adminLoginId = 'admin';
-      const adminPassword = "password";
-
-      // Check for admin existence using the world-readable 'user_lookups' collection
-      const adminLookupRef = doc(firestore, 'user_lookups', adminLoginId);
-      const adminLookupSnap = await getDoc(adminLookupRef);
-      
-      if (adminLookupSnap.exists()) {
-        addLog('✅ Admin user record already exists in "user_lookups". Setup is already complete.');
+        tempApp = initializeApp(firebaseConfig, tempAppName);
+    } catch(e) {
+        const errorMsg = 'Firebase configuration is invalid. Please check your .env file.';
+        setError(errorMsg);
+        addLog(`❌ ${errorMsg}`);
         setIsLoading(false);
         return;
-      }
-      
-      addLog('👤 Admin not found. Proceeding with creation...');
+    }
+    
+    const tempAuth = getAuth(tempApp);
+    
+    const adminEmail = 'baitulmalss.solapur@gmail.com';
+    const adminPhone = '9270946423';
+    const adminUserKey = 'admin';
+    const adminLoginId = 'admin';
+    const adminPassword = "password";
+
+    try {
+      addLog('Step 1: Checking for existing admin in Firebase Auth...');
       
       try {
-        tempApp = initializeApp(firebaseConfig, tempAppName);
-      } catch(e) {
-          const errorMsg = 'Firebase configuration is invalid. Please check your .env file.';
-          setError(errorMsg);
-          addLog(`❌ ${errorMsg}`);
-          setIsLoading(false);
-          return;
-      }
-      const tempAuth = getAuth(tempApp);
+        // Attempt to sign in to see if the user exists
+        const userCredential = await signInWithEmailAndPassword(tempAuth, adminEmail, adminPassword);
+        const user = userCredential.user;
+        addLog(`✅ Auth user found (UID: ${user.uid}). Verifying database records...`);
+        
+        // If auth user exists, verify/repair all DB records
+        const repairBatch = writeBatch(firestore);
+        
+        // 1. Verify 'users' document
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (!userDocSnap.exists()) {
+          addLog(`   - "users" document missing. Re-creating...`);
+          const userProfileData = {
+              name: 'System Admin',
+              email: adminEmail,
+              phone: adminPhone,
+              loginId: adminLoginId,
+              userKey: adminUserKey,
+              role: 'Admin',
+              status: 'Active',
+              permissions: createAdminPermissions(),
+              createdAt: serverTimestamp(),
+              createdById: 'system',
+              createdByName: 'System Seed'
+          };
+          repairBatch.set(userDocRef, userProfileData);
+        } else {
+           addLog(`   - "users" document OK.`);
+        }
 
-      const adminCreationBatch = writeBatch(firestore);
+        // 2. Verify 'user_lookups'
+        const lookupsToVerify: Record<string, {email: string}> = {
+          [adminLoginId]: { email: adminEmail },
+          [adminUserKey]: { email: adminEmail },
+          [adminPhone]: { email: adminEmail },
+        };
 
-      try {
-          addLog('Step 2: Creating Firebase Auth account...');
-          const userCredential = await createUserWithEmailAndPassword(tempAuth, adminEmail, adminPassword);
-          const newUid = userCredential.user.uid;
-          addLog(`✅ Auth account created with UID: ${newUid}.`);
+        for (const [lookupId, lookupData] of Object.entries(lookupsToVerify)) {
+            const lookupDocRef = doc(firestore, 'user_lookups', lookupId);
+            const lookupDocSnap = await getDoc(lookupDocRef);
+            if (!lookupDocSnap.exists()) {
+                addLog(`   - Lookup for "${lookupId}" missing. Re-creating...`);
+                repairBatch.set(lookupDocRef, lookupData);
+            } else {
+                 addLog(`   - Lookup for "${lookupId}" OK.`);
+            }
+        }
+        
+        await repairBatch.commit();
+        addLog('✅ Database records verified and synchronized.');
 
-          addLog('Step 3: Preparing database records...');
+      } catch (authError: any) {
+        // This block runs if signInWithEmailAndPassword fails
+        if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/user-not-found') {
+          addLog(`👤 Auth user not found. Proceeding to create new account...`);
+
+          const newUserCredential = await createUserWithEmailAndPassword(tempAuth, adminEmail, adminPassword);
+          const newUid = newUserCredential.user.uid;
+          addLog(`   - Auth account created with UID: ${newUid}.`);
+          
+          addLog('   - Preparing database records...');
+          const creationBatch = writeBatch(firestore);
           const userDocRef = doc(firestore, 'users', newUid);
           const userProfileData = {
               name: 'System Admin',
@@ -116,41 +157,41 @@ export default function SeedPage() {
               createdById: 'system',
               createdByName: 'System Seed'
           };
-          adminCreationBatch.set(userDocRef, userProfileData);
-          addLog('  - "users" document prepared.');
+          creationBatch.set(userDocRef, userProfileData);
 
           const userLookupsRef = collection(firestore, 'user_lookups');
-          adminCreationBatch.set(doc(userLookupsRef, adminLoginId), { email: adminEmail });
-          adminCreationBatch.set(doc(userLookupsRef, adminUserKey), { email: adminEmail });
-          adminCreationBatch.set(doc(userLookupsRef, adminPhone), { email: adminEmail });
-          addLog('  - "user_lookups" documents prepared.');
+          creationBatch.set(doc(userLookupsRef, adminLoginId), { email: adminEmail });
+          creationBatch.set(doc(userLookupsRef, adminUserKey), { email: adminEmail });
+          creationBatch.set(doc(userLookupsRef, adminPhone), { email: adminEmail });
 
-          addLog('Step 4: Committing records to database...');
-          await adminCreationBatch.commit();
-          addLog('✅ Success! The "users" and "user_lookups" collections are now available.');
-          addLog('---');
-          addLog('🔑 Admin Credentials:');
-          addLog(`   Login ID: ${adminLoginId}`);
-          addLog(`   Password: ${adminPassword}`);
-          addLog('---');
-          addLog('🔒 IMPORTANT: Please log in and change this password immediately.');
+          addLog('   - Committing records to database...');
+          await creationBatch.commit();
+          addLog('✅ New admin user and all database records created successfully.');
 
-          toast({
-            title: 'Setup Complete',
-            description: 'Initial admin user has been created successfully.',
-            variant: 'success'
-          });
-
-      } catch (error: any) {
-          if (error.code === 'auth/email-already-in-use') {
-              const authErrorMsg = `The admin email ${adminEmail} is already in use in Firebase Authentication, but the database records are missing. Please resolve this manually by deleting the user from the Firebase Authentication console and running this script again.`;
-              addLog(`❌ ERROR: ${authErrorMsg}`);
-              setError(authErrorMsg);
-              throw new Error("Admin email already exists in Auth.");
-          }
-          // Re-throw other auth errors to be caught by the outer catch block
-          throw error;
+        } else if (authError.code === 'auth/email-already-in-use') {
+            const errorMsg = `Admin email '${adminEmail}' exists in Auth, but login failed (likely wrong password). Please reset the password in the Firebase Console and run this script again.`;
+            setError(errorMsg);
+            addLog(`❌ ${errorMsg}`);
+            throw new Error(errorMsg);
+        } else {
+          // Re-throw other unexpected auth errors
+          throw authError;
+        }
       }
+
+      addLog('---');
+      addLog('🔑 Admin Credentials:');
+      addLog(`   Login ID: ${adminLoginId}`);
+      addLog(`   Password: ${adminPassword}`);
+      addLog('---');
+      addLog('🔒 IMPORTANT: If a new user was created, please log in and change this password immediately.');
+      
+      toast({
+        title: 'Setup Complete',
+        description: 'Initial admin user has been successfully configured.',
+        variant: 'success'
+      });
+
     } catch (e: any) {
       const errorMessage = e.message || 'An unknown error occurred.';
       setError(errorMessage);
@@ -185,9 +226,9 @@ export default function SeedPage() {
         </div>
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
-            <CardTitle>Initial Application Setup</CardTitle>
+            <CardTitle>Initial Application Setup & Diagnostics</CardTitle>
             <CardDescription>
-                This script performs the one-time setup required for the application. It creates the default administrator user, allowing you to log in and manage the system.
+                This script performs a deep scan to diagnose and repair the default administrator account, ensuring all necessary database records and authentication entries are consistent and correct.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -195,7 +236,7 @@ export default function SeedPage() {
                 <ShieldCheck className="h-4 w-4" />
                 <AlertTitle>Important!</AlertTitle>
                 <AlertDescription>
-                    Run this script only once for the initial setup on a new project. If the admin user is created successfully, the temporary password will be displayed in the log below. You must log in and change it immediately.
+                    Run this script to set up your application for the first time or to repair the admin account if you are having login issues.
                 </AlertDescription>
             </Alert>
 
@@ -205,7 +246,7 @@ export default function SeedPage() {
               ) : (
                 <Database className="mr-2 h-4 w-4" />
               )}
-              Run Initial Setup
+              Run Setup & Diagnostics
             </Button>
             
             <div className="space-y-2">
