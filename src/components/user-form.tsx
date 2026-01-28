@@ -7,7 +7,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 
 import {
-  Form,
+  ShadForm,
   FormControl,
   FormDescription,
   FormField,
@@ -192,7 +192,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isFormDisabled = isSubmitting || isLoading;
 
   return (
-    <Form {...form}>
+    <ShadForm {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
             <FormField
               control={form.control}
@@ -526,6 +526,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             </Button>
             </div>
         </form>
-    </Form>
+    </ShadForm>
   );
 }
