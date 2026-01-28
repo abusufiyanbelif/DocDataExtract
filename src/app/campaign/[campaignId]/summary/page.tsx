@@ -72,6 +72,7 @@ export default function CampaignSummaryPage() {
     const [editMode, setEditMode] = useState(false);
     const [editableCampaign, setEditableCampaign] = useState<Partial<Campaign>>({});
     const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('Verified');
+    const [isSharing, setIsSharing] = useState(false);
 
     // Data fetching
     const campaignDocRef = useMemo(() => (firestore && !isProfileLoading) ? doc(firestore, 'campaigns', campaignId) : null, [firestore, campaignId, isProfileLoading]);
@@ -117,7 +118,7 @@ export default function CampaignSummaryPage() {
 
         updateDoc(campaignDocRef, saveData)
             .then(() => {
-                toast({ title: 'Success', description: 'Campaign summary updated.' });
+                toast({ title: 'Success', description: 'Campaign summary updated.', variant: 'success' });
                 setEditMode(false);
             })
             .catch(async (serverError) => {
@@ -214,6 +215,7 @@ export default function CampaignSummaryPage() {
             });
             return;
         }
+        setIsSharing(true);
 
         const remainingToCollectText = summaryData.remainingToCollect > 0 
             ? `*Remaining to Collect: ₹${summaryData.remainingToCollect.toLocaleString()}*`
@@ -237,7 +239,6 @@ Please donate and share this message. Every contribution helps!
 
 
         const shareData = {
-            title: `Campaign: ${campaign.name}`,
             text: shareText,
         };
 
@@ -245,8 +246,26 @@ Please donate and share this message. Every contribution helps!
             try {
                 await navigator.share(shareData);
             } catch (err) {
-                // This error is common when the user cancels the share sheet, so we don't need to show a toast.
-                console.log('Share was cancelled or failed', err);
+                // Don't show toast if user cancels share dialog.
+                if ((err as Error).name !== 'AbortError') {
+                    console.log('Share failed, falling back to clipboard.', err);
+                    try {
+                        await navigator.clipboard.writeText(shareText);
+                        toast({
+                            title: 'Share Failed, Copied to Clipboard',
+                            description: 'The summary has been copied to your clipboard.',
+                            variant: 'success'
+                        });
+                    } catch (copyErr) {
+                        toast({
+                            title: 'Share and Copy Failed',
+                            description: 'Could not share or copy the summary.',
+                            variant: 'destructive',
+                        });
+                    }
+                }
+            } finally {
+                setIsSharing(false);
             }
         } else {
             try {
@@ -254,6 +273,7 @@ Please donate and share this message. Every contribution helps!
                 toast({
                     title: 'Copied to Clipboard',
                     description: 'Campaign summary has been copied successfully.',
+                    variant: 'success'
                 });
             } catch (err) {
                 toast({
@@ -261,6 +281,8 @@ Please donate and share this message. Every contribution helps!
                     description: 'Could not copy summary to clipboard.',
                     variant: 'destructive',
                 });
+            } finally {
+                setIsSharing(false);
             }
         }
     };
@@ -307,8 +329,9 @@ Please donate and share this message. Every contribution helps!
                     <h1 className="text-3xl font-bold">{campaign.name}</h1>
                     <div className="flex gap-2">
                         {!editMode && (
-                            <Button onClick={handleShare} variant="outline">
-                                <Share2 className="mr-2 h-4 w-4" /> Share
+                            <Button onClick={handleShare} variant="outline" disabled={isSharing}>
+                                {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
+                                Share
                             </Button>
                         )}
                         {canUpdate && (
