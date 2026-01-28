@@ -1,4 +1,3 @@
-
 'use client';
 
 import { z } from 'zod';
@@ -30,11 +29,14 @@ import { modules } from '@/lib/modules';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from './ui/separator';
-import { Loader2, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ChevronDown, Send } from 'lucide-react';
 import type { UserPermissions } from '@/lib/modules';
+import { useAuth } from '@/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  email: z.string().email({ message: "Please enter a valid email address."}),
   phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
   loginId: z.string().min(3, { message: "Login ID must be at least 3 characters." }).regex(/^[a-z0-9_.]+$/, { message: 'Login ID can only contain lowercase letters, numbers, underscores, and periods.' }),
   userKey: z.string().min(1, { message: 'User Key is required.'}),
@@ -47,15 +49,7 @@ const formSchema = z.object({
   password: z.string().optional(),
   _isEditing: z.boolean(),
 }).superRefine((data, ctx) => {
-    if (data._isEditing) {
-        if (data.password && data.password.length > 0 && data.password.length < 6) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['password'],
-                message: 'If changing, the password must be at least 6 characters.',
-            });
-        }
-    } else {
+    if (!data._isEditing) {
         if (!data.password || data.password.length < 6) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -81,6 +75,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isEditing = !!user;
   const isDefaultAdmin = user?.userKey === 'admin';
   const { toast } = useToast();
+  const auth = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [openModules, setOpenModules] = useState<Record<string, boolean>>({ campaigns: true });
 
@@ -92,6 +87,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: user?.name || '',
+      email: user?.email || '',
       phone: user?.phone || '',
       userKey: user?.userKey || `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       loginId: user?.loginId || '',
@@ -125,12 +121,10 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   }, [nameValue, isEditing, setValue]);
   
    useEffect(() => {
-    // When role changes FROM User TO Admin
     if (roleValue === 'Admin' && prevRoleRef.current === 'User') {
       setUserPermissions(getValues('permissions'));
     }
 
-    // Apply permissions based on the current role
     if (roleValue === 'Admin') {
       const allPermissions: any = {};
       for (const mod of modules) {
@@ -148,11 +142,10 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         }
       }
       setValue('permissions', allPermissions, { shouldDirty: true });
-    } else { // Role is 'User'
+    } else {
       setValue('permissions', userPermissions || {}, { shouldDirty: true });
     }
 
-    // Update the ref for the next render
     prevRoleRef.current = roleValue;
   }, [roleValue, setValue, getValues, userPermissions]);
 
@@ -172,11 +165,18 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     }
   }, [idProofFile, user?.idProofUrl]);
 
-  const handleFeatureNotReady = (featureName: string) => {
-    toast({
-        title: 'Coming Soon!',
-        description: `${featureName} functionality will be implemented in a future update.`,
-    });
+  const handleSendPasswordReset = async () => {
+    if (!auth || !user?.email) {
+        toast({ title: "Error", description: "Cannot send password reset. User email or auth service is not available.", variant: "destructive"});
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(auth, user.email);
+        toast({ title: "Email Sent", description: `A password reset link has been sent to ${user.email}.`, variant: "success"});
+    } catch (error: any) {
+        console.error("Password reset error:", error);
+        toast({ title: "Failed to Send", description: `Could not send password reset email. Error: ${error.message}`, variant: "destructive"});
+    }
   }
   
   const isFormDisabled = isSubmitting || isLoading;
@@ -193,6 +193,20 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
               <FormControl>
                 <Input placeholder="e.g. Moosa Shaikh" {...field} disabled={isFormDisabled} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email Address</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled || isEditing} />
+              </FormControl>
+              <FormDescription>Used for login and password resets. Cannot be changed after creation.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -241,35 +255,50 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             />
         </div>
         
-        <FormField
-        control={form.control}
-        name="password"
-        render={({ field }) => (
-            <FormItem>
-            <FormLabel>{isEditing ? 'Change Password' : 'Password'}</FormLabel>
-            <div className="relative w-full">
-                <FormControl>
-                    <Input 
-                        type={showPassword ? 'text' : 'password'} 
-                        placeholder={isEditing ? 'Leave blank to keep current password' : 'Minimum 6 characters'}
-                        {...field} value={field.value ?? ''} 
-                        disabled={isFormDisabled} 
-                    />
-                </FormControl>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                    onClick={() => setShowPassword(!showPassword)}
-                >
-                    {showPassword ? <EyeOff /> : <Eye />}
-                </Button>
-            </div>
-            <FormMessage />
-            </FormItem>
+        {!isEditing && (
+            <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Password</FormLabel>
+                <div className="relative w-full">
+                    <FormControl>
+                        <Input 
+                            type={showPassword ? 'text' : 'password'} 
+                            placeholder="Minimum 6 characters"
+                            {...field} value={field.value ?? ''} 
+                            disabled={isFormDisabled} 
+                        />
+                    </FormControl>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? <EyeOff /> : <Eye />}
+                    </Button>
+                </div>
+                <FormMessage />
+                </FormItem>
+            )}
         )}
-        />
+        
+        {isEditing && (
+            <div className="space-y-2">
+                <FormLabel>Password Reset</FormLabel>
+                <div className="flex items-center gap-2 rounded-md border p-3">
+                    <p className="flex-1 text-sm text-muted-foreground">
+                        An administrator cannot change a user's password directly. Click to send the user a secure password reset link to their email.
+                    </p>
+                    <Button type="button" variant="secondary" onClick={handleSendPasswordReset} disabled={isSubmitting}>
+                        <Send className="mr-2 h-4 w-4"/> Send Password Reset
+                    </Button>
+                </div>
+            </div>
+        )}
 
         <Separator />
         
@@ -480,6 +509,3 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     </Form>
   );
 }
-
-    
-

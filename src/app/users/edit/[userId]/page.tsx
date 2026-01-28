@@ -16,16 +16,6 @@ import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -36,26 +26,25 @@ export default function EditUserPage() {
   const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPasswordAlertOpen, setIsPasswordAlertOpen] = useState(false);
-  const [formDataForSave, setFormDataForSave] = useState<UserFormData | null>(null);
-
+  
   const { userProfile: currentUserProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const userDocRef = useMemo(() => {
-    if (!firestore || !userId || !currentUserProfile) return null;
+    if (!firestore || !userId) return null;
     return doc(firestore, 'users', userId);
-  }, [firestore, userId, currentUserProfile]);
+  }, [firestore, userId]);
 
   const { data: user, isLoading: isUserLoading } = useDoc<UserProfile>(userDocRef);
 
   const canUpdate = currentUserProfile?.role === 'Admin' || !!currentUserProfile?.permissions?.users?.update;
 
-  const proceedWithSave = async (data: UserFormData) => {
+  const handleSave = async (data: UserFormData) => {
     if (!firestore || !storage || !user || !canUpdate) {
         toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
         setIsSubmitting(false);
         return;
     };
+    setIsSubmitting(true);
     
     const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
 
@@ -99,14 +88,17 @@ export default function EditUserPage() {
     const batch = writeBatch(firestore);
     batch.update(docRef, updateData as any);
     
+    // If phone number changes, update the lookup table
     if (user && user.phone !== data.phone) {
+        // Delete the old lookup if it exists
         if (user.phone) {
             const oldPhoneLookupRef = doc(firestore, 'user_lookups', user.phone);
             batch.delete(oldPhoneLookupRef);
         }
+        // Create the new lookup if a new number is provided
         if (data.phone) {
             const newPhoneLookupRef = doc(firestore, 'user_lookups', data.phone);
-            batch.set(newPhoneLookupRef, { userKey: user.userKey });
+            batch.set(newPhoneLookupRef, { email: user.email });
         }
     }
 
@@ -123,19 +115,6 @@ export default function EditUserPage() {
         errorEmitter.emit('permission-error', permissionError);
     } finally {
         setIsSubmitting(false);
-        setIsPasswordAlertOpen(false);
-    }
-  };
-  
-  const handleSave = async (data: UserFormData) => {
-    if (!canUpdate) return;
-    setIsSubmitting(true);
-    setFormDataForSave(data);
-
-    if (data.password) {
-        setIsPasswordAlertOpen(true);
-    } else {
-        await proceedWithSave(data);
     }
   };
 
@@ -228,34 +207,6 @@ export default function EditUserPage() {
           </CardContent>
         </Card>
       </main>
-
-       <AlertDialog open={isPasswordAlertOpen} onOpenChange={(open) => {
-           if (!open) setIsSubmitting(false);
-           setIsPasswordAlertOpen(open);
-       }}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Security Information: Password Change</AlertDialogTitle>
-                <AlertDialogDescription>
-                    For security reasons, an administrator cannot directly change another user&apos;s password from the client application. This action requires a secure backend environment and has not been implemented.
-                    <br/><br/>
-                    <strong className="font-semibold text-destructive">The user&apos;s password has not been changed.</strong>
-                    <br/><br/>
-                    Would you like to proceed with saving the other changes to this user&apos;s profile?
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setIsSubmitting(false)}>Cancel All</AlertDialogCancel>
-                <AlertDialogAction onClick={async () => {
-                    if (formDataForSave) {
-                        await proceedWithSave(formDataForSave);
-                    }
-                }}>
-                    Save Other Changes
-                </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

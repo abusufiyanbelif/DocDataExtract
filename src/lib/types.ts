@@ -50,6 +50,7 @@ export interface Beneficiary extends DocumentData {
 export interface UserProfile extends DocumentData {
   id: string;
   name: string;
+  email: string;
   phone: string;
   loginId: string;
   userKey: string;

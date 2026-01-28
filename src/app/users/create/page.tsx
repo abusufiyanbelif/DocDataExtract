@@ -31,9 +31,9 @@ export default function CreateUserPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const usersCollectionRef = useMemo(() => {
-    if (!firestore || !userProfile) return null;
+    if (!firestore) return null;
     return collection(firestore, 'users');
-  }, [firestore, userProfile]);
+  }, [firestore]);
   const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
   
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;
@@ -45,17 +45,17 @@ export default function CreateUserPage() {
     };
     setIsSubmitting(true);
     
-    if (users && users.some(u => u.loginId === data.loginId || u.userKey === data.userKey)) {
+    if (users && users.some(u => u.loginId === data.loginId || u.userKey === data.userKey || u.email === data.email)) {
         toast({
             title: 'ID Exists',
-            description: 'This Login ID or User Key is already taken. Please choose another one.',
+            description: 'This Login ID, User Key, or Email is already taken. Please choose another one.',
             variant: 'destructive',
         });
         setIsSubmitting(false);
         return;
     }
 
-    const email = `${data.userKey}@docdataextract.app`;
+    const email = data.email;
     const newPassword = data.password!;
 
     const tempAppName = `temp-user-creation-${Date.now()}`;
@@ -91,6 +91,7 @@ export default function CreateUserPage() {
         const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
         const dataToSave: Omit<UserProfile, 'id'> & { createdAt: any } = {
             name: data.name,
+            email: data.email,
             phone: data.phone,
             loginId: data.loginId,
             userKey: data.userKey,
@@ -108,11 +109,11 @@ export default function CreateUserPage() {
         batch.set(docRef, dataToSave);
 
         const loginIdLookupRef = doc(firestore, 'user_lookups', data.loginId);
-        batch.set(loginIdLookupRef, { userKey: data.userKey });
+        batch.set(loginIdLookupRef, { email: data.email });
 
         if (data.phone) {
             const phoneLookupRef = doc(firestore, 'user_lookups', data.phone);
-            batch.set(phoneLookupRef, { userKey: data.userKey });
+            batch.set(phoneLookupRef, { email: data.email });
         }
         
         await batch.commit();
@@ -125,7 +126,7 @@ export default function CreateUserPage() {
         if (error.code) {
             switch (error.code) {
                 case 'auth/email-already-in-use':
-                    errorMessage = "This user key is already associated with an authentication account. This can happen if a user with this key was deleted from Firestore but not from Firebase Auth.";
+                    errorMessage = "This email is already in use. Each user must have a unique email address.";
                     break;
                 case 'auth/weak-password':
                     errorMessage = "The password is too weak. Please use at least 6 characters.";

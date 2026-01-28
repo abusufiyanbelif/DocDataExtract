@@ -102,10 +102,10 @@ service firebase.storage {
     const ensureAdminIntegrity = async (adminAuthUser: User) => {
         if (!firestore) throw new Error("Firestore service not available.");
         log("Step 2: Verifying & Consolidating Admin User Data in Firestore");
+        const adminEmail = adminAuthUser.email!;
 
         const usersRef = collection(firestore, 'users');
         
-        // --- Step 2a: Find and delete any duplicate/legacy admin documents ---
         log(" -> Searching for legacy or duplicate admin documents...");
         const adminQuery = query(usersRef, where('userKey', '==', 'admin'));
         const adminQuerySnap = await getDocs(adminQuery);
@@ -135,7 +135,6 @@ service firebase.storage {
         }
 
 
-        // --- Step 2b: Ensure the primary admin user document is correct ---
         log(" -> Verifying the primary admin user document...");
         const allPermissions: any = {};
         for (const mod of modules) {
@@ -152,7 +151,7 @@ service firebase.storage {
                 }
             }
         }
-        const canonicalAdminData: Omit<UserProfile, 'id'> = { name: 'Admin User', phone: '0000000000', loginId: 'admin', userKey: 'admin', role: 'Admin', status: 'Active', permissions: allPermissions };
+        const canonicalAdminData: Omit<UserProfile, 'id'> = { name: 'Admin User', email: adminEmail, phone: '0000000000', loginId: 'admin', userKey: 'admin', role: 'Admin', status: 'Active', permissions: allPermissions };
         const adminUserDocRef = doc(firestore, 'users', adminAuthUser.uid);
 
         try {
@@ -169,51 +168,27 @@ service firebase.storage {
             throw error;
         }
 
-        // --- Step 2c: Ensure Lookup Documents Exist ---
         log(" -> Verifying user lookups...");
         const lookupBatch = writeBatch(firestore);
         const loginIdLookupRef = doc(firestore, 'user_lookups', canonicalAdminData.loginId);
         const phoneLookupRef = doc(firestore, 'user_lookups', canonicalAdminData.phone);
         
-        const [loginIdLookupSnap, phoneLookupSnap] = await Promise.all([
-            getDoc(loginIdLookupRef),
-            getDoc(phoneLookupRef)
-        ]);
-
-        let lookupsToWrite = false;
-        if (!loginIdLookupSnap.exists()) {
-            lookupBatch.set(loginIdLookupRef, { userKey: canonicalAdminData.userKey });
-            log(` -> Preparing to create missing lookup for loginId: '${canonicalAdminData.loginId}'.`);
-            lookupsToWrite = true;
-        } else {
-            log(` -> Lookup for loginId '${canonicalAdminData.loginId}' already exists.`);
-        }
+        lookupBatch.set(loginIdLookupRef, { email: adminEmail });
+        lookupBatch.set(phoneLookupRef, { email: adminEmail });
         
-        if (!phoneLookupSnap.exists()) {
-            lookupBatch.set(phoneLookupRef, { userKey: canonicalAdminData.userKey });
-            log(` -> Preparing to create missing lookup for phone: '${canonicalAdminData.phone}'.`);
-            lookupsToWrite = true;
-        } else {
-            log(` -> Lookup for phone '${canonicalAdminData.phone}' already exists.`);
-        }
-        
-        if(lookupsToWrite) {
-            log(" -> Committing lookup changes to the database...");
-            try {
-                await lookupBatch.commit();
-                log(" -> Lookup changes committed.");
-            } catch (error: any) {
-                if (error.code === 'permission-denied') {
-                    const permissionError = new FirestorePermissionError({
-                        path: 'user_lookups (batch write)',
-                        operation: 'write',
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                }
-                throw error;
+        log(" -> Committing admin lookup changes to the database...");
+        try {
+            await lookupBatch.commit();
+            log(" -> Admin lookup changes committed.");
+        } catch (error: any) {
+            if (error.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                    path: 'user_lookups (batch write)',
+                    operation: 'write',
+                });
+                errorEmitter.emit('permission-error', permissionError);
             }
-        } else {
-            log(" -> All admin lookups are already correct.");
+            throw error;
         }
     }
     
@@ -235,23 +210,21 @@ service firebase.storage {
 
         for (const userDoc of usersSnapshot.docs) {
             const userData = userDoc.data() as UserProfile;
-            const { userKey, loginId, phone } = userData;
+            const { userKey, loginId, phone, email } = userData;
 
-            if (userKey === 'admin') continue; // Skip admin, it's handled separately
+            if (userKey === 'admin') continue;
 
-            if (!userKey || !loginId) {
-                log(`   -> ⚠️ WARNING: Skipping user ${userDoc.id} (${userData.name || 'No Name'}) due to missing 'userKey' or 'loginId'.`);
+            if (!loginId || !email) {
+                log(`   -> ⚠️ WARNING: Skipping user ${userDoc.id} (${userData.name || 'No Name'}) due to missing 'loginId' or 'email'. Please edit this user to add an email.`);
                 continue;
             }
 
-            // Create/update loginId lookup
             const loginIdLookupRef = doc(firestore, 'user_lookups', loginId);
-            batch.set(loginIdLookupRef, { userKey });
+            batch.set(loginIdLookupRef, { email });
 
-            // Create/update phone lookup
             if (phone) {
                 const phoneLookupRef = doc(firestore, 'user_lookups', phone);
-                batch.set(phoneLookupRef, { userKey });
+                batch.set(phoneLookupRef, { email });
             }
             migratedCount++;
         }
@@ -298,12 +271,10 @@ service firebase.storage {
             log('✅ Script completed successfully. Admin user and all existing users are configured correctly.');
             toast({ title: 'Success', description: 'Admin user verified and all existing users have been migrated for the new login system.', variant: 'success' });
         } catch (e: any) {
-            // Contextual error is emitted by helper functions, this block just updates UI.
             const errorMessage = e.message || 'An unknown error occurred.';
             log(`❌ FAILED: ${errorMessage}`);
             setErrorOccurred(true);
             
-            // Only show a generic toast if it wasn't a permission error (which shows its own toast via the listener).
             if (e.name !== 'FirestorePermissionError' && e.code !== 'permission-denied') {
                  toast({ title: 'Script Failed', description: 'An error occurred. Check the logs for details.', variant: 'destructive' });
             }

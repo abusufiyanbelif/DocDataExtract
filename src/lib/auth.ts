@@ -13,27 +13,22 @@ import {
 
 export const signInWithLoginId = async (auth: Auth, firestore: Firestore, loginId: string, password?: string) => {
     
-    const lookupsRef = collection(firestore, 'user_lookups');
-    let userKey: string | null = null;
-
-    // Attempt to find userKey from loginId or phone in the public lookup collection
-    const lookupDocRef = doc(lookupsRef, loginId);
+    // This could be a loginId or a phone number
+    const lookupDocRef = doc(firestore, 'user_lookups', loginId);
     const lookupDoc = await getDoc(lookupDocRef);
 
-    if (lookupDoc.exists()) {
-        userKey = lookupDoc.data().userKey;
-    }
-
-    if (!userKey) {
+    if (!lookupDoc.exists()) {
         throw new Error('User not found. Please check your Login ID or Phone Number.');
+    }
+    
+    const email = lookupDoc.data().email;
+    if (!email) {
+        throw new Error('Authentication configuration error for this user. Email is missing.');
     }
     
     if (!password) {
         throw new Error('Password is required.');
     }
-
-    // The user's email is their unique userKey + the app domain.
-    const email = `${userKey}@docdataextract.app`;
 
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
