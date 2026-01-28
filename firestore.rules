@@ -29,6 +29,10 @@ service cloud.firestore {
 
     // Check for a specific permission in the user's profile
     function hasPermission(pathSegments, permission) {
+      // A user must be signed in to have any permissions.
+      if (!isSignedIn()) {
+        return false;
+      }
       // Admins have all permissions implicitly
       if (isAdmin()) {
         return true;
