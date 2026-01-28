@@ -93,7 +93,7 @@ export default function UsersPage() {
 
     updateDoc(docRef, updatedData)
         .then(() => {
-            toast({ title: 'Success', description: `${userToUpdate.name}'s account is now ${newStatus}.` });
+            toast({ title: 'Success', description: `${userToUpdate.name}'s account is now ${newStatus}.`, variant: 'success' });
         })
         .catch(async (serverError) => {
             const permissionError = new FirestorePermissionError({
@@ -149,7 +149,7 @@ export default function UsersPage() {
 
         batch.commit()
             .then(() => {
-                toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed.` });
+                toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed.`, variant: 'success' });
             })
             .catch((serverError) => {
                 const permissionError = new FirestorePermissionError({
