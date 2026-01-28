@@ -5,13 +5,9 @@ import { firebaseConfig } from '@/firebase/config';
 import {
   collection,
   doc,
-  getDocs,
-  writeBatch,
-  query,
-  where,
   getDoc,
+  writeBatch,
   serverTimestamp,
-  limit,
 } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -65,39 +61,12 @@ export default function SeedPage() {
     try {
       addLog('🚀 Starting setup and migration...');
       
-      // --- Data Cleanup Step ---
-      addLog('🧹 Scanning for orphaned data in "user_lookups"...');
-      const cleanupBatch = writeBatch(firestore);
-      const userLookupsRef = collection(firestore, 'user_lookups');
       const usersRef = collection(firestore, 'users');
-      const lookupsSnap = await getDocs(userLookupsRef);
-      let orphanedCount = 0;
-
-      for (const lookupDoc of lookupsSnap.docs) {
-          const lookupData = lookupDoc.data();
-          if (!lookupData.email) {
-              addLog(`  - Deleting lookup "${lookupDoc.id}" because it has no email.`);
-              cleanupBatch.delete(lookupDoc.ref);
-              orphanedCount++;
-              continue;
-          }
-
-          const userQuery = query(usersRef, where('email', '==', lookupData.email), limit(1));
-          const userSnap = await getDocs(userQuery);
-          
-          if (userSnap.empty) {
-              addLog(`  - Deleting orphaned lookup: "${lookupDoc.id}" (points to non-existent user with email: ${lookupData.email})`);
-              cleanupBatch.delete(lookupDoc.ref);
-              orphanedCount++;
-          }
-      }
+      const userLookupsRef = collection(firestore, 'user_lookups');
       
-      if (orphanedCount > 0) {
-          await cleanupBatch.commit();
-          addLog(`✅ Successfully cleaned up ${orphanedCount} orphaned lookup entries.`);
-      } else {
-          addLog('✅ No orphaned lookups found. Data is clean.');
-      }
+      // Data cleanup cannot be performed securely from an unauthenticated client.
+      // The root causes of orphaned data have been fixed in the user management pages.
+      addLog('ℹ️ Skipping orphaned data scan. This check can only be performed by an authenticated admin.');
 
       // --- Admin Creation Step ---
       const adminEmail = 'baitulmalss.solapur@gmail.com';
@@ -105,12 +74,13 @@ export default function SeedPage() {
       const adminUserKey = 'admin';
       const adminLoginId = 'admin';
 
-      const adminUserQuery = query(usersRef, where('userKey', '==', adminUserKey), limit(1));
-      const adminUserSnap = await getDocs(adminUserQuery);
+      // Check for admin existence using the world-readable lookups collection
+      const adminLookupRef = doc(firestore, 'user_lookups', adminUserKey);
+      const adminLookupSnap = await getDoc(adminLookupRef);
       
       const adminCreationBatch = writeBatch(firestore);
 
-      if (adminUserSnap.empty) {
+      if (!adminLookupSnap.exists()) {
         addLog('👤 Admin user does not exist. Creating...');
         
         const tempAdminPassword = "password";
