@@ -1,491 +1,275 @@
-{
-  "entities": {
-    "UserProfile": {
-      "title": "User Profile",
-      "description": "Represents a user's profile in the system.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The user's full name."
-        },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's primary email address, used for authentication."
-        },
-        "phone": {
-          "type": "string",
-          "description": "The user's phone number."
-        },
-        "loginId": {
-          "type": "string",
-          "description": "The user's unique login ID."
-        },
-        "userKey": {
-          "type": "string",
-          "description": "A unique system-generated key for the user, used to link to the auth account. Cannot be edited."
-        },
-        "password": {
-          "type": "string",
-          "description": "The user's hashed password for custom authentication. This field should not be managed from the client-side due to security risks."
-        },
-        "role": {
-          "type": "string",
-          "enum": [
-            "Admin",
-            "User"
-          ],
-          "description": "The user's role. 'Admin' has all permissions by default."
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "Active",
-            "Inactive"
-          ],
-          "description": "The current status of the user account."
-        },
-        "idProofType": {
-          "type": "string",
-          "description": "The type of ID proof provided (e.g., Aadhaar, PAN)."
-        },
-        "idNumber": {
-          "type": "string",
-          "description": "The ID number from the provided proof."
-        },
-        "idProofUrl": {
-          "type": "string",
-          "description": "URL of the uploaded ID proof document."
-        },
-        "permissions": {
-          "type": "object",
-          "description": "Granular permissions for the user.",
-          "properties": {
-            "users": {
-              "$ref": "#/backend/entities/CrudPermissions"
-            },
-            "campaigns": {
-              "type": "object",
-              "description": "Permissions for the Campaigns module.",
-              "properties": {
-                "read": {
-                  "type": "boolean"
-                },
-                "create": {
-                  "type": "boolean"
-                },
-                "summary": {
-                  "type": "object",
-                  "properties": {
-                    "read": {
-                      "type": "boolean"
-                    },
-                    "update": {
-                      "type": "boolean"
-                    }
-                  }
-                },
-                "ration": {
-                  "type": "object",
-                  "properties": {
-                    "read": {
-                      "type": "boolean"
-                    },
-                    "update": {
-                      "type": "boolean"
-                    }
-                  }
-                },
-                "beneficiaries": {
-                  "$ref": "#/backend/entities/CrudPermissions"
-                },
-                "donations": {
-                  "$ref": "#/backend/entities/CrudPermissions"
-                }
-              }
-            },
-            "extractor": {
-              "type": "object",
-              "properties": {
-                "read": {
-                  "type": "boolean"
-                }
-              }
-            },
-            "storyCreator": {
-              "type": "object",
-              "properties": {
-                "read": {
-                  "type": "boolean"
-                }
-              }
-            },
-            "diagnostics": {
-              "type": "object",
-              "properties": {
-                "read": {
-                  "type": "boolean"
-                }
-              }
+'use client';
+import { useState } from 'react';
+import { useFirestore, useAuth } from '@/firebase';
+import { firebaseConfig } from '@/firebase/config';
+import {
+  collection,
+  doc,
+  getDocs,
+  writeBatch,
+  query,
+  where,
+  getDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { DocuExtractHeader } from '@/components/docu-extract-header';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ArrowLeft, Loader2, Database, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import { createAdminPermissions } from '@/lib/modules';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+export default function SeedPage() {
+  const firestore = useFirestore();
+  const mainAuth = useAuth();
+  const { toast } = useToast();
+  const [logs, setLogs] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const addLog = (message: string) => {
+    setLogs((prev) => [...prev, message]);
+  };
+  
+  const generatePassword = () => {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let password = "";
+    for (let i = 0; i < 8; i++) {
+        password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  const handleSeed = async () => {
+    setIsLoading(true);
+    setError(null);
+    setLogs([]);
+
+    if (!firestore || !mainAuth) {
+      setError('Firebase is not initialized. Please check your configuration.');
+      addLog('❌ Firebase is not initialized.');
+      setIsLoading(false);
+      return;
+    }
+    
+    const tempAppName = `seed-app-${Date.now()}`;
+    const tempApp = initializeApp(firebaseConfig, tempAppName);
+    const tempAuth = getAuth(tempApp);
+
+    try {
+      addLog('🚀 Starting setup and migration...');
+      
+      const adminEmail = 'baitulmalss.solapur@gmail.com';
+      const adminPhone = '9270946423';
+      const adminUserKey = 'admin';
+      const adminLoginId = 'admin';
+
+      const userLookupsRef = collection(firestore, 'user_lookups');
+      const adminLookupQuery = query(userLookupsRef, where('email', '==', adminEmail));
+      const adminLookupSnap = await getDocs(adminLookupQuery);
+      
+      const batch = writeBatch(firestore);
+
+      if (adminLookupSnap.empty) {
+        addLog('👤 Admin user does not exist. Creating...');
+        
+        const tempAdminPassword = "password";
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(tempAuth, adminEmail, tempAdminPassword);
+            const newUid = userCredential.user.uid;
+            addLog(`✅ Firebase Auth account created for admin with UID: ${newUid}.`);
+
+            const userDocRef = doc(firestore, 'users', newUid);
+            const userProfileData = {
+                name: 'System Admin',
+                email: adminEmail,
+                phone: adminPhone,
+                loginId: adminLoginId,
+                userKey: adminUserKey,
+                role: 'Admin',
+                status: 'Active',
+                permissions: createAdminPermissions(),
+                createdAt: serverTimestamp()
+            };
+            batch.set(userDocRef, userProfileData);
+
+            // Create lookups
+            batch.set(doc(userLookupsRef, adminLoginId), { email: adminEmail });
+            batch.set(doc(userLookupsRef, adminUserKey), { email: adminEmail });
+            batch.set(doc(userLookupsRef, adminPhone), { email: adminEmail });
+
+            addLog(`🔑 Admin temporary password is: ${tempAdminPassword}`);
+            addLog('🔒 Please log in and change this password immediately.');
+
+        } catch (error: any) {
+            if (error.code === 'auth/email-already-in-use') {
+                addLog(`⚠️ Auth account for ${adminEmail} already exists. Skipping auth creation.`);
+                setError(`The admin email ${adminEmail} is already in use in Firebase Authentication, but the corresponding database records are missing. Please resolve this manually in your Firebase console.`);
+                throw new Error("Admin email already exists in Auth.");
             }
+            throw error; // Rethrow other errors
+        }
+      } else {
+        addLog('✅ Admin user lookup already exists. Skipping admin creation.');
+      }
+
+      // --- User Migration Logic ---
+      addLog('🔄 Starting migration of existing database users...');
+      const usersRef = collection(firestore, 'users');
+      const allUsersSnap = await getDocs(usersRef);
+
+      if (allUsersSnap.empty) {
+        addLog('No users found in the database to migrate.');
+      } else {
+        for (const userDoc of allUsersSnap.docs) {
+          const userData = userDoc.data();
+          const userId = userDoc.id;
+
+          const isLegacyRecord = !userData.email || !isNaN(Date.parse(userId));
+          
+          if (!isLegacyRecord) {
+            addLog(`- Skipping user '${userData.name || userId}'. Already appears to be a modern record.`);
+            continue;
+          }
+
+          addLog(`- Processing legacy user record: '${userData.name || userId}'`);
+
+          let userEmail = userData.email;
+          const userPhone = userData.phone;
+
+          if (!userEmail && userPhone) {
+              userEmail = `+${userPhone}@docdataextract.app`; // Create synthetic email for phone users
+              addLog(`  - No email found. Creating synthetic email from phone: ${userEmail}`);
+          }
+
+          if (!userEmail) {
+              addLog(`  - ⚠️ SKIPPING: User '${userData.name}' has no email or phone number. Cannot create auth account.`);
+              continue;
+          }
+
+          const tempPassword = generatePassword();
+          
+          try {
+            const userCredential = await createUserWithEmailAndPassword(tempAuth, userEmail, tempPassword);
+            const newUid = userCredential.user.uid;
+            addLog(`  - ✅ Auth account created for '${userData.name}' with UID: ${newUid}`);
+
+            const newUserDocRef = doc(firestore, 'users', newUid);
+            const newProfileData = {
+              ...userData,
+              email: userEmail,
+              createdAt: userData.createdAt || serverTimestamp(),
+            };
+            batch.set(newUserDocRef, newProfileData);
+            addLog(`  - Database record prepared for new UID.`);
+
+            if (userData.loginId) batch.set(doc(userLookupsRef, userData.loginId), { email: userEmail });
+            if (userData.phone) batch.set(doc(userLookupsRef, userData.phone), { email: userEmail });
+            if (userData.userKey) batch.set(doc(userLookupsRef, userData.userKey), { email: userEmail });
+
+            batch.delete(userDoc.ref);
+            addLog(`  - Old database record marked for deletion.`);
+
+            addLog(`  - 🔑 Temporary password for ${userData.name} (${userEmail}): ${tempPassword}`);
+          } catch(error: any) {
+              if (error.code === 'auth/email-already-in-use') {
+                addLog(`  - ⚠️ SKIPPING: Auth account for '${userData.name}' (${userEmail}) already exists. No changes made.`);
+              } else {
+                addLog(`  - ❌ ERROR: Could not create auth account for '${userData.name}' (${userEmail}). Reason: ${error.message}`);
+              }
           }
         }
-      },
-      "required": [
-        "name",
-        "email",
-        "phone",
-        "loginId",
-        "userKey",
-        "role",
-        "status"
-      ]
-    },
-    "UserLookup": {
-      "title": "User Lookup",
-      "description": "A public record for mapping a login ID or phone number to a user's email.",
-      "type": "object",
-      "properties": {
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's primary email address."
-        }
-      },
-      "required": [
-        "email"
-      ]
-    },
-    "RationItem": {
-      "title": "Ration Item",
-      "description": "A single item in a ration kit, part of a campaign's ration list.",
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "A unique identifier for the ration item within its list."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the ration item."
-        },
-        "quantity": {
-          "type": "string",
-          "description": "The quantity of the item (e.g., '10 kg')."
-        },
-        "price": {
-          "type": "number",
-          "description": "The price of the item in Rupees."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Additional notes for the item (e.g., brand, price per unit)."
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "price"
-      ]
-    },
-    "Beneficiary": {
-      "title": "Beneficiary",
-      "description": "An individual or family receiving benefits from a campaign.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The full name of the beneficiary."
-        },
-        "address": {
-          "type": "string",
-          "description": "The beneficiary's full residential address."
-        },
-        "phone": {
-          "type": "string",
-          "description": "The beneficiary's 10-digit phone number."
-        },
-        "members": {
-          "type": "integer",
-          "description": "The number of members in the beneficiary's family."
-        },
-        "earningMembers": {
-          "type": "integer",
-          "description": "The number of earning members in the family."
-        },
-        "male": {
-          "type": "integer",
-          "description": "The number of male members in the family."
-        },
-        "female": {
-          "type": "integer",
-          "description": "The number of female members in the family."
-        },
-        "addedDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The date the beneficiary was added to the campaign."
-        },
-        "idProofType": {
-          "type": "string",
-          "description": "The type of ID proof provided (e.g., Aadhaar, PAN)."
-        },
-        "idNumber": {
-          "type": "string",
-          "description": "The ID number from the provided proof."
-        },
-        "referralBy": {
-          "type": "string",
-          "description": "The person or organization that referred the beneficiary."
-        },
-        "kitAmount": {
-          "type": "number",
-          "description": "The total amount of the ration kit provided, in Rupees."
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "Given",
-            "Pending",
-            "Hold",
-            "Need More Details",
-            "Verified"
-          ],
-          "description": "The current status of the beneficiary's ration kit."
-        },
-        "idProofUrl": {
-          "type": "string",
-          "description": "URL of the uploaded ID proof document."
-        }
-      },
-      "required": [
-        "name",
-        "referralBy"
-      ]
-    },
-    "Campaign": {
-      "title": "Campaign",
-      "description": "A campaign to distribute resources, such as ration kits.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The name of the campaign."
-        },
-        "category": {
-          "type": "string",
-          "description": "The category of the campaign (e.g., Ration, Relief).",
-          "enum": [
-            "Ration",
-            "Relief",
-            "General"
-          ]
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the campaign's goals and purpose."
-        },
-        "targetAmount": {
-          "type": "number",
-          "description": "The fundraising goal for the campaign in Rupees."
-        },
-        "startDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The start date of the campaign."
-        },
-        "endDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The end date of the campaign."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the campaign (e.g., 'Upcoming', 'Active', 'Completed')."
-        },
-        "priceDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The date for which the ration prices are valid."
-        },
-        "shopName": {
-          "type": "string",
-          "description": "The name of the shop where items are purchased."
-        },
-        "shopContact": {
-          "type": "string",
-          "description": "The contact number for the shop."
-        },
-        "shopAddress": {
-          "type": "string",
-          "description": "The address of the shop."
-        },
-        "rationLists": {
-          "type": "object",
-          "description": "A map where keys are member counts (e.g., '5', 'General') and values are the corresponding lists of ration items.",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "$ref": "#/backend/entities/RationItem"
-            }
-          }
-        }
-      },
-      "required": [
-        "name",
-        "category",
-        "status",
-        "startDate",
-        "endDate"
-      ]
-    },
-    "Donation": {
-      "title": "Donation",
-      "description": "A donation made towards a campaign.",
-      "type": "object",
-      "properties": {
-        "donorName": {
-          "type": "string",
-          "description": "The name of the donor."
-        },
-        "donorPhone": {
-          "type": "string",
-          "description": "The donor's 10-digit phone number."
-        },
-        "amount": {
-          "type": "number",
-          "description": "The donation amount in Rupees."
-        },
-        "type": {
-          "type": "string",
-          "enum": [
-            "Zakat",
-            "Sadqa",
-            "Interest",
-            "Lillah",
-            "General"
-          ],
-          "description": "The type of donation."
-        },
-        "paymentType": {
-          "type": "string",
-          "enum": [
-            "Cash",
-            "Online"
-          ],
-          "description": "The method of payment for the donation."
-        },
-        "referral": {
-          "type": "string",
-          "description": "The person or entity that referred the donor."
-        },
-        "donationDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The date the donation was made."
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "Verified",
-            "Pending",
-            "Canceled"
-          ],
-          "description": "The verification status of the donation."
-        },
-        "screenshotUrl": {
-          "type": "string",
-          "description": "URL of the uploaded donation screenshot."
-        },
-        "uploadedBy": {
-          "type": "string",
-          "description": "Name of the user who recorded the donation."
-        },
-        "uploadedById": {
-          "type": "string",
-          "description": "ID of the user who recorded the donation."
-        },
-        "campaignId": {
-          "type": "string",
-          "description": "The ID of the campaign this donation belongs to."
-        },
-        "campaignName": {
-          "type": "string",
-          "description": "The name of the campaign this donation belongs to."
-        }
-      },
-      "required": [
-        "donorName",
-        "amount",
-        "type",
-        "paymentType",
-        "referral",
-        "donationDate",
-        "status",
-        "uploadedBy",
-        "uploadedById",
-        "campaignId",
-        "campaignName"
-      ]
-    },
-    "CrudPermissions": {
-      "title": "CRUD Permissions",
-      "description": "Defines full Create, Read, Update, Delete permissions.",
-      "type": "object",
-      "properties": {
-        "create": {
-          "type": "boolean"
-        },
-        "read": {
-          "type": "boolean"
-        },
-        "update": {
-          "type": "boolean"
-        },
-        "delete": {
-          "type": "boolean"
-        }
-      },
-      "additionalProperties": false
+      }
+
+
+      await batch.commit();
+      addLog('✅ Batch commit successful.');
+
+      toast({
+        title: 'Setup Complete',
+        description: 'Initial data has been seeded and migrated successfully.',
+        variant: 'success'
+      });
+    } catch (e: any) {
+      console.error(e);
+      const errorMessage = e.message || 'An unknown error occurred.';
+      setError(errorMessage);
+      addLog(`❌ An error occurred: ${errorMessage}`);
+      toast({
+        title: 'Setup Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      await deleteApp(tempApp);
+      addLog('🔚 Setup process finished.');
+      setIsLoading(false);
     }
-  },
-  "auth": {
-    "providers": [
-      "Email/Password",
-      "Phone"
-    ]
-  },
-  "firestore": {
-    "/user_lookups/{lookupId}": {
-      "schema": {
-        "$ref": "#/backend/entities/UserLookup"
-      },
-      "description": "Publicly readable mapping of login IDs and phone numbers to user keys."
-    },
-    "/users/{userId}": {
-      "schema": {
-        "$ref": "#/backend/entities/UserProfile"
-      },
-      "description": "Stores public profile information for each user."
-    },
-    "/campaigns/{campaignId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Campaign"
-      },
-      "description": "Stores details for each campaign."
-    },
-    "/campaigns/{campaignId}/beneficiaries/{beneficiaryId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Beneficiary"
-      },
-      "description": "Stores the list of beneficiaries for a specific campaign."
-    },
-    "/donations/{donationId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Donation"
-      },
-      "description": "Stores all donation records across all campaigns."
-    }
-  }
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <DocuExtractHeader />
+      <main className="container mx-auto p-4 md:p-8">
+        <div className="mb-4">
+            <Button variant="outline" asChild>
+                <Link href="/">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Home
+                </Link>
+            </Button>
+        </div>
+        <Card className="max-w-4xl mx-auto">
+          <CardHeader>
+            <CardTitle>Setup & Data Migration</CardTitle>
+            <CardDescription>
+                This script performs two key functions. First, it creates a default 'System Admin' user if one doesn't exist. Second, it migrates any old, legacy user records from the database into the secure Firebase Authentication system, making them compatible with the current login flow.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Alert>
+                <ShieldCheck className="h-4 w-4" />
+                <AlertTitle>Important!</AlertTitle>
+                <AlertDescription>
+                    Run this script only once for initial setup. Running it again may re-process data. If temporary passwords are generated for migrated users, they will be displayed in the log below. You must securely share these passwords with your users.
+                </AlertDescription>
+            </Alert>
+
+            <Button onClick={handleSeed} disabled={isLoading}>
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Database className="mr-2 h-4 w-4" />
+              )}
+              Run Setup & Migration
+            </Button>
+            
+            <div className="space-y-2">
+                <h3 className="font-medium">Logs</h3>
+                <ScrollArea className="h-72 w-full rounded-md border p-4 font-mono text-sm">
+                    {logs.map((log, i) => (
+                        <p key={i}>{log}</p>
+                    ))}
+                    {logs.length === 0 && <p className="text-muted-foreground">Logs will appear here...</p>}
+                </ScrollArea>
+            </div>
+            
+            {error && (
+                <Alert variant="destructive">
+                    <AlertTitle>An Error Occurred</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
 }
