@@ -147,13 +147,18 @@ export default function UsersPage() {
             batch.delete(phoneLookupRef);
         }
 
+        if (userBeingDeleted.userKey) {
+            const userKeyLookupRef = doc(firestore, 'user_lookups', userBeingDeleted.userKey);
+            batch.delete(userKeyLookupRef);
+        }
+
         batch.commit()
             .then(() => {
                 toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed.`, variant: 'success' });
             })
             .catch((serverError) => {
                 const permissionError = new FirestorePermissionError({
-                    path: `users/${userToDelete} and lookups`,
+                    path: `users/${userToDelete} and associated lookups`,
                     operation: 'delete',
                 } satisfies SecurityRuleContext);
                 errorEmitter.emit('permission-error', permissionError);

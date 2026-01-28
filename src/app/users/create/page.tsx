@@ -126,6 +126,11 @@ export default function CreateUserPage() {
             batch.set(phoneLookupRef, { email: email });
         }
         
+        if (data.userKey) {
+            const userKeyLookupRef = doc(firestore, 'user_lookups', data.userKey);
+            batch.set(userKeyLookupRef, { email: email });
+        }
+        
         await batch.commit();
 
         toast({ title: 'Success', description: `User '${data.name}' created successfully.`, variant: 'success' });

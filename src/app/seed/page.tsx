@@ -11,6 +11,7 @@ import {
   where,
   getDoc,
   serverTimestamp,
+  limit,
 } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -64,18 +65,52 @@ export default function SeedPage() {
     try {
       addLog('🚀 Starting setup and migration...');
       
+      // --- Data Cleanup Step ---
+      addLog('🧹 Scanning for orphaned data in "user_lookups"...');
+      const cleanupBatch = writeBatch(firestore);
+      const userLookupsRef = collection(firestore, 'user_lookups');
+      const usersRef = collection(firestore, 'users');
+      const lookupsSnap = await getDocs(userLookupsRef);
+      let orphanedCount = 0;
+
+      for (const lookupDoc of lookupsSnap.docs) {
+          const lookupData = lookupDoc.data();
+          if (!lookupData.email) {
+              addLog(`  - Deleting lookup "${lookupDoc.id}" because it has no email.`);
+              cleanupBatch.delete(lookupDoc.ref);
+              orphanedCount++;
+              continue;
+          }
+
+          const userQuery = query(usersRef, where('email', '==', lookupData.email), limit(1));
+          const userSnap = await getDocs(userQuery);
+          
+          if (userSnap.empty) {
+              addLog(`  - Deleting orphaned lookup: "${lookupDoc.id}" (points to non-existent user with email: ${lookupData.email})`);
+              cleanupBatch.delete(lookupDoc.ref);
+              orphanedCount++;
+          }
+      }
+      
+      if (orphanedCount > 0) {
+          await cleanupBatch.commit();
+          addLog(`✅ Successfully cleaned up ${orphanedCount} orphaned lookup entries.`);
+      } else {
+          addLog('✅ No orphaned lookups found. Data is clean.');
+      }
+
+      // --- Admin Creation Step ---
       const adminEmail = 'baitulmalss.solapur@gmail.com';
       const adminPhone = '9270946423';
       const adminUserKey = 'admin';
       const adminLoginId = 'admin';
 
-      const userLookupsRef = collection(firestore, 'user_lookups');
-      const adminLookupQuery = query(userLookupsRef, where('email', '==', adminEmail));
-      const adminLookupSnap = await getDocs(adminLookupQuery);
+      const adminUserQuery = query(usersRef, where('userKey', '==', adminUserKey), limit(1));
+      const adminUserSnap = await getDocs(adminUserQuery);
       
-      const batch = writeBatch(firestore);
+      const adminCreationBatch = writeBatch(firestore);
 
-      if (adminLookupSnap.empty) {
+      if (adminUserSnap.empty) {
         addLog('👤 Admin user does not exist. Creating...');
         
         const tempAdminPassword = "password";
@@ -97,12 +132,12 @@ export default function SeedPage() {
                 permissions: createAdminPermissions(),
                 createdAt: serverTimestamp()
             };
-            batch.set(userDocRef, userProfileData);
+            adminCreationBatch.set(userDocRef, userProfileData);
 
             // Create lookups
-            batch.set(doc(userLookupsRef, adminLoginId), { email: adminEmail });
-            batch.set(doc(userLookupsRef, adminUserKey), { email: adminEmail });
-            batch.set(doc(userLookupsRef, adminPhone), { email: adminEmail });
+            adminCreationBatch.set(doc(userLookupsRef, adminLoginId), { email: adminEmail });
+            adminCreationBatch.set(doc(userLookupsRef, adminUserKey), { email: adminEmail });
+            adminCreationBatch.set(doc(userLookupsRef, adminPhone), { email: adminEmail });
 
             addLog(`🔑 Admin temporary password is: ${tempAdminPassword}`);
             addLog('🔒 Please log in and change this password immediately.');
@@ -116,17 +151,21 @@ export default function SeedPage() {
             throw error; // Rethrow other errors
         }
       } else {
-        addLog('✅ Admin user lookup already exists. Skipping admin creation.');
+        addLog('✅ Admin user database record already exists. Skipping admin creation.');
       }
+      
+      await adminCreationBatch.commit();
+      addLog('✅ Admin setup complete.');
 
       // --- User Migration Logic ---
-      addLog('🔄 Starting migration of existing database users...');
-      const usersRef = collection(firestore, 'users');
+      addLog('🔄 Starting migration of existing legacy database users...');
+      const migrationBatch = writeBatch(firestore);
       const allUsersSnap = await getDocs(usersRef);
 
       if (allUsersSnap.empty) {
         addLog('No users found in the database to migrate.');
       } else {
+        let migrationCount = 0;
         for (const userDoc of allUsersSnap.docs) {
           const userData = userDoc.data();
           const userId = userDoc.id;
@@ -137,7 +176,7 @@ export default function SeedPage() {
             addLog(`- Skipping user '${userData.name || userId}'. Already appears to be a modern record.`);
             continue;
           }
-
+          migrationCount++;
           addLog(`- Processing legacy user record: '${userData.name || userId}'`);
 
           let userEmail = userData.email;
@@ -166,14 +205,14 @@ export default function SeedPage() {
               email: userEmail,
               createdAt: userData.createdAt || serverTimestamp(),
             };
-            batch.set(newUserDocRef, newProfileData);
+            migrationBatch.set(newUserDocRef, newProfileData);
             addLog(`  - Database record prepared for new UID.`);
 
-            if (userData.loginId) batch.set(doc(userLookupsRef, userData.loginId), { email: userEmail });
-            if (userData.phone) batch.set(doc(userLookupsRef, userData.phone), { email: userEmail });
-            if (userData.userKey) batch.set(doc(userLookupsRef, userData.userKey), { email: userEmail });
+            if (userData.loginId) migrationBatch.set(doc(userLookupsRef, userData.loginId), { email: userEmail });
+            if (userData.phone) migrationBatch.set(doc(userLookupsRef, userData.phone), { email: userEmail });
+            if (userData.userKey) migrationBatch.set(doc(userLookupsRef, userData.userKey), { email: userEmail });
 
-            batch.delete(userDoc.ref);
+            migrationBatch.delete(userDoc.ref);
             addLog(`  - Old database record marked for deletion.`);
 
             addLog(`  - 🔑 Temporary password for ${userData.name} (${userEmail}): ${tempPassword}`);
@@ -185,11 +224,11 @@ export default function SeedPage() {
               }
           }
         }
+        if (migrationCount > 0) {
+            await migrationBatch.commit();
+            addLog('✅ User migration batch commit successful.');
+        }
       }
-
-
-      await batch.commit();
-      addLog('✅ Batch commit successful.');
 
       toast({
         title: 'Setup Complete',
@@ -228,7 +267,7 @@ export default function SeedPage() {
           <CardHeader>
             <CardTitle>Setup & Data Migration</CardTitle>
             <CardDescription>
-                This script performs two key functions. First, it creates a default 'System Admin' user if one doesn't exist. Second, it migrates any old, legacy user records from the database into the secure Firebase Authentication system, making them compatible with the current login flow.
+                This script performs key setup and cleanup functions. It creates a default admin, migrates legacy users to the secure authentication system, and cleans up any orphaned data records it finds.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -236,7 +275,7 @@ export default function SeedPage() {
                 <ShieldCheck className="h-4 w-4" />
                 <AlertTitle>Important!</AlertTitle>
                 <AlertDescription>
-                    Run this script only once for initial setup. Running it again may re-process data. If temporary passwords are generated for migrated users, they will be displayed in the log below. You must securely share these passwords with your users.
+                    Run this script only once for initial setup, or if you suspect data inconsistencies. If temporary passwords are generated for migrated users, they will be displayed in the log below. You must securely share these passwords with your users.
                 </AlertDescription>
             </Alert>
 
