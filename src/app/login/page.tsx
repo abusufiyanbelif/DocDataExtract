@@ -73,7 +73,7 @@ export default function LoginPage() {
     }
   };
 
-  const firebaseProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const firebaseProjectId = firebaseConfig.projectId;
   const authUrl = `https://console.firebase.google.com/project/${firebaseProjectId}/authentication/sign-in-method`;
 
   if (!isFirebaseConfigured) {
