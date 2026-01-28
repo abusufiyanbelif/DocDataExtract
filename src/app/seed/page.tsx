@@ -71,7 +71,6 @@ export default function SeedPage() {
         addLog('🔚 Setup process finished.');
         toast({ title: 'Setup Not Needed', description: 'The admin user already exists.' });
         setIsLoading(false);
-        await deleteApp(tempApp);
         return;
       }
       
