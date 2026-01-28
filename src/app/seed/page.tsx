@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { useFirestore, useAuth } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { firebaseConfig } from '@/firebase/config';
 import {
   collection,
@@ -9,8 +9,6 @@ import {
   writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeApp, deleteApp } from 'firebase/app';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -38,8 +36,11 @@ export default function SeedPage() {
     setLogs([]);
 
     addLog('🚀 Starting Initial Setup...');
-    addLog('This script will create the first administrator account.');
+    addLog('This script will create the first administrator account if it does not exist.');
+    addLog('---');
+    addLog('ℹ️ Required collections: users, user_lookups, campaigns, donations');
     addLog('This process creates the first documents in the "users" and "user_lookups" collections, making them visible in your Firebase console.');
+    addLog('The "campaigns" and "donations" collections will be created automatically when you add data through the app.');
     addLog('---');
 
 
@@ -51,20 +52,14 @@ export default function SeedPage() {
       return;
     }
     
+    // Dynamically import Firebase modules to improve page load performance
+    const { getAuth, createUserWithEmailAndPassword } = await import('firebase/auth');
+    const { initializeApp, deleteApp } = await import('firebase/app');
+
     // Use a temporary, secondary Firebase App instance for creating the user.
     // This avoids conflicts with the primary app's authentication state.
     const tempAppName = `seed-app-${Date.now()}`;
     let tempApp;
-    try {
-        tempApp = initializeApp(firebaseConfig, tempAppName);
-    } catch(e) {
-        const errorMsg = 'Firebase configuration is invalid. Please check your .env file.';
-        setError(errorMsg);
-        addLog(`❌ ${errorMsg}`);
-        setIsLoading(false);
-        return;
-    }
-    const tempAuth = getAuth(tempApp);
 
     try {
       addLog('Step 1: Checking if admin user already exists...');
@@ -81,13 +76,23 @@ export default function SeedPage() {
       
       if (adminLookupSnap.exists()) {
         addLog('✅ Admin user record already exists in "user_lookups". Setup is already complete.');
-        addLog('🔚 Setup process finished.');
         setIsLoading(false);
-        await deleteApp(tempApp);
         return;
       }
       
       addLog('👤 Admin not found. Proceeding with creation...');
+      
+      try {
+        tempApp = initializeApp(firebaseConfig, tempAppName);
+      } catch(e) {
+          const errorMsg = 'Firebase configuration is invalid. Please check your .env file.';
+          setError(errorMsg);
+          addLog(`❌ ${errorMsg}`);
+          setIsLoading(false);
+          return;
+      }
+      const tempAuth = getAuth(tempApp);
+
       const adminCreationBatch = writeBatch(firestore);
 
       try {
@@ -129,9 +134,6 @@ export default function SeedPage() {
           addLog(`   Password: ${adminPassword}`);
           addLog('---');
           addLog('🔒 IMPORTANT: Please log in and change this password immediately.');
-          addLog('---');
-          addLog('ℹ️ Other collections like "campaigns" and "donations" will be created automatically when you add data through the app.');
-
 
           toast({
             title: 'Setup Complete',
