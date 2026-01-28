@@ -90,11 +90,13 @@ export default function CampaignSummaryPage() {
     useEffect(() => {
         if (campaign && !editMode) {
              setEditableCampaign({
+                name: campaign.name || '',
                 description: campaign.description || '',
                 targetAmount: campaign.targetAmount || 0,
                 startDate: campaign.startDate || '',
                 endDate: campaign.endDate || '',
                 category: campaign.category || 'General',
+                status: campaign.status || 'Upcoming',
             });
         }
     }, [campaign, editMode]);
@@ -109,11 +111,13 @@ export default function CampaignSummaryPage() {
         if (!campaignDocRef || !userProfile || !canUpdate) return;
         
         const saveData = {
+            name: editableCampaign.name || '',
             description: editableCampaign.description || '',
             targetAmount: Number(editableCampaign.targetAmount) || 0,
             startDate: editableCampaign.startDate || '',
             endDate: editableCampaign.endDate || '',
             category: editableCampaign.category || 'General',
+            status: editableCampaign.status || 'Upcoming',
         };
 
         updateDoc(campaignDocRef, saveData)
@@ -134,11 +138,13 @@ export default function CampaignSummaryPage() {
     const handleEditClick = () => {
         if (campaign) {
             setEditableCampaign({
+                name: campaign.name || '',
                 description: campaign.description || '',
                 targetAmount: campaign.targetAmount || 0,
                 startDate: campaign.startDate || '',
                 endDate: campaign.endDate || '',
                 category: campaign.category || 'General',
+                status: campaign.status || 'Upcoming',
             });
         }
         setEditMode(true);
@@ -239,6 +245,7 @@ Please donate and share this message. Every contribution helps!
 
 
         const shareData = {
+            title: `Campaign Summary: ${campaign.name}`,
             text: shareText,
         };
 
@@ -326,7 +333,35 @@ Please donate and share this message. Every contribution helps!
                     </Button>
                 </div>
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                    <h1 className="text-3xl font-bold">{campaign.name}</h1>
+                     <div className="space-y-1">
+                        {editMode ? (
+                           <Input
+                                id="name"
+                                value={editableCampaign.name}
+                                onChange={(e) => setEditableCampaign(p => ({...p, name: e.target.value}))}
+                                className="text-3xl font-bold h-auto p-0 border-0 shadow-none focus-visible:ring-0"
+                            />
+                        ) : (
+                            <h1 className="text-3xl font-bold">{campaign.name}</h1>
+                        )}
+                        {editMode ? (
+                             <Select
+                                value={editableCampaign.status}
+                                onValueChange={(value) => setEditableCampaign(p => ({...p, status: value as any}))}
+                            >
+                                <SelectTrigger className="w-fit border-0 shadow-none focus:ring-0 p-0 h-auto text-muted-foreground [&>svg]:ml-1">
+                                    <SelectValue placeholder="Select a status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Upcoming">Upcoming</SelectItem>
+                                    <SelectItem value="Active">Active</SelectItem>
+                                    <SelectItem value="Completed">Completed</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        ): (
+                            <p className="text-muted-foreground">{campaign.status}</p>
+                        )}
+                    </div>
                     <div className="flex gap-2">
                         {!editMode && (
                             <Button onClick={handleShare} variant="outline" disabled={isSharing}>
