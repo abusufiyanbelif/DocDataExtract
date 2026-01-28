@@ -6,13 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Form as RadixForm,
+  FormControl as RadixFormControl,
+  FormDescription as RadixFormDescription,
+  FormField as RadixFormField,
+  FormItem as RadixFormItem,
+  FormLabel as RadixFormLabel,
+  FormMessage as RadixFormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -207,96 +207,96 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isFormDisabled = isSubmitting || isLoading;
 
   return (
-    <Form {...form}>
+    <RadixForm {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-        <FormField
+        <RadixFormField
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Full Name</FormLabel>
-              <FormControl>
+            <RadixFormItem>
+              <RadixFormLabel>Full Name</RadixFormLabel>
+              <RadixFormControl>
                 <Input placeholder="e.g. Moosa Shaikh" {...field} disabled={isFormDisabled} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+              </RadixFormControl>
+              <RadixFormMessage />
+            </RadixFormItem>
           )}
         />
-        <FormField
+        <RadixFormField
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email Address (Optional)</FormLabel>
-              <FormControl>
+            <RadixFormItem>
+              <RadixFormLabel>Email Address (Optional)</RadixFormLabel>
+              <RadixFormControl>
                 <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled || isEditing} />
-              </FormControl>
-              <FormDescription>Used for login and password resets. Cannot be changed after creation.</FormDescription>
-              <FormMessage />
-            </FormItem>
+              </RadixFormControl>
+              <RadixFormDescription>Used for login and password resets. Cannot be changed after creation.</RadixFormDescription>
+              <RadixFormMessage />
+            </RadixFormItem>
           )}
         />
-        <FormField
+        <RadixFormField
           control={form.control}
           name="phone"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone Number</FormLabel>
-                <FormControl>
+            <RadixFormItem>
+              <RadixFormLabel>Phone Number</RadixFormLabel>
+                <RadixFormControl>
                     <Input placeholder="10-digit mobile number" {...field} disabled={isFormDisabled || (isEditing && !!user?.phone)} />
-                </FormControl>
-                <FormDescription>Can be used for login if provided. Cannot be changed after creation.</FormDescription>
-              <FormMessage />
-            </FormItem>
+                </RadixFormControl>
+                <RadixFormDescription>Can be used for login if provided. Cannot be changed after creation.</RadixFormDescription>
+              <RadixFormMessage />
+            </RadixFormItem>
           )}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
+            <RadixFormField
             control={form.control}
             name="loginId"
             render={({ field }) => (
-                <FormItem>
-                <FormLabel>Login ID</FormLabel>
-                <FormControl>
+                <RadixFormItem>
+                <RadixFormLabel>Login ID</RadixFormLabel>
+                <RadixFormControl>
                     <Input placeholder="auto-generated from name" {...field} readOnly={isEditing} disabled={isFormDisabled || isEditing} />
-                </FormControl>
-                <FormDescription>Used for signing in. Cannot be changed after creation.</FormDescription>
-                <FormMessage />
-                </FormItem>
+                </RadixFormControl>
+                <RadixFormDescription>Used for signing in. Cannot be changed after creation.</RadixFormDescription>
+                <RadixFormMessage />
+                </RadixFormItem>
             )}
             />
-            <FormField
+            <RadixFormField
             control={form.control}
             name="userKey"
             render={({ field }) => (
-                <FormItem>
-                <FormLabel>User Key (System ID)</FormLabel>
-                <FormControl>
+                <RadixFormItem>
+                <RadixFormLabel>User Key (System ID)</RadixFormLabel>
+                <RadixFormControl>
                     <Input placeholder="System-generated" {...field} readOnly disabled={isFormDisabled || isEditing} />
-                </FormControl>
-                <FormDescription>This is a system-generated unique ID. It cannot be changed.</FormDescription>
-                <FormMessage />
-                </FormItem>
+                </RadixFormControl>
+                <RadixFormDescription>This is a system-generated unique ID. It cannot be changed.</RadixFormDescription>
+                <RadixFormMessage />
+                </RadixFormItem>
             )}
             />
         </div>
         
         {!isEditing && (
-            <FormField
+            <RadixFormField
             control={form.control}
             name="password"
             render={({ field }) => (
-                <FormItem>
-                <FormLabel>Password</FormLabel>
+                <RadixFormItem>
+                <RadixFormLabel>Password</RadixFormLabel>
                 <div className="relative w-full">
-                    <FormControl>
+                    <RadixFormControl>
                         <Input 
                             type={showPassword ? 'text' : 'password'} 
                             placeholder="Minimum 6 characters"
                             {...field} value={field.value ?? ''} 
                             disabled={isFormDisabled} 
                         />
-                    </FormControl>
+                    </RadixFormControl>
                     <Button
                         type="button"
                         variant="ghost"
@@ -307,14 +307,14 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         {showPassword ? <EyeOff /> : <Eye />}
                     </Button>
                 </div>
-                <FormMessage />
-                </FormItem>
+                <RadixFormMessage />
+                </RadixFormItem>
             )}
         )}
         
         {isEditing && (
             <div className="space-y-2">
-                <FormLabel>Password</FormLabel>
+                <RadixFormLabel>Password</RadixFormLabel>
                 <div className="flex items-center gap-2">
                     <Input 
                         type="password"
@@ -327,51 +327,51 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         <Send className="mr-2 h-4 w-4"/> Send Password Reset
                     </Button>
                 </div>
-                <FormDescription>
+                <RadixFormDescription>
                     An administrator cannot set a password directly. Click the button to send a secure reset link to the user's email.
-                </FormDescription>
+                </RadixFormDescription>
             </div>
         )}
 
         <Separator />
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
+            <RadixFormField
             control={form.control}
             name="idProofType"
             render={({ field }) => (
-                <FormItem>
-                <FormLabel>ID Proof Type</FormLabel>
-                <FormControl>
+                <RadixFormItem>
+                <RadixFormLabel>ID Proof Type</RadixFormLabel>
+                <RadixFormControl>
                     <Input placeholder="Aadhaar, PAN, etc." {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
+                </RadixFormControl>
+                <RadixFormMessage />
+                </RadixFormItem>
             )}
             />
-            <FormField
+            <RadixFormField
             control={form.control}
             name="idNumber"
             render={({ field }) => (
-                <FormItem>
-                <FormLabel>ID Number</FormLabel>
-                <FormControl>
+                <RadixFormItem>
+                <RadixFormLabel>ID Number</RadixFormLabel>
+                <RadixFormControl>
                     <Input placeholder="e.g. XXXX XXXX 1234" {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
+                </RadixFormControl>
+                <RadixFormMessage />
+                </RadixFormItem>
             )}
             />
         </div>
 
-        <FormItem>
-            <FormLabel>ID Proof Document</FormLabel>
-            <FormControl>
+        <RadixFormItem>
+            <RadixFormLabel>ID Proof Document</RadixFormLabel>
+            <RadixFormControl>
                 <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
-            </FormControl>
-            <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
-            <FormMessage />
-        </FormItem>
+            </RadixFormControl>
+            <RadixFormDescription>Optional. Upload an image of the ID proof.</RadixFormDescription>
+            <RadixFormMessage />
+        </RadixFormItem>
         
         {preview && (
             <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
@@ -382,56 +382,56 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         <Separator />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-             <FormField
+             <RadixFormField
                 control={form.control}
                 name="role"
                 render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-full">
+                    <RadixFormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-full">
                         <div className="space-y-0.5">
-                            <FormLabel>Administrator Privileges</FormLabel>
-                            <FormDescription>
+                            <RadixFormLabel>Administrator Privileges</RadixFormLabel>
+                            <RadixFormDescription>
                                 Grants full access to all modules.
-                            </FormDescription>
+                            </RadixFormDescription>
                         </div>
-                        <FormControl>
+                        <RadixFormControl>
                             <Switch
                                 checked={field.value === 'Admin'}
                                 onCheckedChange={(checked) => field.onChange(checked ? 'Admin' : 'User')}
                                 disabled={isDefaultAdmin || isFormDisabled}
                             />
-                        </FormControl>
-                    </FormItem>
+                        </RadixFormControl>
+                    </RadixFormItem>
                 )}
             />
-            <FormField
+            <RadixFormField
                 control={form.control}
                 name="status"
                 render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <RadixFormItem>
+                    <RadixFormLabel>Status</RadixFormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin || isFormDisabled}>
-                        <FormControl>
+                        <RadixFormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="Select a status" />
                         </SelectTrigger>
-                        </FormControl>
+                        </RadixFormControl>
                         <SelectContent>
                         <SelectItem value="Active">Active</SelectItem>
                         <SelectItem value="Inactive">Inactive</SelectItem>
                         </SelectContent>
                     </Select>
-                    <FormDescription>
+                    <RadixFormDescription>
                         {isDefaultAdmin ? 'The default admin user cannot be deactivated.' : 'Inactive users cannot log in.'}
-                    </FormDescription>
-                    <FormMessage />
-                    </FormItem>
+                    </RadixFormDescription>
+                    <RadixFormMessage />
+                    </RadixFormItem>
                 )}
             />
         </div>
 
         <div className="space-y-2">
-            <FormLabel>Module Permissions</FormLabel>
-            <FormDescription>Set granular permissions for the user. These are ignored if the user has Administrator Privileges.</FormDescription>
+            <RadixFormLabel>Module Permissions</RadixFormLabel>
+            <RadixFormDescription>Set granular permissions for the user. These are ignored if the user has Administrator Privileges.</RadixFormDescription>
             <div className="rounded-md border overflow-x-auto">
                 <Table>
                 <TableHeader>
@@ -466,12 +466,12 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         </TableCell>
                         {['create', 'read', 'update', 'delete'].map((perm) => (
                           <TableCell key={perm} className="text-center">
-                            <FormField
+                            <RadixFormField
                               control={form.control}
                               name={`permissions.${mod.id}.${perm}`}
                               render={({ field }) => (
-                                <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                  <FormControl>
+                                <RadixFormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                  <RadixFormControl>
                                     <Checkbox
                                       checked={roleValue === 'Admin' || !!field.value}
                                       onCheckedChange={field.onChange}
@@ -481,8 +481,8 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                         !(mod.permissions as readonly string[]).includes(perm)
                                       }
                                     />
-                                  </FormControl>
-                                </FormItem>
+                                  </RadixFormControl>
+                                </RadixFormItem>
                               )}
                             />
                           </TableCell>
@@ -497,12 +497,12 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             </TableCell>
                             {['create', 'read', 'update', 'delete'].map((perm) => (
                               <TableCell key={perm} className="text-center">
-                                <FormField
+                                <RadixFormField
                                   control={form.control}
                                   name={`permissions.${mod.id}.${subMod.id}.${perm}`}
                                   render={({ field }) => (
-                                    <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                      <FormControl>
+                                    <RadixFormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                      <RadixFormControl>
                                         <Checkbox
                                           checked={roleValue === 'Admin' || !!field.value}
                                           onCheckedChange={field.onChange}
@@ -514,8 +514,8 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                             )
                                           }
                                         />
-                                      </FormControl>
-                                    </FormItem>
+                                      </RadixFormControl>
+                                    </RadixFormItem>
                                   )}
                                 />
                               </TableCell>
@@ -537,6 +537,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
           </Button>
         </div>
       </form>
-    </Form>
+    </RadixForm>
   );
 }
