@@ -197,7 +197,6 @@ export default function SeedPage() {
         variant: 'success'
       });
     } catch (e: any) {
-      console.error(e);
       const errorMessage = e.message || 'An unknown error occurred.';
       setError(errorMessage);
       addLog(`❌ An error occurred: ${errorMessage}`);
