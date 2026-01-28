@@ -130,6 +130,19 @@
               }
             }
           }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the user was created."
+        },
+        "createdById": {
+          "type": "string",
+          "description": "The ID of the user who created this user."
+        },
+        "createdByName": {
+          "type": "string",
+          "description": "The name of the user who created this user."
         }
       },
       "required": [
@@ -257,6 +270,19 @@
         "idProofUrl": {
           "type": "string",
           "description": "URL of the uploaded ID proof document."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the beneficiary was created."
+        },
+        "createdById": {
+          "type": "string",
+          "description": "ID of the user who added the beneficiary."
+        },
+        "createdByName": {
+          "type": "string",
+          "description": "Name of the user who added the beneficiary."
         }
       },
       "required": [
@@ -330,6 +356,19 @@
               "$ref": "#/backend/entities/RationItem"
             }
           }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the campaign was created."
+        },
+        "createdById": {
+          "type": "string",
+          "description": "ID of the user who created the campaign."
+        },
+        "createdByName": {
+          "type": "string",
+          "description": "Name of the user who created the campaign."
         }
       },
       "required": [
@@ -413,6 +452,11 @@
         "campaignName": {
           "type": "string",
           "description": "The name of the campaign this donation belongs to."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the donation was recorded."
         }
       },
       "required": [

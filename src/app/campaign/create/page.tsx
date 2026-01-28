@@ -75,7 +75,7 @@ export default function CreateCampaignPage() {
   });
 
   const handleCreateCampaign = (data: CampaignFormValues) => {
-    if (!firestore || !canCreate) return;
+    if (!firestore || !canCreate || !userProfile) return;
     setIsLoading(true);
 
     const newCampaignData = {
@@ -83,6 +83,8 @@ export default function CreateCampaignPage() {
       targetAmount: data.targetAmount || 0,
       description: '',
       createdAt: serverTimestamp(),
+      createdById: userProfile.id,
+      createdByName: userProfile.name,
       priceDate: new Date().toISOString().split('T')[0],
       shopName: '',
       shopContact: '',

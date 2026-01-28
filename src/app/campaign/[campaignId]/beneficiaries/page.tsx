@@ -210,6 +210,8 @@ export default function BeneficiariesPage() {
             ...(!editingBeneficiary && {
                 addedDate: new Date().toISOString().split('T')[0],
                 createdAt: serverTimestamp(),
+                createdById: userProfile.id,
+                createdByName: userProfile.name,
             }),
         };
         
@@ -254,7 +256,7 @@ export default function BeneficiariesPage() {
   };
 
   const handleImportBeneficiaries = async () => {
-    if (!selectedFile || !firestore || !campaignId || !canCreate) return;
+    if (!selectedFile || !firestore || !campaignId || !canCreate || !userProfile) return;
     setIsImporting(true);
 
     const reader = new FileReader();
@@ -311,6 +313,8 @@ export default function BeneficiariesPage() {
                     status: validStatuses.includes(status) ? status : 'Pending',
                     addedDate: new Date().toISOString().split('T')[0],
                     createdAt: serverTimestamp(),
+                    createdById: userProfile.id,
+                    createdByName: userProfile.name,
                 };
                 validBeneficiaries.push(beneficiaryData);
             });

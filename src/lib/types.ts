@@ -27,6 +27,9 @@ export interface Campaign extends DocumentData {
   shopContact: string;
   shopAddress: string;
   rationLists: RationList;
+  createdAt?: any;
+  createdById?: string;
+  createdByName?: string;
 }
 
 export interface Beneficiary extends DocumentData {
@@ -45,6 +48,9 @@ export interface Beneficiary extends DocumentData {
     kitAmount: number;
     status: 'Given' | 'Pending' | 'Hold' | 'Need More Details' | 'Verified';
     idProofUrl?: string;
+    createdAt?: any;
+    createdById?: string;
+    createdByName?: string;
 }
 
 export interface UserProfile extends DocumentData {
@@ -60,6 +66,9 @@ export interface UserProfile extends DocumentData {
   idProofType?: string;
   idNumber?: string;
   idProofUrl?: string;
+  createdAt?: any;
+  createdById?: string;
+  createdByName?: string;
 }
 
 export interface Donation extends DocumentData {
@@ -77,4 +86,5 @@ export interface Donation extends DocumentData {
   uploadedById: string;
   campaignId: string;
   campaignName: string;
+  createdAt?: any;
 }

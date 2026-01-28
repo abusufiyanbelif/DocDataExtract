@@ -39,7 +39,7 @@ export default function CreateUserPage() {
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;
 
   const handleSave = async (data: UserFormData) => {
-    if (!firestore || !storage || !canCreate) {
+    if (!firestore || !storage || !canCreate || !userProfile) {
         toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
         return;
     };
@@ -111,7 +111,9 @@ export default function CreateUserPage() {
             idProofType: data.idProofType,
             idNumber: data.idNumber,
             idProofUrl,
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
+            createdById: userProfile.id,
+            createdByName: userProfile.name,
         };
 
         const batch = writeBatch(firestore);
