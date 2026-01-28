@@ -80,8 +80,15 @@ export default function CampaignDetailsPage() {
 
   const handleSave = () => {
     if (!campaignDocRef || !editableCampaign || !canUpdate) return;
-    
-    const saveData = { ...editableCampaign };
+
+    // Only send the fields that are editable on this page to respect granular security rules
+    const saveData = {
+        priceDate: editableCampaign.priceDate,
+        shopName: editableCampaign.shopName,
+        shopContact: editableCampaign.shopContact,
+        shopAddress: editableCampaign.shopAddress,
+        rationLists: editableCampaign.rationLists,
+    };
     
     updateDoc(campaignDocRef, saveData)
         .catch(async (serverError) => {

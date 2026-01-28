@@ -50,6 +50,13 @@ service cloud.firestore {
       // Check the final permission
       return (permission in perms) && perms[permission] == true;
     }
+
+    function campaignSummaryKeys() { 
+      return ['name', 'category', 'description', 'targetAmount', 'startDate', 'endDate', 'status']; 
+    }
+    function campaignRationKeys() { 
+      return ['priceDate', 'shopName', 'shopContact', 'shopAddress', 'rationLists']; 
+    }
     
     // --- Collection Rules ---
 
@@ -89,11 +96,16 @@ service cloud.firestore {
       allow create: if hasPermission(['campaigns'], 'create');
       
       // Updating a campaign document itself requires specific permissions
-      // Summary update permission for campaign-level fields
-      // Ration update permission for ration-level fields
       allow update: if 
-        hasPermission(['campaigns', 'summary'], 'update') ||
-        hasPermission(['campaigns', 'ration'], 'update');
+        isAdmin() ||
+        (
+          hasPermission(['campaigns', 'summary'], 'update') &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(campaignSummaryKeys())
+        ) ||
+        (
+          hasPermission(['campaigns', 'ration'], 'update') &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(campaignRationKeys())
+        );
       
       // Deleting a campaign
       allow delete: if hasPermission(['campaigns'], 'delete');
