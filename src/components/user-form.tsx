@@ -1,3 +1,4 @@
+
 'use client';
 
 import { z } from 'zod';
@@ -170,6 +171,18 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         toast({ title: "Error", description: "Cannot send password reset. User email or auth service is not available.", variant: "destructive"});
         return;
     }
+
+    // Check if the email is a synthetic one from the old system
+    if (user.email.includes('@docdataextract.app')) {
+        toast({
+            title: "Action Not Possible for Legacy User",
+            description: "This user was created with a synthetic email and cannot receive password reset links. To fix this, please update the user's email in the Firebase Authentication console to a real address.",
+            variant: "destructive",
+            duration: 10000,
+        });
+        return;
+    }
+
     try {
         await sendPasswordResetEmail(auth, user.email);
         toast({ title: "Email Sent", description: `A password reset link has been sent to ${user.email}.`, variant: "success"});
@@ -334,7 +347,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         <FormItem>
             <FormLabel>ID Proof Document</FormLabel>
             <FormControl>
-                <Input type="file" accept="image/*" {...register('idProofFile')} />
+                <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
             </FormControl>
             <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
             <FormMessage />
