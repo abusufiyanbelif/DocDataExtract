@@ -16,6 +16,16 @@ import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -26,6 +36,9 @@ export default function EditUserPage() {
   const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPasswordAlertOpen, setIsPasswordAlertOpen] = useState(false);
+  const [formDataForSave, setFormDataForSave] = useState<UserFormData | null>(null);
+
   const { userProfile: currentUserProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const userDocRef = useMemo(() => {
@@ -36,23 +49,14 @@ export default function EditUserPage() {
   const { data: user, isLoading: isUserLoading } = useDoc<UserProfile>(userDocRef);
 
   const canUpdate = currentUserProfile?.role === 'Admin' || !!currentUserProfile?.permissions?.users?.update;
-  
-  const handleSave = async (data: UserFormData) => {
+
+  const proceedWithSave = async (data: UserFormData) => {
     if (!firestore || !storage || !user || !canUpdate) {
         toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
+        setIsSubmitting(false);
         return;
     };
-    setIsSubmitting(true);
-
-    if (data.password) {
-        toast({
-            variant: 'destructive',
-            title: 'Password Change Not Implemented',
-            description: "Changing a user's password from this screen requires a secure backend function and has not been implemented. The password was not changed.",
-            duration: 9000,
-        });
-    }
-
+    
     const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
 
     let idProofUrl = user?.idProofUrl || '';
@@ -95,36 +99,44 @@ export default function EditUserPage() {
     const batch = writeBatch(firestore);
     batch.update(docRef, updateData as any);
     
-    // Handle phone number lookup update if it changed
     if (user && user.phone !== data.phone) {
-        // Delete old lookup if it existed
         if (user.phone) {
             const oldPhoneLookupRef = doc(firestore, 'user_lookups', user.phone);
             batch.delete(oldPhoneLookupRef);
         }
-        // Create new lookup if new phone exists
         if (data.phone) {
             const newPhoneLookupRef = doc(firestore, 'user_lookups', data.phone);
             batch.set(newPhoneLookupRef, { userKey: user.userKey });
         }
     }
 
-    batch.commit()
-        .then(() => {
-            toast({ title: 'Success', description: 'User details have been successfully updated.', variant: 'success' });
-            router.push('/users');
-        })
-        .catch(async (serverError) => {
-             const permissionError = new FirestorePermissionError({
-                path: docRef.path,
-                operation: 'update',
-                requestResourceData: updateData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => {
-            setIsSubmitting(false);
+    try {
+        await batch.commit();
+        toast({ title: 'Success', description: 'User details have been successfully updated.', variant: 'success' });
+        router.push('/users');
+    } catch (serverError) {
+         const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'update',
+            requestResourceData: updateData,
         });
+        errorEmitter.emit('permission-error', permissionError);
+    } finally {
+        setIsSubmitting(false);
+        setIsPasswordAlertOpen(false);
+    }
+  };
+  
+  const handleSave = async (data: UserFormData) => {
+    if (!canUpdate) return;
+    setIsSubmitting(true);
+    setFormDataForSave(data);
+
+    if (data.password) {
+        setIsPasswordAlertOpen(true);
+    } else {
+        await proceedWithSave(data);
+    }
   };
 
   const handleCancel = () => {
@@ -216,6 +228,32 @@ export default function EditUserPage() {
           </CardContent>
         </Card>
       </main>
+
+       <AlertDialog open={isPasswordAlertOpen} onOpenChange={(open) => {
+           if (!open) setIsSubmitting(false);
+           setIsPasswordAlertOpen(open);
+       }}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Security Information: Password Change</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                    <p>For security reasons, an administrator cannot directly change another user's password from the client application. This action requires a secure backend environment and is not implemented.</p>
+                    <p className="font-semibold text-destructive">The user's password has not been changed.</p>
+                    <p>Would you like to proceed with saving the other changes to this user's profile?</p>
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setIsSubmitting(false)}>Cancel All</AlertDialogCancel>
+                <AlertDialogAction onClick={async () => {
+                    if (formDataForSave) {
+                        await proceedWithSave(formDataForSave);
+                    }
+                }}>
+                    Save Other Changes
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
