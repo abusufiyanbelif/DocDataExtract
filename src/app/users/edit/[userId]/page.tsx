@@ -106,13 +106,21 @@ export default function EditUserPage() {
         await batch.commit();
         toast({ title: 'Success', description: 'User details have been successfully updated.', variant: 'success' });
         router.push('/users');
-    } catch (serverError) {
-         const permissionError = new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'update',
-            requestResourceData: updateData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
+    } catch (serverError: any) {
+        if (serverError.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: `users/${userId} or associated lookups`,
+                operation: 'update',
+                requestResourceData: updateData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            toast({
+                title: 'Update Failed',
+                description: `An unexpected error occurred: ${serverError.message}`,
+                variant: 'destructive',
+            });
+        }
     } finally {
         setIsSubmitting(false);
     }

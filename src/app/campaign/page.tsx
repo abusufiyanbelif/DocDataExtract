@@ -126,9 +126,8 @@ export default function CampaignPage() {
         toast({ title: 'Success', description: `Campaign '${campaignToDelete.name}' was successfully deleted.`, variant: 'success' });
 
     } catch (error: any) {
-        console.error('Failed to delete campaign:', error);
         if (error.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `campaigns/${campaignToDelete.id}`, operation: 'delete' }));
+            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `campaigns/${campaignToDelete.id} and all sub-collections`, operation: 'delete' }));
         } else {
             toast({ title: 'Error', description: `An unexpected error occurred: ${error.message}`, variant: 'destructive'});
         }

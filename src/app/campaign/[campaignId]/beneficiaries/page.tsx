@@ -362,12 +362,17 @@ export default function BeneficiariesPage() {
                         toast({ title: 'Success', description: `${validBeneficiaries.length} beneficiaries imported successfully.`, variant: 'success' });
                     }
                 })
-                .catch((serverError) => {
-                    const permissionError = new FirestorePermissionError({
-                        path: `campaigns/${campaignId}/beneficiaries`,
-                        operation: 'write',
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
+                .catch((serverError: any) => {
+                    if (serverError.code === 'permission-denied') {
+                        const permissionError = new FirestorePermissionError({
+                            path: `campaigns/${campaignId}/beneficiaries`,
+                            operation: 'write',
+                            requestResourceData: { note: `${validBeneficiaries.length} beneficiaries to import` }
+                        });
+                        errorEmitter.emit('permission-error', permissionError);
+                    } else {
+                        toast({ title: 'Import Failed', description: serverError.message || "An unexpected error occurred during the final save.", variant: 'destructive' });
+                    }
                 })
                 .finally(() => {
                     setIsImporting(false);
