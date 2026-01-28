@@ -34,11 +34,12 @@ import { Loader2, Eye, EyeOff, ChevronDown, Send } from 'lucide-react';
 import type { UserPermissions } from '@/lib/modules';
 import { useAuth } from '@/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
+import { Switch } from './ui/switch';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Please enter a valid email address."}),
-  phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }),
+  email: z.string().email({ message: "Please enter a valid email address."}).optional().or(z.literal('')),
+  phone: z.string().regex(/^\d{10}$/, { message: "Phone must be 10 digits." }).optional().or(z.literal('')),
   loginId: z.string().min(3, { message: "Login ID must be at least 3 characters." }).regex(/^[a-z0-9_.]+$/, { message: 'Login ID can only contain lowercase letters, numbers, underscores, and periods.' }),
   userKey: z.string().min(1, { message: 'User Key is required.'}),
   role: z.enum(['Admin', 'User']),
@@ -58,6 +59,18 @@ const formSchema = z.object({
                 message: 'Password is required and must be at least 6 characters for new users.',
             });
         }
+    }
+    if (!data.email && !data.phone) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['email'],
+            message: 'Either an Email or a Phone Number is required.',
+        });
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['phone'],
+            message: 'Either an Email or a Phone Number is required.',
+        });
     }
 });
 
@@ -88,7 +101,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: user?.name || '',
-      email: user?.email || '',
+      email: user?.email.includes('@docdataextract.app') ? '' : user?.email || '',
       phone: user?.phone || '',
       userKey: user?.userKey || `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       loginId: user?.loginId || '',
@@ -175,8 +188,8 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     // Check if the email is a synthetic one from the old system
     if (user.email.includes('@docdataextract.app')) {
         toast({
-            title: "Action Not Possible for Legacy User",
-            description: "This user was created with a synthetic email and cannot receive password reset links. To fix this, please update the user's email in the Firebase Authentication console to a real address.",
+            title: "Action Not Possible for Phone-Only User",
+            description: "This user was created with a phone number and does not have a real email for resets. To fix this, you must edit the user record in Firebase Authentication to add a real email address.",
             variant: "destructive",
             duration: 10000,
         });
@@ -215,7 +228,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Address</FormLabel>
+              <FormLabel>Email Address (Optional)</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled || isEditing} />
               </FormControl>
@@ -231,8 +244,9 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             <FormItem>
               <FormLabel>Phone Number</FormLabel>
                 <FormControl>
-                    <Input placeholder="10-digit mobile number" {...field} disabled={isFormDisabled} />
+                    <Input placeholder="10-digit mobile number" {...field} disabled={isFormDisabled || (isEditing && !!user?.phone)} />
                 </FormControl>
+                <FormDescription>Can be used for login if provided. Cannot be changed after creation.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -368,59 +382,57 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         
         <Separator />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Role</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin || isFormDisabled}>
-                    <FormControl>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                    <SelectItem value="User">User</SelectItem>
-                    <SelectItem value="Admin">Admin</SelectItem>
-                    </SelectContent>
-                </Select>
-                <FormDescription>
-                    {isDefaultAdmin ? 'The default admin role cannot be changed.' : "'Admin' has all permissions."}
-                </FormDescription>
-                <FormMessage />
-                </FormItem>
-            )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+             <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-full">
+                        <div className="space-y-0.5">
+                            <FormLabel>Administrator Privileges</FormLabel>
+                            <FormDescription>
+                                Grants full access to all modules.
+                            </FormDescription>
+                        </div>
+                        <FormControl>
+                            <Switch
+                                checked={field.value === 'Admin'}
+                                onCheckedChange={(checked) => field.onChange(checked ? 'Admin' : 'User')}
+                                disabled={isDefaultAdmin || isFormDisabled}
+                            />
+                        </FormControl>
+                    </FormItem>
+                )}
             />
             <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin || isFormDisabled}>
-                    <FormControl>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
-                    </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                    </SelectContent>
-                </Select>
-                <FormDescription>
-                    {isDefaultAdmin ? 'The default admin user cannot be deactivated.' : 'Inactive users cannot log in.'}
-                </FormDescription>
-                <FormMessage />
-                </FormItem>
-            )}
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin || isFormDisabled}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormDescription>
+                        {isDefaultAdmin ? 'The default admin user cannot be deactivated.' : 'Inactive users cannot log in.'}
+                    </FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
             />
         </div>
 
         <div className="space-y-2">
             <FormLabel>Module Permissions</FormLabel>
+            <FormDescription>Set granular permissions for the user. These are ignored if the user has Administrator Privileges.</FormDescription>
             <div className="rounded-md border overflow-x-auto">
                 <Table>
                 <TableHeader>

@@ -45,17 +45,27 @@ export default function CreateUserPage() {
     };
     setIsSubmitting(true);
     
-    if (users && users.some(u => u.loginId === data.loginId || u.userKey === data.userKey || u.email === data.email)) {
+    let email = data.email;
+    if (!email && data.phone) {
+        email = `+${data.phone}@docdataextract.app`;
+    }
+
+    if (!email) {
+        toast({ title: 'Validation Error', description: 'Either an email or phone number is required to create a user.', variant: 'destructive' });
+        setIsSubmitting(false);
+        return;
+    }
+    
+    if (users && users.some(u => u.loginId === data.loginId || u.userKey === data.userKey || u.email === email)) {
         toast({
             title: 'ID Exists',
-            description: 'This Login ID, User Key, or Email is already taken. Please choose another one.',
+            description: 'This Login ID, User Key, or Email/Phone is already taken. Please choose another one.',
             variant: 'destructive',
         });
         setIsSubmitting(false);
         return;
     }
 
-    const email = data.email;
     const newPassword = data.password!;
 
     const tempAppName = `temp-user-creation-${Date.now()}`;
@@ -91,7 +101,7 @@ export default function CreateUserPage() {
         const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
         const dataToSave: Omit<UserProfile, 'id'> & { createdAt: any } = {
             name: data.name,
-            email: data.email,
+            email: email, // Use real or synthetic email
             phone: data.phone,
             loginId: data.loginId,
             userKey: data.userKey,
@@ -109,11 +119,11 @@ export default function CreateUserPage() {
         batch.set(docRef, dataToSave);
 
         const loginIdLookupRef = doc(firestore, 'user_lookups', data.loginId);
-        batch.set(loginIdLookupRef, { email: data.email });
+        batch.set(loginIdLookupRef, { email: email });
 
         if (data.phone) {
             const phoneLookupRef = doc(firestore, 'user_lookups', data.phone);
-            batch.set(phoneLookupRef, { email: data.email });
+            batch.set(phoneLookupRef, { email: email });
         }
         
         await batch.commit();
