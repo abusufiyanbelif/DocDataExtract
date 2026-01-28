@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useUser, useFirestore } from '@/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 
 export function useUserProfile() {
@@ -10,52 +10,66 @@ export function useUserProfile() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  
-  // A function to manually refetch the profile.
-  const refetch = useCallback(() => {
-    if (!firestore || !authUser) return;
 
-    const usersRef = collection(firestore, 'users');
-    const q = query(usersRef, where('__name__', '==', authUser.uid));
-    
-    const unsubscribe = onSnapshot(q, 
-        (snapshot) => {
-            if (!snapshot.empty) {
-                const userDoc = snapshot.docs[0];
-                setUserProfile({ id: userDoc.id, ...userDoc.data() } as UserProfile);
-            } else {
-                setUserProfile(null);
-                console.warn(`User profile not found in Firestore for UID: ${authUser.uid}`);
-            }
-            setIsLoading(false);
-        },
-        (err) => {
-            console.error("Error fetching user profile:", err);
-            setError(err);
-            setIsLoading(false);
-        }
-    );
+  // useRef to hold the unsubscribe function, preventing race conditions.
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
-    return () => unsubscribe();
-  }, [firestore, authUser]);
+  const fetchData = useCallback(() => {
+    // Clean up any existing listener before creating a new one.
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+    }
 
-  useEffect(() => {
-    if (isAuthLoading) return;
-    
-    if (!authUser || !firestore) {
+    if (!firestore || !authUser) {
       setUserProfile(null);
       setIsLoading(false);
       return;
     }
-    
+
     setIsLoading(true);
-    const unsubscribe = refetch();
+    const userDocRef = doc(firestore, 'users', authUser.uid);
+    
+    // Create the new listener and store its cleanup function in the ref.
+    unsubscribeRef.current = onSnapshot(userDocRef, 
+      (doc) => {
+        if (doc.exists()) {
+          setUserProfile({ id: doc.id, ...doc.data() } as UserProfile);
+        } else {
+          setUserProfile(null);
+          // This can happen briefly during logout/login, so it's a warn not an error.
+          console.warn(`User profile not found in Firestore for UID: ${authUser.uid}`);
+        }
+        setError(null);
+        setIsLoading(false);
+      },
+      (err) => {
+        console.error("Error fetching user profile:", err);
+        setError(err);
+        setIsLoading(false);
+      }
+    );
+  }, [firestore, authUser]);
 
+
+  useEffect(() => {
+    if (isAuthLoading) {
+      // Wait for authentication to resolve before fetching data.
+      return;
+    }
+    
+    fetchData(); // Initial fetch and listener setup.
+
+    // The main cleanup function that runs when the component unmounts.
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
     };
+  }, [isAuthLoading, authUser, firestore, fetchData]);
 
-  }, [authUser, firestore, isAuthLoading, refetch]);
+  // The refetch function is now simply a call to our stable fetchData function.
+  const refetch = fetchData;
 
   return { userProfile, isLoading: isAuthLoading || isLoading, error, refetch };
 }
