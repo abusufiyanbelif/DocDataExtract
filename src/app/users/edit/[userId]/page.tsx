@@ -1,9 +1,10 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
+import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage, useAuth } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { updateDoc, doc, writeBatch } from 'firebase/firestore';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import type { UserProfile } from '@/lib/types';
 import { modules, createAdminPermissions } from '@/lib/modules';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -12,7 +13,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,8 +25,10 @@ export default function EditUserPage() {
 
   const firestore = useFirestore();
   const storage = useStorage();
+  const auth = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const { userProfile: currentUserProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const userDocRef = useMemo(() => {
@@ -37,6 +40,38 @@ export default function EditUserPage() {
 
   const canUpdate = currentUserProfile?.role === 'Admin' || !!currentUserProfile?.permissions?.users?.update;
 
+  const handlePasswordReset = async () => {
+    if (!auth || !user) {
+        toast({ title: 'Error', description: 'User data or auth service is not available.', variant: 'destructive'});
+        return;
+    };
+    if (user.userKey === 'admin') {
+      toast({ title: 'Action Forbidden', description: 'Password for the default admin cannot be reset this way.', variant: 'destructive'});
+      return;
+    }
+
+    setIsResetting(true);
+    const email = `${user.userKey}@docdataextract.app`;
+    try {
+        await sendPasswordResetEmail(auth, email);
+        toast({
+            title: 'Password Reset Email Sent',
+            description: `An email has been sent to the address associated with this user (${email}).`,
+            variant: 'success',
+            duration: 9000,
+        });
+    } catch (error: any) {
+        console.error("Password reset failed:", error);
+        toast({
+            title: 'Failed to Send Email',
+            description: error.message,
+            variant: 'destructive',
+        });
+    } finally {
+        setIsResetting(false);
+    }
+  };
+  
   const handleSave = async (data: UserFormData) => {
     if (!firestore || !storage || !user || !canUpdate) {
         toast({ title: 'Error', description: 'You do not have permission or services are unavailable.', variant: 'destructive' });
@@ -102,7 +137,7 @@ export default function EditUserPage() {
 
     batch.commit()
         .then(() => {
-            toast({ title: 'Success', description: 'User details have been successfully updated.' });
+            toast({ title: 'Success', description: 'User details have been successfully updated.', variant: 'success' });
             router.push('/users');
         })
         .catch(async (serverError) => {
@@ -123,6 +158,7 @@ export default function EditUserPage() {
   };
 
   const isLoading = isUserLoading || isProfileLoading;
+  const isFormDisabled = isLoading || isSubmitting || isResetting;
 
   if (isLoading) {
     return (
@@ -191,7 +227,15 @@ export default function EditUserPage() {
 
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
-            <CardTitle>Edit User: {user.name}</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <CardTitle>Edit User: {user.name}</CardTitle>
+                 <div className="flex gap-2">
+                    <Button variant="outline" onClick={handlePasswordReset} disabled={isFormDisabled}>
+                        {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Send Password Reset
+                    </Button>
+                </div>
+            </div>
           </CardHeader>
           <CardContent>
             <UserForm

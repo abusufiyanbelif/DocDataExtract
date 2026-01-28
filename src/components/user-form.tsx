@@ -93,7 +93,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     defaultValues: {
       name: user?.name || '',
       phone: user?.phone || '',
-      userKey: user?.userKey || 'user_' + Date.now(),
+      userKey: user?.userKey || `user_${Math.random().toString(36).slice(2, 11)}`,
       loginId: user?.loginId || '',
       role: user?.role || 'User',
       status: user?.status || 'Active',
@@ -247,27 +247,24 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             render={({ field }) => (
                 <FormItem>
                 <FormLabel>Password</FormLabel>
-                <div className="flex gap-2">
-                    <div className="relative w-full">
-                        <FormControl>
-                            <Input 
-                                type={showPassword ? 'text' : 'password'} 
-                                placeholder={isEditing ? "Leave blank to keep current" : "Minimum 6 characters"} 
-                                {...field} value={field.value ?? ''} 
-                                disabled={isFormDisabled} 
-                            />
-                        </FormControl>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                            onClick={() => setShowPassword(!showPassword)}
-                        >
-                            {showPassword ? <EyeOff /> : <Eye />}
-                        </Button>
-                    </div>
-                    <Button type="button" variant="outline" onClick={() => handleFeatureNotReady('Password Reset')} disabled>Reset</Button>
+                <div className="relative w-full">
+                    <FormControl>
+                        <Input 
+                            type={showPassword ? 'text' : 'password'} 
+                            placeholder="Minimum 6 characters" 
+                            {...field} value={field.value ?? ''} 
+                            disabled={isFormDisabled} 
+                        />
+                    </FormControl>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? <EyeOff /> : <Eye />}
+                    </Button>
                 </div>
                 <FormMessage />
                 </FormItem>
