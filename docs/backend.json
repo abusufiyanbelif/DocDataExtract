@@ -452,7 +452,8 @@
   },
   "auth": {
     "providers": [
-      "Email/Password"
+      "Email/Password",
+      "Phone"
     ]
   },
   "firestore": {
