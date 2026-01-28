@@ -98,21 +98,12 @@ export default function CreateCampaignPage() {
         router.push(`/campaign/${docRef.id}/summary`);
       })
       .catch((serverError) => {
-        if (serverError.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: 'campaigns',
-                operation: 'create',
-                requestResourceData: newCampaignData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            console.error("Error creating campaign: ", serverError);
-            toast({
-                title: 'Error',
-                description: `Could not create campaign. ${serverError.message}`,
-                variant: 'destructive'
-            });
-        }
+        const permissionError = new FirestorePermissionError({
+            path: 'campaigns',
+            operation: 'create',
+            requestResourceData: newCampaignData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
       })
       .finally(() => {
         setIsLoading(false);

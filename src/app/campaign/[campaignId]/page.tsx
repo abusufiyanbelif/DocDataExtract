@@ -84,26 +84,17 @@ export default function CampaignDetailsPage() {
     const saveData = { ...editableCampaign };
     
     updateDoc(campaignDocRef, saveData)
-        .then(() => {
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: campaignDocRef.path,
+                operation: 'update',
+                requestResourceData: saveData,
+            } satisfies SecurityRuleContext);
+            errorEmitter.emit('permission-error', permissionError);
+        })
+        .finally(() => {
             toast({ title: 'Success', description: 'Campaign details saved.' });
             setEditMode(false);
-        })
-        .catch(async (serverError) => {
-            if (serverError.code === 'permission-denied') {
-                const permissionError = new FirestorePermissionError({
-                    path: campaignDocRef.path,
-                    operation: 'update',
-                    requestResourceData: saveData,
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-            } else {
-                console.error("Error saving campaign: ", serverError);
-                toast({
-                    title: 'Error',
-                    description: `Could not save the campaign. ${serverError.message}`,
-                    variant: 'destructive'
-                });
-            }
         });
   };
 

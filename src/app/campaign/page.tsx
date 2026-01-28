@@ -105,11 +105,10 @@ export default function CampaignPage() {
         const deleteFilePromises = storageUrls.map(url => {
             const fileRef = storageRef(storage, url);
             return deleteObject(fileRef).catch(error => {
-                if (error.code === 'storage/object-not-found') {
-                    console.log(`File not found, skipping: ${url}`);
-                    return; // Don't throw an error, just continue
+                // Don't throw an error, just continue
+                if (error.code !== 'storage/object-not-found') {
+                    console.error(`Failed to delete file ${url}`, error);
                 }
-                throw error;
             });
         });
 
@@ -126,11 +125,7 @@ export default function CampaignPage() {
         toast({ title: 'Success', description: `Campaign '${campaignToDelete.name}' was successfully deleted.`, variant: 'success' });
 
     } catch (error: any) {
-        if (error.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `campaigns/${campaignToDelete.id} and all sub-collections`, operation: 'delete' }));
-        } else {
-            toast({ title: 'Error', description: `An unexpected error occurred: ${error.message}`, variant: 'destructive'});
-        }
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `campaigns/${campaignToDelete.id} and all sub-collections`, operation: 'delete' }));
     } finally {
         setIsDeleting(false);
         setCampaignToDelete(null);

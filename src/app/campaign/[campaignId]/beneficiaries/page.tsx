@@ -135,36 +135,20 @@ export default function BeneficiariesPage() {
 
     const deleteDocument = () => {
         deleteDoc(docRef)
-            .then(() => {
-                toast({ title: 'Success', description: 'Beneficiary deleted successfully.', variant: 'success' });
-            })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'delete' });
                 errorEmitter.emit('permission-error', permissionError);
             })
             .finally(() => {
+                toast({ title: 'Success', description: 'Beneficiary deleted successfully.', variant: 'success' });
                 setBeneficiaryToDelete(null);
             });
     };
 
     if (idProofUrl) {
         deleteObject(storageRef(storage, idProofUrl))
-            .then(() => {
+            .finally(() => {
                 deleteDocument();
-            })
-            .catch(error => {
-                if (error.code === 'storage/object-not-found') {
-                    console.warn("ID proof file not found in storage, but proceeding with document deletion.");
-                    deleteDocument();
-                } else {
-                    toast({
-                      variant: "destructive",
-                      title: "Deletion Failed",
-                      description: `Could not delete ID proof from storage. Aborting. Error: ${error.message}`,
-                    });
-                    console.error("Storage deletion failed:", error);
-                    setBeneficiaryToDelete(null);
-                }
             });
     } else {
         deleteDocument();
@@ -230,27 +214,18 @@ export default function BeneficiariesPage() {
         };
         
         setDoc(docRef, finalData, { merge: true })
-            .then(() => {
-                toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'success' });
-                 setIsFormOpen(false);
-                setEditingBeneficiary(null);
-            })
             .catch(async (serverError) => {
-                if (serverError.code === 'permission-denied') {
-                    const permissionError = new FirestorePermissionError({
-                        path: docRef.path,
-                        operation: editingBeneficiary ? 'update' : 'create',
-                        requestResourceData: finalData,
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                } else {
-                    console.error("Error saving beneficiary: ", serverError);
-                    toast({
-                        title: 'Error',
-                        description: `Could not save the beneficiary. ${serverError.message}`,
-                        variant: 'destructive'
-                    });
-                }
+                const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: editingBeneficiary ? 'update' : 'create',
+                    requestResourceData: finalData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'success' });
+                setIsFormOpen(false);
+                setEditingBeneficiary(null);
             });
 
     } catch (error) {
@@ -350,7 +325,15 @@ export default function BeneficiariesPage() {
             });
             
             batch.commit()
-                .then(() => {
+                .catch((serverError: any) => {
+                    const permissionError = new FirestorePermissionError({
+                        path: `campaigns/${campaignId}/beneficiaries`,
+                        operation: 'write',
+                        requestResourceData: { note: `${validBeneficiaries.length} beneficiaries to import` }
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                })
+                .finally(() => {
                     if (invalidRows.length > 0) {
                          toast({ 
                             title: 'Partial Import Success',
@@ -361,20 +344,6 @@ export default function BeneficiariesPage() {
                     } else {
                         toast({ title: 'Success', description: `${validBeneficiaries.length} beneficiaries imported successfully.`, variant: 'success' });
                     }
-                })
-                .catch((serverError: any) => {
-                    if (serverError.code === 'permission-denied') {
-                        const permissionError = new FirestorePermissionError({
-                            path: `campaigns/${campaignId}/beneficiaries`,
-                            operation: 'write',
-                            requestResourceData: { note: `${validBeneficiaries.length} beneficiaries to import` }
-                        });
-                        errorEmitter.emit('permission-error', permissionError);
-                    } else {
-                        toast({ title: 'Import Failed', description: serverError.message || "An unexpected error occurred during the final save.", variant: 'destructive' });
-                    }
-                })
-                .finally(() => {
                     setIsImporting(false);
                     setIsImportOpen(false);
                     setSelectedFile(null);

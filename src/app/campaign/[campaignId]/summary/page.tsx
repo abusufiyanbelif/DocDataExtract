@@ -121,10 +121,6 @@ export default function CampaignSummaryPage() {
         };
 
         updateDoc(campaignDocRef, saveData)
-            .then(() => {
-                toast({ title: 'Success', description: 'Campaign summary updated.', variant: 'success' });
-                setEditMode(false);
-            })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
                     path: campaignDocRef.path,
@@ -132,6 +128,10 @@ export default function CampaignSummaryPage() {
                     requestResourceData: saveData,
                 });
                 errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
+                toast({ title: 'Success', description: 'Campaign summary updated.', variant: 'success' });
+                setEditMode(false);
             });
     };
     

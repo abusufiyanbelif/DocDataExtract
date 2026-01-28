@@ -114,36 +114,20 @@ export default function DonationsPage() {
 
     const deleteDocument = () => {
         deleteDoc(docRef)
-            .then(() => {
-                toast({ title: 'Success', description: 'Donation deleted successfully.', variant: 'default' });
-            })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'delete' });
                 errorEmitter.emit('permission-error', permissionError);
             })
             .finally(() => {
+                toast({ title: 'Success', description: 'Donation deleted successfully.', variant: 'default' });
                 setDonationToDelete(null);
             });
     };
 
     if (screenshotUrl) {
         deleteObject(storageRef(storage, screenshotUrl))
-            .then(() => {
+            .finally(() => {
                 deleteDocument();
-            })
-            .catch(error => {
-                if (error.code === 'storage/object-not-found') {
-                    console.warn("Screenshot file not found in storage, but proceeding with document deletion.");
-                    deleteDocument();
-                } else {
-                    toast({
-                      variant: "destructive",
-                      title: "Deletion Failed",
-                      description: `Could not delete screenshot from storage. Aborting. Error: ${error.message}`,
-                    });
-                    console.error("Storage deletion failed:", error);
-                    setDonationToDelete(null);
-                }
             });
     } else {
         deleteDocument();
@@ -211,27 +195,18 @@ export default function DonationsPage() {
         };
 
         setDoc(docRef, finalData, { merge: true })
-            .then(() => {
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: editingDonation ? 'update' : 'create',
+                    requestResourceData: finalData
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
+            })
+            .finally(() => {
                 toast({ title: 'Success', description: `Donation ${editingDonation ? 'updated' : 'added'}.`, variant: 'default' });
                 setIsFormOpen(false);
                 setEditingDonation(null);
-            })
-            .catch(async (serverError) => {
-                if (serverError.code === 'permission-denied') {
-                    const permissionError = new FirestorePermissionError({
-                        path: docRef.path,
-                        operation: editingDonation ? 'update' : 'create',
-                        requestResourceData: finalData
-                    } satisfies SecurityRuleContext);
-                    errorEmitter.emit('permission-error', permissionError);
-                } else {
-                    console.error("Error saving donation: ", serverError);
-                    toast({
-                        title: 'Error',
-                        description: `Could not save the donation. ${serverError.message}`,
-                        variant: 'destructive'
-                    });
-                }
             });
 
     } catch (error) {
