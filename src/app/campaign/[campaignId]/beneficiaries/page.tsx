@@ -136,7 +136,7 @@ export default function BeneficiariesPage() {
     const deleteDocument = () => {
         deleteDoc(docRef)
             .then(() => {
-                toast({ title: 'Success', description: 'Beneficiary deleted successfully.', variant: 'default' });
+                toast({ title: 'Success', description: 'Beneficiary deleted successfully.', variant: 'success' });
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({ path: docRef.path, operation: 'delete' });
@@ -175,6 +175,21 @@ export default function BeneficiariesPage() {
     if (!firestore || !storage || !campaignId || !userProfile) return;
     if (editingBeneficiary && !canUpdate) return;
     if (!editingBeneficiary && !canCreate) return;
+
+    if (!editingBeneficiary) {
+        const isDuplicate = beneficiaries.some(b => 
+            b.name.trim().toLowerCase() === data.name.trim().toLowerCase() &&
+            (b.phone || '') === (data.phone || '')
+        );
+        if (isDuplicate) {
+            toast({
+                title: 'Duplicate Beneficiary',
+                description: 'A beneficiary with the same name and phone number already exists in this campaign.',
+                variant: 'destructive',
+            });
+            return;
+        }
+    }
 
     const docRef = editingBeneficiary
         ? doc(firestore, `campaigns/${campaignId}/beneficiaries`, editingBeneficiary.id)
@@ -216,7 +231,7 @@ export default function BeneficiariesPage() {
         
         setDoc(docRef, finalData, { merge: true })
             .then(() => {
-                toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'default' });
+                toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'success' });
                  setIsFormOpen(false);
                 setEditingBeneficiary(null);
             })
@@ -226,7 +241,7 @@ export default function BeneficiariesPage() {
                         path: docRef.path,
                         operation: editingBeneficiary ? 'update' : 'create',
                         requestResourceData: finalData,
-                    } satisfies SecurityRuleContext);
+                    });
                     errorEmitter.emit('permission-error', permissionError);
                 } else {
                     console.error("Error saving beneficiary: ", serverError);
@@ -340,11 +355,11 @@ export default function BeneficiariesPage() {
                          toast({ 
                             title: 'Partial Import Success',
                             description: `${validBeneficiaries.length} beneficiaries imported. ${invalidRows.length} rows were invalid and skipped (Rows: ${invalidRows.join(', ')}).`,
-                            variant: 'default',
+                            variant: 'success',
                             duration: 8000,
                          });
                     } else {
-                        toast({ title: 'Success', description: `${validBeneficiaries.length} beneficiaries imported successfully.`, variant: 'default' });
+                        toast({ title: 'Success', description: `${validBeneficiaries.length} beneficiaries imported successfully.`, variant: 'success' });
                     }
                 })
                 .catch((serverError) => {
@@ -650,7 +665,7 @@ export default function BeneficiariesPage() {
                                   ) : "N/A"}
                               </TableCell>
                               <TableCell>{beneficiary.referralBy}</TableCell>
-                              <TableCell className="text-right font-medium">₹{beneficiary.kitAmount.toFixed(2)}</TableCell>
+                              <TableCell className="text-right font-medium">₹{(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
                               <TableCell>
                                   <Badge variant={
                                       beneficiary.status === 'Given' ? 'default' :
