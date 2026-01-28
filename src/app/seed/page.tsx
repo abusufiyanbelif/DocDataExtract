@@ -37,15 +37,11 @@ export default function SeedPage() {
     setError(null);
     setLogs([]);
 
-    addLog('ℹ️ Verifying application setup...');
-    addLog('This script will create the initial administrator user.');
-    addLog('This process ensures the "users" and "user_lookups" collections are created.');
+    addLog('🚀 Starting Initial Setup...');
+    addLog('This script will create the first administrator account.');
+    addLog('This process creates the first documents in the "users" and "user_lookups" collections, making them visible in your Firebase console.');
     addLog('---');
-    addLog('Other Required Collections:');
-    addLog('The following collections are also used by the application and will be created automatically when you add data through the UI:');
-    addLog('  - campaigns');
-    addLog('  - donations');
-    addLog('---');
+
 
     if (!firestore) {
       const errorMsg = 'Firebase is not initialized. Please check your configuration.';
@@ -71,7 +67,7 @@ export default function SeedPage() {
     const tempAuth = getAuth(tempApp);
 
     try {
-      addLog('🚀 Starting initial admin setup...');
+      addLog('Step 1: Checking if admin user already exists...');
       
       const adminEmail = 'baitulmalss.solapur@gmail.com';
       const adminPhone = '9270946423';
@@ -84,20 +80,23 @@ export default function SeedPage() {
       const adminLookupSnap = await getDoc(adminLookupRef);
       
       if (adminLookupSnap.exists()) {
-        addLog('✅ Admin user record already exists in the database. Skipping creation.');
+        addLog('✅ Admin user record already exists in "user_lookups". Setup is already complete.');
+        addLog('🔚 Setup process finished.');
         setIsLoading(false);
         await deleteApp(tempApp);
         return;
       }
       
-      addLog('👤 Admin user not found. Proceeding with creation...');
+      addLog('👤 Admin not found. Proceeding with creation...');
       const adminCreationBatch = writeBatch(firestore);
 
       try {
+          addLog('Step 2: Creating Firebase Auth account...');
           const userCredential = await createUserWithEmailAndPassword(tempAuth, adminEmail, adminPassword);
           const newUid = userCredential.user.uid;
-          addLog(`✅ Firebase Auth account created for admin with UID: ${newUid}.`);
+          addLog(`✅ Auth account created with UID: ${newUid}.`);
 
+          addLog('Step 3: Preparing database records...');
           const userDocRef = doc(firestore, 'users', newUid);
           const userProfileData = {
               name: 'System Admin',
@@ -108,25 +107,31 @@ export default function SeedPage() {
               role: 'Admin',
               status: 'Active',
               permissions: createAdminPermissions(),
-              createdAt: serverTimestamp()
+              createdAt: serverTimestamp(),
+              createdById: 'system',
+              createdByName: 'System Seed'
           };
           adminCreationBatch.set(userDocRef, userProfileData);
-          addLog('ℹ️ Database record prepared for new admin user.');
+          addLog('  - "users" document prepared.');
 
           const userLookupsRef = collection(firestore, 'user_lookups');
           adminCreationBatch.set(doc(userLookupsRef, adminLoginId), { email: adminEmail });
           adminCreationBatch.set(doc(userLookupsRef, adminUserKey), { email: adminEmail });
           adminCreationBatch.set(doc(userLookupsRef, adminPhone), { email: adminEmail });
-          addLog('ℹ️ User lookup records prepared.');
+          addLog('  - "user_lookups" documents prepared.');
 
+          addLog('Step 4: Committing records to database...');
           await adminCreationBatch.commit();
-          addLog('✅ Admin user and lookups successfully saved to the database.');
+          addLog('✅ Success! The "users" and "user_lookups" collections are now available.');
           addLog('---');
           addLog('🔑 Admin Credentials:');
           addLog(`   Login ID: ${adminLoginId}`);
           addLog(`   Password: ${adminPassword}`);
           addLog('---');
           addLog('🔒 IMPORTANT: Please log in and change this password immediately.');
+          addLog('---');
+          addLog('ℹ️ Other collections like "campaigns" and "donations" will be created automatically when you add data through the app.');
+
 
           toast({
             title: 'Setup Complete',
