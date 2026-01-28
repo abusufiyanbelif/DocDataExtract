@@ -1,13 +1,12 @@
 'use client';
 
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 
 import {
-  Form,
   FormControl,
   FormDescription,
   FormField,
@@ -192,272 +191,303 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isFormDisabled = isSubmitting || isLoading;
 
   return (
-    <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g. Moosa Shaikh" {...field} disabled={isFormDisabled} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email Address (Optional)</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled || isEditing} />
+              </FormControl>
+              <FormDescription>Used for login and password resets. Cannot be changed after creation.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input placeholder="10-digit mobile number" {...field} disabled={isFormDisabled || (isEditing && !!user?.phone)} />
+              </FormControl>
+              <FormDescription>Can be used for login if provided. Cannot be changed after creation.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
+            control={form.control}
+            name="loginId"
+            render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Moosa Shaikh" {...field} disabled={isFormDisabled} />
-                  </FormControl>
-                  <FormMessage />
+                <FormLabel>Login ID</FormLabel>
+                <FormControl>
+                    <Input placeholder="auto-generated from name" {...field} readOnly={isEditing} disabled={isFormDisabled || isEditing} />
+                </FormControl>
+                <FormDescription>Used for signing in. Cannot be changed after creation.</FormDescription>
+                <FormMessage />
                 </FormItem>
-              )}
+            )}
             />
             <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
+            control={form.control}
+            name="userKey"
+            render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address (Optional)</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled || isEditing} />
-                  </FormControl>
-                  <FormDescription>Used for login and password resets. Cannot be changed after creation.</FormDescription>
-                  <FormMessage />
+                <FormLabel>User Key (System ID)</FormLabel>
+                <FormControl>
+                    <Input placeholder="System-generated" {...field} readOnly disabled={isFormDisabled || isEditing} />
+                </FormControl>
+                <FormDescription>This is a system-generated unique ID. It cannot be changed.</FormDescription>
+                <FormMessage />
                 </FormItem>
-              )}
+            )}
             />
+        </div>
+        
+        {!isEditing && (
             <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
+            control={form.control}
+            name="password"
+            render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="10-digit mobile number" {...field} disabled={isFormDisabled || (isEditing && !!user?.phone)} />
-                  </FormControl>
-                  <FormDescription>Can be used for login if provided. Cannot be changed after creation.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                control={form.control}
-                name="loginId"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Login ID</FormLabel>
+                <FormLabel>Password</FormLabel>
+                <div className="relative w-full">
                     <FormControl>
-                        <Input placeholder="auto-generated from name" {...field} readOnly={isEditing} disabled={isFormDisabled || isEditing} />
+                        <Input 
+                            type={showPassword ? 'text' : 'password'} 
+                            placeholder="Minimum 6 characters"
+                            {...field} value={field.value ?? ''} 
+                            disabled={isFormDisabled} 
+                        />
                     </FormControl>
-                    <FormDescription>Used for signing in. Cannot be changed after creation.</FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="userKey"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>User Key (System ID)</FormLabel>
-                    <FormControl>
-                        <Input placeholder="System-generated" {...field} readOnly disabled={isFormDisabled || isEditing} />
-                    </FormControl>
-                    <FormDescription>This is a system-generated unique ID. It cannot be changed.</FormDescription>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                    >
+                        {showPassword ? <EyeOff /> : <Eye />}
+                    </Button>
+                </div>
+                <FormMessage />
+                </FormItem>
+            )}
+        )}
+        
+        {isEditing && (
+            <div className="space-y-2">
+                <FormLabel>Password</FormLabel>
+                <div className="flex items-center gap-2">
+                    <Input 
+                        type="password"
+                        value="••••••••••"
+                        readOnly
+                        disabled
+                        className="flex-1"
+                    />
+                    <Button type="button" variant="secondary" onClick={handleSendPasswordReset} disabled={isSubmitting}>
+                        <Send className="mr-2 h-4 w-4"/> Send Password Reset
+                    </Button>
+                </div>
+                <FormDescription>
+                    An administrator cannot set a password directly. Click the button to send a secure reset link to the user's email.
+                </FormDescription>
             </div>
-            
-            {!isEditing && (
-                <FormField
+        )}
+
+        <Separator />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+            control={form.control}
+            name="idProofType"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>ID Proof Type</FormLabel>
+                <FormControl>
+                    <Input placeholder="Aadhaar, PAN, etc." {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            <FormField
+            control={form.control}
+            name="idNumber"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>ID Number</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. XXXX XXXX 1234" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+
+        <FormItem>
+            <FormLabel>ID Proof Document</FormLabel>
+            <FormControl>
+                <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
+            </FormControl>
+            <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
+            <FormMessage />
+        </FormItem>
+        
+        {preview && (
+            <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
+                {preview.startsWith('data:application/pdf') ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">PDF Preview</div>
+                ) : (
+                    <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
+                )}
+            </div>
+        )}
+        
+        <Separator />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <FormField
                 control={form.control}
-                name="password"
+                name="role"
                 render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <div className="relative w-full">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-full">
+                        <div className="space-y-0.5">
+                            <FormLabel>Administrator Privileges</FormLabel>
+                            <FormDescription>
+                                Grants full access to all modules.
+                            </FormDescription>
+                        </div>
                         <FormControl>
-                            <Input 
-                                type={showPassword ? 'text' : 'password'} 
-                                placeholder="Minimum 6 characters"
-                                {...field} value={field.value ?? ''} 
-                                disabled={isFormDisabled} 
+                            <Switch
+                                checked={field.value === 'Admin'}
+                                onCheckedChange={(checked) => field.onChange(checked ? 'Admin' : 'User')}
+                                disabled={isDefaultAdmin || isFormDisabled}
                             />
                         </FormControl>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                            onClick={() => setShowPassword(!showPassword)}
-                        >
-                            {showPassword ? <EyeOff /> : <Eye />}
-                        </Button>
-                    </div>
-                    <FormMessage />
                     </FormItem>
                 )}
-            )}
-            
-            {isEditing && (
-                <div className="space-y-2">
-                    <FormLabel>Password</FormLabel>
-                    <div className="flex items-center gap-2">
-                        <Input 
-                            type="password"
-                            value="••••••••••"
-                            readOnly
-                            disabled
-                            className="flex-1"
-                        />
-                        <Button type="button" variant="secondary" onClick={handleSendPasswordReset} disabled={isSubmitting}>
-                            <Send className="mr-2 h-4 w-4"/> Send Password Reset
-                        </Button>
-                    </div>
+            />
+            <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin || isFormDisabled}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a status" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <FormDescription>
-                        An administrator cannot set a password directly. Click the button to send a secure reset link to the user's email.
+                        {isDefaultAdmin ? 'The default admin user cannot be deactivated.' : 'Inactive users cannot log in.'}
                     </FormDescription>
-                </div>
-            )}
-
-            <Separator />
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                control={form.control}
-                name="idProofType"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>ID Proof Type</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Aadhaar, PAN, etc." {...field} />
-                    </FormControl>
                     <FormMessage />
                     </FormItem>
                 )}
-                />
-                <FormField
-                control={form.control}
-                name="idNumber"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>ID Number</FormLabel>
-                    <FormControl>
-                        <Input placeholder="e.g. XXXX XXXX 1234" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-            </div>
+            />
+        </div>
 
-            <FormItem>
-                <FormLabel>ID Proof Document</FormLabel>
-                <FormControl>
-                    <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
-                </FormControl>
-                <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
-                <FormMessage />
-            </FormItem>
-            
-            {preview && (
-                <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
-                    {preview.startsWith('data:application/pdf') ? (
-                        <div className="flex items-center justify-center h-full text-muted-foreground">PDF Preview</div>
-                    ) : (
-                        <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
-                    )}
-                </div>
-            )}
-            
-            <Separator />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-full">
-                            <div className="space-y-0.5">
-                                <FormLabel>Administrator Privileges</FormLabel>
-                                <FormDescription>
-                                    Grants full access to all modules.
-                                </FormDescription>
+        <div className="space-y-2">
+            <FormLabel>Module Permissions</FormLabel>
+            <FormDescription>Set granular permissions for the user. These are ignored if the user has Administrator Privileges.</FormDescription>
+            <div className="rounded-md border overflow-x-auto">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead className="w-[200px]">Module</TableHead>
+                    <TableHead className="text-center">Create</TableHead>
+                    <TableHead className="text-center">Read</TableHead>
+                    <TableHead className="text-center">Update</TableHead>
+                    <TableHead className="text-center">Delete</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                {modules.map((mod) => (
+                    <React.Fragment key={mod.id}>
+                    <TableRow>
+                        <TableCell className="font-medium">
+                        {mod.subModules ? (
+                            <div
+                            onClick={() => toggleModule(mod.id)}
+                            className="flex items-center gap-2 cursor-pointer"
+                            >
+                            <span>{mod.name}</span>
+                            <ChevronDown
+                                className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                                openModules[mod.id] ? 'rotate-180' : ''
+                                }`}
+                            />
                             </div>
-                            <FormControl>
-                                <Switch
-                                    checked={field.value === 'Admin'}
-                                    onCheckedChange={(checked) => field.onChange(checked ? 'Admin' : 'User')}
-                                    disabled={isDefaultAdmin || isFormDisabled}
-                                />
-                            </FormControl>
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin || isFormDisabled}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a status" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            <SelectItem value="Active">Active</SelectItem>
-                            <SelectItem value="Inactive">Inactive</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormDescription>
-                            {isDefaultAdmin ? 'The default admin user cannot be deactivated.' : 'Inactive users cannot log in.'}
-                        </FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-
-            <div className="space-y-2">
-                <FormLabel>Module Permissions</FormLabel>
-                <FormDescription>Set granular permissions for the user. These are ignored if the user has Administrator Privileges.</FormDescription>
-                <div className="rounded-md border overflow-x-auto">
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead className="w-[200px]">Module</TableHead>
-                        <TableHead className="text-center">Create</TableHead>
-                        <TableHead className="text-center">Read</TableHead>
-                        <TableHead className="text-center">Update</TableHead>
-                        <TableHead className="text-center">Delete</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {modules.map((mod) => (
-                        <React.Fragment key={mod.id}>
-                        <TableRow>
-                            <TableCell className="font-medium">
-                            {mod.subModules ? (
-                                <div
-                                onClick={() => toggleModule(mod.id)}
-                                className="flex items-center gap-2 cursor-pointer"
-                                >
-                                <span>{mod.name}</span>
-                                <ChevronDown
-                                    className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                                    openModules[mod.id] ? 'rotate-180' : ''
-                                    }`}
-                                />
-                                </div>
-                            ) : (
-                                mod.name
+                        ) : (
+                            mod.name
+                        )}
+                        </TableCell>
+                        {['create', 'read', 'update', 'delete'].map((perm) => (
+                        <TableCell key={perm} className="text-center">
+                            <FormField
+                            control={form.control}
+                            name={`permissions.${mod.id}.${perm}`}
+                            render={({ field }) => (
+                                <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                                <FormControl>
+                                    <Checkbox
+                                    checked={roleValue === 'Admin' || !!field.value}
+                                    onCheckedChange={field.onChange}
+                                    disabled={
+                                        roleValue === 'Admin' ||
+                                        isFormDisabled ||
+                                        !(mod.permissions as readonly string[]).includes(perm)
+                                    }
+                                    />
+                                </FormControl>
+                                </FormItem>
                             )}
+                            />
+                        </TableCell>
+                        ))}
+                    </TableRow>
+                    {mod.subModules &&
+                        openModules[mod.id] &&
+                        mod.subModules.map((subMod) => (
+                        <TableRow key={subMod.id} className="bg-muted/30 hover:bg-muted/50">
+                            <TableCell className="pl-12 text-muted-foreground">
+                            {subMod.name}
                             </TableCell>
                             {['create', 'read', 'update', 'delete'].map((perm) => (
                             <TableCell key={perm} className="text-center">
                                 <FormField
                                 control={form.control}
-                                name={`permissions.${mod.id}.${perm}`}
+                                name={`permissions.${mod.id}.${subMod.id}.${perm}`}
                                 render={({ field }) => (
                                     <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
                                     <FormControl>
@@ -467,7 +497,9 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                         disabled={
                                             roleValue === 'Admin' ||
                                             isFormDisabled ||
-                                            !(mod.permissions as readonly string[]).includes(perm)
+                                            !(subMod.permissions as readonly string[]).includes(
+                                            perm
+                                            )
                                         }
                                         />
                                     </FormControl>
@@ -477,55 +509,22 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             </TableCell>
                             ))}
                         </TableRow>
-                        {mod.subModules &&
-                            openModules[mod.id] &&
-                            mod.subModules.map((subMod) => (
-                            <TableRow key={subMod.id} className="bg-muted/30 hover:bg-muted/50">
-                                <TableCell className="pl-12 text-muted-foreground">
-                                {subMod.name}
-                                </TableCell>
-                                {['create', 'read', 'update', 'delete'].map((perm) => (
-                                <TableCell key={perm} className="text-center">
-                                    <FormField
-                                    control={form.control}
-                                    name={`permissions.${mod.id}.${subMod.id}.${perm}`}
-                                    render={({ field }) => (
-                                        <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                        <FormControl>
-                                            <Checkbox
-                                            checked={roleValue === 'Admin' || !!field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={
-                                                roleValue === 'Admin' ||
-                                                isFormDisabled ||
-                                                !(subMod.permissions as readonly string[]).includes(
-                                                perm
-                                                )
-                                            }
-                                            />
-                                        </FormControl>
-                                        </FormItem>
-                                    )}
-                                    />
-                                </TableCell>
-                                ))}
-                            </TableRow>
-                            ))}
-                        </React.Fragment>
-                    ))}
-                    </TableBody>
-                    </Table>
-                </div>
+                        ))}
+                    </React.Fragment>
+                ))}
+                </TableBody>
+                </Table>
             </div>
-            
-            <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isFormDisabled}>Cancel</Button>
-            <Button type="submit" disabled={isFormDisabled}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? 'Saving...' : 'Save User'}
-            </Button>
-            </div>
-        </form>
-    </Form>
+        </div>
+        
+        <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isFormDisabled}>Cancel</Button>
+        <Button type="submit" disabled={isFormDisabled}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSubmitting ? 'Saving...' : 'Save User'}
+        </Button>
+        </div>
+      </form>
+    </FormProvider>
   );
 }
