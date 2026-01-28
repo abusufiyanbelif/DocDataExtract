@@ -51,14 +51,15 @@ export default function CampaignPage() {
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
+  
+  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const campaignsCollectionRef = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !userProfile) return null;
     return collection(firestore, 'campaigns');
-  }, [firestore]);
+  }, [firestore, userProfile]);
 
   const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const handleRowClick = (campaignId: string) => {
     router.push(`/campaign/${campaignId}/summary`);
@@ -147,6 +148,7 @@ export default function CampaignPage() {
   };
   
   const filteredAndSortedCampaigns = useMemo(() => {
+    if (!campaigns) return [];
     let sortableItems = [...campaigns];
     
     // Filtering
@@ -347,7 +349,7 @@ export default function CampaignPage() {
                 {!isLoading && filteredAndSortedCampaigns.length === 0 && (
                     <TableRow>
                         <TableCell colSpan={canDelete ? 7 : 6} className="text-center text-muted-foreground h-24">
-                           No campaigns found matching your criteria. {canCreate && campaigns.length === 0 && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
+                           No campaigns found matching your criteria. {canCreate && campaigns?.length === 0 && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
                         </TableCell>
                     </TableRow>
                 )}

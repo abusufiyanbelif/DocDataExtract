@@ -42,9 +42,9 @@ export default function EditUserPage() {
   const { userProfile: currentUserProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const userDocRef = useMemo(() => {
-    if (!firestore || !userId) return null;
+    if (!firestore || !userId || !currentUserProfile) return null;
     return doc(firestore, 'users', userId);
-  }, [firestore, userId]);
+  }, [firestore, userId, currentUserProfile]);
 
   const { data: user, isLoading: isUserLoading } = useDoc<UserProfile>(userDocRef);
 
@@ -236,12 +236,12 @@ export default function EditUserPage() {
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Security Information: Password Change</AlertDialogTitle>
-                <AlertDialogDescription asChild>
-                    <div className="space-y-2">
-                        <p>For security reasons, an administrator cannot directly change another user's password from the client application. This action requires a secure backend environment and has not been implemented.</p>
-                        <p className="font-semibold text-destructive">The user's password has not been changed.</p>
-                        <p>Would you like to proceed with saving the other changes to this user's profile?</p>
-                    </div>
+                <AlertDialogDescription>
+                    For security reasons, an administrator cannot directly change another user&apos;s password from the client application. This action requires a secure backend environment and has not been implemented.
+                    <br/><br/>
+                    <strong className="font-semibold text-destructive">The user&apos;s password has not been changed.</strong>
+                    <br/><br/>
+                    Would you like to proceed with saving the other changes to this user&apos;s profile?
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

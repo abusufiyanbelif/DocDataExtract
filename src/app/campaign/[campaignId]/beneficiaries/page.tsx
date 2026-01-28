@@ -62,15 +62,15 @@ export default function BeneficiariesPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || isProfileLoading) return null;
+    if (!firestore || !campaignId || !userProfile) return null;
     return doc(firestore, 'campaigns', campaignId);
-  }, [firestore, campaignId, isProfileLoading]);
+  }, [firestore, campaignId, userProfile]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const beneficiariesCollectionRef = useMemo(() => {
-    if (!firestore || !campaignId || isProfileLoading) return null;
+    if (!firestore || !campaignId || !userProfile) return null;
     return collection(firestore, `campaigns/${campaignId}/beneficiaries`);
-  }, [firestore, campaignId, isProfileLoading]);
+  }, [firestore, campaignId, userProfile]);
   const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -404,6 +404,7 @@ export default function BeneficiariesPage() {
   }, [beneficiaries]);
   
   const filteredAndSortedBeneficiaries = useMemo(() => {
+    if (!beneficiaries) return [];
     let sortableItems = [...beneficiaries];
     
     // Filtering

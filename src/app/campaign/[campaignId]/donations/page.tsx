@@ -50,15 +50,15 @@ export default function DonationsPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || isProfileLoading) return null;
+    if (!firestore || !campaignId || !userProfile) return null;
     return doc(firestore, 'campaigns', campaignId);
-  }, [firestore, campaignId, isProfileLoading]);
+  }, [firestore, campaignId, userProfile]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const donationsCollectionRef = useMemo(() => {
-    if (!firestore || !campaignId || isProfileLoading) return null;
+    if (!firestore || !campaignId || !userProfile) return null;
     return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-  }, [firestore, campaignId, isProfileLoading]);
+  }, [firestore, campaignId, userProfile]);
   const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -243,6 +243,7 @@ export default function DonationsPage() {
   };
   
   const totalDonationAmount = useMemo(() => {
+    if (!donations) return 0;
     return donations.reduce((acc, d) => acc + (d.amount || 0), 0);
   }, [donations]);
 
@@ -298,7 +299,7 @@ export default function DonationsPage() {
         <Card>
           <CardHeader className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
             <div className="flex-1 space-y-1.5">
-              <CardTitle>Donation List ({donations.length})</CardTitle>
+              <CardTitle>Donation List ({donations?.length || 0})</CardTitle>
               <p className="text-muted-foreground">
                   Total Donations: <span className="font-bold text-foreground">₹{totalDonationAmount.toFixed(2)}</span>
               </p>
@@ -336,7 +337,7 @@ export default function DonationsPage() {
                                 <TableCell colSpan={(canUpdate || canDelete) ? 12 : 11}><Skeleton className="h-6 w-full" /></TableCell>
                            </TableRow>
                         ))
-                      ) : donations.length > 0 ? (
+                      ) : (donations && donations.length > 0) ? (
                         donations.map((donation, index) => (
                           <TableRow key={donation.id}>
                               {(canUpdate || canDelete) && (

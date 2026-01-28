@@ -47,9 +47,9 @@ export default function CampaignDetailsPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || isProfileLoading) return null;
+    if (!firestore || !campaignId || !userProfile) return null;
     return doc(firestore, 'campaigns', campaignId);
-  }, [firestore, campaignId, isProfileLoading]);
+  }, [firestore, campaignId, userProfile]);
 
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
 

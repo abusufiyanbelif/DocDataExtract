@@ -75,12 +75,12 @@ export default function CampaignSummaryPage() {
     const [isSharing, setIsSharing] = useState(false);
 
     // Data fetching
-    const campaignDocRef = useMemo(() => (firestore && !isProfileLoading) ? doc(firestore, 'campaigns', campaignId) : null, [firestore, campaignId, isProfileLoading]);
-    const beneficiariesCollectionRef = useMemo(() => (firestore && !isProfileLoading) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId, isProfileLoading]);
+    const campaignDocRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? doc(firestore, 'campaigns', campaignId) : null, [firestore, campaignId, isProfileLoading, userProfile]);
+    const beneficiariesCollectionRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId, isProfileLoading, userProfile]);
     const donationsCollectionRef = useMemo(() => {
-        if (!firestore || !campaignId || isProfileLoading) return null;
+        if (!firestore || !campaignId || isProfileLoading || !userProfile) return null;
         return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-    }, [firestore, campaignId, isProfileLoading]);
+    }, [firestore, campaignId, isProfileLoading, userProfile]);
 
     const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
