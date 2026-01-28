@@ -30,7 +30,7 @@ import { Loader2 } from 'lucide-react';
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   address: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string().length(10, { message: "Phone must be exactly 10 digits." }).optional().or(z.literal('')),
   members: z.coerce.number().int().optional(),
   earningMembers: z.coerce.number().int().optional(),
   male: z.coerce.number().int().optional(),
@@ -305,15 +305,19 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         <FormItem>
             <FormLabel>ID Proof Document</FormLabel>
             <FormControl>
-                <Input type="file" accept="image/*" {...register('idProofFile')} />
+                <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
             </FormControl>
-            <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
+            <FormDescription>Optional. Upload an image or PDF of the ID proof.</FormDescription>
             <FormMessage />
         </FormItem>
         
         {preview && (
             <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
-                <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
+                 {preview.startsWith('data:application/pdf') ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">PDF Preview</div>
+                 ) : (
+                    <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
+                 )}
             </div>
         )}
 
