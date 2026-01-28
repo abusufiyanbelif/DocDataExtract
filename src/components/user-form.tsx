@@ -301,15 +301,22 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         
         {isEditing && (
             <div className="space-y-2">
-                <FormLabel>Password Reset</FormLabel>
-                <div className="flex items-center gap-2 rounded-md border p-3">
-                    <p className="flex-1 text-sm text-muted-foreground">
-                        An administrator cannot change a user's password directly. Click to send the user a secure password reset link to their email.
-                    </p>
+                <FormLabel>Password</FormLabel>
+                <div className="flex items-center gap-2">
+                    <Input 
+                        type="password"
+                        value="••••••••••"
+                        readOnly
+                        disabled
+                        className="flex-1"
+                    />
                     <Button type="button" variant="secondary" onClick={handleSendPasswordReset} disabled={isSubmitting}>
                         <Send className="mr-2 h-4 w-4"/> Send Password Reset
                     </Button>
                 </div>
+                <FormDescription>
+                    An administrator cannot set a password directly. Click the button to send a secure reset link to the user's email.
+                </FormDescription>
             </div>
         )}
 
@@ -404,7 +411,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     </SelectContent>
                 </Select>
                 <FormDescription>
-                    Inactive users cannot log in.
+                    {isDefaultAdmin ? 'The default admin user cannot be deactivated.' : 'Inactive users cannot log in.'}
                 </FormDescription>
                 <FormMessage />
                 </FormItem>
