@@ -1,13 +1,12 @@
 'use client';
 
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 
 import {
-  ShadForm,
   FormControl,
   FormDescription,
   FormField,
@@ -192,7 +191,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isFormDisabled = isSubmitting || isLoading;
 
   return (
-    <ShadForm {...form}>
+    <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
             <FormField
               control={form.control}
@@ -526,6 +525,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             </Button>
             </div>
         </form>
-    </ShadForm>
+    </FormProvider>
   );
 }
