@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { z } from 'zod';
@@ -29,12 +30,12 @@ import { useToast } from '@/hooks/use-toast';
 import { modules } from '@/lib/modules';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from './ui/separator';
+import { Separator } from '@/components/ui/separator';
 import { Loader2, Eye, EyeOff, ChevronDown, Send } from 'lucide-react';
 import type { UserPermissions } from '@/lib/modules';
 import { useAuth } from '@/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { Switch } from './ui/switch';
+import { Switch } from '@/components/ui/switch';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
