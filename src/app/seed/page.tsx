@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useAuth, useFirestore, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext }from '@/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, User, fetchSignInMethodsForEmail } from 'firebase/auth';
+import { getAuth, initializeApp, deleteApp } from 'firebase/app';
+import { firebaseConfig } from '@/firebase/config';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
 import { writeBatch, doc, collection, serverTimestamp, getDocs, query, where, getDoc, setDoc } from 'firebase/firestore';
 import { modules } from '@/lib/modules';
@@ -173,12 +175,10 @@ service firebase.storage {
         const loginIdLookupRef = doc(firestore, 'user_lookups', canonicalAdminData.loginId);
         const phoneLookupRef = doc(firestore, 'user_lookups', canonicalAdminData.phone);
         
-        // Clean up old default phone lookup
-        const oldPhoneLookupRef = doc(firestore, 'user_lookups', '0000000000');
-        const oldPhoneDoc = await getDoc(oldPhoneLookupRef);
+        const oldPhoneDoc = await getDoc(doc(firestore, 'user_lookups', '0000000000'));
         if (oldPhoneDoc.exists()) {
             log("   -> Removing old default phone number lookup for admin.");
-            lookupBatch.delete(oldPhoneLookupRef);
+            lookupBatch.delete(oldPhoneDoc.ref);
         }
 
         lookupBatch.set(loginIdLookupRef, { email: adminEmail });
@@ -200,60 +200,93 @@ service firebase.storage {
         }
     }
     
-    const migrateExistingUsers = async () => {
-        if (!firestore) throw new Error("Firestore service not available.");
-        log("Step 3: Migrating existing user data for new login system.");
-        log(" -> This will create lookup entries for each user. No user data will be deleted.");
+    const migrateLegacyUsers = async () => {
+        if (!firestore || !auth) throw new Error("Services not available.");
+        log("Step 3: Migrating Legacy User Data");
+        log(" -> This will create secure Auth entries for users found in Firestore without one.");
+
+        const tempAppName = `migration-app-${Date.now()}`;
+        const tempApp = initializeApp(firebaseConfig, tempAppName);
+        const tempAuth = getAuth(tempApp);
 
         const usersRef = collection(firestore, 'users');
         const usersSnapshot = await getDocs(usersRef);
 
         if (usersSnapshot.empty) {
-            log(" -> No existing users found to migrate. Skipping.");
+            log(" -> No users found in Firestore. Skipping migration.");
+            await deleteApp(tempApp);
             return;
         }
 
-        const batch = writeBatch(firestore);
         let migratedCount = 0;
+        const mainAdminUID = auth.currentUser?.uid;
 
         for (const userDoc of usersSnapshot.docs) {
-            const userData = userDoc.data() as UserProfile;
-            const { userKey, loginId, phone, email } = userData;
-
-            if (userKey === 'admin') continue;
-
-            if (!loginId || !email) {
-                log(`   -> ⚠️ WARNING: Skipping user ${userDoc.id} (${userData.name || 'No Name'}) due to missing 'loginId' or 'email'. Please edit this user to add an email.`);
+             if (userDoc.id === mainAdminUID) {
                 continue;
             }
 
-            const loginIdLookupRef = doc(firestore, 'user_lookups', loginId);
-            batch.set(loginIdLookupRef, { email });
+            const legacyUserData = { id: userDoc.id, ...userDoc.data() } as UserProfile;
 
-            if (phone) {
-                const phoneLookupRef = doc(firestore, 'user_lookups', phone);
-                batch.set(phoneLookupRef, { email });
+            if (!legacyUserData.email) {
+                log(` -> ⚠️ WARNING: Skipping user '${legacyUserData.name}' (ID: ${legacyUserData.id}) because they have no email address. Please manually add a unique email and re-run this script.`);
+                continue;
             }
-            migratedCount++;
-        }
-
-        if (migratedCount > 0) {
+            
             try {
-                await batch.commit();
-            } catch (error: any) {
-                if (error.code === 'permission-denied') {
-                    const permissionError = new FirestorePermissionError({
-                        path: 'user_lookups (batch migration)',
-                        operation: 'write',
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
+                const signInMethods = await fetchSignInMethodsForEmail(auth, legacyUserData.email);
+                if (signInMethods.length > 0) {
+                    log(` -> User '${legacyUserData.email}' already has an auth account. Skipping Auth creation.`);
+                    continue;
                 }
-                throw error;
+
+                log(` -> Migrating '${legacyUserData.name}' (${legacyUserData.email})...`);
+                migratedCount++;
+
+                const tempPassword = `P@ss_${Math.random().toString(36).slice(-8)}`;
+                const userCredential = await createUserWithEmailAndPassword(tempAuth, legacyUserData.email, tempPassword);
+                const newUid = userCredential.user.uid;
+
+                log(`   -> Created Auth account with new UID: ${newUid}`);
+                log(`   -> !!! TEMPORARY PASSWORD for ${legacyUserData.email}: ${tempPassword}`);
+                
+                const newUserDocRef = doc(firestore, 'users', newUid);
+                const { id, ...dataToCopy } = legacyUserData;
+                
+                const batch = writeBatch(firestore);
+                batch.set(newUserDocRef, { ...dataToCopy, createdAt: serverTimestamp() });
+                log(`   -> Staged new Firestore document at users/${newUid}.`);
+                
+                if (legacyUserData.loginId) {
+                    const loginIdLookupRef = doc(firestore, 'user_lookups', legacyUserData.loginId);
+                    batch.set(loginIdLookupRef, { email: legacyUserData.email });
+                    log(`   -> Staged loginId lookup.`);
+                }
+                if (legacyUserData.phone) {
+                    const phoneLookupRef = doc(firestore, 'user_lookups', legacyUserData.phone);
+                    batch.set(phoneLookupRef, { email: legacyUserData.email });
+                    log(`   -> Staged phone lookup.`);
+                }
+
+                batch.delete(userDoc.ref);
+                log(`   -> Staged deletion of old document: users/${userDoc.id}.`);
+                
+                await batch.commit();
+                log(`   -> Successfully committed migration for ${legacyUserData.name}.`);
+
+            } catch (error: any) {
+                log(` -> ❌ ERROR migrating user ${legacyUserData.name}: ${error.message}`);
+                setErrorOccurred(true);
             }
-            log(` -> Successfully processed and created lookups for ${migratedCount} user(s).`);
-        } else {
-             log(` -> No users required migration.`);
         }
+        
+        if (migratedCount > 0) {
+            log(` -> Migration finished. ${migratedCount} user(s) were successfully migrated.`);
+        } else {
+            log(" -> No users required migration at this time.");
+        }
+        
+        await deleteApp(tempApp);
     }
     
     const handleSeed = async () => {
@@ -274,7 +307,7 @@ service firebase.storage {
             const adminAuthUser = await createAdminUser();
             await testStoragePermissions();
             await ensureAdminIntegrity(adminAuthUser);
-            await migrateExistingUsers();
+            await migrateLegacyUsers();
 
             log('✅ Script completed successfully. Admin user and all existing users are configured correctly.');
             toast({ title: 'Success', description: 'Admin user verified and all existing users have been migrated for the new login system.', variant: 'success' });
@@ -325,7 +358,7 @@ service firebase.storage {
                             <Alert variant="destructive">
                                 <AlertTitle>Script Failed</AlertTitle>
                                 <AlertDescription>
-                                    An error occurred during the process. Please review the logs below. If the error is related to permissions, the log may contain a link and instructions to fix your security rules.
+                                    One or more errors occurred during the process. Please review the logs below. If the error is related to permissions, the log may contain a link and instructions to fix your security rules.
                                 </AlertDescription>
                             </Alert>
                         )}
