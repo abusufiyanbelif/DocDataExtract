@@ -455,7 +455,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                 <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
                                   <FormControl>
                                     <Checkbox
-                                      checked={!!field.value}
+                                      checked={roleValue === 'Admin' || !!field.value}
                                       onCheckedChange={field.onChange}
                                       disabled={
                                         roleValue === 'Admin' ||
@@ -486,7 +486,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                     <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
                                       <FormControl>
                                         <Checkbox
-                                          checked={!!field.value}
+                                          checked={roleValue === 'Admin' || !!field.value}
                                           onCheckedChange={field.onChange}
                                           disabled={
                                             roleValue === 'Admin' ||

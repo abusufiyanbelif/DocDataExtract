@@ -69,7 +69,7 @@ service firebase.storage {
 
     const createAdminUser = async (): Promise<User> => {
         if (!auth) throw new Error("Auth service not available.");
-        const adminEmail = 'admin@docdataextract.app';
+        const adminEmail = 'baitulmalss.solapur@gmail.com';
         const adminPassword = 'password';
         
         log("Step 1: Admin User Authentication Setup");
@@ -151,7 +151,7 @@ service firebase.storage {
                 }
             }
         }
-        const canonicalAdminData: Omit<UserProfile, 'id'> = { name: 'Admin User', email: adminEmail, phone: '0000000000', loginId: 'admin', userKey: 'admin', role: 'Admin', status: 'Active', permissions: allPermissions };
+        const canonicalAdminData: Omit<UserProfile, 'id'> = { name: 'System Admin', email: adminEmail, phone: '9270946423', loginId: 'admin', userKey: 'admin', role: 'Admin', status: 'Active', permissions: allPermissions };
         const adminUserDocRef = doc(firestore, 'users', adminAuthUser.uid);
 
         try {
@@ -173,6 +173,14 @@ service firebase.storage {
         const loginIdLookupRef = doc(firestore, 'user_lookups', canonicalAdminData.loginId);
         const phoneLookupRef = doc(firestore, 'user_lookups', canonicalAdminData.phone);
         
+        // Clean up old default phone lookup
+        const oldPhoneLookupRef = doc(firestore, 'user_lookups', '0000000000');
+        const oldPhoneDoc = await getDoc(oldPhoneLookupRef);
+        if (oldPhoneDoc.exists()) {
+            log("   -> Removing old default phone number lookup for admin.");
+            lookupBatch.delete(oldPhoneLookupRef);
+        }
+
         lookupBatch.set(loginIdLookupRef, { email: adminEmail });
         lookupBatch.set(phoneLookupRef, { email: adminEmail });
         
