@@ -140,8 +140,8 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
   const acceptedFileTypes = uploadType === 'image' ? 'image/*' : 'application/pdf';
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="grid md:grid-cols-2 gap-8">
+    <div className="flex flex-col gap-6">
+      <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
