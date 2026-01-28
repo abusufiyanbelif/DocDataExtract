@@ -1,7 +1,6 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true,
   serverExternalPackages: ['handlebars'],
   typescript: {
     ignoreBuildErrors: true,
