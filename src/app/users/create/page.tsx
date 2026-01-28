@@ -1,7 +1,8 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, errorEmitter, FirestorePermissionError, useStorage, useCollection, useUserProfile } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError, useStorage, useCollection } from '@/firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -122,7 +123,7 @@ export default function CreateUserPage() {
         
         await batch.commit()
             .then(() => {
-                toast({ title: 'Success', description: `User '${data.name}' created successfully.` });
+                toast({ title: 'Success', description: `User '${data.name}' created successfully.`, variant: 'success' });
                 router.push('/users');
             })
             .catch((serverError) => {
