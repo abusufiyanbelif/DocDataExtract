@@ -55,9 +55,6 @@ export default function CreateUserPage() {
         return;
     }
 
-    const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
-
-    let idProofUrl = '';
     const email = `${data.userKey}@docdataextract.app`;
     const newPassword = data.password!;
 
@@ -69,6 +66,7 @@ export default function CreateUserPage() {
         const userCredential = await createUserWithEmailAndPassword(tempAuth, email, newPassword);
         const newUid = userCredential.user.uid;
         
+        let idProofUrl = '';
         try {
             const fileList = data.idProofFile as FileList | undefined;
             if (fileList && fileList.length > 0) {
@@ -86,11 +84,11 @@ export default function CreateUserPage() {
                 const uploadResult = await uploadBytes(fileRef, file);
                 idProofUrl = await getDownloadURL(uploadResult.ref);
             }
-        } catch (uploadError) {
-             console.error("Error during file upload:", uploadError);
-             toast({ title: 'File Upload Error', description: 'Could not upload ID proof. User created without it.', variant: 'destructive' });
+        } catch (uploadError: any) {
+             throw new Error(`File upload failed: ${uploadError.message}. User creation has been cancelled. The temporary authentication account will be removed, but if that fails, manual cleanup may be required.`);
         }
         
+        const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
         const dataToSave: Omit<UserProfile, 'id'> & { createdAt: any } = {
             name: data.name,
             phone: data.phone,
@@ -106,36 +104,21 @@ export default function CreateUserPage() {
         };
 
         const batch = writeBatch(firestore);
-
-        // 1. Set the main user document with UID as the doc ID
         const docRef = doc(firestore, 'users', newUid);
         batch.set(docRef, dataToSave);
 
-        // 2. Create the lookup document for the loginId
         const loginIdLookupRef = doc(firestore, 'user_lookups', data.loginId);
         batch.set(loginIdLookupRef, { userKey: data.userKey });
 
-        // 3. Create the lookup document for the phone number
         if (data.phone) {
             const phoneLookupRef = doc(firestore, 'user_lookups', data.phone);
             batch.set(phoneLookupRef, { userKey: data.userKey });
         }
         
-        await batch.commit()
-            .then(() => {
-                toast({ title: 'Success', description: `User '${data.name}' created successfully.`, variant: 'success' });
-                router.push('/users');
-            })
-            .catch((serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: 'users collection and user_lookups',
-                    operation: 'create',
-                    requestResourceData: dataToSave,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                console.error("Firestore write failed, but Auth user was created. Manual cleanup may be required for user:", email);
-                toast({ title: 'Database Error', description: 'User could not be saved to the database due to permissions. The auth account was created but is orphaned.', variant: 'destructive', duration: 10000 });
-            });
+        await batch.commit();
+
+        toast({ title: 'Success', description: `User '${data.name}' created successfully.`, variant: 'success' });
+        router.push('/users');
 
     } catch (error: any) {
         let errorMessage = "An unexpected error occurred during user creation.";
@@ -151,8 +134,21 @@ export default function CreateUserPage() {
                     errorMessage = error.message;
                     break;
             }
+        } else {
+             errorMessage = error.message;
         }
-        toast({ title: 'User Creation Failed', description: errorMessage, variant: 'destructive' });
+
+        if (error.name === 'FirestorePermissionError' || error.code === 'permission-denied') {
+             const permissionError = new FirestorePermissionError({
+                path: 'users collection and user_lookups',
+                operation: 'create',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            errorMessage = 'User could not be saved to the database due to permissions. The auth account was created but is orphaned. Manual cleanup may be required.';
+        }
+
+
+        toast({ title: 'User Creation Failed', description: errorMessage, variant: 'destructive', duration: 10000 });
     } finally {
         await deleteApp(tempApp);
         setIsSubmitting(false);

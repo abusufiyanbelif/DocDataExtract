@@ -38,8 +38,12 @@ export default function SeedPage() {
         try {
             await uploadBytes(testFileRef, new Blob(['test']));
             log("   -> Write permissions test successful.");
-            await deleteObject(testFileRef);
-            log("   -> Cleaned up test file.");
+            try {
+                await deleteObject(testFileRef);
+                log("   -> Cleaned up test file.");
+            } catch (cleanupError: any) {
+                log(`   -> ⚠️ WARNING: Could not clean up test file (${testFile}). This may be due to missing delete permissions in your Storage Security Rules. Manual deletion is recommended. Error: ${cleanupError.message}`);
+            }
             return true;
         } catch (error: any) {
              const storageRulesUrl = `https://console.firebase.google.com/project/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/storage/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/rules`;
