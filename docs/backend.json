@@ -26,6 +26,10 @@
           "type": "string",
           "description": "A unique system-generated key for the user, used to link to the auth account. Cannot be edited."
         },
+        "password": {
+          "type": "string",
+          "description": "The user's hashed password for custom authentication. This field should not be managed from the client-side due to security risks."
+        },
         "role": {
           "type": "string",
           "enum": [
