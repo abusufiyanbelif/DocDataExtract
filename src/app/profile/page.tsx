@@ -6,7 +6,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle, LogIn, FileText, BadgeInfo, Hash, Eye, Edit, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle, LogIn, FileText, BadgeInfo, Hash, Eye, Edit, Save, Envelope } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -149,6 +149,7 @@ export default function ProfilePage() {
                                 <ProfileDetail icon={<User />} label="Full Name" value={userProfile.name} isEditing={isEditMode}>
                                     <Input value={name} onChange={(e) => setName(e.target.value)} />
                                 </ProfileDetail>
+                                <ProfileDetail icon={<Envelope />} label="Email Address" value={userProfile.email} />
                                 <ProfileDetail icon={<LogIn />} label="Login ID" value={userProfile.loginId} />
                                 <ProfileDetail icon={<Phone />} label="Phone Number" value={userProfile.phone} isEditing={isEditMode}>
                                      <Input value={phone} onChange={(e) => setPhone(e.target.value)} />

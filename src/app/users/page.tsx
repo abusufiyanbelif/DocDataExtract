@@ -263,6 +263,7 @@ export default function UsersPage() {
                           {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center">Actions</TableHead>}
                           <TableHead className="w-[40px]">#</TableHead>
                           <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
                           <TableHead>Phone</TableHead>
                           <TableHead>Login ID</TableHead>
                           <TableHead>User Key</TableHead>
@@ -312,6 +313,7 @@ export default function UsersPage() {
                               )}
                               <TableCell>{index + 1}</TableCell>
                               <TableCell className="font-medium">{user.name}</TableCell>
+                              <TableCell>{user.email}</TableCell>
                               <TableCell>{user.phone}</TableCell>
                               <TableCell>{user.loginId}</TableCell>
                               <TableCell>{user.userKey}</TableCell>
@@ -325,7 +327,7 @@ export default function UsersPage() {
                       ))}
                       {users.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={canUpdate || canDelete ? 9 : 8} className="text-center h-24 text-muted-foreground">
                                 No users found. The database may be empty.
                             </TableCell>
                         </TableRow>
