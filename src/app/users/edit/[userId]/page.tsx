@@ -236,10 +236,12 @@ export default function EditUserPage() {
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Security Information: Password Change</AlertDialogTitle>
-                <AlertDialogDescription className="space-y-2">
-                    <p>For security reasons, an administrator cannot directly change another user's password from the client application. This action requires a secure backend environment and is not implemented.</p>
-                    <p className="font-semibold text-destructive">The user's password has not been changed.</p>
-                    <p>Would you like to proceed with saving the other changes to this user's profile?</p>
+                <AlertDialogDescription asChild>
+                    <div className="space-y-2">
+                        <p>For security reasons, an administrator cannot directly change another user's password from the client application. This action requires a secure backend environment and has not been implemented.</p>
+                        <p className="font-semibold text-destructive">The user's password has not been changed.</p>
+                        <p>Would you like to proceed with saving the other changes to this user's profile?</p>
+                    </div>
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
