@@ -23,7 +23,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function SeedPage() {
   const firestore = useFirestore();
-  const mainAuth = useAuth();
   const { toast } = useToast();
   const [logs, setLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,189 +31,116 @@ export default function SeedPage() {
   const addLog = (message: string) => {
     setLogs((prev) => [...prev, message]);
   };
-  
-  const generatePassword = () => {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let password = "";
-    for (let i = 0; i < 8; i++) {
-        password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
-  };
 
   const handleSeed = async () => {
     setIsLoading(true);
     setError(null);
     setLogs([]);
 
-    if (!firestore || !mainAuth) {
-      setError('Firebase is not initialized. Please check your configuration.');
-      addLog('❌ Firebase is not initialized.');
+    if (!firestore) {
+      const errorMsg = 'Firebase is not initialized. Please check your configuration.';
+      setError(errorMsg);
+      addLog(`❌ ${errorMsg}`);
       setIsLoading(false);
       return;
     }
     
+    // Use a temporary, secondary Firebase App instance for creating the user.
+    // This avoids conflicts with the primary app's authentication state.
     const tempAppName = `seed-app-${Date.now()}`;
     const tempApp = initializeApp(firebaseConfig, tempAppName);
     const tempAuth = getAuth(tempApp);
 
     try {
-      addLog('🚀 Starting setup and migration...');
+      addLog('🚀 Starting initial admin setup...');
       
-      const usersRef = collection(firestore, 'users');
       const userLookupsRef = collection(firestore, 'user_lookups');
       
-      // Data cleanup cannot be performed securely from an unauthenticated client.
-      // The root causes of orphaned data have been fixed in the user management pages.
-      addLog('ℹ️ Skipping orphaned data scan. This check can only be performed by an authenticated admin.');
-
-      // --- Admin Creation Step ---
       const adminEmail = 'baitulmalss.solapur@gmail.com';
       const adminPhone = '9270946423';
       const adminUserKey = 'admin';
       const adminLoginId = 'admin';
+      const adminPassword = "password";
 
-      // Check for admin existence using the world-readable lookups collection
+      // Check for admin existence using the world-readable 'user_lookups' collection
       const adminLookupRef = doc(firestore, 'user_lookups', adminUserKey);
       const adminLookupSnap = await getDoc(adminLookupRef);
       
-      const adminCreationBatch = writeBatch(firestore);
-
-      if (!adminLookupSnap.exists()) {
-        addLog('👤 Admin user does not exist. Creating...');
-        
-        const tempAdminPassword = "password";
-
-        try {
-            const userCredential = await createUserWithEmailAndPassword(tempAuth, adminEmail, tempAdminPassword);
-            const newUid = userCredential.user.uid;
-            addLog(`✅ Firebase Auth account created for admin with UID: ${newUid}.`);
-
-            const userDocRef = doc(firestore, 'users', newUid);
-            const userProfileData = {
-                name: 'System Admin',
-                email: adminEmail,
-                phone: adminPhone,
-                loginId: adminLoginId,
-                userKey: adminUserKey,
-                role: 'Admin',
-                status: 'Active',
-                permissions: createAdminPermissions(),
-                createdAt: serverTimestamp()
-            };
-            adminCreationBatch.set(userDocRef, userProfileData);
-
-            // Create lookups
-            adminCreationBatch.set(doc(userLookupsRef, adminLoginId), { email: adminEmail });
-            adminCreationBatch.set(doc(userLookupsRef, adminUserKey), { email: adminEmail });
-            adminCreationBatch.set(doc(userLookupsRef, adminPhone), { email: adminEmail });
-
-            addLog(`🔑 Admin temporary password is: ${tempAdminPassword}`);
-            addLog('🔒 Please log in and change this password immediately.');
-
-        } catch (error: any) {
-            if (error.code === 'auth/email-already-in-use') {
-                addLog(`⚠️ Auth account for ${adminEmail} already exists. Skipping auth creation.`);
-                setError(`The admin email ${adminEmail} is already in use in Firebase Authentication, but the corresponding database records are missing. Please resolve this manually in your Firebase console.`);
-                throw new Error("Admin email already exists in Auth.");
-            }
-            throw error; // Rethrow other errors
-        }
-      } else {
-        addLog('✅ Admin user database record already exists. Skipping admin creation.');
+      if (adminLookupSnap.exists()) {
+        addLog('✅ Admin user record already exists in the database. Skipping creation.');
+        addLog('🔚 Setup process finished.');
+        toast({ title: 'Setup Not Needed', description: 'The admin user already exists.' });
+        setIsLoading(false);
+        await deleteApp(tempApp);
+        return;
       }
       
-      await adminCreationBatch.commit();
-      addLog('✅ Admin setup complete.');
+      addLog('👤 Admin user not found. Proceeding with creation...');
+      const adminCreationBatch = writeBatch(firestore);
 
-      // --- User Migration Logic ---
-      addLog('🔄 Starting migration of existing legacy database users...');
-      const migrationBatch = writeBatch(firestore);
-      const allUsersSnap = await getDocs(usersRef);
+      try {
+          const userCredential = await createUserWithEmailAndPassword(tempAuth, adminEmail, adminPassword);
+          const newUid = userCredential.user.uid;
+          addLog(`✅ Firebase Auth account created for admin with UID: ${newUid}.`);
 
-      if (allUsersSnap.empty) {
-        addLog('No users found in the database to migrate.');
-      } else {
-        let migrationCount = 0;
-        for (const userDoc of allUsersSnap.docs) {
-          const userData = userDoc.data();
-          const userId = userDoc.id;
+          const userDocRef = doc(firestore, 'users', newUid);
+          const userProfileData = {
+              name: 'System Admin',
+              email: adminEmail,
+              phone: adminPhone,
+              loginId: adminLoginId,
+              userKey: adminUserKey,
+              role: 'Admin',
+              status: 'Active',
+              permissions: createAdminPermissions(),
+              createdAt: serverTimestamp()
+          };
+          adminCreationBatch.set(userDocRef, userProfileData);
+          addLog('ℹ️ Database record prepared for new admin user.');
 
-          const isLegacyRecord = !userData.email || !isNaN(Date.parse(userId));
-          
-          if (!isLegacyRecord) {
-            addLog(`- Skipping user '${userData.name || userId}'. Already appears to be a modern record.`);
-            continue;
+          // Create all necessary lookup records
+          adminCreationBatch.set(doc(userLookupsRef, adminLoginId), { email: adminEmail });
+          adminCreationBatch.set(doc(userLookupsRef, adminUserKey), { email: adminEmail });
+          adminCreationBatch.set(doc(userLookupsRef, adminPhone), { email: adminEmail });
+          addLog('ℹ️ User lookup records prepared.');
+
+          await adminCreationBatch.commit();
+          addLog('✅ Admin user and lookups successfully saved to the database.');
+          addLog('---');
+          addLog('🔑 Admin Credentials:');
+          addLog(`   Login ID: ${adminLoginId}`);
+          addLog(`   Password: ${adminPassword}`);
+          addLog('---');
+          addLog('🔒 IMPORTANT: Please log in and change this password immediately.');
+
+          toast({
+            title: 'Setup Complete',
+            description: 'Initial admin user has been created successfully.',
+            variant: 'success'
+          });
+
+      } catch (error: any) {
+          if (error.code === 'auth/email-already-in-use') {
+              const authErrorMsg = `The admin email ${adminEmail} is already in use in Firebase Authentication, but the database records are missing. Please resolve this manually by deleting the user from the Firebase Authentication console and running this script again.`;
+              addLog(`❌ ERROR: ${authErrorMsg}`);
+              setError(authErrorMsg);
+              throw new Error("Admin email already exists in Auth.");
           }
-          migrationCount++;
-          addLog(`- Processing legacy user record: '${userData.name || userId}'`);
-
-          let userEmail = userData.email;
-          const userPhone = userData.phone;
-
-          if (!userEmail && userPhone) {
-              userEmail = `+${userPhone}@docdataextract.app`; // Create synthetic email for phone users
-              addLog(`  - No email found. Creating synthetic email from phone: ${userEmail}`);
-          }
-
-          if (!userEmail) {
-              addLog(`  - ⚠️ SKIPPING: User '${userData.name}' has no email or phone number. Cannot create auth account.`);
-              continue;
-          }
-
-          const tempPassword = generatePassword();
-          
-          try {
-            const userCredential = await createUserWithEmailAndPassword(tempAuth, userEmail, tempPassword);
-            const newUid = userCredential.user.uid;
-            addLog(`  - ✅ Auth account created for '${userData.name}' with UID: ${newUid}`);
-
-            const newUserDocRef = doc(firestore, 'users', newUid);
-            const newProfileData = {
-              ...userData,
-              email: userEmail,
-              createdAt: userData.createdAt || serverTimestamp(),
-            };
-            migrationBatch.set(newUserDocRef, newProfileData);
-            addLog(`  - Database record prepared for new UID.`);
-
-            if (userData.loginId) migrationBatch.set(doc(userLookupsRef, userData.loginId), { email: userEmail });
-            if (userData.phone) migrationBatch.set(doc(userLookupsRef, userData.phone), { email: userEmail });
-            if (userData.userKey) migrationBatch.set(doc(userLookupsRef, userData.userKey), { email: userEmail });
-
-            migrationBatch.delete(userDoc.ref);
-            addLog(`  - Old database record marked for deletion.`);
-
-            addLog(`  - 🔑 Temporary password for ${userData.name} (${userEmail}): ${tempPassword}`);
-          } catch(error: any) {
-              if (error.code === 'auth/email-already-in-use') {
-                addLog(`  - ⚠️ SKIPPING: Auth account for '${userData.name}' (${userEmail}) already exists. No changes made.`);
-              } else {
-                addLog(`  - ❌ ERROR: Could not create auth account for '${userData.name}' (${userEmail}). Reason: ${error.message}`);
-              }
-          }
-        }
-        if (migrationCount > 0) {
-            await migrationBatch.commit();
-            addLog('✅ User migration batch commit successful.');
-        }
+          // Re-throw other auth errors to be caught by the outer catch block
+          throw error;
       }
-
-      toast({
-        title: 'Setup Complete',
-        description: 'Initial data has been seeded and migrated successfully.',
-        variant: 'success'
-      });
     } catch (e: any) {
       const errorMessage = e.message || 'An unknown error occurred.';
       setError(errorMessage);
-      addLog(`❌ An error occurred: ${errorMessage}`);
+      addLog(`❌ An error occurred during setup: ${errorMessage}`);
       toast({
         title: 'Setup Failed',
         description: errorMessage,
         variant: 'destructive',
+        duration: 10000,
       });
     } finally {
+      // Clean up the temporary Firebase app instance
       await deleteApp(tempApp);
       addLog('🔚 Setup process finished.');
       setIsLoading(false);
@@ -235,9 +161,9 @@ export default function SeedPage() {
         </div>
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
-            <CardTitle>Setup & Data Migration</CardTitle>
+            <CardTitle>Initial Application Setup</CardTitle>
             <CardDescription>
-                This script performs key setup and cleanup functions. It creates a default admin, migrates legacy users to the secure authentication system, and cleans up any orphaned data records it finds.
+                This script performs the one-time setup required for the application. It creates the default administrator user, allowing you to log in and manage the system.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -245,7 +171,7 @@ export default function SeedPage() {
                 <ShieldCheck className="h-4 w-4" />
                 <AlertTitle>Important!</AlertTitle>
                 <AlertDescription>
-                    Run this script only once for initial setup, or if you suspect data inconsistencies. If temporary passwords are generated for migrated users, they will be displayed in the log below. You must securely share these passwords with your users.
+                    Run this script only once for the initial setup on a new project. If the admin user is created successfully, the temporary password will be displayed in the log below. You must log in and change it immediately.
                 </AlertDescription>
             </Alert>
 
@@ -255,7 +181,7 @@ export default function SeedPage() {
               ) : (
                 <Database className="mr-2 h-4 w-4" />
               )}
-              Run Setup & Migration
+              Run Initial Setup
             </Button>
             
             <div className="space-y-2">
