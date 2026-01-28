@@ -37,6 +37,16 @@ export default function SeedPage() {
     setError(null);
     setLogs([]);
 
+    addLog('ℹ️ Verifying application setup...');
+    addLog('This script will create the initial administrator user.');
+    addLog('This process ensures the "users" and "user_lookups" collections are created.');
+    addLog('---');
+    addLog('Other Required Collections:');
+    addLog('The following collections are also used by the application and will be created automatically when you add data through the UI:');
+    addLog('  - campaigns');
+    addLog('  - donations');
+    addLog('---');
+
     if (!firestore) {
       const errorMsg = 'Firebase is not initialized. Please check your configuration.';
       setError(errorMsg);
@@ -48,13 +58,20 @@ export default function SeedPage() {
     // Use a temporary, secondary Firebase App instance for creating the user.
     // This avoids conflicts with the primary app's authentication state.
     const tempAppName = `seed-app-${Date.now()}`;
-    const tempApp = initializeApp(firebaseConfig, tempAppName);
+    let tempApp;
+    try {
+        tempApp = initializeApp(firebaseConfig, tempAppName);
+    } catch(e) {
+        const errorMsg = 'Firebase configuration is invalid. Please check your .env file.';
+        setError(errorMsg);
+        addLog(`❌ ${errorMsg}`);
+        setIsLoading(false);
+        return;
+    }
     const tempAuth = getAuth(tempApp);
 
     try {
       addLog('🚀 Starting initial admin setup...');
-      
-      const userLookupsRef = collection(firestore, 'user_lookups');
       
       const adminEmail = 'baitulmalss.solapur@gmail.com';
       const adminPhone = '9270946423';
@@ -63,14 +80,13 @@ export default function SeedPage() {
       const adminPassword = "password";
 
       // Check for admin existence using the world-readable 'user_lookups' collection
-      const adminLookupRef = doc(firestore, 'user_lookups', adminUserKey);
+      const adminLookupRef = doc(firestore, 'user_lookups', adminLoginId);
       const adminLookupSnap = await getDoc(adminLookupRef);
       
       if (adminLookupSnap.exists()) {
         addLog('✅ Admin user record already exists in the database. Skipping creation.');
-        addLog('🔚 Setup process finished.');
-        toast({ title: 'Setup Not Needed', description: 'The admin user already exists.' });
         setIsLoading(false);
+        await deleteApp(tempApp);
         return;
       }
       
@@ -97,7 +113,7 @@ export default function SeedPage() {
           adminCreationBatch.set(userDocRef, userProfileData);
           addLog('ℹ️ Database record prepared for new admin user.');
 
-          // Create all necessary lookup records
+          const userLookupsRef = collection(firestore, 'user_lookups');
           adminCreationBatch.set(doc(userLookupsRef, adminLoginId), { email: adminEmail });
           adminCreationBatch.set(doc(userLookupsRef, adminUserKey), { email: adminEmail });
           adminCreationBatch.set(doc(userLookupsRef, adminPhone), { email: adminEmail });
@@ -140,7 +156,9 @@ export default function SeedPage() {
       });
     } finally {
       // Clean up the temporary Firebase app instance
-      await deleteApp(tempApp);
+      if (tempApp) {
+        await deleteApp(tempApp);
+      }
       addLog('🔚 Setup process finished.');
       setIsLoading(false);
     }
