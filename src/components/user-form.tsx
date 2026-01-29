@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,14 +29,12 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
-import { modules, type UserPermissions, createAdminPermissions } from '@/lib/modules';
+import { createAdminPermissions, type UserPermissions } from '@/lib/modules';
 import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { Loader2, Eye, EyeOff, Send } from 'lucide-react';
 
 // --- Start of inlined helpers ---
-
-// Simplified get helper to avoid extra dependencies
 function get(obj: any, path: string, defaultValue: any = undefined) {
     if (!path) return defaultValue;
     const keys = path.split('.');
@@ -51,7 +48,6 @@ function get(obj: any, path: string, defaultValue: any = undefined) {
     return result;
 }
 
-// Simplified set helper
 function set(obj: any, path: string, value: any) {
     const keys = path.split('.');
     let current = obj;
@@ -65,7 +61,6 @@ function set(obj: any, path: string, value: any) {
     current[keys[keys.length - 1]] = value;
     return obj;
 }
-
 // --- End of inlined helpers ---
 
 const formSchema = z.object({
@@ -105,7 +100,6 @@ const formSchema = z.object({
     }
 });
 
-// This type now includes permissions, even though it's not in the Zod schema for the form hook.
 export type UserFormData = z.infer<typeof formSchema> & { permissions?: UserPermissions };
 
 interface UserFormProps {
@@ -123,7 +117,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const auth = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   
-  // Manage complex permissions state locally, outside of react-hook-form.
   const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || {});
   const [stashedUserPermissions, setStashedUserPermissions] = useState<UserPermissions>(
     isEditing && user?.role === 'User' ? user.permissions || {} : {}
@@ -162,15 +155,14 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   
   useEffect(() => {
     if (roleValue === 'Admin') {
-      // If switching from User to Admin, stash the current permissions.
-      if (!get(permissions, 'users.create', false)) { // Heuristic to check if it's already admin perms
+      if (!get(permissions, 'users.create', false)) { 
           setStashedUserPermissions(permissions);
       }
       setPermissions(createAdminPermissions());
-    } else { // Role is 'User'
+    } else { 
       setPermissions(stashedUserPermissions);
     }
-  }, [roleValue]);
+  }, [roleValue, permissions, stashedUserPermissions]);
 
   useEffect(() => {
     const fileList = idProofFile as FileList | undefined;
@@ -303,7 +295,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 />
             </div>
             
-            {!isEditing && (
+            {!isEditing ? (
                 <FormField
                 control={control}
                 name="password"
@@ -332,10 +324,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     <FormMessage />
                     </FormItem>
                 )}
-           
-            )}
-            
-            {isEditing && (
+            ) : (
                 <div className="space-y-2">
                     <FormLabel>Password</FormLabel>
                     <div className="flex items-center gap-2">
@@ -355,7 +344,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     </FormDescription>
                 </div>
             )}
-
+            
             <Separator />
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
