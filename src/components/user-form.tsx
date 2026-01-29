@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useRef } from 'react';
@@ -35,7 +36,6 @@ import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { Loader2, Eye, EyeOff, ChevronDown, Send } from 'lucide-react';
 
-// Define a strict schema for permissions
 const permissionActionSchema = z.object({
   create: z.boolean().optional(),
   read: z.boolean().optional(),
@@ -43,7 +43,11 @@ const permissionActionSchema = z.object({
   delete: z.boolean().optional(),
 });
 
-const campaignPermissionsSchema = permissionActionSchema.extend({
+const campaignPermissionsSchema = z.object({
+  create: z.boolean().optional(),
+  read: z.boolean().optional(),
+  update: z.boolean().optional(),
+  delete: z.boolean().optional(),
   summary: z.object({ read: z.boolean().optional(), update: z.boolean().optional() }).optional(),
   ration: z.object({ read: z.boolean().optional(), update: z.boolean().optional() }).optional(),
   beneficiaries: permissionActionSchema.optional(),
@@ -480,7 +484,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             <TableCell key={perm} className="text-center">
                                 <FormField
                                 control={form.control}
-                                name={`permissions.${mod.id}.${perm}`}
+                                name={(`permissions.${mod.id}.${perm}`) as any}
                                 render={({ field }) => (
                                     <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
                                     <FormControl>
@@ -508,12 +512,12 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                 {subMod.name}
                                 </TableCell>
                                 {['create', 'read', 'update', 'delete'].map((perm) => {
-                                const fieldName = `permissions.${mod.id}.${subMod.id}.${perm}` as `permissions.campaigns.${typeof subMod.id}.${typeof perm}`;
+                                const fieldName = `permissions.${mod.id}.${subMod.id}.${perm}`;
                                 return (
                                 <TableCell key={perm} className="text-center">
                                     <FormField
                                     control={form.control}
-                                    name={fieldName}
+                                    name={fieldName as any}
                                     render={({ field }) => (
                                         <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
                                         <FormControl>
