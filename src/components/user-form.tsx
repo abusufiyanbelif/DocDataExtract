@@ -49,7 +49,7 @@ const formSchema = z.object({
   idProofFile: z.any().optional(),
   permissions: z.any().optional(),
   password: z.string().optional(),
-  _isEditing: z.boolean(),
+  _isEditing: z.boolean()
 }).superRefine((data, ctx) => {
     if (!data._isEditing) {
         if (!data.password || data.password.length < 6) {
@@ -111,7 +111,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       idProofType: user?.idProofType || '',
       idNumber: user?.idNumber || '',
       permissions: user?.permissions || {},
-      _isEditing: isEditing,
+      _isEditing: isEditing
     },
   });
 
