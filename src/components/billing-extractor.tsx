@@ -83,8 +83,8 @@ export function BillingExtractor() {
       .map(
         (item) =>
           `${item.item} (Qty: ${item.quantity || 'N/A'}, Unit: ${
-            item.unitPrice ? `₹${item.unitPrice.toFixed(2)}` : 'N/A'
-          }, Total: ₹${item.totalPrice.toFixed(2)})`
+            item.unitPrice ? `Rupee ${item.unitPrice.toFixed(2)}` : 'N/A'
+          }, Total: Rupee ${item.totalPrice.toFixed(2)})`
       )
       .join('\n');
     return `Vendor Information: ${billingResult.vendorInformation}\nDates: ${billingResult.dates}\nAmounts: ${billingResult.amounts}\n\nPurchased Items:\n${itemsText}`;
@@ -200,8 +200,8 @@ export function BillingExtractor() {
                         <TableRow>
                           <TableHead>Item</TableHead>
                           <TableHead className="text-right">Qty</TableHead>
-                          <TableHead className="text-right">Unit Price (₹)</TableHead>
-                          <TableHead className="text-right">Total (₹)</TableHead>
+                          <TableHead className="text-right">Unit Price (Rupee)</TableHead>
+                          <TableHead className="text-right">Total (Rupee)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -210,9 +210,9 @@ export function BillingExtractor() {
                             <TableCell className="font-medium">{item.item}</TableCell>
                             <TableCell className="text-right">{item.quantity ?? 'N/A'}</TableCell>
                             <TableCell className="text-right">
-                              {item.unitPrice ? `₹${item.unitPrice.toFixed(2)}` : 'N/A'}
+                              {item.unitPrice ? `Rupee ${item.unitPrice.toFixed(2)}` : 'N/A'}
                             </TableCell>
-                            <TableCell className="text-right">₹{item.totalPrice.toFixed(2)}</TableCell>
+                            <TableCell className="text-right">Rupee {item.totalPrice.toFixed(2)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

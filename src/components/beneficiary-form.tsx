@@ -272,7 +272,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                 name="kitAmount"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Kit Amount (₹)</FormLabel>
+                    <FormLabel>Kit Amount (Rupee)</FormLabel>
                     <FormControl>
                         <Input
                             type="number"

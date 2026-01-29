@@ -224,7 +224,7 @@ export default function CampaignSummaryPage() {
         setIsSharing(true);
 
         const remainingToCollectText = summaryData.remainingToCollect > 0 
-            ? `*Remaining to Collect: ₹${summaryData.remainingToCollect.toLocaleString()}*`
+            ? `*Remaining to Collect: Rupee ${summaryData.remainingToCollect.toLocaleString()}*`
             : `*Goal Achieved! Thank you for your support!*`;
 
         const shareText = `
@@ -234,8 +234,8 @@ export default function CampaignSummaryPage() {
 ${campaign.description || ''}
 
 *Financial Summary:*
-Target Amount: ₹${(summaryData.targetAmount || 0).toLocaleString()}
-Verified Donations: ₹${summaryData.verifiedDonations.toLocaleString()}
+Target Amount: Rupee ${(summaryData.targetAmount || 0).toLocaleString()}
+Verified Donations: Rupee ${summaryData.verifiedDonations.toLocaleString()}
 ${remainingToCollectText}
 
 We are providing aid to *${summaryData.totalBeneficiaries} beneficiaries*.
@@ -442,7 +442,7 @@ Please donate and share this message. Every contribution helps!
                                             placeholder="e.g. 100000"
                                         />
                                     ) : (
-                                        <p className="mt-1 text-lg font-semibold">₹{campaign.targetAmount?.toLocaleString() ?? '0.00'}</p>
+                                        <p className="mt-1 text-lg font-semibold">Rupee {campaign.targetAmount?.toLocaleString() ?? '0.00'}</p>
                                     )}
                                 </div>
                                 <div className="space-y-1">
@@ -504,7 +504,7 @@ Please donate and share this message. Every contribution helps!
                                 <Gift className="h-4 w-4 text-green-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">₹{summaryData?.verifiedDonations.toLocaleString() ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.verifiedDonations.toLocaleString() ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -513,7 +513,7 @@ Please donate and share this message. Every contribution helps!
                                 <Hourglass className="h-4 w-4 text-orange-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">₹{summaryData?.pendingDonations.toLocaleString() ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString() ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -522,7 +522,7 @@ Please donate and share this message. Every contribution helps!
                                 <Target className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">₹{summaryData?.totalKitAmountRequired.toLocaleString() ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString() ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -550,7 +550,7 @@ Please donate and share this message. Every contribution helps!
                             <CardHeader>
                                 <CardTitle>Funding Progress</CardTitle>
                                 <CardDescription>
-                                    ₹{summaryData?.verifiedDonations.toLocaleString() ?? 0} of ₹{(summaryData?.targetAmount ?? 0).toLocaleString()} funded from verified donations.
+                                    Rupee {summaryData?.verifiedDonations.toLocaleString() ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString()} funded from verified donations.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -608,7 +608,7 @@ Please donate and share this message. Every contribution helps!
                                             axisLine={false}
                                         />
                                         <YAxis
-                                            tickFormatter={(value) => `₹${Number(value).toLocaleString()}`}
+                                            tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`}
                                         />
                                         <ChartTooltip
                                             cursor={false}

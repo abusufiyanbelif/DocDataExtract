@@ -131,7 +131,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 name="amount"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Amount (₹)</FormLabel>
+                    <FormLabel>Amount (Rupee)</FormLabel>
                     <FormControl>
                         <Input type="number" {...field} />
                     </FormControl>

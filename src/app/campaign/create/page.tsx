@@ -215,7 +215,7 @@ export default function CreateCampaignPage() {
                   name="targetAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Target Amount (₹)</FormLabel>
+                      <FormLabel>Target Amount (Rupee)</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="e.g. 100000" {...field} />
                       </FormControl>

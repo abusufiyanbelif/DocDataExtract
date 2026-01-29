@@ -193,7 +193,7 @@ export default function CampaignDetailsPage() {
           if (items.length > 0) {
               const categoryTitle = memberCount === 'General' ? 'General' : `For ${memberCount} Members`;
               csvContent += `"${categoryTitle}"\n`;
-              csvContent += '#,Item Name,Quantity,Notes,Price (₹)\n';
+              csvContent += '#,Item Name,Quantity,Notes,Price (Rupee)\n';
 
               items.forEach((item, index) => {
                   const row = [
@@ -229,7 +229,7 @@ export default function CampaignDetailsPage() {
                 const categoryTitle = memberCount === 'General' ? 'General' : `For ${memberCount} Members`;
                 const total = calculateTotal(items);
 
-                const header = ['#', 'Item Name', 'Quantity', 'Notes', 'Price (₹)'];
+                const header = ['#', 'Item Name', 'Quantity', 'Notes', 'Price (Rupee)'];
                 const body = items.map((item, index) => [
                     index + 1,
                     item.name,
@@ -283,12 +283,12 @@ export default function CampaignDetailsPage() {
                     item.name,
                     item.quantity,
                     item.notes,
-                    `₹${(item.price || 0).toFixed(2)}`,
+                    `Rupee ${(item.price || 0).toFixed(2)}`,
                 ]);
 
                 (tableBody as any).push([
                     { content: 'Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
-                    { content: `₹${total.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }
+                    { content: `Rupee ${total.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }
                 ]);
                 
                 (doc as any).autoTable({
@@ -301,7 +301,7 @@ export default function CampaignDetailsPage() {
                 startY = (doc as any).lastAutoTable.finalY;
 
                 (doc as any).autoTable({
-                    head: [['#', 'Item Name', 'Quantity', 'Notes', 'Price (₹)']],
+                    head: [['#', 'Item Name', 'Quantity', 'Notes', 'Price (Rupee)']],
                     body: tableBody as any,
                     startY: startY,
                 });
@@ -399,7 +399,7 @@ export default function CampaignDetailsPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-            <h4 className="text-lg font-bold">Total: <span className="font-mono">₹{total.toFixed(2)}</span></h4>
+            <h4 className="text-lg font-bold">Total: <span className="font-mono">Rupee {total.toFixed(2)}</span></h4>
             {canUpdate && editMode && (
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => handleAddItem(memberCount)}>
@@ -419,7 +419,7 @@ export default function CampaignDetailsPage() {
                   <TableHead className="w-[30%]">Item Name</TableHead>
                   <TableHead className="w-[15%]">Quantity</TableHead>
                   <TableHead>Notes</TableHead>
-                  <TableHead className="w-[120px] text-right">Price (₹)</TableHead>
+                  <TableHead className="w-[120px] text-right">Price (Rupee)</TableHead>
                   {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -777,7 +777,7 @@ export default function CampaignDetailsPage() {
                                 }}
                             />
                             <label htmlFor={`copy-${item.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                {item.name} ({item.quantity} - ₹{item.price})
+                                {item.name} ({item.quantity} - Rupee {item.price})
                             </label>
                         </div>
                     ))}

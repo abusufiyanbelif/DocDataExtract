@@ -276,7 +276,7 @@ export default function DonationsPage() {
             <div className="flex-1 space-y-1.5">
               <CardTitle>Donation List ({donations?.length || 0})</CardTitle>
               <p className="text-muted-foreground">
-                  Total Donations: <span className="font-bold text-foreground">₹{totalDonationAmount.toFixed(2)}</span>
+                  Total Donations: <span className="font-bold text-foreground">Rupee {totalDonationAmount.toFixed(2)}</span>
               </p>
             </div>
             {canCreate && (
@@ -297,7 +297,7 @@ export default function DonationsPage() {
                           <TableHead>Donor Name</TableHead>
                           <TableHead>Phone</TableHead>
                           <TableHead>Referral</TableHead>
-                          <TableHead className="text-right">Amount (₹)</TableHead>
+                          <TableHead className="text-right">Amount (Rupee)</TableHead>
                           <TableHead>Type</TableHead>
                           <TableHead>Payment</TableHead>
                           <TableHead>Date</TableHead>
@@ -345,16 +345,16 @@ export default function DonationsPage() {
                               <TableCell className="font-medium">{donation.donorName}</TableCell>
                               <TableCell>{donation.donorPhone}</TableCell>
                               <TableCell>{donation.referral}</TableCell>
-                              <TableCell className="text-right font-medium">₹{donation.amount.toFixed(2)}</TableCell>
+                              <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
                               <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
                               <TableCell><Badge variant="outline">{donation.paymentType}</Badge></TableCell>
                               <TableCell>{donation.donationDate}</TableCell>
                               <TableCell>
-                                  {donation.screenshotUrl ? (
+                                  {donation.screenshotUrl && (
                                     <Button variant="outline" size="sm" onClick={() => donation.screenshotUrl && handleViewImage(donation.screenshotUrl)}>
                                         <Eye className="mr-2 h-4 w-4" /> View
                                     </Button>
-                                  ) : "N/A"}
+                                  )}
                               </TableCell>
                               <TableCell>{donation.uploadedBy}</TableCell>
                           </TableRow>
