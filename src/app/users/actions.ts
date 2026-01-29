@@ -5,6 +5,12 @@ import type { UserProfile } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 
 export async function deleteUserAction(uidToDelete: string): Promise<{ success: boolean; message: string }> {
+  if (!adminAuth || !adminDb || !adminStorage) {
+    const errorMessage = 'Firebase Admin SDK is not initialized. User deletion cannot proceed.';
+    console.error(errorMessage);
+    return { success: false, message: errorMessage };
+  }
+
   try {
     // In a production app, you would add robust auth checks here to ensure
     // the calling user is an administrator. For this starter, we rely on the
