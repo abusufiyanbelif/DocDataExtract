@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -80,7 +81,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   
   const { toast } = useToast();
   const auth = useAuth();
-  const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || createAdminPermissions());
+  const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || {});
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -116,12 +117,12 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   useEffect(() => {
     if (roleValue === 'Admin') {
       setPermissions(createAdminPermissions());
-    } else if (user) {
+    } else if (isEditing) {
         setPermissions(user.permissions || {});
     } else {
         setPermissions({});
     }
-  }, [roleValue, user]);
+  }, [roleValue, user, isEditing]);
 
   useEffect(() => {
     const fileList = idProofFile as FileList | undefined;
@@ -153,15 +154,26 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         });
         return;
     }
+
+    const actionCodeSettings = {
+        url: `${window.location.origin}/login`,
+        handleCodeInApp: false, 
+    };
+
     try {
-        await sendPasswordResetEmail(auth, user.email);
-        toast({ title: "Email Sent", description: `A password reset link has been sent to ${user.email}.`, variant: "success"});
+        await sendPasswordResetEmail(auth, user.email, actionCodeSettings);
+        toast({ 
+            title: "Email Sent", 
+            description: `A password reset link has been sent to ${user.email}. The user will be prompted to return to the login page after a successful reset.`, 
+            variant: "success",
+            duration: 10000
+        });
     } catch (error: any) {
         console.error("Password reset error:", error);
         toast({ title: "Failed to Send", description: `Could not send password reset email. Error: ${error.message}`, variant: "destructive"});
     }
   };
-
+  
   const handlePermissionChange = (path: string, checked: boolean) => {
       setPermissions(prevPermissions => {
         const newPermissions = JSON.parse(JSON.stringify(prevPermissions));
@@ -255,7 +267,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 />
             </div>
             
-            {isEditing && (
+            {isEditing ? (
                 <div className="space-y-2">
                     <FormLabel>Password</FormLabel>
                     <div className="flex items-center gap-2">
@@ -274,8 +286,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         An administrator cannot set a password directly. Click the button to send a secure reset link to the user's email.
                     </FormDescription>
                 </div>
-            )}
-            {!isEditing && (
+            ) : (
                 <FormField
                     control={control}
                     name="password"
