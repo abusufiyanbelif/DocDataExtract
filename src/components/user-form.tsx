@@ -23,8 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -34,7 +32,9 @@ import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { Loader2, Eye, EyeOff, Send } from 'lucide-react';
 import { get, set } from '@/lib/utils';
+import { PermissionsTable } from './permissions-table';
 
+// The schema is now much simpler, as permissions are managed outside the form state.
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address."}).optional().or(z.literal('')),
@@ -89,6 +89,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const auth = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   
+  // Permissions are now managed in local React state, NOT react-hook-form state.
   const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || {});
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -168,11 +169,15 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   };
 
   const handlePermissionChange = (path: string, checked: boolean) => {
-      const newPermissions = JSON.parse(JSON.stringify(permissions)); // Deep copy
-      set(newPermissions, path, checked);
-      setPermissions(newPermissions);
+      // Use a functional update to ensure we have the latest state
+      setPermissions(prevPermissions => {
+        const newPermissions = JSON.parse(JSON.stringify(prevPermissions)); // Deep copy
+        set(newPermissions, path, checked);
+        return newPermissions;
+      });
   };
   
+  // Inject the local permissions state into the form data on submit.
   const finalSubmitHandler = (formData: z.infer<typeof formSchema>) => {
       const dataWithPermissions: UserFormData = {
           ...formData,
@@ -411,224 +416,12 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             <div className="space-y-2">
                 <FormLabel>Module Permissions</FormLabel>
                 <FormDescription>Set granular permissions for the user. These are ignored if the user has Administrator Privileges.</FormDescription>
-                <div className="rounded-md border overflow-x-auto">
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead className="w-[200px]">Module</TableHead>
-                        <TableHead className="text-center">Create</TableHead>
-                        <TableHead className="text-center">Read</TableHead>
-                        <TableHead className="text-center">Update</TableHead>
-                        <TableHead className="text-center">Delete</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell className="font-medium">User Management</TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'users.create', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('users.create', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'users.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('users.read', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'users.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('users.update', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'users.delete', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('users.delete', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell className="font-medium">Campaigns</TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.create', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.create', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.read', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.update', false)}
-                                    onCheckedChange={(c) => {
-                                        console.log('This checkbox is a placeholder and does not affect permissions.');
-                                    }}
-                                    disabled={true}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.delete', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.delete', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                        </TableRow>
-                        <TableRow className="bg-muted/30 hover:bg-muted/50">
-                            <TableCell className="pl-12 text-muted-foreground">Summary</TableCell>
-                            <TableCell />
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.summary.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.summary.read', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                             <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.summary.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.summary.update', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell />
-                        </TableRow>
-                        <TableRow className="bg-muted/30 hover:bg-muted/50">
-                            <TableCell className="pl-12 text-muted-foreground">Ration Details</TableCell>
-                            <TableCell />
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.ration.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.ration.read', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.ration.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.ration.update', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell />
-                        </TableRow>
-                        <TableRow className="bg-muted/30 hover:bg-muted/50">
-                            <TableCell className="pl-12 text-muted-foreground">Beneficiary List</TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.beneficiaries.create', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.create', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.beneficiaries.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.read', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.beneficiaries.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.update', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.beneficiaries.delete', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.delete', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                        </TableRow>
-                        <TableRow className="bg-muted/30 hover:bg-muted/50">
-                            <TableCell className="pl-12 text-muted-foreground">Donations</TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.donations.create', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.create', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.donations.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.read', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.donations.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.update', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'campaigns.donations.delete', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.delete', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell className="font-medium">Extractor</TableCell>
-                            <TableCell />
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'extractor.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('extractor.read', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell />
-                            <TableCell />
-                        </TableRow>
-                        <TableRow>
-                            <TableCell className="font-medium">Story Creator</TableCell>
-                            <TableCell />
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'storyCreator.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('storyCreator.read', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell />
-                            <TableCell />
-                        </TableRow>
-                        <TableRow>
-                            <TableCell className="font-medium">Diagnostics</TableCell>
-                            <TableCell />
-                            <TableCell className="text-center">
-                                <Checkbox
-                                    checked={!!get(permissions, 'diagnostics.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('diagnostics.read', c === true)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
-                                />
-                            </TableCell>
-                            <TableCell />
-                            <TableCell />
-                        </TableRow>
-                    </TableBody>
-                    </Table>
-                </div>
+                <PermissionsTable 
+                    permissions={permissions}
+                    onPermissionChange={handlePermissionChange}
+                    role={roleValue}
+                    disabled={isFormDisabled}
+                />
             </div>
             
             <div className="flex justify-end gap-2 pt-4">
