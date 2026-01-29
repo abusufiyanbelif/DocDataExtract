@@ -1,72 +1,56 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useUser, useFirestore } from '@/firebase';
-import { useEffect, useState } from 'react';
+import { useUser } from '@/firebase';
+import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { Progress } from './ui/progress';
 
 const publicPaths = ['/login', '/seed'];
 
+function FullScreenLoader({ message }: { message: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+            <div className="w-full max-w-xs text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+                <p className="text-muted-foreground">{message}</p>
+            </div>
+        </div>
+    );
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoading: isAuthLoading } = useUser();
-  const firestore = useFirestore();
   const pathname = usePathname();
   const router = useRouter();
 
-  const [loadingMessage, setLoadingMessage] = useState('Initializing...');
-  const [progress, setProgress] = useState(0);
-
   useEffect(() => {
-    let unmounted = false;
-    
-    const updateProgress = (msg: string, val: number) => {
-        if (unmounted) return;
-        setLoadingMessage(msg);
-        setProgress(val);
+    if (isAuthLoading) {
+      return; // Don't do anything while auth is loading
     }
     
-    if (isAuthLoading || !firestore) {
-        updateProgress('Connecting to services...', 25);
-    } else {
-        updateProgress('Checking authentication...', 60);
-    }
+    const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
     
-    return () => { unmounted = true; }
-
-  }, [isAuthLoading, firestore])
-
-
-  useEffect(() => {
-    if (isAuthLoading) return;
-
-    setProgress(100);
-
-    const isPublicPath = publicPaths.includes(pathname);
-
     if (!user && !isPublicPath) {
       router.push('/login');
     } else if (user && pathname === '/login') {
       router.push('/');
     }
+
   }, [user, isAuthLoading, pathname, router]);
 
-  const isLoading = isAuthLoading || progress < 100;
+  if (isAuthLoading) {
+    return <FullScreenLoader message="Initializing..." />;
+  }
   
-  if (isLoading) {
-    const isPublic = publicPaths.includes(pathname);
-    // This condition shows a loader only when a redirect is imminent.
-    if ((!user && !isPublic) || (user && pathname === '/login')) {
-        return (
-          <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-            <div className="w-full max-w-xs text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-              <p className="text-muted-foreground mb-2">{loadingMessage}</p>
-              <Progress value={progress} className="w-full" />
-            </div>
-          </div>
-        );
-    }
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
+
+  // If a redirect is needed, show a loader while the useEffect triggers the navigation
+  if (!user && !isPublicPath) {
+    return <FullScreenLoader message="Redirecting to login..." />;
+  }
+  
+  if (user && pathname === '/login') {
+    return <FullScreenLoader message="Redirecting..." />;
   }
 
   return <>{children}</>;
