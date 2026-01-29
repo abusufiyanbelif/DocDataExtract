@@ -1,3 +1,4 @@
+// This comment is added to invalidate the Next.js cache.
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
