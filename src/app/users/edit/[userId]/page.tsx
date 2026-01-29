@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -78,6 +79,7 @@ export default function EditUserPage() {
 
     const updateData: any = {
         name: data.name,
+        email: data.email,
         phone: data.phone,
         role: data.role,
         status: data.status,

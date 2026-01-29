@@ -213,11 +213,16 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address (Optional)</FormLabel>
+                  <FormLabel>{isEditing ? 'Contact Email' : 'Authentication Email (Optional)'}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled || isEditing} />
+                    <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled} />
                   </FormControl>
-                  <FormDescription>Used for login and password resets. Cannot be changed after creation for security reasons.</FormDescription>
+                  <FormDescription>
+                    {isEditing 
+                        ? "This is the user's contact email. It does not affect their login credentials."
+                        : "If provided, this will be the user's login email. Cannot be changed after creation."
+                    }
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
