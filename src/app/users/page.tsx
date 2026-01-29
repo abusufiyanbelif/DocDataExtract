@@ -1,9 +1,9 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useStorage } from '@/firebase';
+import { useFirestore, useCollection, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -33,11 +33,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { collection } from 'firebase/firestore';
-import { deleteObject, ref as storageRef } from 'firebase/storage';
+import { deleteUserAction } from './actions';
+
 
 export default function UsersPage() {
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -100,13 +100,13 @@ export default function UsersPage() {
                 path: docRef.path,
                 operation: 'update',
                 requestResourceData: updatedData,
-            } satisfies SecurityRuleContext);
+            });
             errorEmitter.emit('permission-error', permissionError);
         });
   };
 
-  const handleDeleteConfirm = () => {
-    if (!userToDelete || !firestore || !storage || !canDelete) {
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete || !canDelete) {
         toast({ title: 'Permission Denied', description: 'You do not have permission to delete users.', variant: 'destructive'});
         return;
     };
@@ -129,67 +129,17 @@ export default function UsersPage() {
     }
     
     setIsDeleteDialogOpen(false);
-    toast({ title: 'Deleting...', description: `Please wait while user '${userBeingDeleted.name}' is being deleted.`});
+    toast({ title: 'Deleting...', description: `Please wait while user '${userBeingDeleted.name}' is being completely removed from the system.`});
 
-    const deleteDatabaseRecords = () => {
-        const batch = writeBatch(firestore);
+    const result = await deleteUserAction(userToDelete);
 
-        const userDocRef = doc(firestore, 'users', userToDelete);
-        batch.delete(userDocRef);
-
-        if (userBeingDeleted.loginId) {
-            const loginIdLookupRef = doc(firestore, 'user_lookups', userBeingDeleted.loginId);
-            batch.delete(loginIdLookupRef);
-        }
-
-        if (userBeingDeleted.phone) {
-            const phoneLookupRef = doc(firestore, 'user_lookups', userBeingDeleted.phone);
-            batch.delete(phoneLookupRef);
-        }
-
-        if (userBeingDeleted.userKey) {
-            const userKeyLookupRef = doc(firestore, 'user_lookups', userBeingDeleted.userKey);
-            batch.delete(userKeyLookupRef);
-        }
-
-        batch.commit()
-            .then(() => {
-                toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' and their database records have been removed.`, variant: 'success' });
-            })
-            .catch((serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: `users/${userToDelete} and associated lookups`,
-                    operation: 'delete',
-                } satisfies SecurityRuleContext);
-                errorEmitter.emit('permission-error', permissionError);
-            })
-            .finally(() => {
-                setUserToDelete(null);
-            });
-    };
-
-    if (userBeingDeleted.idProofUrl) {
-        deleteObject(storageRef(storage, userBeingDeleted.idProofUrl))
-            .then(() => {
-                deleteDatabaseRecords();
-            })
-            .catch((error) => {
-                if (error.code === 'storage/object-not-found') {
-                    console.warn("ID proof file not found in storage, but proceeding with DB record deletion.");
-                    deleteDatabaseRecords();
-                } else {
-                    toast({
-                        variant: "destructive",
-                        title: "Deletion Failed",
-                        description: `Could not delete ID proof from storage. Aborting. Error: ${error.message}`,
-                    });
-                    console.error("Storage deletion failed:", error);
-                    setUserToDelete(null);
-                }
-            });
+    if (result.success) {
+        toast({ title: 'User Deleted', description: result.message, variant: 'success' });
     } else {
-        deleteDatabaseRecords();
+        toast({ title: 'Deletion Failed', description: result.message, variant: 'destructive' });
     }
+    
+    setUserToDelete(null);
   };
   
   const isLoading = areUsersLoading || isProfileLoading;
@@ -355,9 +305,9 @@ export default function UsersPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This will permanently delete the user's profile and lookup records. For security, the user's authentication account itself is not deleted, but they will no longer be able to log in. This action is irreversible.
+                    This will permanently delete the user's Auth account, their database profile, and all associated files from storage. This action is irreversible.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
