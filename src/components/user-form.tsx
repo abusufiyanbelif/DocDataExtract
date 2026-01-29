@@ -1,20 +1,19 @@
 
-"use client";
+'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
-
 import {
   Form,
   FormControl,
   FormDescription,
-  FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  FormField,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -235,74 +234,60 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const handlePermissionChange = (path: string, checked: boolean | 'indeterminate') => {
     setValue(path as any, checked === true, { shouldDirty: true });
   };
-
-  const renderPermissions = () => {
+  
+  const renderPermissionRows = () => {
     const rows = [];
     for (const mod of modules) {
-      rows.push(
-        <TableRow key={mod.id}>
-          <TableCell className="font-medium">
-            {mod.subModules ? (
-              <div
-                onClick={() => toggleModule(mod.id)}
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <span>{mod.name}</span>
-                <ChevronDown
-                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                    openModules[mod.id] ? 'rotate-180' : ''
-                  }`}
-                />
-              </div>
-            ) : (
-              mod.name
-            )}
-          </TableCell>
-          {(['create', 'read', 'update', 'delete'] as const).map((perm) => (
-            <TableCell key={perm} className="text-center">
-              <Checkbox
-                checked={roleValue === 'Admin' || !!get(watchedPermissions, `${mod.id}.${perm}`)}
-                onCheckedChange={(checked) => handlePermissionChange(`permissions.${mod.id}.${perm}`, checked)}
-                disabled={
-                  roleValue === 'Admin' ||
-                  isFormDisabled ||
-                  !(mod.permissions as readonly string[]).includes(perm)
-                }
-              />
-            </TableCell>
-          ))}
-        </TableRow>
-      );
-      if (mod.subModules && openModules[mod.id]) {
-        for (const subMod of mod.subModules) {
-          rows.push(
-            <TableRow key={subMod.id} className="bg-muted/30 hover:bg-muted/50">
-              <TableCell className="pl-12 text-muted-foreground">{subMod.name}</TableCell>
-              {(['create', 'read', 'update', 'delete'] as const).map((perm) => {
-                const fieldName = `permissions.${mod.id}.${subMod.id}.${perm}`;
-                const isChecked = !!get(watchedPermissions, `${mod.id}.${subMod.id}.${perm}`);
-                
-                return (
-                  <TableCell key={perm} className="text-center">
-                    <Checkbox
-                      checked={roleValue === 'Admin' || isChecked}
-                      onCheckedChange={(checked) => handlePermissionChange(fieldName, checked)}
-                      disabled={
-                        roleValue === 'Admin' ||
-                        isFormDisabled ||
-                        !(subMod.permissions as readonly string[]).includes(perm)
-                      }
-                    />
-                  </TableCell>
-                );
-              })}
+        rows.push(
+            <TableRow key={mod.id}>
+                <TableCell className="font-medium">
+                {mod.subModules ? (
+                    <div onClick={() => toggleModule(mod.id)} className="flex items-center gap-2 cursor-pointer">
+                        <span>{mod.name}</span>
+                        <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${openModules[mod.id] ? 'rotate-180' : ''}`} />
+                    </div>
+                ) : ( mod.name )}
+                </TableCell>
+                {(['create', 'read', 'update', 'delete'] as const).map((perm) => {
+                    const fieldName = `permissions.${mod.id}.${perm}`;
+                    return (
+                        <TableCell key={perm} className="text-center">
+                            <Checkbox
+                                checked={roleValue === 'Admin' || !!get(watchedPermissions, fieldName)}
+                                onCheckedChange={(checked) => handlePermissionChange(fieldName, checked)}
+                                disabled={isFormDisabled || roleValue === 'Admin' || !(mod.permissions as readonly string[]).includes(perm)}
+                            />
+                        </TableCell>
+                    );
+                })}
             </TableRow>
-          );
+        );
+
+        if (mod.subModules && openModules[mod.id]) {
+            for (const subMod of mod.subModules) {
+                rows.push(
+                    <TableRow key={subMod.id} className="bg-muted/30 hover:bg-muted/50">
+                        <TableCell className="pl-12 text-muted-foreground">{subMod.name}</TableCell>
+                        {(['create', 'read', 'update', 'delete'] as const).map((perm) => {
+                            const fieldName = `permissions.${mod.id}.${subMod.id}.${perm}`;
+                            return (
+                                <TableCell key={perm} className="text-center">
+                                    <Checkbox
+                                        checked={roleValue === 'Admin' || !!get(watchedPermissions, fieldName)}
+                                        onCheckedChange={(checked) => handlePermissionChange(fieldName, checked)}
+                                        disabled={isFormDisabled || roleValue === 'Admin' || !(subMod.permissions as readonly string[]).includes(perm)}
+                                    />
+                                </TableCell>
+                            );
+                        })}
+                    </TableRow>
+                );
+            }
         }
-      }
     }
     return rows;
   };
+
 
   return (
     <Form {...form}>
@@ -442,7 +427,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     <FormItem>
                     <FormLabel>ID Proof Type</FormLabel>
                     <FormControl>
-                        <Input placeholder="Aadhaar, PAN, etc." {...field} />
+                        <Input placeholder="Aadhaar, PAN, etc." {...field} disabled={isFormDisabled}/>
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -455,7 +440,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     <FormItem>
                     <FormLabel>ID Number</FormLabel>
                     <FormControl>
-                        <Input placeholder="e.g. XXXX XXXX 1234" {...field} />
+                        <Input placeholder="e.g. XXXX XXXX 1234" {...field} disabled={isFormDisabled}/>
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -466,7 +451,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             <FormItem>
                 <FormLabel>ID Proof Document</FormLabel>
                 <FormControl>
-                    <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
+                    <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} disabled={isFormDisabled}/>
                 </FormControl>
                 <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
                 <FormMessage />
@@ -546,7 +531,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         <TableHead className="text-center">Delete</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>{renderPermissions()}</TableBody>
+                    <TableBody>{renderPermissionRows()}</TableBody>
                     </Table>
                 </div>
             </div>
