@@ -35,6 +35,28 @@ import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { Loader2, Eye, EyeOff, ChevronDown, Send } from 'lucide-react';
 
+// Define a strict schema for permissions
+const permissionActionSchema = z.object({
+  create: z.boolean().optional(),
+  read: z.boolean().optional(),
+  update: z.boolean().optional(),
+  delete: z.boolean().optional(),
+});
+
+const campaignPermissionsSchema = permissionActionSchema.extend({
+  summary: z.object({ read: z.boolean().optional(), update: z.boolean().optional() }).optional(),
+  ration: z.object({ read: z.boolean().optional(), update: z.boolean().optional() }).optional(),
+  beneficiaries: permissionActionSchema.optional(),
+  donations: permissionActionSchema.optional(),
+});
+
+const permissionsSchema = z.object({
+  users: permissionActionSchema.optional(),
+  campaigns: campaignPermissionsSchema.optional(),
+  extractor: z.object({ read: z.boolean().optional() }).optional(),
+  storyCreator: z.object({ read: z.boolean().optional() }).optional(),
+  diagnostics: z.object({ read: z.boolean().optional() }).optional(),
+});
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -47,7 +69,7 @@ const formSchema = z.object({
   idProofType: z.string().optional(),
   idNumber: z.string().optional(),
   idProofFile: z.any().optional(),
-  permissions: z.any().optional(),
+  permissions: permissionsSchema.optional(),
   password: z.string().optional(),
   _isEditing: z.boolean()
 }).superRefine((data, ctx) => {
@@ -142,7 +164,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     if (roleValue === 'Admin') {
       setValue('permissions', createAdminPermissions(), { shouldDirty: true });
     } else {
-      setValue('permissions', userPermissions || {}, { shouldDirty: true });
+      setValue('permissions', userPermissions, { shouldDirty: true });
     }
 
     prevRoleRef.current = roleValue;
@@ -295,6 +317,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     <FormMessage />
                     </FormItem>
                 )}
+           
             )}
             
             {isEditing && (
@@ -484,11 +507,13 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                 <TableCell className="pl-12 text-muted-foreground">
                                 {subMod.name}
                                 </TableCell>
-                                {['create', 'read', 'update', 'delete'].map((perm) => (
+                                {['create', 'read', 'update', 'delete'].map((perm) => {
+                                const fieldName = `permissions.${mod.id}.${subMod.id}.${perm}` as `permissions.campaigns.${typeof subMod.id}.${typeof perm}`;
+                                return (
                                 <TableCell key={perm} className="text-center">
                                     <FormField
                                     control={form.control}
-                                    name={`permissions.${mod.id}.${subMod.id}.${perm}`}
+                                    name={fieldName}
                                     render={({ field }) => (
                                         <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
                                         <FormControl>
@@ -498,9 +523,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                             disabled={
                                                 roleValue === 'Admin' ||
                                                 isFormDisabled ||
-                                                !(subMod.permissions as readonly string[]).includes(
-                                                perm
-                                                )
+                                                !(subMod.permissions as readonly string[]).includes(perm)
                                             }
                                             />
                                         </FormControl>
@@ -508,7 +531,8 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                     )}
                                     />
                                 </TableCell>
-                                ))}
+                                );
+                                })}
                             </TableRow>
                             ))}
                         </React.Fragment>
