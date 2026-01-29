@@ -31,10 +31,9 @@ import { createAdminPermissions, type UserPermissions } from '@/lib/modules';
 import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { Loader2, Eye, EyeOff, Send } from 'lucide-react';
-import { get, set } from '@/lib/utils';
 import { PermissionsTable } from './permissions-table';
+import { get, set } from '@/lib/utils';
 
-// The schema is now much simpler, as permissions are managed outside the form state.
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address."}).optional().or(z.literal('')),
@@ -48,29 +47,21 @@ const formSchema = z.object({
   idProofFile: z.any().optional(),
   password: z.string().optional(),
   _isEditing: z.boolean(),
-}).superRefine((data, ctx) => {
-    if (!data._isEditing) {
-        if (!data.password || data.password.length < 6) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['password'],
-                message: 'Password is required and must be at least 6 characters for new users.',
-            });
-        }
-    }
-    if (!data.email && !data.phone) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['email'],
-            message: 'Either an Email or a Phone Number is required.',
-        });
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['phone'],
-            message: 'Either an Email or a Phone Number is required.',
-        });
-    }
+})
+.refine((data) => data.email || data.phone, {
+  message: 'Either an Email or a Phone Number is required.',
+  path: ['email'], // Report error on one of the fields
+})
+.refine((data) => {
+  if (!data._isEditing) {
+    return data.password && data.password.length >= 6;
+  }
+  return true;
+}, {
+  message: 'Password is required and must be at least 6 characters for new users.',
+  path: ['password'],
 });
+
 
 export type UserFormData = z.infer<typeof formSchema> & { permissions: UserPermissions };
 
@@ -88,8 +79,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const { toast } = useToast();
   const auth = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  
-  // Permissions are now managed in local React state, NOT react-hook-form state.
   const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || {});
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -169,15 +158,13 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   };
 
   const handlePermissionChange = (path: string, checked: boolean) => {
-      // Use a functional update to ensure we have the latest state
       setPermissions(prevPermissions => {
-        const newPermissions = JSON.parse(JSON.stringify(prevPermissions)); // Deep copy
+        const newPermissions = JSON.parse(JSON.stringify(prevPermissions));
         set(newPermissions, path, checked);
         return newPermissions;
       });
   };
   
-  // Inject the local permissions state into the form data on submit.
   const finalSubmitHandler = (formData: z.infer<typeof formSchema>) => {
       const dataWithPermissions: UserFormData = {
           ...formData,
@@ -263,36 +250,38 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 />
             </div>
             
-            {!isEditing ? (
+            {!isEditing && (
                 <FormField
-                control={control}
-                name="password"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <div className="relative w-full">
-                        <FormControl>
-                            <Input 
-                                type={showPassword ? 'text' : 'password'} 
-                                placeholder="Minimum 6 characters"
-                                {...field} value={field.value ?? ''} 
-                                disabled={isFormDisabled} 
-                            />
-                        </FormControl>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                            onClick={() => setShowPassword(!showPassword)}
-                        >
-                            {showPassword ? <EyeOff /> : <Eye />}
-                        </Button>
-                    </div>
-                    <FormMessage />
-                    </FormItem>
-                )}
-            ) : (
+                    control={control}
+                    name="password"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <div className="relative w-full">
+                                <FormControl>
+                                    <Input 
+                                        type={showPassword ? 'text' : 'password'} 
+                                        placeholder="Minimum 6 characters"
+                                        {...field} value={field.value ?? ''} 
+                                        disabled={isFormDisabled} 
+                                    />
+                                </FormControl>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? <EyeOff /> : <Eye />}
+                                </Button>
+                            </div>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            )}
+            {isEditing && (
                 <div className="space-y-2">
                     <FormLabel>Password</FormLabel>
                     <div className="flex items-center gap-2">
