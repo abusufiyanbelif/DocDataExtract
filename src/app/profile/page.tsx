@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function ProfileDetail({ icon, label, value, children, isEditing }: { icon: React.ReactNode, label: string, value?: React.ReactNode, children?: React.ReactNode, isEditing?: boolean }) {
     return (
@@ -35,6 +36,8 @@ export default function ProfilePage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
+    const [role, setRole] = useState<'Admin' | 'User'>('User');
+    const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
 
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
     const [imageToView, setImageToView] = useState<string | null>(null);
@@ -48,6 +51,8 @@ export default function ProfilePage() {
         if (userProfile) {
             setName(userProfile.name);
             setPhone(userProfile.phone);
+            setRole(userProfile.role);
+            setStatus(userProfile.status);
             setIsEditMode(true);
         }
     };
@@ -62,12 +67,23 @@ export default function ProfilePage() {
             return;
         }
 
+        if (userProfile.userKey === 'admin' && role !== 'Admin') {
+            toast({ title: 'Invalid Action', description: 'The default System Admin cannot be demoted.', variant: 'destructive'});
+            return;
+        }
+        if (userProfile.userKey === 'admin' && status !== 'Active') {
+            toast({ title: 'Invalid Action', description: 'The default System Admin cannot be deactivated.', variant: 'destructive'});
+            return;
+        }
+
         const batch = writeBatch(firestore);
         const userDocRef = doc(firestore, 'users', userProfile.id);
 
-        const updateData: {name?: string, phone?: string} = {};
+        const updateData: {name?: string, phone?: string, role?: 'Admin' | 'User', status?: 'Active' | 'Inactive' } = {};
         if (name !== userProfile.name) updateData.name = name;
         if (phone !== userProfile.phone) updateData.phone = phone;
+        if (role !== userProfile.role) updateData.role = role;
+        if (status !== userProfile.status) updateData.status = status;
 
         if (Object.keys(updateData).length === 0) {
             setIsEditMode(false);
@@ -155,12 +171,37 @@ export default function ProfilePage() {
                                      <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
                                 </ProfileDetail>
                                 <ProfileDetail icon={<KeyRound />} label="User Key (System ID)" value={userProfile.userKey} />
-                                <ProfileDetail icon={<Shield />} label="Role" value={<Badge variant={userProfile.role === 'Admin' ? 'destructive' : 'secondary'}>{userProfile.role}</Badge>} />
+                                
+                                <ProfileDetail 
+                                    icon={<Shield />} 
+                                    label="Role" 
+                                    value={<Badge variant={userProfile.role === 'Admin' ? 'destructive' : 'secondary'}>{userProfile.role}</Badge>} 
+                                    isEditing={isEditMode && userProfile.role === 'Admin'}
+                                >
+                                     <Select value={role} onValueChange={(value: 'Admin' | 'User') => setRole(value)}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Admin">Admin</SelectItem>
+                                            <SelectItem value="User">User</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </ProfileDetail>
+                                
                                 <ProfileDetail 
                                     icon={userProfile.status === 'Active' ? <CheckCircle className="text-green-500" /> : <XCircle className="text-destructive" />} 
                                     label="Status" 
                                     value={<Badge variant={userProfile.status === 'Active' ? 'default' : 'outline'}>{userProfile.status}</Badge>} 
-                                />
+                                    isEditing={isEditMode && userProfile.role === 'Admin'}
+                                >
+                                    <Select value={status} onValueChange={(value: 'Active' | 'Inactive') => setStatus(value)}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Active">Active</SelectItem>
+                                            <SelectItem value="Inactive">Inactive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </ProfileDetail>
+
                                 {userProfile.idProofUrl && (
                                     <ProfileDetail 
                                         icon={<FileText />} 

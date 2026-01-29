@@ -96,6 +96,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
   useEffect(() => {
     const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + Number(item.price || 0), 0);
     
+    let total = 0; // Default to 0
     if (membersValue && membersValue > 0) {
         const memberCountStr = String(membersValue);
         const exactMatchList = rationLists[memberCountStr];
@@ -104,10 +105,12 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         const listToUse = exactMatchList || generalListForFivePlus;
 
         if (listToUse) {
-            const total = calculateTotal(listToUse);
-            setValue('kitAmount', total, { shouldValidate: true });
+            total = calculateTotal(listToUse);
         }
     }
+    // Always set the value to either the calculated total or 0
+    setValue('kitAmount', total, { shouldValidate: true });
+    
   }, [membersValue, rationLists, setValue]);
   
   const isKitAmountReadOnly = useMemo(() => {
