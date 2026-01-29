@@ -141,7 +141,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     },
   });
 
-  const { watch, setValue, getValues, register } = form;
+  const { watch, setValue, getValues, register, control } = form;
   const nameValue = watch('name');
   const roleValue = watch('role');
   const idProofFile = watch('idProofFile');
@@ -216,12 +216,98 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   };
   
   const isFormDisabled = isSubmitting || isLoading;
+  
+  const renderPermissions = () => {
+    const rows: React.ReactNode[] = [];
+    modules.forEach((mod) => {
+      rows.push(
+        <TableRow key={mod.id}>
+          <TableCell className="font-medium">
+            {mod.subModules ? (
+              <div
+                onClick={() => toggleModule(mod.id)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <span>{mod.name}</span>
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
+                    openModules[mod.id] ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
+            ) : (
+              mod.name
+            )}
+          </TableCell>
+          {['create', 'read', 'update', 'delete'].map((perm) => (
+            <TableCell key={perm} className="text-center">
+              <FormField
+                control={control}
+                name={`permissions.${mod.id}.${perm}` as any}
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={roleValue === 'Admin' || !!field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={
+                          roleValue === 'Admin' ||
+                          isFormDisabled ||
+                          !(mod.permissions as readonly string[]).includes(perm)
+                        }
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </TableCell>
+          ))}
+        </TableRow>
+      );
+      if (mod.subModules && openModules[mod.id]) {
+        mod.subModules.forEach((subMod) => {
+          rows.push(
+            <TableRow key={subMod.id} className="bg-muted/30 hover:bg-muted/50">
+              <TableCell className="pl-12 text-muted-foreground">{subMod.name}</TableCell>
+              {['create', 'read', 'update', 'delete'].map((perm) => {
+                const fieldName = `permissions.${mod.id}.${subMod.id}.${perm}`;
+                return (
+                  <TableCell key={perm} className="text-center">
+                    <FormField
+                      control={control}
+                      name={fieldName as any}
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={roleValue === 'Admin' || !!field.value}
+                              onCheckedChange={field.onChange}
+                              disabled={
+                                roleValue === 'Admin' ||
+                                isFormDisabled ||
+                                !(subMod.permissions as readonly string[]).includes(perm)
+                              }
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          );
+        });
+      }
+    });
+    return rows;
+  };
 
   return (
     <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
             <FormField
-              control={form.control}
+              control={control}
               name="name"
               render={({ field }) => (
                 <FormItem>
@@ -234,7 +320,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
               )}
             />
             <FormField
-              control={form.control}
+              control={control}
               name="email"
               render={({ field }) => (
                 <FormItem>
@@ -248,7 +334,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
               )}
             />
             <FormField
-              control={form.control}
+              control={control}
               name="phone"
               render={({ field }) => (
                 <FormItem>
@@ -263,7 +349,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
-                control={form.control}
+                control={control}
                 name="loginId"
                 render={({ field }) => (
                     <FormItem>
@@ -277,7 +363,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 )}
                 />
                 <FormField
-                control={form.control}
+                control={control}
                 name="userKey"
                 render={({ field }) => (
                     <FormItem>
@@ -294,7 +380,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             
             {!isEditing && (
                 <FormField
-                control={form.control}
+                control={control}
                 name="password"
                 render={({ field }) => (
                     <FormItem>
@@ -349,7 +435,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
-                control={form.control}
+                control={control}
                 name="idProofType"
                 render={({ field }) => (
                     <FormItem>
@@ -362,7 +448,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 )}
                 />
                 <FormField
-                control={form.control}
+                control={control}
                 name="idNumber"
                 render={({ field }) => (
                     <FormItem>
@@ -399,7 +485,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                 <FormField
-                    control={form.control}
+                    control={control}
                     name="role"
                     render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-full">
@@ -420,7 +506,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     )}
                 />
                 <FormField
-                    control={form.control}
+                    control={control}
                     name="status"
                     render={({ field }) => (
                         <FormItem>
@@ -459,89 +545,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         <TableHead className="text-center">Delete</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>
-                    {modules.map((mod) => (
-                        <React.Fragment key={mod.id}>
-                        <TableRow>
-                            <TableCell className="font-medium">
-                            {mod.subModules ? (
-                                <div
-                                onClick={() => toggleModule(mod.id)}
-                                className="flex items-center gap-2 cursor-pointer"
-                                >
-                                <span>{mod.name}</span>
-                                <ChevronDown
-                                    className={`h-4 w-4 shrink-0 transition-transform duration-200 ${
-                                    openModules[mod.id] ? 'rotate-180' : ''
-                                    }`}
-                                />
-                                </div>
-                            ) : (
-                                mod.name
-                            )}
-                            </TableCell>
-                            {['create', 'read', 'update', 'delete'].map((perm) => (
-                            <TableCell key={perm} className="text-center">
-                                <FormField
-                                control={form.control}
-                                name={(`permissions.${mod.id}.${perm}`) as any}
-                                render={({ field }) => (
-                                    <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                    <FormControl>
-                                        <Checkbox
-                                        checked={roleValue === 'Admin' || !!field.value}
-                                        onCheckedChange={field.onChange}
-                                        disabled={
-                                            roleValue === 'Admin' ||
-                                            isFormDisabled ||
-                                            !(mod.permissions as readonly string[]).includes(perm)
-                                        }
-                                        />
-                                    </FormControl>
-                                    </FormItem>
-                                )}
-                                />
-                            </TableCell>
-                            ))}
-                        </TableRow>
-                        {mod.subModules &&
-                            openModules[mod.id] &&
-                            mod.subModules.map((subMod) => (
-                            <TableRow key={subMod.id} className="bg-muted/30 hover:bg-muted/50">
-                                <TableCell className="pl-12 text-muted-foreground">
-                                {subMod.name}
-                                </TableCell>
-                                {['create', 'read', 'update', 'delete'].map((perm) => {
-                                const fieldName = `permissions.${mod.id}.${subMod.id}.${perm}`;
-                                return (
-                                <TableCell key={perm} className="text-center">
-                                    <FormField
-                                    control={form.control}
-                                    name={fieldName as any}
-                                    render={({ field }) => (
-                                        <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                                        <FormControl>
-                                            <Checkbox
-                                            checked={roleValue === 'Admin' || !!field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={
-                                                roleValue === 'Admin' ||
-                                                isFormDisabled ||
-                                                !(subMod.permissions as readonly string[]).includes(perm)
-                                            }
-                                            />
-                                        </FormControl>
-                                        </FormItem>
-                                    )}
-                                    />
-                                </TableCell>
-                                );
-                                })}
-                            </TableRow>
-                            ))}
-                        </React.Fragment>
-                    ))}
-                    </TableBody>
+                    <TableBody>{renderPermissions()}</TableBody>
                     </Table>
                 </div>
             </div>
@@ -557,3 +561,5 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     </Form>
   );
 }
+
+    
