@@ -48,8 +48,8 @@ const campaignPermissionsSchema = z.object({
   read: z.boolean().optional(),
   update: z.boolean().optional(),
   delete: z.boolean().optional(),
-  summary: z.object({ read: z.boolean().optional(), update: z.boolean().optional() }).optional(),
-  ration: z.object({ read: z.boolean().optional(), update: z.boolean().optional() }).optional(),
+  summary: permissionActionSchema.omit({ create: true, delete: true }).optional(),
+  ration: permissionActionSchema.omit({ create: true, delete: true }).optional(),
   beneficiaries: permissionActionSchema.optional(),
   donations: permissionActionSchema.optional(),
 });
@@ -57,9 +57,9 @@ const campaignPermissionsSchema = z.object({
 const permissionsSchema = z.object({
   users: permissionActionSchema.optional(),
   campaigns: campaignPermissionsSchema.optional(),
-  extractor: z.object({ read: z.boolean().optional() }).optional(),
-  storyCreator: z.object({ read: z.boolean().optional() }).optional(),
-  diagnostics: z.object({ read: z.boolean().optional() }).optional(),
+  extractor: permissionActionSchema.omit({ create: true, update: true, delete: true }).optional(),
+  storyCreator: permissionActionSchema.omit({ create: true, update: true, delete: true }).optional(),
+  diagnostics: permissionActionSchema.omit({ create: true, update: true, delete: true }).optional(),
 });
 
 const formSchema = z.object({
@@ -75,7 +75,7 @@ const formSchema = z.object({
   idProofFile: z.any().optional(),
   permissions: permissionsSchema.optional(),
   password: z.string().optional(),
-  _isEditing: z.boolean()
+  _isEditing: z.boolean(),
 }).superRefine((data, ctx) => {
     if (!data._isEditing) {
         if (!data.password || data.password.length < 6) {
@@ -111,6 +111,20 @@ interface UserFormProps {
   isLoading: boolean;
 }
 
+// Helper to safely access nested properties of an object.
+function get(obj: any, path: string, defaultValue: any = undefined) {
+  const keys = path.split('.');
+  let result = obj;
+  for (const key of keys) {
+    result = result?.[key];
+    if (result === undefined) {
+      return defaultValue;
+    }
+  }
+  return result;
+}
+
+
 export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: UserFormProps) {
   const isEditing = !!user;
   const isDefaultAdmin = user?.userKey === 'admin';
@@ -137,7 +151,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       idProofType: user?.idProofType || '',
       idNumber: user?.idNumber || '',
       permissions: user?.permissions || {},
-      _isEditing: isEditing
+      _isEditing: isEditing,
     },
   });
 
@@ -145,6 +159,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const nameValue = watch('name');
   const roleValue = watch('role');
   const idProofFile = watch('idProofFile');
+  const watchedPermissions = watch('permissions');
   const prevRoleRef = useRef(roleValue);
 
   const [preview, setPreview] = useState<string | null>(user?.idProofUrl || null);
@@ -217,9 +232,13 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   
   const isFormDisabled = isSubmitting || isLoading;
   
+  const handlePermissionChange = (path: string, checked: boolean | 'indeterminate') => {
+    setValue(path as any, checked === true, { shouldDirty: true });
+  };
+
   const renderPermissions = () => {
-    const rows: React.ReactNode[] = [];
-    modules.forEach((mod) => {
+    const rows = [];
+    for (const mod of modules) {
       rows.push(
         <TableRow key={mod.id}>
           <TableCell className="font-medium">
@@ -239,67 +258,49 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
               mod.name
             )}
           </TableCell>
-          {['create', 'read', 'update', 'delete'].map((perm) => (
+          {(['create', 'read', 'update', 'delete'] as const).map((perm) => (
             <TableCell key={perm} className="text-center">
-              <FormField
-                control={control}
-                name={`permissions.${mod.id}.${perm}` as any}
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={roleValue === 'Admin' || !!field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={
-                          roleValue === 'Admin' ||
-                          isFormDisabled ||
-                          !(mod.permissions as readonly string[]).includes(perm)
-                        }
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
+              <Checkbox
+                checked={roleValue === 'Admin' || !!get(watchedPermissions, `${mod.id}.${perm}`)}
+                onCheckedChange={(checked) => handlePermissionChange(`permissions.${mod.id}.${perm}`, checked)}
+                disabled={
+                  roleValue === 'Admin' ||
+                  isFormDisabled ||
+                  !(mod.permissions as readonly string[]).includes(perm)
+                }
               />
             </TableCell>
           ))}
         </TableRow>
       );
       if (mod.subModules && openModules[mod.id]) {
-        mod.subModules.forEach((subMod) => {
+        for (const subMod of mod.subModules) {
           rows.push(
             <TableRow key={subMod.id} className="bg-muted/30 hover:bg-muted/50">
               <TableCell className="pl-12 text-muted-foreground">{subMod.name}</TableCell>
-              {['create', 'read', 'update', 'delete'].map((perm) => {
+              {(['create', 'read', 'update', 'delete'] as const).map((perm) => {
                 const fieldName = `permissions.${mod.id}.${subMod.id}.${perm}`;
+                const isChecked = !!get(watchedPermissions, `${mod.id}.${subMod.id}.${perm}`);
+                
                 return (
                   <TableCell key={perm} className="text-center">
-                    <FormField
-                      control={control}
-                      name={fieldName as any}
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-center p-0 m-0 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={roleValue === 'Admin' || !!field.value}
-                              onCheckedChange={field.onChange}
-                              disabled={
-                                roleValue === 'Admin' ||
-                                isFormDisabled ||
-                                !(subMod.permissions as readonly string[]).includes(perm)
-                              }
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                    <Checkbox
+                      checked={roleValue === 'Admin' || isChecked}
+                      onCheckedChange={(checked) => handlePermissionChange(fieldName, checked)}
+                      disabled={
+                        roleValue === 'Admin' ||
+                        isFormDisabled ||
+                        !(subMod.permissions as readonly string[]).includes(perm)
+                      }
                     />
                   </TableCell>
                 );
               })}
             </TableRow>
           );
-        });
+        }
       }
-    });
+    }
     return rows;
   };
 
@@ -561,5 +562,3 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     </Form>
   );
 }
-
-    
