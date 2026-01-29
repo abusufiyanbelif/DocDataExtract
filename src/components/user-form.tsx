@@ -30,7 +30,7 @@ import { useAuth } from '@/firebase';
 import { createAdminPermissions, type UserPermissions } from '@/lib/modules';
 import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { Loader2, Eye, EyeOff, Send } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import { PermissionsTable } from './permissions-table';
 import { get, set } from '@/lib/utils';
 
@@ -50,7 +50,7 @@ const formSchema = z.object({
 })
 .refine((data) => data.email || data.phone, {
   message: 'Either an Email or a Phone Number is required.',
-  path: ['email'], // Report error on one of the fields
+  path: ['email'],
 })
 .refine((data) => {
   if (!data._isEditing) {
@@ -61,7 +61,6 @@ const formSchema = z.object({
   message: 'Password is required and must be at least 6 characters for new users.',
   path: ['password'],
 });
-
 
 export type UserFormData = z.infer<typeof formSchema> & { permissions: UserPermissions };
 
@@ -78,8 +77,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const isDefaultAdmin = user?.userKey === 'admin';
   const { toast } = useToast();
   const auth = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || {});
+  const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || createAdminPermissions());
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -115,8 +113,12 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   useEffect(() => {
     if (roleValue === 'Admin') {
       setPermissions(createAdminPermissions());
+    } else if (user) {
+        setPermissions(user.permissions || {});
+    } else {
+        setPermissions({});
     }
-  }, [roleValue]);
+  }, [roleValue, user]);
 
   useEffect(() => {
     const fileList = idProofFile as FileList | undefined;
@@ -250,37 +252,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 />
             </div>
             
-            {!isEditing && (
-                <FormField
-                    control={control}
-                    name="password"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Password</FormLabel>
-                            <div className="relative w-full">
-                                <FormControl>
-                                    <Input 
-                                        type={showPassword ? 'text' : 'password'} 
-                                        placeholder="Minimum 6 characters"
-                                        {...field} value={field.value ?? ''} 
-                                        disabled={isFormDisabled} 
-                                    />
-                                </FormControl>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                >
-                                    {showPassword ? <EyeOff /> : <Eye />}
-                                </Button>
-                            </div>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            )}
             {isEditing && (
                 <div className="space-y-2">
                     <FormLabel>Password</FormLabel>
@@ -300,6 +271,26 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         An administrator cannot set a password directly. Click the button to send a secure reset link to the user's email.
                     </FormDescription>
                 </div>
+            )}
+            {!isEditing && (
+                <FormField
+                    control={control}
+                    name="password"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    type="password"
+                                    placeholder="Minimum 6 characters"
+                                    {...field} value={field.value ?? ''} 
+                                    disabled={isFormDisabled} 
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
             )}
             
             <Separator />

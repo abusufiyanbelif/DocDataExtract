@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, setDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, setDoc, DocumentReference } from 'firebase/firestore';
 import type { Donation, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -51,7 +51,7 @@ export default function DonationsPage() {
   
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId || !userProfile) return null;
-    return doc(firestore, 'campaigns', campaignId);
+    return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
   }, [firestore, campaignId, userProfile]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
@@ -351,7 +351,7 @@ export default function DonationsPage() {
                               <TableCell>{donation.donationDate}</TableCell>
                               <TableCell>
                                   {donation.screenshotUrl ? (
-                                    <Button variant="outline" size="sm" onClick={() => handleViewImage(donation.screenshotUrl)}>
+                                    <Button variant="outline" size="sm" onClick={() => handleViewImage(donation.screenshotUrl!)}>
                                         <Eye className="mr-2 h-4 w-4" /> View
                                     </Button>
                                   ) : "N/A"}

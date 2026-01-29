@@ -106,7 +106,10 @@ async function main() {
     if (usersToDelete.length > 0) {
         const result = await auth.deleteUsers(usersToDelete.map(u => u.uid));
         deletedAuthCount += result.successCount;
-        result.errors.forEach(err => console.error(`   - ❌ Failed to delete auth user ${err.uid}: ${err.error}`));
+        result.errors.forEach(err => {
+            const failedUser = usersToDelete[err.index];
+            console.error(`   - ❌ Failed to delete auth user ${failedUser.uid}: ${err.error}`);
+        });
     }
     nextPageToken = listUsersResult.pageToken;
   } while (nextPageToken);

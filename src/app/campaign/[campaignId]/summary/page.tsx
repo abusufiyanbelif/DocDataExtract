@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, collection, updateDoc, query, where } from 'firebase/firestore';
+import { doc, collection, updateDoc, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import {
   BarChart,
@@ -75,7 +75,7 @@ export default function CampaignSummaryPage() {
     const [isSharing, setIsSharing] = useState(false);
 
     // Data fetching
-    const campaignDocRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? doc(firestore, 'campaigns', campaignId) : null, [firestore, campaignId, isProfileLoading, userProfile]);
+    const campaignDocRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId, isProfileLoading, userProfile]);
     const beneficiariesCollectionRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId, isProfileLoading, userProfile]);
     const donationsCollectionRef = useMemo(() => {
         if (!firestore || !campaignId || isProfileLoading || !userProfile) return null;

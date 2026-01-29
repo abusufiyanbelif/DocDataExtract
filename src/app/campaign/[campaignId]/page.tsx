@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, DocumentReference } from 'firebase/firestore';
 import type { Campaign, RationItem } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -48,7 +48,7 @@ export default function CampaignDetailsPage() {
   
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId || !userProfile) return null;
-    return doc(firestore, 'campaigns', campaignId);
+    return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
   }, [firestore, campaignId, userProfile]);
 
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
@@ -286,7 +286,7 @@ export default function CampaignDetailsPage() {
                     `₹${(item.price || 0).toFixed(2)}`,
                 ]);
 
-                tableBody.push([
+                (tableBody as any).push([
                     { content: 'Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
                     { content: `₹${total.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }
                 ]);

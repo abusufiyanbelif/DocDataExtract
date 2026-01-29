@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, setDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, setDoc, DocumentReference } from 'firebase/firestore';
 import type { Beneficiary, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -63,7 +63,7 @@ export default function BeneficiariesPage() {
   
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId || !userProfile) return null;
-    return doc(firestore, 'campaigns', campaignId);
+    return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
   }, [firestore, campaignId, userProfile]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
@@ -406,8 +406,8 @@ export default function BeneficiariesPage() {
     if (sortConfig !== null) {
         sortableItems.sort((a, b) => {
             if (sortConfig.key === 'srNo') return 0; // Keep original order for srNo
-            const aValue = a[sortConfig.key] ?? '';
-            const bValue = b[sortConfig.key] ?? '';
+            const aValue = a[sortConfig.key as keyof Beneficiary] ?? '';
+            const bValue = b[sortConfig.key as keyof Beneficiary] ?? '';
             
             if (typeof aValue === 'number' && typeof bValue === 'number') {
                 return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;

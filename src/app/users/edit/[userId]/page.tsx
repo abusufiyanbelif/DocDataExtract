@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { updateDoc, doc, writeBatch } from 'firebase/firestore';
+import { updateDoc, doc, writeBatch, DocumentReference } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { createAdminPermissions } from '@/lib/modules';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -31,7 +31,7 @@ export default function EditUserPage() {
   
   const userDocRef = useMemo(() => {
     if (!firestore || !userId) return null;
-    return doc(firestore, 'users', userId);
+    return doc(firestore, 'users', userId) as DocumentReference<UserProfile>;
   }, [firestore, userId]);
 
   const { data: user, isLoading: isUserLoading } = useDoc<UserProfile>(userDocRef);

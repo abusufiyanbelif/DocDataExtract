@@ -55,11 +55,10 @@ async function main() {
       });
     }
 
-    const lookupsToVerify = {
-      [adminLoginId]: { email: adminEmail },
-      [adminUserKey]: { email: adminEmail },
-      [adminPhone]: { email: adminEmail },
-    };
+    const lookupsToVerify: {[key: string]: {email: string}} = {};
+    lookupsToVerify[adminLoginId] = { email: adminEmail };
+    lookupsToVerify[adminUserKey] = { email: adminEmail };
+    lookupsToVerify[adminPhone] = { email: adminEmail };
 
     for (const [lookupId, lookupData] of Object.entries(lookupsToVerify)) {
       const lookupDocRef = db.collection('user_lookups').doc(lookupId);

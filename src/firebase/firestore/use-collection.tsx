@@ -22,7 +22,7 @@ export function useCollection<T extends DocumentData>(
       (snapshot) => {
         const result: T[] = [];
         snapshot.forEach(doc => {
-          result.push({ id: doc.id, ...doc.data() } as T);
+          result.push({ id: doc.id, ...doc.data() } as unknown as T);
         });
         setData(result);
         setError(null);

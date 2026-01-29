@@ -54,7 +54,7 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
     const newTables = [...(result.tables || [])];
     const newRows = newTables[tableIndex].rows.filter((_, i) => i !== rowIndex);
     newTables[tableIndex] = { ...newTables[tableIndex], rows: newRows };
-    setResult({ ...result, tables: newRows });
+    setResult({ ...result, tables: newTables });
   };
   
   const handleAddTableRow = (tableIndex: number) => {
@@ -62,7 +62,7 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
     const newTables = [...(result.tables || [])];
     const newRows = [...newTables[tableIndex].rows, Array(newTables[tableIndex].headers.length).fill('')];
     newTables[tableIndex] = { ...newTables[tableIndex], rows: newRows };
-    setResult({ ...result, tables: newRows });
+    setResult({ ...result, tables: newTables });
   };
   
   const handleDownload = (format: 'json' | 'csv') => {
