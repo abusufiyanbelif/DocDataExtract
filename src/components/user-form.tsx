@@ -33,35 +33,7 @@ import { createAdminPermissions, type UserPermissions } from '@/lib/modules';
 import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { Loader2, Eye, EyeOff, Send } from 'lucide-react';
-
-// --- Start of inlined helpers ---
-function get(obj: any, path: string, defaultValue: any = undefined) {
-    if (!path) return defaultValue;
-    const keys = path.split('.');
-    let result = obj;
-    for (const key of keys) {
-        result = result?.[key];
-        if (result === undefined) {
-        return defaultValue;
-        }
-    }
-    return result;
-}
-
-function set(obj: any, path: string, value: any) {
-    const keys = path.split('.');
-    let current = obj;
-    for (let i = 0; i < keys.length - 1; i++) {
-        const key = keys[i];
-        if (current[key] === undefined || typeof current[key] !== 'object' || current[key] === null) {
-            current[key] = {};
-        }
-        current = current[key];
-    }
-    current[keys[keys.length - 1]] = value;
-    return obj;
-}
-// --- End of inlined helpers ---
+import { get, set } from '@/lib/utils';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -100,7 +72,7 @@ const formSchema = z.object({
     }
 });
 
-export type UserFormData = z.infer<typeof formSchema> & { permissions?: UserPermissions };
+export type UserFormData = z.infer<typeof formSchema> & { permissions: UserPermissions };
 
 interface UserFormProps {
   user?: UserProfile | null;
@@ -118,9 +90,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const [showPassword, setShowPassword] = useState(false);
   
   const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || {});
-  const [stashedUserPermissions, setStashedUserPermissions] = useState<UserPermissions>(
-    isEditing && user?.role === 'User' ? user.permissions || {} : {}
-  );
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -155,14 +124,9 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   
   useEffect(() => {
     if (roleValue === 'Admin') {
-      if (!get(permissions, 'users.create', false)) { 
-          setStashedUserPermissions(permissions);
-      }
       setPermissions(createAdminPermissions());
-    } else { 
-      setPermissions(stashedUserPermissions);
     }
-  }, [roleValue, permissions, stashedUserPermissions]);
+  }, [roleValue]);
 
   useEffect(() => {
     const fileList = idProofFile as FileList | undefined;
@@ -203,10 +167,9 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     }
   };
 
-  const handlePermissionChange = (path: string, checked: boolean | 'indeterminate') => {
-      const isChecked = checked === true;
+  const handlePermissionChange = (path: string, checked: boolean) => {
       const newPermissions = JSON.parse(JSON.stringify(permissions)); // Deep copy
-      set(newPermissions, path, isChecked);
+      set(newPermissions, path, checked);
       setPermissions(newPermissions);
   };
   
@@ -465,60 +428,61 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'users.create', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('users.create', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('users.create', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'users.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('users.read', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('users.read', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'users.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('users.update', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('users.update', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'users.delete', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('users.delete', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('users.delete', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                         </TableRow>
-
                         <TableRow>
                             <TableCell className="font-medium">Campaigns</TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.create', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.create', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.create', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.read', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.read', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.update', c)}
-                                    disabled={isFormDisabled || roleValue === 'Admin'}
+                                    onCheckedChange={(c) => {
+                                        console.log('This checkbox is a placeholder and does not affect permissions.');
+                                    }}
+                                    disabled={true}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.delete', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.delete', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.delete', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
@@ -529,14 +493,14 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.summary.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.summary.read', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.summary.read', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                              <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.summary.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.summary.update', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.summary.update', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
@@ -548,14 +512,14 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.ration.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.ration.read', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.ration.read', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.ration.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.ration.update', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.ration.update', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
@@ -566,28 +530,28 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.beneficiaries.create', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.create', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.create', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.beneficiaries.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.read', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.read', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.beneficiaries.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.update', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.update', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.beneficiaries.delete', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.delete', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.beneficiaries.delete', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
@@ -597,28 +561,28 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.donations.create', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.create', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.create', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.donations.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.read', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.read', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.donations.update', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.update', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.update', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'campaigns.donations.delete', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.delete', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('campaigns.donations.delete', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
@@ -629,7 +593,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'extractor.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('extractor.read', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('extractor.read', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
@@ -642,7 +606,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'storyCreator.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('storyCreator.read', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('storyCreator.read', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
@@ -655,7 +619,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             <TableCell className="text-center">
                                 <Checkbox
                                     checked={!!get(permissions, 'diagnostics.read', false)}
-                                    onCheckedChange={(c) => handlePermissionChange('diagnostics.read', c)}
+                                    onCheckedChange={(c) => handlePermissionChange('diagnostics.read', c === true)}
                                     disabled={isFormDisabled || roleValue === 'Admin'}
                                 />
                             </TableCell>
