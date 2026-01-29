@@ -3,6 +3,20 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase';
 import { AuthProvider } from '@/components/auth-provider';
+import { PT_Sans, Source_Code_Pro } from 'next/font/google';
+import { cn } from '@/lib/utils';
+
+const ptSans = PT_Sans({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-body',
+});
+
+const sourceCodePro = Source_Code_Pro({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-code',
+});
 
 export const metadata: Metadata = {
   title: 'Welcome to DocDataExtract AB',
@@ -15,14 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <body className={cn("font-body antialiased", ptSans.variable, sourceCodePro.variable)}>
         <FirebaseClientProvider>
             <AuthProvider>
                 {children}
