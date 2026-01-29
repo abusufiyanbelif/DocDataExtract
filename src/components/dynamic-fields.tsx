@@ -51,17 +51,16 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
 
   const handleRemoveTableRow = (tableIndex: number, rowIndex: number) => {
     if (!result) return;
-    const newTables = [...(result.tables || [])];
-    const newRows = newTables[tableIndex].rows.filter((_, i) => i !== rowIndex);
-    newTables[tableIndex] = { ...newTables[tableIndex], rows: newRows };
+    const newTables = JSON.parse(JSON.stringify(result.tables || []));
+    newTables[tableIndex].rows.splice(rowIndex, 1);
     setResult({ ...result, tables: newTables });
   };
   
   const handleAddTableRow = (tableIndex: number) => {
     if (!result) return;
-    const newTables = [...(result.tables || [])];
-    const newRows = [...newTables[tableIndex].rows, Array(newTables[tableIndex].headers.length).fill('')];
-    newTables[tableIndex] = { ...newTables[tableIndex], rows: newRows };
+    const newTables = JSON.parse(JSON.stringify(result.tables || []));
+    const newRow = Array(newTables[tableIndex].headers.length).fill('');
+    newTables[tableIndex].rows.push(newRow);
     setResult({ ...result, tables: newTables });
   };
   

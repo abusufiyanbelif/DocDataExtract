@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldAlert, UserCheck, UserX } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldAlert, UserCheck, UserX, Database } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -154,7 +154,7 @@ export default function UsersPage() {
 
         batch.commit()
             .then(() => {
-                toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' has been successfully removed.`, variant: 'success' });
+                toast({ title: 'User Deleted', description: `'${userBeingDeleted.name}' and their database records have been removed.`, variant: 'success' });
             })
             .catch((serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -251,14 +251,22 @@ export default function UsersPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
             <CardTitle>User Management</CardTitle>
-            {canCreate && (
-              <div className="flex items-center gap-2">
-                  <Button onClick={handleAdd} disabled={areUsersLoading}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add User
-                  </Button>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+                {userProfile?.role === 'Admin' && (
+                     <Button variant="outline" asChild>
+                        <Link href="/seed">
+                            <Database className="mr-2 h-4 w-4" />
+                            Database Management
+                        </Link>
+                    </Button>
+                )}
+                {canCreate && (
+                    <Button onClick={handleAdd} disabled={areUsersLoading}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add User
+                    </Button>
+                )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -349,7 +357,7 @@ export default function UsersPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the user account profile and all associated lookup records. The authentication account will remain but will be inaccessible.
+                    This will permanently delete the user's profile and lookup records. For security, the user's authentication account itself is not deleted, but they will no longer be able to log in. This action is irreversible.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

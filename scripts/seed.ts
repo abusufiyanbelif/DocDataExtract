@@ -57,7 +57,9 @@ async function main() {
 
     const lookupsToVerify: {[key: string]: {email: string}} = {};
     lookupsToVerify[adminLoginId] = { email: adminEmail };
-    lookupsToVerify[adminUserKey] = { email: adminEmail };
+    if (adminLoginId !== adminUserKey) {
+      lookupsToVerify[adminUserKey] = { email: adminEmail };
+    }
     lookupsToVerify[adminPhone] = { email: adminEmail };
 
     for (const [lookupId, lookupData] of Object.entries(lookupsToVerify)) {

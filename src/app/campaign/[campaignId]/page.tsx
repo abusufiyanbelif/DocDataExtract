@@ -302,7 +302,7 @@ export default function CampaignDetailsPage() {
 
                 (doc as any).autoTable({
                     head: [['#', 'Item Name', 'Quantity', 'Notes', 'Price (₹)']],
-                    body: tableBody,
+                    body: tableBody as any,
                     startY: startY,
                 });
                 
