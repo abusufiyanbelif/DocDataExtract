@@ -648,7 +648,7 @@ export default function BeneficiariesPage() {
                               <TableCell>
                                   <Badge variant={
                                       beneficiary.status === 'Given' ? 'success' :
-                                      beneficiary.status === 'Verified' ? 'default' :
+                                      beneficiary.status === 'Verified' ? 'success' :
                                       beneficiary.status === 'Pending' ? 'secondary' :
                                       beneficiary.status === 'Hold' ? 'destructive' : 'outline'
                                   }>{beneficiary.status}</Badge>
