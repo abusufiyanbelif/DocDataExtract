@@ -33,6 +33,7 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { Loader2, Send } from 'lucide-react';
 import { PermissionsTable } from './permissions-table';
 import { get, set } from '@/lib/utils';
+import { useUserProfile as useCurrentUserProfile } from '@/hooks/use-user-profile';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -74,7 +75,9 @@ interface UserFormProps {
 
 export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: UserFormProps) {
   const isEditing = !!user;
-  const isDefaultAdmin = user?.userKey === 'admin';
+  const { userProfile: currentUser } = useCurrentUserProfile();
+  const isCurrentUserAdmin = currentUser?.role === 'Admin';
+  
   const { toast } = useToast();
   const auth = useAuth();
   const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || createAdminPermissions());
@@ -202,7 +205,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                   <FormControl>
                     <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled || isEditing} />
                   </FormControl>
-                  <FormDescription>Used for login and password resets. Cannot be changed after creation.</FormDescription>
+                  <FormDescription>Used for login and password resets. Cannot be changed after creation for security reasons.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -214,9 +217,9 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="10-digit mobile number" {...field} disabled={isFormDisabled || (isEditing && !!user?.phone)} />
+                    <Input placeholder="10-digit mobile number" {...field} disabled={isFormDisabled} />
                   </FormControl>
-                  <FormDescription>Can be used for login if provided. Cannot be changed after creation.</FormDescription>
+                  <FormDescription>Can be used for login if provided.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -229,9 +232,9 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     <FormItem>
                     <FormLabel>Login ID</FormLabel>
                     <FormControl>
-                        <Input placeholder="auto-generated from name" {...field} readOnly={isEditing} disabled={isFormDisabled || isEditing} />
+                        <Input placeholder="auto-generated from name" {...field} readOnly={!isCurrentUserAdmin && isEditing} disabled={isFormDisabled || (!isCurrentUserAdmin && isEditing)} />
                     </FormControl>
-                    <FormDescription>Used for signing in. Cannot be changed after creation.</FormDescription>
+                    <FormDescription>Used for signing in. Can only be changed by an Admin.</FormDescription>
                     <FormMessage />
                     </FormItem>
                 )}
@@ -243,7 +246,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     <FormItem>
                     <FormLabel>User Key (System ID)</FormLabel>
                     <FormControl>
-                        <Input placeholder="System-generated" {...field} readOnly disabled={isFormDisabled || isEditing} />
+                        <Input placeholder="System-generated" {...field} readOnly disabled={true} />
                     </FormControl>
                     <FormDescription>This is a system-generated unique ID. It cannot be changed.</FormDescription>
                     <FormMessage />
@@ -361,7 +364,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                                 <Switch
                                     checked={field.value === 'Admin'}
                                     onCheckedChange={(checked) => field.onChange(checked ? 'Admin' : 'User')}
-                                    disabled={isDefaultAdmin || isFormDisabled}
+                                    disabled={isFormDisabled}
                                 />
                             </FormControl>
                         </FormItem>
@@ -373,7 +376,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isDefaultAdmin || isFormDisabled}>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isFormDisabled}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a status" />
@@ -385,7 +388,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                             </SelectContent>
                         </Select>
                         <FormDescription>
-                            {isDefaultAdmin ? 'The default admin user cannot be deactivated.' : 'Inactive users cannot log in.'}
+                            Inactive users cannot log in.
                         </FormDescription>
                         <FormMessage />
                         </FormItem>

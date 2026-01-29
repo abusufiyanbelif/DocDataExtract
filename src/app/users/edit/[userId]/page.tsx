@@ -73,7 +73,10 @@ export default function EditUserPage() {
          return;
     }
 
-    const updateData = {
+    const batch = writeBatch(firestore);
+    const docRef = doc(firestore, 'users', userId);
+
+    const updateData: any = {
         name: data.name,
         phone: data.phone,
         role: data.role,
@@ -84,23 +87,26 @@ export default function EditUserPage() {
         idProofUrl,
     };
     
-    const docRef = doc(firestore, 'users', userId);
-    const batch = writeBatch(firestore);
-    batch.update(docRef, updateData as any);
+    // Handle Login ID change, which is only possible for admins
+    if (user.loginId !== data.loginId && currentUserProfile?.role === 'Admin') {
+        updateData.loginId = data.loginId;
+        batch.delete(doc(firestore, 'user_lookups', user.loginId));
+        batch.set(doc(firestore, 'user_lookups', data.loginId), { email: user.email });
+    }
     
     // If phone number changes, update the lookup table
     if (user && user.phone !== data.phone) {
-        // Delete the old lookup if it exists
         if (user.phone) {
             const oldPhoneLookupRef = doc(firestore, 'user_lookups', user.phone);
             batch.delete(oldPhoneLookupRef);
         }
-        // Create the new lookup if a new number is provided
         if (data.phone) {
             const newPhoneLookupRef = doc(firestore, 'user_lookups', data.phone);
             batch.set(newPhoneLookupRef, { email: user.email });
         }
     }
+    
+    batch.update(docRef, updateData);
 
     try {
         await batch.commit();

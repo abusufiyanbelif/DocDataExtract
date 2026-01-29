@@ -647,7 +647,7 @@ export default function BeneficiariesPage() {
                               <TableCell className="text-right font-medium">₹{(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
                               <TableCell>
                                   <Badge variant={
-                                      beneficiary.status === 'Given' ? 'default' :
+                                      beneficiary.status === 'Given' ? 'success' :
                                       beneficiary.status === 'Verified' ? 'default' :
                                       beneficiary.status === 'Pending' ? 'secondary' :
                                       beneficiary.status === 'Hold' ? 'destructive' : 'outline'

@@ -100,7 +100,7 @@ export default function CampaignDetailsPage() {
             errorEmitter.emit('permission-error', permissionError);
         })
         .finally(() => {
-            toast({ title: 'Success', description: 'Campaign details saved.' });
+            toast({ title: 'Success', description: 'Campaign details saved.', variant: 'success' });
             setEditMode(false);
         });
   };
@@ -278,7 +278,7 @@ export default function CampaignDetailsPage() {
             const items = rationLists[memberCount];
             if (items.length > 0) {
                 const total = calculateTotal(items);
-                const tableBody = items.map((item, index) => [
+                const tableBody: (string | number)[][] = items.map((item, index) => [
                     index + 1,
                     item.name,
                     item.quantity,
@@ -348,18 +348,29 @@ export default function CampaignDetailsPage() {
         return Number(b) - Number(a);
     });
   }, [editableCampaign]);
+  
+  const itemsAvailableToCopy = useMemo(() => {
+    if (!editableCampaign || !copyTargetCategory) return [];
+    // Get names of items already in the target category list
+    const currentItemNames = new Set(
+        (editableCampaign.rationLists[copyTargetCategory] || [])
+        .map(item => item.name.toLowerCase().trim())
+        .filter(Boolean)
+    );
 
-  const allUniqueItems = useMemo(() => {
-    if (!editableCampaign) return [];
     const allItems = Object.values(editableCampaign.rationLists).flat();
     const uniqueItemsMap = new Map<string, RationItem>();
+
     allItems.forEach(item => {
-        if (item.name && !uniqueItemsMap.has(item.name.toLowerCase().trim())) {
-            uniqueItemsMap.set(item.name.toLowerCase().trim(), item);
+        const trimmedName = item.name.toLowerCase().trim();
+        // Add to map if it's not a duplicate within all items AND not already in the target category
+        if (trimmedName && !uniqueItemsMap.has(trimmedName) && !currentItemNames.has(trimmedName)) {
+            uniqueItemsMap.set(trimmedName, item);
         }
     });
+    
     return Array.from(uniqueItemsMap.values());
-  }, [editableCampaign]);
+  }, [editableCampaign, copyTargetCategory]);
 
   const handleConfirmCopy = () => {
     if (!editableCampaign || !copyTargetCategory || itemsToCopy.length === 0) return;
@@ -726,33 +737,33 @@ export default function CampaignDetailsPage() {
             </DialogHeader>
             <ScrollArea className="h-72 w-full rounded-md border p-4">
                 <div className="space-y-4">
-                     {allUniqueItems.length > 0 && (
+                     {itemsAvailableToCopy.length > 0 && (
                         <>
                             <div className="flex items-center space-x-2">
                                 <Checkbox
                                     id="copy-all"
                                     checked={
-                                        itemsToCopy.length === allUniqueItems.length
+                                        itemsToCopy.length > 0 && itemsToCopy.length === itemsAvailableToCopy.length
                                             ? true
                                             : itemsToCopy.length > 0
                                             ? 'indeterminate'
                                             : false
                                     }
                                     onCheckedChange={(checked) => {
-                                        setItemsToCopy(checked ? allUniqueItems : []);
+                                        setItemsToCopy(checked ? itemsAvailableToCopy : []);
                                     }}
                                 />
                                 <label
                                     htmlFor="copy-all"
                                     className="text-sm font-bold leading-none"
                                 >
-                                    Select All
+                                    Select All ({itemsAvailableToCopy.length})
                                 </label>
                             </div>
                             <Separator />
                         </>
                     )}
-                    {allUniqueItems.map(item => (
+                    {itemsAvailableToCopy.map(item => (
                         <div key={item.id} className="flex items-center space-x-2">
                             <Checkbox 
                                 id={`copy-${item.id}`}
@@ -770,7 +781,7 @@ export default function CampaignDetailsPage() {
                             </label>
                         </div>
                     ))}
-                    {allUniqueItems.length === 0 && <p className="text-muted-foreground text-center">No other items to copy.</p>}
+                    {itemsAvailableToCopy.length === 0 && <p className="text-muted-foreground text-center">No new items to copy.</p>}
                 </div>
             </ScrollArea>
             <DialogFooter>

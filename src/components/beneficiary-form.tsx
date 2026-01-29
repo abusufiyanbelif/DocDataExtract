@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Form,
@@ -98,11 +98,10 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     
     if (membersValue && membersValue > 0) {
         const memberCountStr = String(membersValue);
-        let listToUse = rationLists[memberCountStr];
+        const exactMatchList = rationLists[memberCountStr];
+        const generalListForFivePlus = (membersValue >= 5 && rationLists['General']) ? rationLists['General'] : undefined;
 
-        if (!listToUse && membersValue >= 5 && rationLists['General']) {
-            listToUse = rationLists['General'];
-        }
+        const listToUse = exactMatchList || generalListForFivePlus;
 
         if (listToUse) {
             const total = calculateTotal(listToUse);
@@ -110,8 +109,16 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         }
     }
   }, [membersValue, rationLists, setValue]);
-
-  const isKitAmountReadOnly = !!(membersValue && (rationLists[String(membersValue)] || (membersValue >= 5 && !!rationLists['General'])));
+  
+  const isKitAmountReadOnly = useMemo(() => {
+    if (membersValue && membersValue > 0) {
+      const memberCountStr = String(membersValue);
+      const hasExactMatch = !!rationLists[memberCountStr];
+      const hasGeneralFallback = !!(membersValue >= 5 && rationLists['General']);
+      return hasExactMatch || hasGeneralFallback;
+    }
+    return false;
+  }, [membersValue, rationLists]);
 
   return (
     <Form {...form}>

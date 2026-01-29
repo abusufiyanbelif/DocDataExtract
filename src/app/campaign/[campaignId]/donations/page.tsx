@@ -119,7 +119,7 @@ export default function DonationsPage() {
                 errorEmitter.emit('permission-error', permissionError);
             })
             .finally(() => {
-                toast({ title: 'Success', description: 'Donation deleted successfully.', variant: 'default' });
+                toast({ title: 'Success', description: 'Donation deleted successfully.', variant: 'success' });
                 setDonationToDelete(null);
             });
     };
@@ -204,7 +204,7 @@ export default function DonationsPage() {
                 errorEmitter.emit('permission-error', permissionError);
             })
             .finally(() => {
-                toast({ title: 'Success', description: `Donation ${editingDonation ? 'updated' : 'added'}.`, variant: 'default' });
+                toast({ title: 'Success', description: `Donation ${editingDonation ? 'updated' : 'added'}.`, variant: 'success' });
                 setIsFormOpen(false);
                 setEditingDonation(null);
             });
@@ -340,7 +340,7 @@ export default function DonationsPage() {
                               )}
                               <TableCell>{index + 1}</TableCell>
                               <TableCell>
-                                  <Badge variant={donation.status === 'Verified' ? 'default' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
+                                  <Badge variant={donation.status === 'Verified' ? 'success' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
                               </TableCell>
                               <TableCell className="font-medium">{donation.donorName}</TableCell>
                               <TableCell>{donation.donorPhone}</TableCell>

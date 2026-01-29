@@ -97,7 +97,7 @@ export default function CreateCampaignPage() {
     addDoc(collection(firestore, 'campaigns'), newCampaignData)
       .then((docRef) => {
         toast({ title: 'Success', description: 'Campaign created successfully.', variant: 'success' });
-        router.push(`/campaign/${docRef.id}/summary`);
+        router.push(`/campaign`);
       })
       .catch((serverError) => {
         const permissionError = new FirestorePermissionError({
