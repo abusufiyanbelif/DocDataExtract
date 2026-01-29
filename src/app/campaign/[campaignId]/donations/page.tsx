@@ -351,7 +351,7 @@ export default function DonationsPage() {
                               <TableCell>{donation.donationDate}</TableCell>
                               <TableCell>
                                   {donation.screenshotUrl ? (
-                                    <Button variant="outline" size="sm" onClick={() => handleViewImage(donation.screenshotUrl!)}>
+                                    <Button variant="outline" size="sm" onClick={() => donation.screenshotUrl && handleViewImage(donation.screenshotUrl)}>
                                         <Eye className="mr-2 h-4 w-4" /> View
                                     </Button>
                                   ) : "N/A"}

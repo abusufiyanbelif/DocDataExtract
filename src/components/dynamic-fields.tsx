@@ -41,26 +41,45 @@ export function DynamicFields({ isLoading, result, setResult }: DynamicFieldsPro
   };
   
   const handleTableCellChange = (tableIndex: number, rowIndex: number, cellIndex: number, value: string) => {
-    if (!result) return;
-    const newTables = [...(result.tables || [])];
-    const newRows = [...newTables[tableIndex].rows];
-    newRows[rowIndex][cellIndex] = value;
-    newTables[tableIndex] = { ...newTables[tableIndex], rows: newRows };
+    if (!result || !result.tables) return;
+    const newTables = result.tables.map((table, tIndex) => {
+        if (tIndex !== tableIndex) {
+            return table;
+        }
+        const newRows = table.rows.map((row, rIndex) => {
+            if (rIndex !== rowIndex) {
+                return row;
+            }
+            const newRow = [...row];
+            newRow[cellIndex] = value;
+            return newRow;
+        });
+        return { ...table, rows: newRows };
+    });
     setResult({ ...result, tables: newTables });
   };
 
   const handleRemoveTableRow = (tableIndex: number, rowIndex: number) => {
-    if (!result) return;
-    const newTables = JSON.parse(JSON.stringify(result.tables || []));
-    newTables[tableIndex].rows.splice(rowIndex, 1);
+    if (!result || !result.tables) return;
+    const newTables = result.tables.map((table, tIndex) => {
+      if (tIndex !== tableIndex) {
+        return table;
+      }
+      const newRows = table.rows.filter((_, rIndex) => rIndex !== rowIndex);
+      return { ...table, rows: newRows };
+    });
     setResult({ ...result, tables: newTables });
   };
   
   const handleAddTableRow = (tableIndex: number) => {
-    if (!result) return;
-    const newTables = JSON.parse(JSON.stringify(result.tables || []));
-    const newRow = Array(newTables[tableIndex].headers.length).fill('');
-    newTables[tableIndex].rows.push(newRow);
+    if (!result || !result.tables) return;
+    const newTables = result.tables.map((table, tIndex) => {
+        if (tIndex !== tableIndex) {
+            return table;
+        }
+        const newRow = Array(table.headers.length).fill('');
+        return { ...table, rows: [...table.rows, newRow] };
+    });
     setResult({ ...result, tables: newTables });
   };
   
