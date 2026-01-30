@@ -21,6 +21,7 @@ const sourceCodePro = Source_Code_Pro({
 export const metadata: Metadata = {
   title: 'Welcome to DocDataExtract AB',
   description: 'Scan images and documents to extract text and structured data.',
+  icons: null,
 };
 
 export default function RootLayout({
