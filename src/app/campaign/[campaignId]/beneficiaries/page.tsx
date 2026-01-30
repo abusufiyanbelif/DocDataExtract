@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, setDoc, DocumentReference } from 'firebase/firestore';
-import type { Beneficiary, Campaign } from '@/lib/types';
+import type { Beneficiary, Campaign, RationItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -85,6 +85,7 @@ export default function BeneficiariesPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -378,6 +379,78 @@ export default function BeneficiariesPage() {
     }
     setSortConfig({ key, direction });
   };
+  
+    const handleSyncKitAmounts = async () => {
+    if (!firestore || !campaign || !beneficiaries || !canUpdate) {
+        toast({ title: 'Error', description: 'Cannot sync. Data is missing or you lack permissions.', variant: 'destructive'});
+        return;
+    };
+    setIsSyncing(true);
+    toast({ title: 'Syncing...', description: 'Recalculating and updating kit amounts for eligible beneficiaries.' });
+
+    const { rationLists } = campaign;
+    if (!rationLists || Object.keys(rationLists).length === 0) {
+        toast({ title: 'Sync Canceled', description: 'No ration lists found for this campaign to calculate amounts.', variant: 'destructive' });
+        setIsSyncing(false);
+        return;
+    }
+    
+    // Find the general list robustly
+    const generalListKey = Object.keys(rationLists).find(k => k.toLowerCase().includes('general'));
+    const generalList = generalListKey ? rationLists[generalListKey] : [];
+    const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+    
+    const batch = writeBatch(firestore);
+    let updatesCount = 0;
+
+    for (const beneficiary of beneficiaries) {
+        // Rule: Do not update if status is 'Given'
+        if (beneficiary.status === 'Given') {
+            continue;
+        }
+
+        let expectedAmount = 0;
+        const members = beneficiary.members;
+        if (members && members > 0) {
+            const exactMatchList = rationLists[String(members)];
+            // Use general list as a fallback for 5 or more members if no exact match exists
+            const generalListForFivePlus = (members >= 5 && generalList.length > 0) ? generalList : undefined;
+            
+            const listToUse = exactMatchList || generalListForFivePlus;
+            if (listToUse) {
+                expectedAmount = calculateTotal(listToUse);
+            }
+        }
+        
+        // Only add to batch if the amount is different to avoid unnecessary writes
+        if (beneficiary.kitAmount !== expectedAmount) {
+            const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiary.id);
+            batch.update(docRef, { kitAmount: expectedAmount });
+            updatesCount++;
+        }
+    }
+
+    if (updatesCount === 0) {
+        toast({ title: 'No Updates Needed', description: 'All beneficiary kit amounts are already up to date.' });
+        setIsSyncing(false);
+        return;
+    }
+
+    try {
+        await batch.commit();
+        toast({ title: 'Sync Complete', description: `${updatesCount} beneficiary kit amounts were updated successfully.`, variant: 'success' });
+    } catch (serverError: any) {
+        // Use the existing error handling pattern
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `campaigns/${campaignId}/beneficiaries`,
+            operation: 'update',
+            requestResourceData: { note: `Batch update for ${updatesCount} beneficiaries` }
+        }));
+    } finally {
+        setIsSyncing(false);
+    }
+  };
+
 
   const uniqueReferrals = useMemo(() => {
     if (!beneficiaries) return [];
@@ -529,6 +602,12 @@ export default function BeneficiariesPage() {
                 </div>
                 {canCreate && (
                     <div className="flex flex-wrap gap-2 shrink-0">
+                        {canUpdate && (
+                            <Button onClick={handleSyncKitAmounts} disabled={isSyncing} variant="secondary">
+                                {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                Sync Kit Amounts
+                            </Button>
+                        )}
                         <Button variant="outline" onClick={handleDownloadTemplate}>
                             <Download className="mr-2 h-4 w-4" />
                             Template
@@ -582,21 +661,21 @@ export default function BeneficiariesPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {(canUpdate || canDelete) && <TableHead className="w-[80px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
+                        {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 w-[50px] bg-card text-center">Actions</TableHead>}
                         <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
                         <SortableHeader sortKey="name" className="min-w-[150px]">Name</SortableHeader>
                         <SortableHeader sortKey="address" className="min-w-[200px]">Address</SortableHeader>
-                        <SortableHeader sortKey="phone" className="w-[120px]">Phone</SortableHeader>
-                        <SortableHeader sortKey="members" className="w-[80px]">Members</SortableHeader>
-                        <SortableHeader sortKey="earningMembers" className="w-[80px]">Earning</SortableHeader>
-                        <SortableHeader sortKey="male" className="w-[60px]">M/F</SortableHeader>
-                        <SortableHeader sortKey="addedDate" className="w-[120px]">Added Date</SortableHeader>
+                        <SortableHeader sortKey="phone" className="w-auto">Phone</SortableHeader>
+                        <SortableHeader sortKey="members" className="w-auto text-center">Members</SortableHeader>
+                        <SortableHeader sortKey="earningMembers" className="w-auto text-center">Earning</SortableHeader>
+                        <SortableHeader sortKey="male" className="w-auto text-center">M/F</SortableHeader>
+                        <SortableHeader sortKey="addedDate" className="w-auto">Added Date</SortableHeader>
                         <TableHead className="min-w-[120px]">ID Proof Type</TableHead>
                         <TableHead className="min-w-[150px]">ID Number</TableHead>
-                        <TableHead className="w-[120px]">ID Proof</TableHead>
+                        <TableHead className="w-auto">ID Proof</TableHead>
                         <SortableHeader sortKey="referralBy" className="min-w-[150px]">Referred By</SortableHeader>
-                        <SortableHeader sortKey="kitAmount" className="w-[150px] text-right">Kit Amount (Rupee)</SortableHeader>
-                        <SortableHeader sortKey="status" className="w-[140px]">Status</SortableHeader>
+                        <SortableHeader sortKey="kitAmount" className="w-auto text-right">Kit Amount (Rupee)</SortableHeader>
+                        <SortableHeader sortKey="status" className="w-auto">Status</SortableHeader>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -610,7 +689,7 @@ export default function BeneficiariesPage() {
                     {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.map((beneficiary, index) => (
                         <TableRow key={beneficiary.id}>
                             {(canUpdate || canDelete) && (
-                            <TableCell className="text-center sticky left-0 bg-card z-10">
+                            <TableCell className="sticky left-0 z-10 bg-card text-center">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon">
