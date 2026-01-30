@@ -499,11 +499,11 @@ export default function CampaignDetailsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead className="min-w-[200px]">Item Name</TableHead>
-                  <TableHead className="min-w-[100px]">Quantity</TableHead>
-                  <TableHead className="min-w-[150px]">Quantity Type</TableHead>
-                   {!isGeneral && <TableHead className="min-w-[150px]">Notes</TableHead>}
-                  <TableHead className="min-w-[150px] text-right">{isGeneral ? 'Total Price (Rupee)' : 'Total Price (Rupee)'}</TableHead>
+                  <TableHead className="min-w-[250px]">Item Name</TableHead>
+                  <TableHead className="w-28">Quantity</TableHead>
+                  <TableHead className="w-36">{isGeneral ? 'Quantity Type' : 'Type'}</TableHead>
+                  {!isGeneral && <TableHead className="min-w-[200px]">Notes</TableHead>}
+                  <TableHead className="w-48 text-right">{isGeneral ? 'Price per Unit (Rupee)' : 'Total Price (Rupee)'}</TableHead>
                   {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>

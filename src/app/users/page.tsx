@@ -223,15 +223,15 @@ export default function UsersPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
-                        <TableHead className="w-[40px]">#</TableHead>
+                        {(canUpdate || canDelete) && <TableHead className="w-[80px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
+                        <TableHead className="w-[50px]">#</TableHead>
                         <TableHead className="min-w-[150px]">Name</TableHead>
                         <TableHead className="min-w-[200px]">Email</TableHead>
-                        <TableHead className="min-w-[120px]">Phone</TableHead>
-                        <TableHead className="min-w-[120px]">Login ID</TableHead>
+                        <TableHead className="w-[120px]">Phone</TableHead>
+                        <TableHead className="min-w-[150px]">Login ID</TableHead>
                         <TableHead className="min-w-[200px]">User Key</TableHead>
-                        <TableHead className="min-w-[100px]">Role</TableHead>
-                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        <TableHead className="w-[100px]">Role</TableHead>
+                        <TableHead className="w-[100px]">Status</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>

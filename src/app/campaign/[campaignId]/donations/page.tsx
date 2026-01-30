@@ -297,18 +297,18 @@ export default function DonationsPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
-                        <TableHead className="w-[40px]">#</TableHead>
-                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        {(canUpdate || canDelete) && <TableHead className="w-[80px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
+                        <TableHead className="w-[50px]">#</TableHead>
+                        <TableHead className="w-[120px]">Status</TableHead>
                         <TableHead className="min-w-[150px]">Donor Name</TableHead>
                         <TableHead className="min-w-[150px]">Receiver Name</TableHead>
-                        <TableHead className="min-w-[120px]">Phone</TableHead>
+                        <TableHead className="w-[120px]">Phone</TableHead>
                         <TableHead className="min-w-[150px]">Referral</TableHead>
-                        <TableHead className="text-right min-w-[150px]">Amount (Rupee)</TableHead>
-                        <TableHead className="min-w-[100px]">Type</TableHead>
-                        <TableHead className="min-w-[100px]">Payment</TableHead>
-                        <TableHead className="min-w-[120px]">Date</TableHead>
-                        <TableHead className="min-w-[100px]">Screenshot</TableHead>
+                        <TableHead className="text-right w-[150px]">Amount (Rupee)</TableHead>
+                        <TableHead className="w-[100px]">Type</TableHead>
+                        <TableHead className="w-[100px]">Payment</TableHead>
+                        <TableHead className="w-[120px]">Date</TableHead>
+                        <TableHead className="w-[120px]">Screenshot</TableHead>
                         <TableHead className="min-w-[150px]">Uploaded By</TableHead>
                     </TableRow>
                 </TableHeader>

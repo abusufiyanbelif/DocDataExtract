@@ -582,21 +582,21 @@ export default function BeneficiariesPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
+                        {(canUpdate || canDelete) && <TableHead className="w-[80px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
                         <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
                         <SortableHeader sortKey="name" className="min-w-[150px]">Name</SortableHeader>
                         <SortableHeader sortKey="address" className="min-w-[200px]">Address</SortableHeader>
-                        <SortableHeader sortKey="phone" className="min-w-[120px]">Phone</SortableHeader>
-                        <SortableHeader sortKey="members" className="min-w-[80px]">Members</SortableHeader>
-                        <SortableHeader sortKey="earningMembers" className="min-w-[80px]">Earning</SortableHeader>
-                        <SortableHeader sortKey="male" className="min-w-[80px]">M/F</SortableHeader>
-                        <SortableHeader sortKey="addedDate" className="min-w-[120px]">Added Date</SortableHeader>
+                        <SortableHeader sortKey="phone" className="w-[120px]">Phone</SortableHeader>
+                        <SortableHeader sortKey="members" className="w-[80px]">Members</SortableHeader>
+                        <SortableHeader sortKey="earningMembers" className="w-[80px]">Earning</SortableHeader>
+                        <SortableHeader sortKey="male" className="w-[60px]">M/F</SortableHeader>
+                        <SortableHeader sortKey="addedDate" className="w-[120px]">Added Date</SortableHeader>
                         <TableHead className="min-w-[120px]">ID Proof Type</TableHead>
                         <TableHead className="min-w-[150px]">ID Number</TableHead>
-                        <TableHead className="min-w-[100px]">ID Proof</TableHead>
+                        <TableHead className="w-[120px]">ID Proof</TableHead>
                         <SortableHeader sortKey="referralBy" className="min-w-[150px]">Referred By</SortableHeader>
-                        <SortableHeader sortKey="kitAmount" className="min-w-[150px] text-right">Kit Amount (Rupee)</SortableHeader>
-                        <SortableHeader sortKey="status" className="min-w-[120px]">Status</SortableHeader>
+                        <SortableHeader sortKey="kitAmount" className="w-[150px] text-right">Kit Amount (Rupee)</SortableHeader>
+                        <SortableHeader sortKey="status" className="w-[140px]">Status</SortableHeader>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
