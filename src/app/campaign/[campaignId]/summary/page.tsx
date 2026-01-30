@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -523,6 +524,40 @@ Please donate and share this message. Every contribution helps!
                         </CardContent>
                     </Card>
 
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Funding Progress</CardTitle>
+                            <CardDescription>
+                                Rupee {summaryData?.verifiedDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from verified donations.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
+                                <div 
+                                    className="h-full bg-green-500 transition-all"
+                                    style={{ width: `${summaryData?.fundingProgress || 0}%` }}
+                                ></div>
+                                <div 
+                                    className="absolute top-0 h-full bg-orange-500 transition-all"
+                                    style={{ 
+                                        left: `${summaryData?.fundingProgress || 0}%`, 
+                                        width: `${summaryData?.pendingProgress || 0}%`
+                                    }}
+                                ></div>
+                            </div>
+                            <div className="mt-2 flex justify-between text-sm text-muted-foreground">
+                                <div className="flex items-center">
+                                    <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                                    Verified
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
+                                    Pending Verification
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -562,70 +597,38 @@ Please donate and share this message. Every contribution helps!
                                 </div>
                             </CardContent>
                         </Card>
-                        
-                        <Card className="col-span-1 lg:col-span-3">
-                            <CardHeader>
-                                <CardTitle>Funding Progress</CardTitle>
-                                <CardDescription>
-                                    Rupee {summaryData?.verifiedDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from verified donations.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
-                                    <div 
-                                        className="h-full bg-green-500 transition-all"
-                                        style={{ width: `${summaryData?.fundingProgress || 0}%` }}
-                                    ></div>
-                                    <div 
-                                        className="absolute top-0 h-full bg-orange-500 transition-all"
-                                        style={{ 
-                                            left: `${summaryData?.fundingProgress || 0}%`, 
-                                            width: `${summaryData?.pendingProgress || 0}%`
-                                        }}
-                                    ></div>
-                                </div>
-                                <div className="mt-2 flex justify-between text-sm text-muted-foreground">
-                                    <div className="flex items-center">
-                                        <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
-                                        Verified
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
-                                        Pending Verification
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="lg:col-span-3">
-                            <CardHeader>
-                                <CardTitle>Beneficiaries by Category</CardTitle>
-                                <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
-                                        summaryData.beneficiaryCategoryBreakdown.map((item, index) => (
-                                            <React.Fragment key={item.name}>
-                                                <div className="flex justify-between items-center">
-                                                    <div>
-                                                        <p className="font-medium text-foreground">{item.name}</p>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'}
-                                                        </p>
-                                                    </div>
-                                                    <p className="font-mono text-right text-foreground">Rupee {item.totalAmount.toLocaleString('en-IN')}</p>
+                    </div>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Beneficiaries by Category</CardTitle>
+                            <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
+                                    summaryData.beneficiaryCategoryBreakdown.map((item, index) => (
+                                        <React.Fragment key={item.name}>
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="font-medium text-foreground">{item.name}</p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'}
+                                                    </p>
                                                 </div>
-                                                {index < summaryData.beneficiaryCategoryBreakdown.length - 1 && <Separator />}
-                                            </React.Fragment>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
+                                                <p className="font-mono text-right text-foreground">Rupee {item.totalAmount.toLocaleString('en-IN')}</p>
+                                            </div>
+                                            {index < summaryData.beneficiaryCategoryBreakdown.length - 1 && <Separator />}
+                                        </React.Fragment>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
 
+                    <div className="grid gap-6 lg:grid-cols-3">
                         <Card className="lg:col-span-2">
                             <CardHeader>
                                 <div className="flex justify-between items-center">
