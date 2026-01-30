@@ -238,8 +238,10 @@ export default function CampaignDetailsPage() {
     }
 
     const sortedMemberCategories = Object.keys(rationLists).sort((a, b) => {
-        if (a.includes('General')) return -1;
-        if (b.includes('General')) return 1;
+        const aIsGeneral = a.includes('General');
+        const bIsGeneral = b.includes('General');
+        if (aIsGeneral && !bIsGeneral) return -1;
+        if (!aIsGeneral && bIsGeneral) return 1;
         return Number(b) - Number(a);
     });
 
@@ -399,8 +401,10 @@ export default function CampaignDetailsPage() {
   const memberCategories = useMemo(() => {
     if (!editableCampaign) return [];
     return Object.keys(editableCampaign.rationLists).sort((a, b) => {
-        if (a.includes('General')) return -1;
-        if (b.includes('General')) return 1;
+        const aIsGeneral = a.includes('General');
+        const bIsGeneral = b.includes('General');
+        if (aIsGeneral && !bIsGeneral) return -1;
+        if (!aIsGeneral && bIsGeneral) return 1;
         return Number(b) - Number(a);
     });
   }, [editableCampaign]);
@@ -485,7 +489,7 @@ export default function CampaignDetailsPage() {
             )}
           </div>
           <div className="w-full overflow-x-auto">
-          <Table>
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]">#</TableHead>
