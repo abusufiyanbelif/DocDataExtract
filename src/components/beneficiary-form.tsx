@@ -100,7 +100,10 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     if (membersValue && membersValue > 0) {
         const memberCountStr = String(membersValue);
         const exactMatchList = rationLists[memberCountStr];
-        const generalListForFivePlus = (membersValue >= 5 && rationLists['General']) ? rationLists['General'] : undefined;
+
+        // Correctly find the general list by checking both possible keys
+        const generalList = rationLists['General Item List'] || rationLists['General'];
+        const generalListForFivePlus = (membersValue >= 5 && generalList) ? generalList : undefined;
 
         const listToUse = exactMatchList || generalListForFivePlus;
 
@@ -117,7 +120,8 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     if (membersValue && membersValue > 0) {
       const memberCountStr = String(membersValue);
       const hasExactMatch = !!rationLists[memberCountStr];
-      const hasGeneralFallback = !!(membersValue >= 5 && rationLists['General']);
+      const generalList = rationLists['General Item List'] || rationLists['General'];
+      const hasGeneralFallback = !!(membersValue >= 5 && generalList);
       return hasExactMatch || hasGeneralFallback;
     }
     return false;
