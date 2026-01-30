@@ -176,7 +176,7 @@ export default function CampaignDetailsPage() {
 
         const newItem = { ...item, [field]: value };
 
-        const isGeneral = memberCount === 'General Item List' || memberCount === 'General';
+        const isGeneral = getCategoryLabel(memberCount) === 'General Item List';
         if (isGeneral) {
             return newItem;
         }
@@ -411,8 +411,8 @@ export default function CampaignDetailsPage() {
   const memberCategories = useMemo(() => {
     if (!editableCampaign?.rationLists) return [];
     return Object.keys(editableCampaign.rationLists).sort((a, b) => {
-        const aIsGeneral = a === 'General Item List' || a === 'General';
-        const bIsGeneral = b === 'General Item List' || b === 'General';
+        const aIsGeneral = getCategoryLabel(a) === 'General Item List';
+        const bIsGeneral = getCategoryLabel(b) === 'General Item List';
         if (aIsGeneral) return -1;
         if (bIsGeneral) return 1;
         return Number(b) - Number(a);
@@ -509,92 +509,90 @@ export default function CampaignDetailsPage() {
             )}
           </div>
           <div className="w-full overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">#</TableHead>
-                  <TableHead className="min-w-[250px]">Item Name</TableHead>
-                  <TableHead className="w-32">Quantity</TableHead>
-                  <TableHead className="w-40">Quantity Type</TableHead>
-                  {!isGeneral && <TableHead className="min-w-[200px]">Notes</TableHead>}
-                  <TableHead className="w-48 text-right">{isGeneral ? 'Price (Rupee)' : 'Total Price (Rupee)'}</TableHead>
-                  {canUpdate && editMode && <TableHead className="w-12 text-center">Action</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item, index) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-medium text-center">{index + 1}</TableCell>
-                    <TableCell>
-                      <Input
-                        value={item.name || ''}
-                        onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)}
-                        placeholder="Item name"
-                        disabled={!editMode || !canUpdate}
-                      />
-                    </TableCell>
-                    <TableCell>
-                        <Input
-                            type="number"
-                            value={item.quantity || 0}
-                            onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                            placeholder="e.g. 1"
-                            disabled={!editMode || !canUpdate}
-                        />
-                    </TableCell>
-                    {isGeneral ? (
-                        <TableCell>
-                            <Select
-                                value={item.quantityType || ''}
-                                onValueChange={value => handleItemChange(memberCount, item.id, 'quantityType', value)}
-                                disabled={!editMode || !canUpdate}
-                            >
-                                <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                {quantityTypes.map(type => (
-                                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                                ))}
-                                </SelectContent>
-                            </Select>
-                        </TableCell>
-                    ) : (
-                      <>
-                        <TableCell className="text-sm text-muted-foreground">
-                            {item.quantityType || 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                            <Input
-                                value={item.notes || ''}
-                                onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)}
-                                placeholder="e.g. brand, quality"
-                                disabled={!editMode || !canUpdate}
-                            />
-                        </TableCell>
-                      </>
-                    )}
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={item.price || 0}
-                        onChange={e => handleItemChange(memberCount, item.id, 'price', parseFloat(e.target.value) || 0)}
-                        className="text-right"
-                        readOnly={!isGeneral && editMode}
-                        disabled={!editMode || !canUpdate || (!isGeneral && editMode)}
-                      />
-                    </TableCell>
-                    {canUpdate && editMode && (
-                        <TableCell className="text-center">
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                        </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            {isGeneral ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-12">#</TableHead>
+                            <TableHead className="min-w-[200px]">Item Name</TableHead>
+                            <TableHead className="w-24">Quantity</TableHead>
+                            <TableHead className="w-32">Quantity Type</TableHead>
+                            <TableHead className="w-40 text-right">Price (Rupee)</TableHead>
+                            {canUpdate && editMode && <TableHead className="w-12 text-center">Action</TableHead>}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {items.map((item, index) => (
+                            <TableRow key={item.id}>
+                                <TableCell className="font-medium text-center">{index + 1}</TableCell>
+                                <TableCell>
+                                    <Input value={item.name || ''} onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)} placeholder="Item name" disabled={!editMode || !canUpdate} />
+                                </TableCell>
+                                <TableCell>
+                                    <Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)} placeholder="e.g. 1" disabled={!editMode || !canUpdate} />
+                                </TableCell>
+                                <TableCell>
+                                    <Select value={item.quantityType || ''} onValueChange={value => handleItemChange(memberCount, item.id, 'quantityType', value)} disabled={!editMode || !canUpdate}>
+                                        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                                        <SelectContent>
+                                            {quantityTypes.map(type => (
+                                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </TableCell>
+                                <TableCell>
+                                    <Input type="number" value={item.price || ''} onChange={e => handleItemChange(memberCount, item.id, 'price', parseFloat(e.target.value) || 0)} className="text-right" disabled={!editMode || !canUpdate} />
+                                </TableCell>
+                                {canUpdate && editMode && (
+                                    <TableCell className="text-center">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    </TableCell>
+                                )}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            ) : (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-12">#</TableHead>
+                            <TableHead className="min-w-[200px]">Item Name</TableHead>
+                            <TableHead className="w-24">Quantity</TableHead>
+                            <TableHead className="w-24">Type</TableHead>
+                            <TableHead className="min-w-[200px]">Notes</TableHead>
+                            <TableHead className="w-40 text-right">Total Price (Rupee)</TableHead>
+                            {canUpdate && editMode && <TableHead className="w-12 text-center">Action</TableHead>}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                         {items.map((item, index) => (
+                            <TableRow key={item.id}>
+                                <TableCell className="font-medium text-center">{index + 1}</TableCell>
+                                <TableCell>
+                                    <Input value={item.name || ''} onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)} placeholder="Item name" disabled={!editMode || !canUpdate} />
+                                </TableCell>
+                                <TableCell>
+                                    <Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)} placeholder="e.g. 1" disabled={!editMode || !canUpdate} />
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">{item.quantityType || 'N/A'}</TableCell>
+                                <TableCell>
+                                    <Input value={item.notes || ''} onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)} placeholder="e.g. brand, quality" disabled={!editMode || !canUpdate} />
+                                </TableCell>
+                                <TableCell>
+                                    <Input type="number" value={item.price || ''} onChange={e => handleItemChange(memberCount, item.id, 'price', parseFloat(e.target.value) || 0)} className="text-right" readOnly disabled={!editMode || !canUpdate} />
+                                </TableCell>
+                                {canUpdate && editMode && (
+                                    <TableCell className="text-center">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    </TableCell>
+                                )}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            )}
             </div>
         </CardContent>
       </Card>
