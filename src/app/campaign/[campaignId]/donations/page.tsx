@@ -295,6 +295,7 @@ export default function DonationsPage() {
                           <TableHead>#</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Donor Name</TableHead>
+                          <TableHead>Receiver Name</TableHead>
                           <TableHead>Phone</TableHead>
                           <TableHead>Referral</TableHead>
                           <TableHead className="text-right">Amount (Rupee)</TableHead>
@@ -309,7 +310,7 @@ export default function DonationsPage() {
                       {areDonationsLoading ? (
                         [...Array(3)].map((_, i) => (
                            <TableRow key={i}>
-                                <TableCell colSpan={(canUpdate || canDelete) ? 12 : 11}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12}><Skeleton className="h-6 w-full" /></TableCell>
                            </TableRow>
                         ))
                       ) : (donations && donations.length > 0) ? (
@@ -343,6 +344,7 @@ export default function DonationsPage() {
                                   <Badge variant={donation.status === 'Verified' ? 'success' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
                               </TableCell>
                               <TableCell className="font-medium">{donation.donorName}</TableCell>
+                              <TableCell>{donation.receiverName}</TableCell>
                               <TableCell>{donation.donorPhone}</TableCell>
                               <TableCell>{donation.referral}</TableCell>
                               <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
@@ -361,7 +363,7 @@ export default function DonationsPage() {
                         ))
                       ) : (
                         <TableRow>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 12 : 11} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12} className="text-center h-24 text-muted-foreground">
                                 No donations recorded yet.
                             </TableCell>
                         </TableRow>

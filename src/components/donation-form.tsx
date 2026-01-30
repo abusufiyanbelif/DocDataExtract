@@ -29,6 +29,7 @@ import { Loader2 } from 'lucide-react';
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
   donorPhone: z.string().length(10, { message: "Phone must be exactly 10 digits." }).optional().or(z.literal('')),
+  receiverName: z.string().min(2, { message: "Receiver name must be at least 2 characters." }),
   referral: z.string().min(1, { message: "Referral is required." }),
   amount: z.coerce.number().min(1, { message: "Amount must be at least 1." }),
   type: z.enum(['Zakat', 'Sadqa', 'Interest', 'Lillah', 'General']),
@@ -52,6 +53,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     defaultValues: {
       donorName: donation?.donorName || '',
       donorPhone: donation?.donorPhone || '',
+      receiverName: donation?.receiverName || '',
       referral: donation?.referral || '',
       amount: donation?.amount || 0,
       type: donation?.type || 'General',
@@ -112,6 +114,19 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 )}
             />
         </div>
+        <FormField
+            control={form.control}
+            name="receiverName"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Receiver Name *</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g. Asif Shaikh" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+        />
         <FormField
             control={form.control}
             name="referral"
