@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -46,6 +46,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { get } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 
 const donationTypeChartConfig = {
@@ -621,17 +622,23 @@ Please donate and share this message. Every contribution helps!
                                 <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <div className="space-y-3">
-                                    {summaryData?.beneficiaryCategoryBreakdown.map((item) => (
-                                        <div key={item.name} className="flex flex-wrap justify-between items-center text-sm gap-2">
-                                            <span className="font-medium text-muted-foreground">{item.name}</span>
-                                            <div className="flex items-center gap-4 text-right">
-                                                <span className="text-foreground">{item.count} beneficiaries</span>
-                                                <span className="font-mono text-foreground w-32 text-right">Rupee {item.totalAmount.toLocaleString('en-IN')}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {summaryData?.beneficiaryCategoryBreakdown.length === 0 && (
+                                <div className="space-y-4">
+                                    {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
+                                        summaryData.beneficiaryCategoryBreakdown.map((item, index) => (
+                                            <React.Fragment key={item.name}>
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <p className="font-medium text-foreground">{item.name}</p>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            {item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'}
+                                                        </p>
+                                                    </div>
+                                                    <p className="font-mono text-right text-foreground">Rupee {item.totalAmount.toLocaleString('en-IN')}</p>
+                                                </div>
+                                                {index < summaryData.beneficiaryCategoryBreakdown.length - 1 && <Separator />}
+                                            </React.Fragment>
+                                        ))
+                                    ) : (
                                         <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
                                     )}
                                 </div>
