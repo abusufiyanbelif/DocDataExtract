@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -27,7 +28,7 @@ export function PermissionsTable({ permissions, onPermissionChange, role, disabl
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[200px]">Module</TableHead>
+            <TableHead>Module</TableHead>
             <TableHead className="text-center">Create</TableHead>
             <TableHead className="text-center">Read</TableHead>
             <TableHead className="text-center">Update</TableHead>

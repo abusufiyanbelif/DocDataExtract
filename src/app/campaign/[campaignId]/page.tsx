@@ -81,7 +81,7 @@ export default function CampaignDetailsPage() {
   
   const getCategoryLabel = (category: string | null): string => {
     if (!category) return '';
-    if (category === 'General Item List' || category === 'General' || category === 'General Members') {
+    if (category === 'General Item List' || category === 'General') {
         return 'General Item List';
     }
     if (!isNaN(Number(category))) {
@@ -95,17 +95,18 @@ export default function CampaignDetailsPage() {
     if (!lists) return {};
     
     // Check for both possible keys for the general list to be robust.
-    const generalList = lists['General Item List'] || lists['General'];
-
+    const generalListKey = Object.keys(lists).find(k => k.toLowerCase().includes('general'));
+    const generalList = generalListKey ? lists[generalListKey] : undefined;
+    
     if (!generalList) {
         return {};
     }
     return generalList.reduce((acc, item) => {
-        const itemName = (item.name || '').toLowerCase().trim();
+        const itemName = (item.name || '').trim().toLowerCase();
         if (itemName) {
-            const unitPrice = (item.quantity && item.quantity > 0) 
-                ? (item.price || 0) / item.quantity
-                : (item.price || 0);
+            const quantity = Number(item.quantity) || 0;
+            const price = Number(item.price) || 0;
+            const unitPrice = quantity > 0 ? price / quantity : price;
 
             acc[itemName] = {
                 price: unitPrice,
@@ -181,7 +182,7 @@ export default function CampaignDetailsPage() {
             return newItem;
         }
         
-        const itemNameLower = String(newItem.name || '').toLowerCase().trim();
+        const itemNameLower = String(newItem.name || '').trim().toLowerCase();
         const masterItem = masterPriceList[itemNameLower];
 
         if (masterItem) {
@@ -248,8 +249,8 @@ export default function CampaignDetailsPage() {
     }
 
     const sortedMemberCategories = Object.keys(rationLists).sort((a, b) => {
-        const aIsGeneral = a.includes('General');
-        const bIsGeneral = b.includes('General');
+        const aIsGeneral = a.toLowerCase().includes('general');
+        const bIsGeneral = b.toLowerCase().includes('general');
         if (aIsGeneral && !bIsGeneral) return -1;
         if (!aIsGeneral && bIsGeneral) return 1;
         return Number(b) - Number(a);
@@ -411,8 +412,8 @@ export default function CampaignDetailsPage() {
   const memberCategories = useMemo(() => {
     if (!editableCampaign?.rationLists) return [];
     return Object.keys(editableCampaign.rationLists).sort((a, b) => {
-        const aIsGeneral = getCategoryLabel(a) === 'General Item List';
-        const bIsGeneral = getCategoryLabel(b) === 'General Item List';
+        const aIsGeneral = a.toLowerCase().includes('general');
+        const bIsGeneral = b.toLowerCase().includes('general');
         if (aIsGeneral) return -1;
         if (bIsGeneral) return 1;
         return Number(b) - Number(a);
@@ -449,7 +450,7 @@ export default function CampaignDetailsPage() {
     if (!editableCampaign || !copyTargetCategory || itemsToCopy.length === 0) return;
 
     const newItems = itemsToCopy.map((item, index) => {
-        const itemNameLower = String(item.name || '').toLowerCase().trim();
+        const itemNameLower = String(item.name || '').trim().toLowerCase();
         const masterItem = masterPriceList[itemNameLower];
 
         const newItem: RationItem = {
@@ -509,91 +510,74 @@ export default function CampaignDetailsPage() {
             )}
           </div>
           <div className="w-full overflow-x-auto">
-            {isGeneral ? (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-12">#</TableHead>
-                            <TableHead className="min-w-[200px]">Item Name</TableHead>
-                            <TableHead className="w-24">Quantity</TableHead>
-                            <TableHead className="w-32">Quantity Type</TableHead>
-                            <TableHead className="w-40 text-right">Price (Rupee)</TableHead>
-                            {canUpdate && editMode && <TableHead className="w-12 text-center">Action</TableHead>}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {items.map((item, index) => (
-                            <TableRow key={item.id}>
-                                <TableCell className="font-medium text-center">{index + 1}</TableCell>
-                                <TableCell>
-                                    <Input value={item.name || ''} onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)} placeholder="Item name" disabled={!editMode || !canUpdate} />
-                                </TableCell>
-                                <TableCell>
-                                    <Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)} placeholder="e.g. 1" disabled={!editMode || !canUpdate} />
-                                </TableCell>
-                                <TableCell>
-                                    <Select value={item.quantityType || ''} onValueChange={value => handleItemChange(memberCount, item.id, 'quantityType', value)} disabled={!editMode || !canUpdate}>
-                                        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
-                                        <SelectContent>
-                                            {quantityTypes.map(type => (
-                                                <SelectItem key={type} value={type}>{type}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </TableCell>
-                                <TableCell>
-                                    <Input type="number" value={item.price || ''} onChange={e => handleItemChange(memberCount, item.id, 'price', parseFloat(e.target.value) || 0)} className="text-right" disabled={!editMode || !canUpdate} />
-                                </TableCell>
-                                {canUpdate && editMode && (
-                                    <TableCell className="text-center">
-                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[50px]">#</TableHead>
+                        <TableHead>Item Name</TableHead>
+                        <TableHead>Quantity</TableHead>
+                        <TableHead>Quantity Type</TableHead>
+                        {isGeneral ? (
+                            <TableHead className="text-right">Price (Rupee)</TableHead>
+                        ) : (
+                            <>
+                                <TableHead>Notes</TableHead>
+                                <TableHead className="text-right">Total Price (Rupee)</TableHead>
+                            </>
+                        )}
+                        {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {items.map((item, index) => (
+                        <TableRow key={item.id}>
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>
+                                <Input value={item.name || ''} onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)} placeholder="Item name" disabled={!editMode || !canUpdate} />
+                            </TableCell>
+                            {isGeneral ? (
+                                <>
+                                    <TableCell>
+                                        <Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)} placeholder="e.g. 1" disabled={!editMode || !canUpdate} />
                                     </TableCell>
-                                )}
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            ) : (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-12">#</TableHead>
-                            <TableHead className="min-w-[200px]">Item Name</TableHead>
-                            <TableHead className="w-24">Quantity</TableHead>
-                            <TableHead className="w-24">Type</TableHead>
-                            <TableHead className="min-w-[200px]">Notes</TableHead>
-                            <TableHead className="w-40 text-right">Total Price (Rupee)</TableHead>
-                            {canUpdate && editMode && <TableHead className="w-12 text-center">Action</TableHead>}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                         {items.map((item, index) => (
-                            <TableRow key={item.id}>
-                                <TableCell className="font-medium text-center">{index + 1}</TableCell>
-                                <TableCell>
-                                    <Input value={item.name || ''} onChange={e => handleItemChange(memberCount, item.id, 'name', e.target.value)} placeholder="Item name" disabled={!editMode || !canUpdate} />
-                                </TableCell>
-                                <TableCell>
-                                    <Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)} placeholder="e.g. 1" disabled={!editMode || !canUpdate} />
-                                </TableCell>
-                                <TableCell className="text-sm text-muted-foreground">{item.quantityType || 'N/A'}</TableCell>
-                                <TableCell>
-                                    <Input value={item.notes || ''} onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)} placeholder="e.g. brand, quality" disabled={!editMode || !canUpdate} />
-                                </TableCell>
-                                <TableCell>
-                                    <Input type="number" value={item.price || ''} onChange={e => handleItemChange(memberCount, item.id, 'price', parseFloat(e.target.value) || 0)} className="text-right" readOnly disabled={!editMode || !canUpdate} />
-                                </TableCell>
-                                {canUpdate && editMode && (
-                                    <TableCell className="text-center">
-                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    <TableCell>
+                                        <Select value={item.quantityType || ''} onValueChange={value => handleItemChange(memberCount, item.id, 'quantityType', value)} disabled={!editMode || !canUpdate}>
+                                            <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                                            <SelectContent>
+                                                {quantityTypes.map(type => (
+                                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </TableCell>
-                                )}
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            )}
-            </div>
+                                    <TableCell>
+                                        <Input type="number" value={item.price || ''} onChange={e => handleItemChange(memberCount, item.id, 'price', parseFloat(e.target.value) || 0)} className="text-right" disabled={!editMode || !canUpdate} />
+                                    </TableCell>
+                                </>
+                            ) : (
+                                <>
+                                    <TableCell>
+                                        <Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)} placeholder="e.g. 1" disabled={!editMode || !canUpdate} />
+                                    </TableCell>
+                                    <TableCell>{item.quantityType || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <Input value={item.notes || ''} onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)} placeholder="e.g. brand, quality" disabled={!editMode || !canUpdate} />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Input type="number" value={item.price || ''} className="text-right" readOnly disabled={!editMode || !canUpdate} />
+                                    </TableCell>
+                                </>
+                            )}
+                            {canUpdate && editMode && (
+                                <TableCell className="text-center">
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(memberCount, item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </TableCell>
+                            )}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     );

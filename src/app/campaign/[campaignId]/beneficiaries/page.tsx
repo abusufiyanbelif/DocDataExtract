@@ -395,7 +395,6 @@ export default function BeneficiariesPage() {
         return;
     }
     
-    // Find the general list robustly. This is the fallback.
     const generalListKey = Object.keys(rationLists).find(k => k.toLowerCase().includes('general'));
     const generalList = generalListKey ? rationLists[generalListKey] : undefined;
     const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
@@ -404,25 +403,20 @@ export default function BeneficiariesPage() {
     let updatesCount = 0;
 
     for (const beneficiary of beneficiaries) {
-        // Rule: Do not update if status is 'Given'
         if (beneficiary.status === 'Given') {
             continue;
         }
 
         let expectedAmount = 0;
         const members = beneficiary.members;
-        if (members && members > 0) {
-            const exactMatchList = rationLists[String(members)];
-            
-            // New fallback logic: Use the general list if it exists and no exact match is found.
-            const listToUse = exactMatchList || generalList;
 
-            if (listToUse) {
-                expectedAmount = calculateTotal(listToUse);
-            }
+        const exactMatchList = members > 0 ? rationLists[String(members)] : undefined;
+        const listToUse = exactMatchList || generalList;
+
+        if (listToUse) {
+            expectedAmount = calculateTotal(listToUse);
         }
         
-        // Only add to batch if the amount is different to avoid unnecessary writes
         if (beneficiary.kitAmount !== expectedAmount) {
             const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiary.id);
             batch.update(docRef, { kitAmount: expectedAmount });
@@ -440,7 +434,6 @@ export default function BeneficiariesPage() {
         await batch.commit();
         toast({ title: 'Sync Complete', description: `${updatesCount} beneficiary kit amounts were updated successfully.`, variant: 'success' });
     } catch (serverError: any) {
-        // Use the existing error handling pattern
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `campaigns/${campaignId}/beneficiaries`,
             operation: 'update',
@@ -661,21 +654,21 @@ export default function BeneficiariesPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 w-auto bg-card text-center">Actions</TableHead>}
-                        <SortableHeader sortKey="srNo" className="w-auto">#</SortableHeader>
-                        <SortableHeader sortKey="name" className="min-w-[150px]">Name</SortableHeader>
-                        <SortableHeader sortKey="address" className="min-w-[200px]">Address</SortableHeader>
-                        <SortableHeader sortKey="phone" className="w-auto">Phone</SortableHeader>
-                        <SortableHeader sortKey="members" className="w-auto text-center">Members</SortableHeader>
-                        <SortableHeader sortKey="earningMembers" className="w-auto text-center">Earning</SortableHeader>
-                        <SortableHeader sortKey="male" className="w-auto text-center">M/F</SortableHeader>
-                        <SortableHeader sortKey="addedDate" className="w-auto">Added Date</SortableHeader>
-                        <TableHead className="min-w-[120px]">ID Proof Type</TableHead>
-                        <TableHead className="min-w-[150px]">ID Number</TableHead>
-                        <TableHead className="w-auto">ID Proof</TableHead>
-                        <SortableHeader sortKey="referralBy" className="min-w-[150px]">Referred By</SortableHeader>
-                        <SortableHeader sortKey="kitAmount" className="w-auto text-right">Kit Amount (Rupee)</SortableHeader>
-                        <SortableHeader sortKey="status" className="w-auto">Status</SortableHeader>
+                        {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 bg-card text-center w-[100px]">Actions</TableHead>}
+                        <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
+                        <SortableHeader sortKey="name">Name</SortableHeader>
+                        <SortableHeader sortKey="address">Address</SortableHeader>
+                        <SortableHeader sortKey="phone">Phone</SortableHeader>
+                        <SortableHeader sortKey="members" className="text-center">Members</SortableHeader>
+                        <SortableHeader sortKey="earningMembers" className="text-center">Earning</SortableHeader>
+                        <SortableHeader sortKey="male" className="text-center">M/F</SortableHeader>
+                        <SortableHeader sortKey="addedDate">Added Date</SortableHeader>
+                        <TableHead>ID Proof Type</TableHead>
+                        <TableHead>ID Number</TableHead>
+                        <TableHead>ID Proof</TableHead>
+                        <SortableHeader sortKey="referralBy">Referred By</SortableHeader>
+                        <SortableHeader sortKey="kitAmount" className="text-right">Kit Amount (Rupee)</SortableHeader>
+                        <SortableHeader sortKey="status">Status</SortableHeader>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
