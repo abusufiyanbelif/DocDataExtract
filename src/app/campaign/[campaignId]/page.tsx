@@ -96,12 +96,13 @@ export default function CampaignDetailsPage() {
         return {};
     }
     return generalList.reduce((acc, item) => {
-        if (item.name) {
+        const itemName = (item.name || '').toLowerCase().trim();
+        if (itemName) {
             const unitPrice = (item.quantity && item.quantity > 0) 
                 ? (item.price || 0) / item.quantity
                 : (item.price || 0);
 
-            acc[item.name.toLowerCase()] = {
+            acc[itemName] = {
                 price: unitPrice,
                 quantityType: item.quantityType || '',
             };
@@ -163,7 +164,7 @@ export default function CampaignDetailsPage() {
   ) => {
     if (!editableCampaign) return;
     
-    let newRationLists = { ...editableCampaign.rationLists };
+    const newRationLists = { ...editableCampaign.rationLists };
 
     const updatedItems = newRationLists[memberCount].map(item => {
         if (item.id !== itemId) return item;
@@ -173,19 +174,19 @@ export default function CampaignDetailsPage() {
 
         const isGeneral = memberCount === 'General Item List' || memberCount === 'General Members';
         if (!isGeneral) {
-            const itemNameLower = String(newItem.name || '').toLowerCase();
+            // Trim the name for a robust lookup
+            const itemNameLower = String(newItem.name || '').toLowerCase().trim();
             const masterItem = masterPriceList[itemNameLower];
 
-            if (field === 'name') {
-                // When name changes, update quantityType and recalculate price
-                newItem.quantityType = masterItem?.quantityType || '';
-                const newPrice = (masterItem?.price || 0) * (Number(newItem.quantity) || 0);
+            if (masterItem) {
+                // If a matching item is found in the master list, update type and price
+                newItem.quantityType = masterItem.quantityType;
+                const newPrice = masterItem.price * (Number(newItem.quantity) || 0);
                 newItem.price = parseFloat(newPrice.toFixed(2));
-            } else if (field === 'quantity') {
-                // When quantity changes, recalculate price
-                const masterPrice = masterPriceList[String(item.name || '').toLowerCase()]?.price || 0;
-                const newPrice = masterPrice * (Number(value) || 0);
-                newItem.price = parseFloat(newPrice.toFixed(2));
+            } else {
+                // If no match, reset type and price
+                newItem.quantityType = '';
+                newItem.price = 0;
             }
         }
         return newItem;
@@ -404,7 +405,7 @@ export default function CampaignDetailsPage() {
   };
   
   const memberCategories = useMemo(() => {
-    if (!editableCampaign) return [];
+    if (!editableCampaign?.rationLists) return [];
     return Object.keys(editableCampaign.rationLists).sort((a, b) => {
         const aIsGeneral = a.includes('General');
         const bIsGeneral = b.includes('General');
@@ -499,19 +500,10 @@ export default function CampaignDetailsPage() {
                 <TableRow>
                   <TableHead className="w-[50px]">#</TableHead>
                   <TableHead className="min-w-[200px]">Item Name</TableHead>
-                  {isGeneral ? (
-                    <>
-                      <TableHead className="min-w-[100px]">Quantity</TableHead>
-                      <TableHead className="min-w-[150px]">Quantity Type</TableHead>
-                    </>
-                  ) : (
-                    <>
-                      <TableHead className="min-w-[100px]">Quantity</TableHead>
-                      <TableHead className="min-w-[120px]">Type</TableHead>
-                      <TableHead className="min-w-[150px]">Notes</TableHead>
-                    </>
-                  )}
-                  <TableHead className="min-w-[150px] text-right">{isGeneral ? 'Price per Unit (Rupee)' : 'Total Price (Rupee)'}</TableHead>
+                  <TableHead className="min-w-[100px]">Quantity</TableHead>
+                  <TableHead className="min-w-[150px]">Quantity Type</TableHead>
+                   {!isGeneral && <TableHead className="min-w-[150px]">Notes</TableHead>}
+                  <TableHead className="min-w-[150px] text-right">{isGeneral ? 'Total Price (Rupee)' : 'Total Price (Rupee)'}</TableHead>
                   {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -527,57 +519,46 @@ export default function CampaignDetailsPage() {
                         disabled={!editMode || !canUpdate}
                       />
                     </TableCell>
+                    <TableCell>
+                        <Input
+                            type="number"
+                            value={item.quantity || 0}
+                            onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                            placeholder="e.g. 1"
+                            disabled={!editMode || !canUpdate}
+                        />
+                    </TableCell>
                     {isGeneral ? (
-                        <>
-                           <TableCell>
-                                <Input
-                                    type="number"
-                                    value={item.quantity || 0}
-                                    onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                    placeholder="e.g. 1"
-                                    disabled={!editMode || !canUpdate}
-                                />
-                            </TableCell>
-                            <TableCell>
-                                <Select
-                                    value={item.quantityType || ''}
-                                    onValueChange={value => handleItemChange(memberCount, item.id, 'quantityType', value)}
-                                    disabled={!editMode || !canUpdate}
-                                >
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                    {quantityTypes.map(type => (
-                                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                                    ))}
-                                    </SelectContent>
-                                </Select>
-                            </TableCell>
-                        </>
+                        <TableCell>
+                            <Select
+                                value={item.quantityType || ''}
+                                onValueChange={value => handleItemChange(memberCount, item.id, 'quantityType', value)}
+                                disabled={!editMode || !canUpdate}
+                            >
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                {quantityTypes.map(type => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                        </TableCell>
                     ) : (
-                        <>
-                            <TableCell>
-                                <Input
-                                    type="number"
-                                    value={item.quantity || 0}
-                                    onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                    placeholder="e.g. 10"
-                                    disabled={!editMode || !canUpdate}
-                                />
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
-                                {item.quantityType || 'N/A'}
-                            </TableCell>
-                            <TableCell>
-                                <Input
-                                    value={item.notes || ''}
-                                    onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)}
-                                    placeholder="e.g. brand, quality"
-                                    disabled={!editMode || !canUpdate}
-                                />
-                            </TableCell>
-                        </>
+                      <>
+                        <TableCell className="text-sm text-muted-foreground">
+                            {item.quantityType || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                            <Input
+                                value={item.notes || ''}
+                                onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)}
+                                placeholder="e.g. brand, quality"
+                                disabled={!editMode || !canUpdate}
+                            />
+                        </TableCell>
+                      </>
                     )}
                     <TableCell>
                       <Input
@@ -586,7 +567,7 @@ export default function CampaignDetailsPage() {
                         onChange={e => handleItemChange(memberCount, item.id, 'price', parseFloat(e.target.value) || 0)}
                         className="text-right"
                         readOnly={!isGeneral && editMode}
-                        disabled={!editMode || !canUpdate}
+                        disabled={!editMode || !canUpdate || (!isGeneral && editMode)}
                       />
                     </TableCell>
                     {canUpdate && editMode && (
