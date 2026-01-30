@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -80,10 +79,10 @@ export default function CampaignDetailsPage() {
   }, [editMode, campaign])
 
   const masterPriceList = useMemo(() => {
-    if (!editableCampaign?.rationLists?.General) {
+    if (!editableCampaign?.rationLists?.['General Item List']) {
         return {};
     }
-    return editableCampaign.rationLists.General.reduce((acc, item) => {
+    return editableCampaign.rationLists['General Item List'].reduce((acc, item) => {
         if (item.name) {
             acc[item.name.toLowerCase()] = {
                 price: item.price || 0,
@@ -92,7 +91,7 @@ export default function CampaignDetailsPage() {
         }
         return acc;
     }, {} as Record<string, { price: number; quantityType: string }>);
-  }, [editableCampaign?.rationLists?.General]);
+  }, [editableCampaign?.rationLists]);
 
   const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
   const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
@@ -156,7 +155,7 @@ export default function CampaignDetailsPage() {
         const newItem = { ...item, [field]: value };
 
         // If we are NOT in the General list, apply dynamic pricing
-        if (memberCount !== 'General') {
+        if (memberCount !== 'General Item List') {
             const itemNameLower = String(newItem.name || '').toLowerCase();
             const masterItem = masterPriceList[itemNameLower];
 
@@ -227,8 +226,8 @@ export default function CampaignDetailsPage() {
     }
 
     const sortedMemberCategories = Object.keys(rationLists).sort((a, b) => {
-        if (a === 'General') return -1;
-        if (b === 'General') return 1;
+        if (a === 'General Item List') return -1;
+        if (b === 'General Item List') return 1;
         return Number(b) - Number(a);
     });
 
@@ -239,8 +238,8 @@ export default function CampaignDetailsPage() {
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
             if (items.length > 0) {
-                const isGeneral = memberCount === 'General';
-                const categoryTitle = isGeneral ? 'General Master Prices' : `For ${memberCount} Members`;
+                const isGeneral = memberCount === 'General Item List';
+                const categoryTitle = isGeneral ? 'General Item List' : `For ${memberCount} Members`;
                 const total = calculateTotal(items);
 
                 const headers = isGeneral
@@ -315,9 +314,9 @@ export default function CampaignDetailsPage() {
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
             if (items.length > 0) {
-                const isGeneral = memberCount === 'General';
+                const isGeneral = memberCount === 'General Item List';
                 const total = calculateTotal(items);
-                const categoryTitle = isGeneral ? 'General Master Prices' : `For ${memberCount} Members`;
+                const categoryTitle = isGeneral ? 'General Item List' : `For ${memberCount} Members`;
                 
                 const headers = isGeneral
                     ? [['#', 'Item Name', 'Quantity Type', 'Notes', 'Price per Unit']]
@@ -388,8 +387,8 @@ export default function CampaignDetailsPage() {
   const memberCategories = useMemo(() => {
     if (!editableCampaign) return [];
     return Object.keys(editableCampaign.rationLists).sort((a, b) => {
-        if (a === 'General') return -1;
-        if (b === 'General') return 1;
+        if (a === 'General Item List') return -1;
+        if (b === 'General Item List') return 1;
         return Number(b) - Number(a);
     });
   }, [editableCampaign]);
@@ -444,7 +443,7 @@ export default function CampaignDetailsPage() {
   const renderRationTable = (memberCount: string) => {
     const items = editableCampaign?.rationLists?.[memberCount] || [];
     const total = calculateTotal(items);
-    const isGeneral = memberCount === 'General';
+    const isGeneral = memberCount === 'General Item List';
 
     return (
       <Card>
@@ -474,7 +473,7 @@ export default function CampaignDetailsPage() {
             )}
           </div>
           <div className="w-full overflow-x-auto">
-          <Table className="min-w-full">
+          <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]">#</TableHead>
@@ -800,7 +799,7 @@ export default function CampaignDetailsPage() {
                         <ScrollArea className="w-full whitespace-nowrap rounded-md">
                             <TabsList className="justify-start">
                                 {memberCategories.map(count => (
-                                    <TabsTrigger key={count} value={count}>{count === 'General' ? 'General' : `For ${count} Members`}</TabsTrigger>
+                                    <TabsTrigger key={count} value={count}>{count === 'General Item List' ? 'General Item List' : `For ${count} Members`}</TabsTrigger>
                                 ))}
                             </TabsList>
                             <ScrollBar orientation="horizontal" />
@@ -819,7 +818,7 @@ export default function CampaignDetailsPage() {
                 )
             ) : (
                 <div className="mt-4">
-                    {renderRationTable('General')}
+                    {renderRationTable('General Item List')}
                 </div>
             )}
           </CardContent>
@@ -829,21 +828,20 @@ export default function CampaignDetailsPage() {
       <Dialog 
         open={isCopyItemsOpen} 
         onOpenChange={(isOpen) => {
-            setIsCopyItemsOpen(isOpen);
             if (!isOpen) {
-                // Reset all states on close
                 setCopyTargetCategory(null);
                 setCopySourceCategory(null);
                 setItemsToCopy([]);
             }
+            setIsCopyItemsOpen(isOpen);
         }}
       >
         <DialogContent className="sm:max-w-[525px]">
             <DialogHeader>
                 <DialogTitle>
                     {copySourceCategory 
-                        ? `Copy from "${copySourceCategory}" to "${copyTargetCategory}"`
-                        : `Copy items to "${copyTargetCategory}" list`
+                        ? `Copy from "${copySourceCategory === 'General Item List' ? 'General Item List' : `For ${copySourceCategory} Members`}" to "For ${copyTargetCategory} Members"`
+                        : `Copy items to "For ${copyTargetCategory}" list`
                     }
                 </DialogTitle>
                 <DialogDescription>
@@ -865,7 +863,7 @@ export default function CampaignDetailsPage() {
                                     className="w-full justify-start"
                                     onClick={() => setCopySourceCategory(category)}
                                 >
-                                    {category === 'General' ? 'General' : `For ${category} Members`}
+                                    {category === 'General Item List' ? 'General Item List' : `For ${category} Members`}
                                 </Button>
                             ))
                         ) : (

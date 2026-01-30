@@ -208,7 +208,7 @@
         },
         "price": {
           "type": "number",
-          "description": "The price of the item in Rupees. For the 'General' list, this is price per unit."
+          "description": "The price of the item in Rupees. For the 'General Item List', this is price per unit."
         },
         "notes": {
           "type": "string",
@@ -368,7 +368,7 @@
         },
         "rationLists": {
           "type": "object",
-          "description": "A map where keys are member counts (e.g., '5', 'General') and values are the corresponding lists of ration items.",
+          "description": "A map where keys are member counts (e.g., '5', 'General Item List') and values are the corresponding lists of ration items.",
           "additionalProperties": {
             "type": "array",
             "items": {

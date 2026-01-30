@@ -90,7 +90,7 @@ export default function CreateCampaignPage() {
       shopContact: '',
       shopAddress: '',
       rationLists: {
-        'General': [],
+        'General Item List': [],
       },
     };
 
