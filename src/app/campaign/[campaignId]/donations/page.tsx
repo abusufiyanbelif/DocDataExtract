@@ -294,90 +294,88 @@ export default function DonationsPage() {
             )}
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                  <TableHeader>
-                      <TableRow>
-                          {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center">Actions</TableHead>}
-                          <TableHead>#</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Donor Name</TableHead>
-                          <TableHead>Receiver Name</TableHead>
-                          <TableHead>Phone</TableHead>
-                          <TableHead>Referral</TableHead>
-                          <TableHead className="text-right">Amount (Rupee)</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Payment</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Screenshot</TableHead>
-                          <TableHead>Uploaded By</TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {areDonationsLoading ? (
-                        [...Array(3)].map((_, i) => (
-                           <TableRow key={i}>
-                                <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12}><Skeleton className="h-6 w-full" /></TableCell>
-                           </TableRow>
-                        ))
-                      ) : (donations && donations.length > 0) ? (
-                        donations.map((donation, index) => (
-                          <TableRow key={donation.id}>
-                              {(canUpdate || canDelete) && (
-                                <TableCell className="text-center">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            {canUpdate && (
-                                                <DropdownMenuItem onClick={() => handleEdit(donation)}>
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canDelete && (
-                                                <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                </DropdownMenuItem>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                              )}
-                              <TableCell>{index + 1}</TableCell>
-                              <TableCell>
-                                  <Badge variant={donation.status === 'Verified' ? 'success' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
-                              </TableCell>
-                              <TableCell className="font-medium">{donation.donorName}</TableCell>
-                              <TableCell>{donation.receiverName}</TableCell>
-                              <TableCell>{donation.donorPhone}</TableCell>
-                              <TableCell>{donation.referral}</TableCell>
-                              <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
-                              <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
-                              <TableCell><Badge variant="outline">{donation.paymentType}</Badge></TableCell>
-                              <TableCell>{donation.donationDate}</TableCell>
-                              <TableCell>
-                                  {donation.screenshotUrl && (
-                                    <Button variant="outline" size="sm" onClick={() => donation.screenshotUrl && handleViewImage(donation.screenshotUrl)}>
-                                        <Eye className="mr-2 h-4 w-4" /> View
-                                    </Button>
-                                  )}
-                              </TableCell>
-                              <TableCell>{donation.uploadedBy}</TableCell>
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12} className="text-center h-24 text-muted-foreground">
-                                No donations recorded yet.
-                            </TableCell>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        {(canUpdate || canDelete) && <TableHead className="w-[50px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
+                        <TableHead className="w-[40px]">#</TableHead>
+                        <TableHead className="min-w-[100px]">Status</TableHead>
+                        <TableHead className="min-w-[150px]">Donor Name</TableHead>
+                        <TableHead className="min-w-[150px]">Receiver Name</TableHead>
+                        <TableHead className="min-w-[120px]">Phone</TableHead>
+                        <TableHead className="min-w-[150px]">Referral</TableHead>
+                        <TableHead className="text-right min-w-[150px]">Amount (Rupee)</TableHead>
+                        <TableHead className="min-w-[100px]">Type</TableHead>
+                        <TableHead className="min-w-[100px]">Payment</TableHead>
+                        <TableHead className="min-w-[120px]">Date</TableHead>
+                        <TableHead className="min-w-[100px]">Screenshot</TableHead>
+                        <TableHead className="min-w-[150px]">Uploaded By</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {areDonationsLoading ? (
+                    [...Array(3)].map((_, i) => (
+                        <TableRow key={i}>
+                            <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12}><Skeleton className="h-6 w-full" /></TableCell>
                         </TableRow>
-                      )}
-                  </TableBody>
-              </Table>
-            </div>
+                    ))
+                    ) : (donations && donations.length > 0) ? (
+                    donations.map((donation, index) => (
+                        <TableRow key={donation.id}>
+                            {(canUpdate || canDelete) && (
+                            <TableCell className="text-center sticky left-0 bg-card z-10">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {canUpdate && (
+                                            <DropdownMenuItem onClick={() => handleEdit(donation)}>
+                                                <Edit className="mr-2 h-4 w-4" /> Edit
+                                            </DropdownMenuItem>
+                                        )}
+                                        {canDelete && (
+                                            <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                            </DropdownMenuItem>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </TableCell>
+                            )}
+                            <TableCell>{index + 1}</TableCell>
+                            <TableCell>
+                                <Badge variant={donation.status === 'Verified' ? 'success' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
+                            </TableCell>
+                            <TableCell className="font-medium">{donation.donorName}</TableCell>
+                            <TableCell>{donation.receiverName}</TableCell>
+                            <TableCell>{donation.donorPhone}</TableCell>
+                            <TableCell>{donation.referral}</TableCell>
+                            <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
+                            <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
+                            <TableCell><Badge variant="outline">{donation.paymentType}</Badge></TableCell>
+                            <TableCell>{donation.donationDate}</TableCell>
+                            <TableCell>
+                                {donation.screenshotUrl && (
+                                <Button variant="outline" size="sm" onClick={() => donation.screenshotUrl && handleViewImage(donation.screenshotUrl)}>
+                                    <Eye className="mr-2 h-4 w-4" /> View
+                                </Button>
+                                )}
+                            </TableCell>
+                            <TableCell>{donation.uploadedBy}</TableCell>
+                        </TableRow>
+                    ))
+                    ) : (
+                    <TableRow>
+                        <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12} className="text-center h-24 text-muted-foreground">
+                            No donations recorded yet.
+                        </TableCell>
+                    </TableRow>
+                    )}
+                </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </main>
