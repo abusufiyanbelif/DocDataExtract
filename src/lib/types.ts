@@ -4,7 +4,8 @@ import type { UserPermissions } from './modules';
 export interface RationItem {
   id: string;
   name: string;
-  quantity: string;
+  quantity: number;
+  quantityType?: string;
   price: number;
   notes: string;
 }

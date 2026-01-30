@@ -75,6 +75,12 @@
                 "create": {
                   "type": "boolean"
                 },
+                "update": {
+                  "type": "boolean"
+                },
+                "delete": {
+                  "type": "boolean"
+                },
                 "summary": {
                   "type": "object",
                   "properties": {
@@ -184,12 +190,25 @@
           "description": "The name of the ration item."
         },
         "quantity": {
+          "type": "number",
+          "description": "The quantity/amount of the item (e.g., 10)."
+        },
+        "quantityType": {
           "type": "string",
-          "description": "The quantity of the item (e.g., '10 kg')."
+          "description": "The unit of measurement for the quantity.",
+          "enum": [
+            "kg",
+            "litre",
+            "gram",
+            "ml",
+            "piece",
+            "packet",
+            "dozen"
+          ]
         },
         "price": {
           "type": "number",
-          "description": "The price of the item in Rupees."
+          "description": "The price of the item in Rupees. For the 'General' list, this is price per unit."
         },
         "notes": {
           "type": "string",

@@ -30,6 +30,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,6 +44,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { get } from '@/lib/utils';
+
+const quantityTypes = ['kg', 'litre', 'gram', 'ml', 'piece', 'packet', 'dozen'];
 
 export default function CampaignDetailsPage() {
   const params = useParams();
@@ -69,6 +78,21 @@ export default function CampaignDetailsPage() {
       setEditableCampaign(JSON.parse(JSON.stringify(campaign)));
     }
   }, [editMode, campaign])
+
+  const masterPriceList = useMemo(() => {
+    if (!editableCampaign?.rationLists?.General) {
+        return {};
+    }
+    return editableCampaign.rationLists.General.reduce((acc, item) => {
+        if (item.name) {
+            acc[item.name.toLowerCase()] = {
+                price: item.price || 0,
+                quantityType: item.quantityType || '',
+            };
+        }
+        return acc;
+    }, {} as Record<string, { price: number; quantityType: string }>);
+  }, [editableCampaign?.rationLists?.General]);
 
   const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
   const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
@@ -122,10 +146,36 @@ export default function CampaignDetailsPage() {
     value: string | number
   ) => {
     if (!editableCampaign) return;
-    const newRationLists = { ...editableCampaign.rationLists };
-    newRationLists[memberCount] = newRationLists[memberCount].map(item =>
-        item.id === itemId ? { ...item, [field]: value } : item
-    );
+    
+    let newRationLists = { ...editableCampaign.rationLists };
+
+    const updatedItems = newRationLists[memberCount].map(item => {
+        if (item.id !== itemId) return item;
+
+        // Create a new item object with the changed field
+        const newItem = { ...item, [field]: value };
+
+        // If we are NOT in the General list, apply dynamic pricing
+        if (memberCount !== 'General') {
+            const itemNameLower = String(newItem.name || '').toLowerCase();
+            const masterItem = masterPriceList[itemNameLower];
+
+            if (field === 'name') {
+                // When name changes, update quantityType and recalculate price
+                newItem.quantityType = masterItem?.quantityType || '';
+                const newPrice = (masterItem?.price || 0) * (Number(newItem.quantity) || 0);
+                newItem.price = parseFloat(newPrice.toFixed(2));
+            } else if (field === 'quantity') {
+                // When quantity changes, recalculate price
+                const masterPrice = masterPriceList[String(item.name || '').toLowerCase()]?.price || 0;
+                const newPrice = masterPrice * (Number(value) || 0);
+                newItem.price = parseFloat(newPrice.toFixed(2));
+            }
+        }
+        return newItem;
+    });
+
+    newRationLists[memberCount] = updatedItems;
     handleFieldChange('rationLists', newRationLists);
   };
 
@@ -134,7 +184,8 @@ export default function CampaignDetailsPage() {
     const newItem: RationItem = {
       id: `${memberCount}-${Date.now()}`,
       name: '',
-      quantity: '',
+      quantity: 0,
+      quantityType: '',
       price: 0,
       notes: '',
     };
@@ -181,132 +232,123 @@ export default function CampaignDetailsPage() {
         return Number(b) - Number(a);
     });
 
-    if (format === 'csv') {
-      let csvContent = `Ration Details\n`;
-      csvContent += `Price Date:,"${priceDate || ''}"\n`;
-      csvContent += `Shop Name:,"${shopName || ''}"\n`;
-      csvContent += `Shop Contact:,"${shopContact || ''}"\n`;
-      csvContent += `Shop Address:,"${shopAddress || ''}"\n\n`;
-
-      sortedMemberCategories.forEach((memberCount) => {
-          const items = rationLists[memberCount];
-          if (items.length > 0) {
-              const categoryTitle = memberCount === 'General' ? 'General' : `For ${memberCount} Members`;
-              csvContent += `"${categoryTitle}"\n`;
-              csvContent += '#,Item Name,Quantity,Notes,Price (Rupee)\n';
-
-              items.forEach((item, index) => {
-                  const row = [
-                      index + 1,
-                      `"${(item.name || '').replace(/"/g, '""')}"`,
-                      `"${(item.quantity || '').replace(/"/g, '""')}"`,
-                      `"${(item.notes || '').replace(/"/g, '""')}"`,
-                      item.price || 0,
-                  ].join(',');
-                  csvContent += row + '\n';
-              });
-
-              const total = calculateTotal(items);
-              csvContent += `,,,Total,${total}\n\n`;
-          }
-      });
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `ration-details-${priceDate}.csv`;
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-    } else if (format === 'excel') {
+    if (format === 'csv' || format === 'excel') {
         const XLSX = await import('xlsx');
         const wb = XLSX.utils.book_new();
 
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
             if (items.length > 0) {
-                const categoryTitle = memberCount === 'General' ? 'General' : `For ${memberCount} Members`;
+                const isGeneral = memberCount === 'General';
+                const categoryTitle = isGeneral ? 'General Master Prices' : `For ${memberCount} Members`;
                 const total = calculateTotal(items);
 
-                const header = ['#', 'Item Name', 'Quantity', 'Notes', 'Price (Rupee)'];
-                const body = items.map((item, index) => [
-                    index + 1,
-                    item.name,
-                    item.quantity,
-                    item.notes,
-                    item.price,
+                const headers = isGeneral
+                    ? ['#', 'Item Name', 'Quantity Type', 'Notes', 'Price per Unit (Rupee)']
+                    : ['#', 'Item Name', 'Quantity', 'Type', 'Notes', 'Total Price (Rupee)'];
+
+                const body = items.map((item, index) => isGeneral ? [
+                    index + 1, item.name, item.quantityType, item.notes, item.price
+                ] : [
+                    index + 1, item.name, item.quantity, item.quantityType, item.notes, item.price
                 ]);
 
-                const table = [header, ...body, ['', '', '', 'Total', total]];
-
-                const ws = XLSX.utils.aoa_to_sheet([]);
+                const totalRow = isGeneral
+                    ? []
+                    : [['', '', '', '', 'Total', total]];
                 
-                XLSX.utils.sheet_add_aoa(ws, [
+                const sheetData = [
                     [`Shop Name:`, shopName],
                     [`Shop Contact:`, shopContact],
                     [`Shop Address:`, shopAddress],
                     [`Price Date:`, priceDate],
                     [], 
                     [categoryTitle],
-                    [], 
-                ], { origin: 'A1' });
+                    [],
+                    headers,
+                    ...body,
+                    ...totalRow
+                ];
 
-                XLSX.utils.sheet_add_aoa(ws, table, { origin: 'A8' });
-
-                ws['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 10 }];
-                XLSX.utils.book_append_sheet(wb, ws, categoryTitle);
+                const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                ws['!cols'] = isGeneral
+                    ? [{ wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 15 }]
+                    : [{ wch: 5 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 15 }];
+                XLSX.utils.book_append_sheet(wb, ws, categoryTitle.slice(0, 31));
             }
         });
-
-        XLSX.writeFile(wb, `ration-details-${priceDate}.xlsx`);
+        
+        if (format === 'excel') {
+            XLSX.writeFile(wb, `ration-details-${priceDate}.xlsx`);
+        } else {
+             // For CSV, we'll create a single sheet and stringify it.
+            const firstSheetName = wb.SheetNames[0];
+            if (firstSheetName) {
+                const csvOutput = XLSX.utils.sheet_to_csv(wb.Sheets[firstSheetName]);
+                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `ration-details-${priceDate}.csv`;
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
 
     } else if (format === 'pdf') {
         const { default: jsPDF } = await import('jspdf');
         await import('jspdf-autotable');
         const doc = new jsPDF();
-        let startY = 20;
+        let startY = 15;
 
         doc.setFontSize(14);
-        doc.text(`Ration Details`, 14, 15);
+        doc.text(`${campaign.name} - Ration Details`, 14, startY);
+        startY += 8;
         
         doc.setFontSize(10);
-        doc.text(`Shop: ${shopName || ''} | Contact: ${shopContact || ''} | Address: ${shopAddress || ''}`, 14, 22);
-        doc.text(`Price Date: ${priceDate || ''}`, 14, 27);
-
-        startY = 35;
+        doc.text(`Shop: ${shopName || ''} | Contact: ${shopContact || ''} | Address: ${shopAddress || ''}`, 14, startY);
+        startY += 5;
+        doc.text(`Price Date: ${priceDate || ''}`, 14, startY);
+        startY += 10;
         
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
             if (items.length > 0) {
+                const isGeneral = memberCount === 'General';
                 const total = calculateTotal(items);
-                const tableBody: (string | number)[][] = items.map((item, index) => [
-                    index + 1,
-                    item.name,
-                    item.quantity,
-                    item.notes,
-                    `Rupee ${(item.price || 0).toFixed(2)}`,
-                ]);
+                const categoryTitle = isGeneral ? 'General Master Prices' : `For ${memberCount} Members`;
+                
+                const headers = isGeneral
+                    ? [['#', 'Item Name', 'Quantity Type', 'Notes', 'Price per Unit']]
+                    : [['#', 'Item Name', 'Qty', 'Type', 'Notes', 'Total Price']];
 
-                (tableBody as any).push([
-                    { content: 'Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
-                    { content: `Rupee ${total.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }
+                const body: (string | number)[][] = items.map((item, index) => isGeneral ? [
+                    index + 1, item.name, item.quantityType || '', item.notes, `Rupee ${(item.price || 0).toFixed(2)}`
+                ] : [
+                    index + 1, item.name, item.quantity, item.quantityType || '', item.notes, `Rupee ${(item.price || 0).toFixed(2)}`
                 ]);
                 
+                if (!isGeneral) {
+                    (body as any).push([
+                        { content: 'Total', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
+                        { content: `Rupee ${total.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }
+                    ]);
+                }
+                
                 (doc as any).autoTable({
-                    head: [[memberCount === 'General' ? 'General' : `For ${memberCount} Members`]],
+                    head: [[categoryTitle]],
                     startY: startY,
                     theme: 'plain',
                     styles: { fontStyle: 'bold', fontSize: 12 }
                 });
-
                 startY = (doc as any).lastAutoTable.finalY;
 
                 (doc as any).autoTable({
-                    head: [['#', 'Item Name', 'Quantity', 'Notes', 'Price (Rupee)']],
-                    body: tableBody as any,
+                    head: headers,
+                    body: body as any,
                     startY: startY,
+                    headStyles: { fillColor: [22, 163, 74] },
                 });
                 
                 startY = (doc as any).lastAutoTable.finalY + 10;
@@ -402,39 +444,51 @@ export default function CampaignDetailsPage() {
   const renderRationTable = (memberCount: string) => {
     const items = editableCampaign?.rationLists?.[memberCount] || [];
     const total = calculateTotal(items);
+    const isGeneral = memberCount === 'General';
 
     return (
       <Card>
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-            <h4 className="text-lg font-bold">Total: <span className="font-mono">Rupee {total.toFixed(2)}</span></h4>
+            {!isGeneral && <h4 className="text-lg font-bold">Total: <span className="font-mono">Rupee {total.toFixed(2)}</span></h4>}
+            {isGeneral && <div />}
             {canUpdate && editMode && (
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => handleAddItem(memberCount)}>
                   <Plus className="mr-2 h-4 w-4" /> Add Item
                 </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setCopyTargetCategory(memberCount);
-                    setCopySourceCategory(null);
-                    setItemsToCopy([]);
-                    setIsCopyItemsOpen(true);
-                  }}
-                >
-                  <Copy className="mr-2 h-4 w-4" /> Copy Items
-                </Button>
+                {!isGeneral && (
+                    <Button 
+                        variant="outline" 
+                        onClick={() => {
+                            setCopyTargetCategory(memberCount);
+                            setCopySourceCategory(null);
+                            setItemsToCopy([]);
+                            setIsCopyItemsOpen(true);
+                        }}
+                    >
+                        <Copy className="mr-2 h-4 w-4" /> Copy Items
+                    </Button>
+                )}
               </div>
             )}
           </div>
-          <Table>
+          <div className="w-full overflow-x-auto">
+          <Table className="min-w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]">#</TableHead>
                   <TableHead className="min-w-[200px]">Item Name</TableHead>
-                  <TableHead className="min-w-[100px]">Quantity</TableHead>
+                  {isGeneral ? (
+                    <TableHead className="min-w-[150px]">Quantity Type</TableHead>
+                  ) : (
+                    <>
+                      <TableHead className="min-w-[100px]">Quantity</TableHead>
+                      <TableHead className="min-w-[120px]">Type</TableHead>
+                    </>
+                  )}
                   <TableHead className="min-w-[150px]">Notes</TableHead>
-                  <TableHead className="min-w-[120px] text-right">Price (Rupee)</TableHead>
+                  <TableHead className="min-w-[150px] text-right">{isGeneral ? 'Price per Unit (Rupee)' : 'Total Price (Rupee)'}</TableHead>
                   {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -450,14 +504,39 @@ export default function CampaignDetailsPage() {
                         disabled={!editMode || !canUpdate}
                       />
                     </TableCell>
-                    <TableCell>
-                      <Input
-                        value={item.quantity || ''}
-                        onChange={e => handleItemChange(memberCount, item.id, 'quantity', e.target.value)}
-                        placeholder="e.g. 10 kg"
-                        disabled={!editMode || !canUpdate}
-                      />
-                    </TableCell>
+                    {isGeneral ? (
+                        <TableCell>
+                            <Select
+                                value={item.quantityType || ''}
+                                onValueChange={value => handleItemChange(memberCount, item.id, 'quantityType', value)}
+                                disabled={!editMode || !canUpdate}
+                            >
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                {quantityTypes.map(type => (
+                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                        </TableCell>
+                    ) : (
+                        <>
+                            <TableCell>
+                                <Input
+                                    type="number"
+                                    value={item.quantity || 0}
+                                    onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                    placeholder="e.g. 10"
+                                    disabled={!editMode || !canUpdate}
+                                />
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                                {item.quantityType || 'N/A'}
+                            </TableCell>
+                        </>
+                    )}
                     <TableCell>
                       <Input
                         value={item.notes || ''}
@@ -472,6 +551,7 @@ export default function CampaignDetailsPage() {
                         value={item.price || 0}
                         onChange={e => handleItemChange(memberCount, item.id, 'price', parseFloat(e.target.value) || 0)}
                         className="text-right"
+                        readOnly={!isGeneral && editMode}
                         disabled={!editMode || !canUpdate}
                       />
                     </TableCell>
@@ -486,6 +566,7 @@ export default function CampaignDetailsPage() {
                 ))}
               </TableBody>
             </Table>
+            </div>
         </CardContent>
       </Card>
     );
