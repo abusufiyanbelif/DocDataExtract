@@ -26,7 +26,8 @@ import {
 } from "@/components/ui/select";
 import type { Beneficiary, RationList, RationItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ScanLine } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -54,6 +55,9 @@ interface BeneficiaryFormProps {
 }
 
 export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }: BeneficiaryFormProps) {
+  const { toast } = useToast();
+  const [isScanning, setIsScanning] = useState(false);
+
   const form = useForm<BeneficiaryFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -102,11 +106,9 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         const memberCountStr = String(membersValue);
         const exactMatchList = rationLists[memberCountStr];
 
-        // Find the general list robustly. This will be the fallback.
         const generalListKey = Object.keys(rationLists).find(k => k.toLowerCase().includes('general'));
         const generalList = generalListKey ? rationLists[generalListKey] : undefined;
         
-        // Use the exact match if it exists, otherwise fall back to the general list.
         const listToUse = exactMatchList || generalList;
 
         if (listToUse) {
@@ -125,11 +127,54 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         const generalListKey = Object.keys(rationLists).find(k => k.toLowerCase().includes('general'));
         const hasGeneralFallback = !!(generalListKey && rationLists[generalListKey]);
         
-        // The field is read-only if an exact list exists OR if a general list exists (as a fallback)
         return hasExactMatch || hasGeneralFallback;
     }
     return false;
   }, [membersValue, rationLists]);
+
+  const handleScanIdProof = async () => {
+    if (!preview) {
+        toast({
+            title: "No Image to Scan",
+            description: "Please upload an ID proof document first.",
+            variant: "destructive",
+        });
+        return;
+    }
+    setIsScanning(true);
+    try {
+        const { extractKeyInfoFromAadhaar } = await import('@/ai/flows/extract-key-info-identity');
+        const response = await extractKeyInfoFromAadhaar({ photoDataUri: preview });
+
+        if (response) {
+            if (response.name) setValue('name', response.name, { shouldValidate: true });
+            if (response.address) setValue('address', response.address, { shouldValidate: true });
+            if (response.aadhaarNumber) setValue('idNumber', response.aadhaarNumber, { shouldValidate:true });
+            setValue('idProofType', 'Aadhaar', { shouldValidate: true });
+            
+            toast({
+                title: "Scan Successful",
+                description: "Beneficiary details have been populated from the ID proof.",
+                variant: "success",
+            });
+        } else {
+             toast({
+                title: "Scan Incomplete",
+                description: "Could not extract all details from the image. Please fill them manually.",
+                variant: "default",
+            });
+        }
+    } catch (error) {
+        console.error("ID Proof scan failed:", error);
+        toast({
+            title: "Scan Failed",
+            description: "An error occurred while trying to scan the document.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsScanning(false);
+    }
+  };
 
   return (
     <Form {...form}>
@@ -322,10 +367,22 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         
         <FormItem>
             <FormLabel>ID Proof Document</FormLabel>
-            <FormControl>
-                <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
-            </FormControl>
-            <FormDescription>Optional. Upload an image or PDF of the ID proof.</FormDescription>
+            <div className="flex items-center gap-2">
+                <FormControl className="flex-grow">
+                    <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
+                </FormControl>
+                <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleScanIdProof} 
+                    disabled={isScanning || !preview}
+                    title="Scan ID Proof from Image"
+                >
+                    {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
+                    Scan
+                </Button>
+            </div>
+            <FormDescription>Optional. Upload an image or PDF of the ID proof. You can scan it after uploading.</FormDescription>
             <FormMessage />
         </FormItem>
         
