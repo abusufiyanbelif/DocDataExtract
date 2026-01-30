@@ -1,3 +1,4 @@
+
 'use client';
 
 import { z } from 'zod';
@@ -96,33 +97,36 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
   useEffect(() => {
     const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + Number(item.price || 0), 0);
     
-    let total = 0; // Default to 0
+    let total = 0;
     if (membersValue && membersValue > 0) {
         const memberCountStr = String(membersValue);
         const exactMatchList = rationLists[memberCountStr];
 
-        // Correctly find the general list by checking both possible keys
-        const generalList = rationLists['General Item List'] || rationLists['General'];
-        const generalListForFivePlus = (membersValue >= 5 && generalList) ? generalList : undefined;
-
-        const listToUse = exactMatchList || generalListForFivePlus;
+        // Find the general list robustly. This will be the fallback.
+        const generalListKey = Object.keys(rationLists).find(k => k.toLowerCase().includes('general'));
+        const generalList = generalListKey ? rationLists[generalListKey] : undefined;
+        
+        // Use the exact match if it exists, otherwise fall back to the general list.
+        const listToUse = exactMatchList || generalList;
 
         if (listToUse) {
             total = calculateTotal(listToUse);
         }
     }
-    // Always set the value to either the calculated total or 0
     setValue('kitAmount', total, { shouldValidate: true });
     
   }, [membersValue, rationLists, setValue]);
   
   const isKitAmountReadOnly = useMemo(() => {
     if (membersValue && membersValue > 0) {
-      const memberCountStr = String(membersValue);
-      const hasExactMatch = !!rationLists[memberCountStr];
-      const generalList = rationLists['General Item List'] || rationLists['General'];
-      const hasGeneralFallback = !!(membersValue >= 5 && generalList);
-      return hasExactMatch || hasGeneralFallback;
+        const memberCountStr = String(membersValue);
+        const hasExactMatch = !!rationLists[memberCountStr];
+
+        const generalListKey = Object.keys(rationLists).find(k => k.toLowerCase().includes('general'));
+        const hasGeneralFallback = !!(generalListKey && rationLists[generalListKey]);
+        
+        // The field is read-only if an exact list exists OR if a general list exists (as a fallback)
+        return hasExactMatch || hasGeneralFallback;
     }
     return false;
   }, [membersValue, rationLists]);

@@ -380,7 +380,7 @@ export default function BeneficiariesPage() {
     setSortConfig({ key, direction });
   };
   
-    const handleSyncKitAmounts = async () => {
+  const handleSyncKitAmounts = async () => {
     if (!firestore || !campaign || !beneficiaries || !canUpdate) {
         toast({ title: 'Error', description: 'Cannot sync. Data is missing or you lack permissions.', variant: 'destructive'});
         return;
@@ -395,9 +395,9 @@ export default function BeneficiariesPage() {
         return;
     }
     
-    // Find the general list robustly
+    // Find the general list robustly. This is the fallback.
     const generalListKey = Object.keys(rationLists).find(k => k.toLowerCase().includes('general'));
-    const generalList = generalListKey ? rationLists[generalListKey] : [];
+    const generalList = generalListKey ? rationLists[generalListKey] : undefined;
     const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
     
     const batch = writeBatch(firestore);
@@ -413,10 +413,10 @@ export default function BeneficiariesPage() {
         const members = beneficiary.members;
         if (members && members > 0) {
             const exactMatchList = rationLists[String(members)];
-            // Use general list as a fallback for 5 or more members if no exact match exists
-            const generalListForFivePlus = (members >= 5 && generalList.length > 0) ? generalList : undefined;
             
-            const listToUse = exactMatchList || generalListForFivePlus;
+            // New fallback logic: Use the general list if it exists and no exact match is found.
+            const listToUse = exactMatchList || generalList;
+
             if (listToUse) {
                 expectedAmount = calculateTotal(listToUse);
             }
@@ -661,8 +661,8 @@ export default function BeneficiariesPage() {
             <Table>
                 <TableHeader>
                     <TableRow>
-                        {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 w-[50px] bg-card text-center">Actions</TableHead>}
-                        <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
+                        {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 w-auto bg-card text-center">Actions</TableHead>}
+                        <SortableHeader sortKey="srNo" className="w-auto">#</SortableHeader>
                         <SortableHeader sortKey="name" className="min-w-[150px]">Name</SortableHeader>
                         <SortableHeader sortKey="address" className="min-w-[200px]">Address</SortableHeader>
                         <SortableHeader sortKey="phone" className="w-auto">Phone</SortableHeader>
