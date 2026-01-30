@@ -81,7 +81,7 @@ export default function CampaignDetailsPage() {
   
   const getCategoryLabel = (category: string | null): string => {
     if (!category) return '';
-    if (category === 'General Item List' || category === 'General Members') {
+    if (category === 'General Item List' || category === 'General' || category === 'General Members') {
         return 'General Item List';
     }
     if (!isNaN(Number(category))) {
@@ -91,7 +91,12 @@ export default function CampaignDetailsPage() {
   };
 
   const masterPriceList = useMemo(() => {
-    const generalList = editableCampaign?.rationLists?.['General Item List'];
+    const lists = editableCampaign?.rationLists;
+    if (!lists) return {};
+    
+    // Check for both possible keys for the general list to be robust.
+    const generalList = lists['General Item List'] || lists['General'];
+
     if (!generalList) {
         return {};
     }
@@ -171,7 +176,7 @@ export default function CampaignDetailsPage() {
 
         const newItem = { ...item, [field]: value };
 
-        const isGeneral = memberCount === 'General Item List';
+        const isGeneral = memberCount === 'General Item List' || memberCount === 'General';
         if (isGeneral) {
             return newItem;
         }
@@ -183,7 +188,8 @@ export default function CampaignDetailsPage() {
             newItem.quantityType = masterItem.quantityType;
             const newPrice = masterItem.price * (Number(newItem.quantity) || 0);
             newItem.price = parseFloat(newPrice.toFixed(2));
-        } else {
+        } else if (field === 'name') {
+            // Only reset if the name itself changes and no match is found
             newItem.quantityType = '';
             newItem.price = 0;
         }
@@ -256,7 +262,7 @@ export default function CampaignDetailsPage() {
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
             if (items.length > 0) {
-                const isGeneral = memberCount.includes('General');
+                const isGeneral = getCategoryLabel(memberCount) === 'General Item List';
                 const categoryTitle = getCategoryLabel(memberCount);
                 const total = calculateTotal(items);
 
@@ -332,7 +338,7 @@ export default function CampaignDetailsPage() {
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
             if (items.length > 0) {
-                const isGeneral = memberCount.includes('General');
+                const isGeneral = getCategoryLabel(memberCount) === 'General Item List';
                 const total = calculateTotal(items);
                 const categoryTitle = getCategoryLabel(memberCount);
                 
@@ -405,8 +411,8 @@ export default function CampaignDetailsPage() {
   const memberCategories = useMemo(() => {
     if (!editableCampaign?.rationLists) return [];
     return Object.keys(editableCampaign.rationLists).sort((a, b) => {
-        const aIsGeneral = a === 'General Item List';
-        const bIsGeneral = b === 'General Item List';
+        const aIsGeneral = a === 'General Item List' || a === 'General';
+        const bIsGeneral = b === 'General Item List' || b === 'General';
         if (aIsGeneral) return -1;
         if (bIsGeneral) return 1;
         return Number(b) - Number(a);
@@ -450,9 +456,7 @@ export default function CampaignDetailsPage() {
             id: `${copyTargetCategory}-${Date.now()}-${index}`,
             name: item.name,
             notes: item.notes || '',
-            // The quantity from the source list is copied over. The user can then change it.
             quantity: item.quantity, 
-            // The quantity type and price are ALWAYS derived from the master list.
             quantityType: masterItem ? masterItem.quantityType : '',
             price: masterItem ? parseFloat((masterItem.price * (Number(item.quantity) || 0)).toFixed(2)) : 0
         };
@@ -475,7 +479,7 @@ export default function CampaignDetailsPage() {
   const renderRationTable = (memberCount: string) => {
     const items = editableCampaign?.rationLists?.[memberCount] || [];
     const total = calculateTotal(items);
-    const isGeneral = memberCount.includes('General');
+    const isGeneral = getCategoryLabel(memberCount) === 'General Item List';
 
     return (
       <Card>
@@ -508,13 +512,13 @@ export default function CampaignDetailsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[50px]">#</TableHead>
+                  <TableHead className="w-12">#</TableHead>
                   <TableHead className="min-w-[250px]">Item Name</TableHead>
-                  <TableHead className="w-28">Quantity</TableHead>
-                  <TableHead className="w-36">Quantity Type</TableHead>
+                  <TableHead className="w-32">Quantity</TableHead>
+                  <TableHead className="w-40">Quantity Type</TableHead>
                   {!isGeneral && <TableHead className="min-w-[200px]">Notes</TableHead>}
                   <TableHead className="w-48 text-right">{isGeneral ? 'Price (Rupee)' : 'Total Price (Rupee)'}</TableHead>
-                  {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
+                  {canUpdate && editMode && <TableHead className="w-12 text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
