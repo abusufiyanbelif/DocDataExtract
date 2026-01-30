@@ -61,6 +61,7 @@ export default function CampaignDetailsPage() {
   // Copy items state
   const [isCopyItemsOpen, setIsCopyItemsOpen] = useState(false);
   const [copyTargetCategory, setCopyTargetCategory] = useState<string | null>(null);
+  const [copySourceCategory, setCopySourceCategory] = useState<string | null>(null);
   const [itemsToCopy, setItemsToCopy] = useState<RationItem[]>([]);
 
   // Reset local state if edit mode is cancelled or if the base data changes while NOT in edit mode.
@@ -349,8 +350,16 @@ export default function CampaignDetailsPage() {
     });
   }, [editableCampaign]);
   
-  const itemsAvailableToCopy = useMemo(() => {
+  const sourceCategoriesForCopy = useMemo(() => {
     if (!editableCampaign || !copyTargetCategory) return [];
+    return Object.keys(editableCampaign.rationLists).filter(
+      (cat) => cat !== copyTargetCategory && editableCampaign.rationLists[cat].length > 0
+    );
+  }, [editableCampaign, copyTargetCategory]);
+  
+  const itemsAvailableToCopy = useMemo(() => {
+    if (!editableCampaign || !copyTargetCategory || !copySourceCategory) return [];
+    
     // Get names of items already in the target category list
     const currentItemNames = new Set(
         (editableCampaign.rationLists[copyTargetCategory] || [])
@@ -358,19 +367,14 @@ export default function CampaignDetailsPage() {
         .filter(Boolean)
     );
 
-    const allItems = Object.values(editableCampaign.rationLists).flat();
-    const uniqueItemsMap = new Map<string, RationItem>();
+    const sourceItems = editableCampaign.rationLists[copySourceCategory] || [];
 
-    allItems.forEach(item => {
+    // Filter out items from the source that are already in the target
+    return sourceItems.filter(item => {
         const trimmedName = item.name.toLowerCase().trim();
-        // Add to map if it's not a duplicate within all items AND not already in the target category
-        if (trimmedName && !uniqueItemsMap.has(trimmedName) && !currentItemNames.has(trimmedName)) {
-            uniqueItemsMap.set(trimmedName, item);
-        }
+        return trimmedName && !currentItemNames.has(trimmedName);
     });
-    
-    return Array.from(uniqueItemsMap.values());
-  }, [editableCampaign, copyTargetCategory]);
+  }, [editableCampaign, copyTargetCategory, copySourceCategory]);
 
   const handleConfirmCopy = () => {
     if (!editableCampaign || !copyTargetCategory || itemsToCopy.length === 0) return;
@@ -386,8 +390,10 @@ export default function CampaignDetailsPage() {
 
     handleFieldChange('rationLists', newRationLists);
 
+    // Reset all copy states
     setIsCopyItemsOpen(false);
     setCopyTargetCategory(null);
+    setCopySourceCategory(null);
     setItemsToCopy([]);
   };
 
@@ -405,7 +411,15 @@ export default function CampaignDetailsPage() {
                 <Button onClick={() => handleAddItem(memberCount)}>
                   <Plus className="mr-2 h-4 w-4" /> Add Item
                 </Button>
-                <Button variant="outline" onClick={() => { setCopyTargetCategory(memberCount); setItemsToCopy([]); setIsCopyItemsOpen(true); }}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setCopyTargetCategory(memberCount);
+                    setCopySourceCategory(null);
+                    setItemsToCopy([]);
+                    setIsCopyItemsOpen(true);
+                  }}
+                >
                   <Copy className="mr-2 h-4 w-4" /> Copy Items
                 </Button>
               </div>
@@ -729,67 +743,120 @@ export default function CampaignDetailsPage() {
         </Card>
       </main>
 
-      <Dialog open={isCopyItemsOpen} onOpenChange={setIsCopyItemsOpen}>
+      <Dialog 
+        open={isCopyItemsOpen} 
+        onOpenChange={(isOpen) => {
+            setIsCopyItemsOpen(isOpen);
+            if (!isOpen) {
+                // Reset all states on close
+                setCopyTargetCategory(null);
+                setCopySourceCategory(null);
+                setItemsToCopy([]);
+            }
+        }}
+      >
         <DialogContent className="sm:max-w-[525px]">
             <DialogHeader>
-                <DialogTitle>Copy Items to "{copyTargetCategory}" List</DialogTitle>
-                <DialogDescription>Select items from other lists to add them to the current list.</DialogDescription>
+                <DialogTitle>
+                    {copySourceCategory 
+                        ? `Copy from "${copySourceCategory}" to "${copyTargetCategory}"`
+                        : `Copy items to "${copyTargetCategory}" list`
+                    }
+                </DialogTitle>
+                <DialogDescription>
+                    {copySourceCategory
+                        ? 'Select items to add to the current list.'
+                        : 'First, select a category to copy items from.'
+                    }
+                </DialogDescription>
             </DialogHeader>
-            <ScrollArea className="h-72 w-full rounded-md border p-4">
-                <div className="space-y-4">
-                     {itemsAvailableToCopy.length > 0 && (
-                        <>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="copy-all"
-                                    checked={
-                                        itemsToCopy.length > 0 && itemsToCopy.length === itemsAvailableToCopy.length
-                                            ? true
-                                            : itemsToCopy.length > 0
-                                            ? 'indeterminate'
-                                            : false
-                                    }
-                                    onCheckedChange={(checked) => {
-                                        setItemsToCopy(checked ? itemsAvailableToCopy : []);
-                                    }}
-                                />
-                                <label
-                                    htmlFor="copy-all"
-                                    className="text-sm font-bold leading-none"
+
+            {!copySourceCategory ? (
+                <>
+                    <div className="py-4 space-y-2 max-h-72 overflow-y-auto">
+                        {sourceCategoriesForCopy.length > 0 ? (
+                            sourceCategoriesForCopy.map(category => (
+                                <Button
+                                    key={category}
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() => setCopySourceCategory(category)}
                                 >
-                                    Select All ({itemsAvailableToCopy.length})
-                                </label>
-                            </div>
-                            <Separator />
-                        </>
-                    )}
-                    {itemsAvailableToCopy.map(item => (
-                        <div key={item.id} className="flex items-center space-x-2">
-                            <Checkbox 
-                                id={`copy-${item.id}`}
-                                checked={itemsToCopy.some(i => i.id === item.id)}
-                                onCheckedChange={(checked) => {
-                                    if (checked) {
-                                        setItemsToCopy(prev => [...prev, item]);
-                                    } else {
-                                        setItemsToCopy(prev => prev.filter(i => i.id !== item.id));
-                                    }
-                                }}
-                            />
-                            <label htmlFor={`copy-${item.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                {item.name} ({item.quantity} - Rupee {item.price})
-                            </label>
+                                    {category === 'General' ? 'General' : `For ${category} Members`}
+                                </Button>
+                            ))
+                        ) : (
+                            <p className="text-center text-muted-foreground py-8">No other categories with items exist to copy from.</p>
+                        )}
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsCopyItemsOpen(false)}>Cancel</Button>
+                    </DialogFooter>
+                </>
+            ) : (
+                <>
+                    <ScrollArea className="h-72 w-full rounded-md border p-4 mt-4">
+                        <div className="space-y-4">
+                            {itemsAvailableToCopy.length > 0 ? (
+                                <>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id="copy-all"
+                                            checked={
+                                                itemsToCopy.length > 0 && itemsToCopy.length === itemsAvailableToCopy.length
+                                                    ? true
+                                                    : itemsToCopy.length > 0
+                                                    ? 'indeterminate'
+                                                    : false
+                                            }
+                                            onCheckedChange={(checked) => {
+                                                setItemsToCopy(checked ? itemsAvailableToCopy : []);
+                                            }}
+                                        />
+                                        <label
+                                            htmlFor="copy-all"
+                                            className="text-sm font-bold leading-none"
+                                        >
+                                            Select All ({itemsAvailableToCopy.length})
+                                        </label>
+                                    </div>
+                                    <Separator />
+                                </>
+                            ) : null}
+                            {itemsAvailableToCopy.map(item => (
+                                <div key={item.id} className="flex items-center space-x-2">
+                                    <Checkbox 
+                                        id={`copy-${item.id}`}
+                                        checked={itemsToCopy.some(i => i.id === item.id)}
+                                        onCheckedChange={(checked) => {
+                                            if (checked) {
+                                                setItemsToCopy(prev => [...prev, item]);
+                                            } else {
+                                                setItemsToCopy(prev => prev.filter(i => i.id !== item.id));
+                                            }
+                                        }}
+                                    />
+                                    <label htmlFor={`copy-${item.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {item.name} ({item.quantity} - Rupee {item.price})
+                                    </label>
+                                </div>
+                            ))}
+                            {itemsAvailableToCopy.length === 0 && <p className="text-muted-foreground text-center">No new items to copy from this category.</p>}
                         </div>
-                    ))}
-                    {itemsAvailableToCopy.length === 0 && <p className="text-muted-foreground text-center">No new items to copy.</p>}
-                </div>
-            </ScrollArea>
-            <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCopyItemsOpen(false)}>Cancel</Button>
-                <Button onClick={handleConfirmCopy} disabled={itemsToCopy.length === 0}>
-                    Add {itemsToCopy.length > 0 ? itemsToCopy.length : ''} Selected Item(s)
-                </Button>
-            </DialogFooter>
+                    </ScrollArea>
+                    <DialogFooter className="pt-4 sm:justify-between">
+                        <Button variant="ghost" onClick={() => setCopySourceCategory(null)}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                        </Button>
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => setIsCopyItemsOpen(false)}>Cancel</Button>
+                            <Button onClick={handleConfirmCopy} disabled={itemsToCopy.length === 0}>
+                                Add {itemsToCopy.length > 0 ? itemsToCopy.length : ''} Selected Item(s)
+                            </Button>
+                        </div>
+                    </DialogFooter>
+                </>
+            )}
         </DialogContent>
       </Dialog>
     </div>
