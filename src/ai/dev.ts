@@ -9,3 +9,4 @@ import '@/ai/flows/extract-dynamic-form.ts';
 import '@/ai/flows/create-lead-story.ts';
 import '@/ai/flows/extract-education-findings.ts';
 import '@/ai/flows/create-education-story.ts';
+import '@/ai/flows/extract-transaction-id.ts';
