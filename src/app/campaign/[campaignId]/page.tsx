@@ -566,27 +566,32 @@ export default function CampaignDetailsPage() {
             <h1 className="text-3xl font-bold">{editableCampaign.name}</h1>
         </div>
         
-        <div className="flex flex-wrap gap-2 border-b mb-4">
-            {canReadSummary && (
-              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                  <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
-              </Button>
-            )}
-            {canReadRation && (
-              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary" data-active="true">
-                  <Link href={`/campaign/${campaignId}`}>{editableCampaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
-              </Button>
-            )}
-            {canReadBeneficiaries && (
-              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                  <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
-              </Button>
-            )}
-             {canReadDonations && (
-              <Button variant="ghost" asChild className="rounded-b-none border-b-2 border-transparent data-[active=true]:border-primary data-[active=true]:text-primary">
-                  <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
-              </Button>
-            )}
+        <div className="border-b mb-4">
+            <ScrollArea className="w-full whitespace-nowrap">
+                <div className="flex w-max space-x-4">
+                    {canReadSummary && (
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
+                          <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
+                      </Button>
+                    )}
+                    {canReadRation && (
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
+                          <Link href={`/campaign/${campaignId}`}>{editableCampaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
+                      </Button>
+                    )}
+                    {canReadBeneficiaries && (
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
+                          <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
+                      </Button>
+                    )}
+                     {canReadDonations && (
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
+                          <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
+                      </Button>
+                    )}
+                </div>
+                <ScrollBar orientation="horizontal" />
+            </ScrollArea>
         </div>
 
         <Card>
