@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -183,6 +184,28 @@ export default function CampaignSummaryPage() {
 
         const beneficiaryChartData = Object.entries(beneficiaryStatusData).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
 
+        const beneficiaryCategoryData = beneficiaries.reduce((acc, beneficiary) => {
+            const members = beneficiary.members;
+            const categoryKey = members && members > 0 ? `${members} Members` : 'General';
+            
+            if (!acc[categoryKey]) {
+                acc[categoryKey] = { count: 0, totalAmount: 0 };
+            }
+            acc[categoryKey].count++;
+            acc[categoryKey].totalAmount += beneficiary.kitAmount || 0;
+            
+            return acc;
+        }, {} as Record<string, { count: number; totalAmount: number }>);
+
+        const beneficiaryCategoryBreakdown = Object.entries(beneficiaryCategoryData).map(([name, data]) => ({
+            name,
+            ...data
+        })).sort((a, b) => {
+            if (a.name === 'General') return 1;
+            if (b.name === 'General') return -1;
+            return (parseInt(b.name) || 0) - (parseInt(a.name) || 0);
+        });
+
         const donationChartData = (() => {
             let filteredDonations = donations;
             if (donationChartFilter !== 'All') {
@@ -204,6 +227,7 @@ export default function CampaignSummaryPage() {
             fundingProgress,
             pendingProgress,
             beneficiaryChartData,
+            beneficiaryCategoryBreakdown,
             donationChartData,
             totalBeneficiaries: beneficiaries.length,
             targetAmount: campaign.targetAmount,
@@ -225,8 +249,12 @@ export default function CampaignSummaryPage() {
         setIsSharing(true);
 
         const remainingToCollectText = summaryData.remainingToCollect > 0 
-            ? `*Remaining to Collect: Rupee ${summaryData.remainingToCollect.toLocaleString()}*`
+            ? `*Remaining to Collect: Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*`
             : `*Goal Achieved! Thank you for your support!*`;
+
+        const categoryBreakdownText = summaryData.beneficiaryCategoryBreakdown.length > 0 
+            ? `\n*Beneficiary Breakdown:*\n${summaryData.beneficiaryCategoryBreakdown.map(item => `${item.name}: ${item.count} beneficiaries (Rupee ${item.totalAmount.toLocaleString('en-IN')})`).join('\n')}`
+            : '';
 
         const shareText = `
 *Help Us Support the Community!*
@@ -235,11 +263,11 @@ export default function CampaignSummaryPage() {
 ${campaign.description || ''}
 
 *Financial Summary:*
-Target Amount: Rupee ${(summaryData.targetAmount || 0).toLocaleString()}
-Verified Donations: Rupee ${summaryData.verifiedDonations.toLocaleString()}
+Target Amount: Rupee ${(summaryData.targetAmount || 0).toLocaleString('en-IN')}
+Verified Donations: Rupee ${summaryData.verifiedDonations.toLocaleString('en-IN')}
 ${remainingToCollectText}
 
-We are providing aid to *${summaryData.totalBeneficiaries} beneficiaries*.
+We are providing aid to *${summaryData.totalBeneficiaries} beneficiaries* in total.${categoryBreakdownText}
 
 Please donate and share this message. Every contribution helps!
         `.trim().replace(/^\s+/gm, '');
@@ -443,7 +471,7 @@ Please donate and share this message. Every contribution helps!
                                             placeholder="e.g. 100000"
                                         />
                                     ) : (
-                                        <p className="mt-1 text-lg font-semibold">Rupee {campaign.targetAmount?.toLocaleString() ?? '0.00'}</p>
+                                        <p className="mt-1 text-lg font-semibold">Rupee {campaign.targetAmount?.toLocaleString('en-IN') ?? '0.00'}</p>
                                     )}
                                 </div>
                                 <div className="space-y-1">
@@ -505,7 +533,7 @@ Please donate and share this message. Every contribution helps!
                                 <Gift className="h-4 w-4 text-green-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.verifiedDonations.toLocaleString() ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.verifiedDonations.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -514,7 +542,7 @@ Please donate and share this message. Every contribution helps!
                                 <Hourglass className="h-4 w-4 text-orange-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString() ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -523,12 +551,12 @@ Please donate and share this message. Every contribution helps!
                                 <Target className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString() ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Beneficiary Breakdown</CardTitle>
+                                <CardTitle className="text-sm font-medium">Beneficiary Status</CardTitle>
                                 <Users className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
@@ -551,7 +579,7 @@ Please donate and share this message. Every contribution helps!
                             <CardHeader>
                                 <CardTitle>Funding Progress</CardTitle>
                                 <CardDescription>
-                                    Rupee {summaryData?.verifiedDonations.toLocaleString() ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString()} funded from verified donations.
+                                    Rupee {summaryData?.verifiedDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from verified donations.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -577,6 +605,29 @@ Please donate and share this message. Every contribution helps!
                                         <span className="h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
                                         Pending
                                     </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="lg:col-span-4">
+                            <CardHeader>
+                                <CardTitle>Beneficiaries by Category</CardTitle>
+                                <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    {summaryData?.beneficiaryCategoryBreakdown.map((item) => (
+                                        <div key={item.name} className="flex flex-wrap justify-between items-center text-sm gap-2">
+                                            <span className="font-medium text-muted-foreground">{item.name}</span>
+                                            <div className="flex items-center gap-4 text-right">
+                                                <span className="text-foreground">{item.count} beneficiaries</span>
+                                                <span className="font-mono text-foreground w-32 text-right">Rupee {item.totalAmount.toLocaleString('en-IN')}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {summaryData?.beneficiaryCategoryBreakdown.length === 0 && (
+                                        <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -609,7 +660,7 @@ Please donate and share this message. Every contribution helps!
                                             axisLine={false}
                                         />
                                         <YAxis
-                                            tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`}
+                                            tickFormatter={(value) => `Rupee ${Number(value).toLocaleString('en-IN')}`}
                                         />
                                         <ChartTooltip
                                             cursor={false}
