@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -96,8 +97,12 @@ export default function CampaignDetailsPage() {
     }
     return generalList.reduce((acc, item) => {
         if (item.name) {
+            const unitPrice = (item.quantity && item.quantity > 0) 
+                ? (item.price || 0) / item.quantity
+                : (item.price || 0);
+
             acc[item.name.toLowerCase()] = {
-                price: item.price || 0,
+                price: unitPrice,
                 quantityType: item.quantityType || '',
             };
         }
@@ -105,10 +110,10 @@ export default function CampaignDetailsPage() {
     }, {} as Record<string, { price: number; quantityType: string }>);
   }, [editableCampaign?.rationLists]);
 
-  const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
-  const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
-  const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
-  const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
+  const canReadSummary = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.campaigns.summary.read', false);
+  const canReadRation = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.campaigns.ration.read', false);
+  const canReadBeneficiaries = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.campaigns.beneficiaries.read', false);
+  const canReadDonations = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.campaigns.donations.read', false);
   const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.update', false) || get(userProfile, 'permissions.campaigns.ration.update', false);
 
   const isLoading = isCampaignLoading || isProfileLoading;
@@ -257,11 +262,11 @@ export default function CampaignDetailsPage() {
                 const total = calculateTotal(items);
 
                 const headers = isGeneral
-                    ? ['#', 'Item Name', 'Quantity Type', 'Notes', 'Price per Unit (Rupee)']
+                    ? ['#', 'Item Name', 'Quantity', 'Quantity Type', 'Price per Unit (Rupee)']
                     : ['#', 'Item Name', 'Quantity', 'Type', 'Notes', 'Total Price (Rupee)'];
 
                 const body = items.map((item, index) => isGeneral ? [
-                    index + 1, item.name, item.quantityType, item.notes, item.price
+                    index + 1, item.name, item.quantity, item.quantityType, item.price
                 ] : [
                     index + 1, item.name, item.quantity, item.quantityType, item.notes, item.price
                 ]);
@@ -285,7 +290,7 @@ export default function CampaignDetailsPage() {
 
                 const ws = XLSX.utils.aoa_to_sheet(sheetData);
                 ws['!cols'] = isGeneral
-                    ? [{ wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 15 }]
+                    ? [{ wch: 5 }, { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 15 }]
                     : [{ wch: 5 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 15 }];
                 XLSX.utils.book_append_sheet(wb, ws, categoryTitle.slice(0, 31));
             }
@@ -333,11 +338,11 @@ export default function CampaignDetailsPage() {
                 const categoryTitle = getCategoryLabel(memberCount);
                 
                 const headers = isGeneral
-                    ? [['#', 'Item Name', 'Quantity Type', 'Notes', 'Price per Unit']]
+                    ? [['#', 'Item Name', 'Quantity', 'Quantity Type', 'Price per Unit']]
                     : [['#', 'Item Name', 'Qty', 'Type', 'Notes', 'Total Price']];
 
                 const body: (string | number)[][] = items.map((item, index) => isGeneral ? [
-                    index + 1, item.name, item.quantityType || '', item.notes, `Rupee ${(item.price || 0).toFixed(2)}`
+                    index + 1, item.name, item.quantity, item.quantityType || '', `Rupee ${(item.price || 0).toFixed(2)}`
                 ] : [
                     index + 1, item.name, item.quantity, item.quantityType || '', item.notes, `Rupee ${(item.price || 0).toFixed(2)}`
                 ]);
@@ -495,14 +500,17 @@ export default function CampaignDetailsPage() {
                   <TableHead className="w-[50px]">#</TableHead>
                   <TableHead className="min-w-[200px]">Item Name</TableHead>
                   {isGeneral ? (
-                    <TableHead className="min-w-[150px]">Quantity Type</TableHead>
+                    <>
+                      <TableHead className="min-w-[100px]">Quantity</TableHead>
+                      <TableHead className="min-w-[150px]">Quantity Type</TableHead>
+                    </>
                   ) : (
                     <>
                       <TableHead className="min-w-[100px]">Quantity</TableHead>
                       <TableHead className="min-w-[120px]">Type</TableHead>
+                      <TableHead className="min-w-[150px]">Notes</TableHead>
                     </>
                   )}
-                  <TableHead className="min-w-[150px]">Notes</TableHead>
                   <TableHead className="min-w-[150px] text-right">{isGeneral ? 'Price per Unit (Rupee)' : 'Total Price (Rupee)'}</TableHead>
                   {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
@@ -520,22 +528,33 @@ export default function CampaignDetailsPage() {
                       />
                     </TableCell>
                     {isGeneral ? (
-                        <TableCell>
-                            <Select
-                                value={item.quantityType || ''}
-                                onValueChange={value => handleItemChange(memberCount, item.id, 'quantityType', value)}
-                                disabled={!editMode || !canUpdate}
-                            >
-                                <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                {quantityTypes.map(type => (
-                                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                                ))}
-                                </SelectContent>
-                            </Select>
-                        </TableCell>
+                        <>
+                           <TableCell>
+                                <Input
+                                    type="number"
+                                    value={item.quantity || 0}
+                                    onChange={e => handleItemChange(memberCount, item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                    placeholder="e.g. 1"
+                                    disabled={!editMode || !canUpdate}
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Select
+                                    value={item.quantityType || ''}
+                                    onValueChange={value => handleItemChange(memberCount, item.id, 'quantityType', value)}
+                                    disabled={!editMode || !canUpdate}
+                                >
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                    {quantityTypes.map(type => (
+                                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                            </TableCell>
+                        </>
                     ) : (
                         <>
                             <TableCell>
@@ -550,16 +569,16 @@ export default function CampaignDetailsPage() {
                             <TableCell className="text-sm text-muted-foreground">
                                 {item.quantityType || 'N/A'}
                             </TableCell>
+                            <TableCell>
+                                <Input
+                                    value={item.notes || ''}
+                                    onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)}
+                                    placeholder="e.g. brand, quality"
+                                    disabled={!editMode || !canUpdate}
+                                />
+                            </TableCell>
                         </>
                     )}
-                    <TableCell>
-                      <Input
-                        value={item.notes || ''}
-                        onChange={e => handleItemChange(memberCount, item.id, 'notes', e.target.value)}
-                        placeholder="e.g. @60/kg"
-                        disabled={!editMode || !canUpdate}
-                      />
-                    </TableCell>
                     <TableCell>
                       <Input
                         type="number"
@@ -695,7 +714,7 @@ export default function CampaignDetailsPage() {
                     <CardTitle>{editableCampaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</CardTitle>
                     {editableCampaign.category === 'Ration' && (
                         <div className="text-sm text-muted-foreground mt-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                                 <div className="space-y-1">
                                     <Label htmlFor="priceDate">Price Date</Label>
                                     <Input
