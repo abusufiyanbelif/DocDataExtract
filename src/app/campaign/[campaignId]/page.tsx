@@ -77,12 +77,24 @@ export default function CampaignDetailsPage() {
       setEditableCampaign(JSON.parse(JSON.stringify(campaign)));
     }
   }, [editMode, campaign])
+  
+  const getCategoryLabel = (category: string | null): string => {
+    if (!category) return '';
+    if (category === 'General Item List' || category === 'General Members') {
+        return 'General Item List';
+    }
+    if (!isNaN(Number(category))) {
+      return `${category} Members`;
+    }
+    return category;
+  };
 
   const masterPriceList = useMemo(() => {
-    if (!editableCampaign?.rationLists?.['General Item List']) {
+    const generalList = editableCampaign?.rationLists?.['General Item List'] || editableCampaign?.rationLists?.['General Members'];
+    if (!generalList) {
         return {};
     }
-    return editableCampaign.rationLists['General Item List'].reduce((acc, item) => {
+    return generalList.reduce((acc, item) => {
         if (item.name) {
             acc[item.name.toLowerCase()] = {
                 price: item.price || 0,
@@ -154,8 +166,8 @@ export default function CampaignDetailsPage() {
         // Create a new item object with the changed field
         const newItem = { ...item, [field]: value };
 
-        // If we are NOT in the General list, apply dynamic pricing
-        if (memberCount !== 'General Item List') {
+        const isGeneral = memberCount === 'General Item List' || memberCount === 'General Members';
+        if (!isGeneral) {
             const itemNameLower = String(newItem.name || '').toLowerCase();
             const masterItem = masterPriceList[itemNameLower];
 
@@ -226,8 +238,8 @@ export default function CampaignDetailsPage() {
     }
 
     const sortedMemberCategories = Object.keys(rationLists).sort((a, b) => {
-        if (a === 'General Item List') return -1;
-        if (b === 'General Item List') return 1;
+        if (a.includes('General')) return -1;
+        if (b.includes('General')) return 1;
         return Number(b) - Number(a);
     });
 
@@ -238,8 +250,8 @@ export default function CampaignDetailsPage() {
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
             if (items.length > 0) {
-                const isGeneral = memberCount === 'General Item List';
-                const categoryTitle = isGeneral ? 'General Item List' : `For ${memberCount} Members`;
+                const isGeneral = memberCount.includes('General');
+                const categoryTitle = getCategoryLabel(memberCount);
                 const total = calculateTotal(items);
 
                 const headers = isGeneral
@@ -314,9 +326,9 @@ export default function CampaignDetailsPage() {
         sortedMemberCategories.forEach((memberCount) => {
             const items = rationLists[memberCount];
             if (items.length > 0) {
-                const isGeneral = memberCount === 'General Item List';
+                const isGeneral = memberCount.includes('General');
                 const total = calculateTotal(items);
-                const categoryTitle = isGeneral ? 'General Item List' : `For ${memberCount} Members`;
+                const categoryTitle = getCategoryLabel(memberCount);
                 
                 const headers = isGeneral
                     ? [['#', 'Item Name', 'Quantity Type', 'Notes', 'Price per Unit']]
@@ -387,8 +399,8 @@ export default function CampaignDetailsPage() {
   const memberCategories = useMemo(() => {
     if (!editableCampaign) return [];
     return Object.keys(editableCampaign.rationLists).sort((a, b) => {
-        if (a === 'General Item List') return -1;
-        if (b === 'General Item List') return 1;
+        if (a.includes('General')) return -1;
+        if (b.includes('General')) return 1;
         return Number(b) - Number(a);
     });
   }, [editableCampaign]);
@@ -443,7 +455,7 @@ export default function CampaignDetailsPage() {
   const renderRationTable = (memberCount: string) => {
     const items = editableCampaign?.rationLists?.[memberCount] || [];
     const total = calculateTotal(items);
-    const isGeneral = memberCount === 'General Item List';
+    const isGeneral = memberCount.includes('General');
 
     return (
       <Card>
@@ -799,7 +811,7 @@ export default function CampaignDetailsPage() {
                         <ScrollArea className="w-full whitespace-nowrap rounded-md">
                             <TabsList className="justify-start">
                                 {memberCategories.map(count => (
-                                    <TabsTrigger key={count} value={count}>{count === 'General Item List' ? 'General Item List' : `For ${count} Members`}</TabsTrigger>
+                                    <TabsTrigger key={count} value={count}>{getCategoryLabel(count)}</TabsTrigger>
                                 ))}
                             </TabsList>
                             <ScrollBar orientation="horizontal" />
@@ -840,8 +852,8 @@ export default function CampaignDetailsPage() {
             <DialogHeader>
                 <DialogTitle>
                     {copySourceCategory 
-                        ? `Copy from "${copySourceCategory === 'General Item List' ? 'General Item List' : `For ${copySourceCategory} Members`}" to "For ${copyTargetCategory} Members"`
-                        : `Copy items to "For ${copyTargetCategory}" list`
+                        ? `Copy from "${getCategoryLabel(copySourceCategory)}" to "${getCategoryLabel(copyTargetCategory)}"`
+                        : `Copy items to "${getCategoryLabel(copyTargetCategory)}"`
                     }
                 </DialogTitle>
                 <DialogDescription>
@@ -863,7 +875,7 @@ export default function CampaignDetailsPage() {
                                     className="w-full justify-start"
                                     onClick={() => setCopySourceCategory(category)}
                                 >
-                                    {category === 'General Item List' ? 'General Item List' : `For ${category} Members`}
+                                    {getCategoryLabel(category)}
                                 </Button>
                             ))
                         ) : (
