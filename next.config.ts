@@ -1,7 +1,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['handlebars', 'genkit', '@genkit-ai/google-genai', '@genkit-ai/next'],
+  serverExternalPackages: ['handlebars', 'genkit', '@genkit-ai/google-genai', '@genkit-ai/next', 'firebase-admin'],
   images: {
     remotePatterns: [
       {
