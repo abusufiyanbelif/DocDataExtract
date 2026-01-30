@@ -132,7 +132,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             name="name"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel>Full Name *</FormLabel>
                 <FormControl>
                     <Input placeholder="e.g. Saleem Khan" {...field} />
                 </FormControl>
@@ -259,7 +259,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             name="referralBy"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Referred By</FormLabel>
+                <FormLabel>Referred By *</FormLabel>
                 <FormControl>
                     <Input placeholder="e.g. Local NGO" {...field} />
                 </FormControl>
@@ -272,7 +272,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                 name="kitAmount"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Kit Amount (Rupee)</FormLabel>
+                    <FormLabel>Kit Amount (Rupee) *</FormLabel>
                     <FormControl>
                         <Input
                             type="number"
@@ -291,7 +291,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             name="status"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Status *</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                     <SelectTrigger>

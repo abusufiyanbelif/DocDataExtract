@@ -90,7 +90,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 name="donorName"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Donor Name</FormLabel>
+                    <FormLabel>Donor Name *</FormLabel>
                     <FormControl>
                         <Input placeholder="e.g. John Doe" {...field} />
                     </FormControl>
@@ -117,7 +117,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
             name="referral"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Referral</FormLabel>
+                <FormLabel>Referral *</FormLabel>
                 <FormControl>
                     <Input placeholder="Referred by..." {...field} />
                 </FormControl>
@@ -131,7 +131,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 name="amount"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Amount (Rupee)</FormLabel>
+                    <FormLabel>Amount (Rupee) *</FormLabel>
                     <FormControl>
                         <Input type="number" {...field} />
                     </FormControl>
@@ -144,7 +144,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 name="type"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>Type *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                         <SelectTrigger>
@@ -168,7 +168,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 name="paymentType"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Payment</FormLabel>
+                    <FormLabel>Payment *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                         <SelectTrigger>
@@ -191,7 +191,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 name="donationDate"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Donation Date</FormLabel>
+                    <FormLabel>Donation Date *</FormLabel>
                     <FormControl>
                         <Input type="date" {...field} />
                     </FormControl>
@@ -204,7 +204,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 name="status"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Status *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                         <SelectTrigger>

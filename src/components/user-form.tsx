@@ -200,7 +200,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>Full Name *</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. Moosa Shaikh" {...field} disabled={isFormDisabled} />
                   </FormControl>
@@ -213,15 +213,12 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{isEditing ? 'Contact Email' : 'Authentication Email (Optional)'}</FormLabel>
+                  <FormLabel>Contact Email *</FormLabel>
                   <FormControl>
                     <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled} />
                   </FormControl>
                   <FormDescription>
-                    {isEditing 
-                        ? "This is the user's contact email. It does not affect their login credentials."
-                        : "If provided, this will be the user's login email. Cannot be changed after creation."
-                    }
+                    Either Email or Phone is required. This is the user's contact email.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -232,11 +229,11 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                  <FormLabel>Phone Number *</FormLabel>
                   <FormControl>
                     <Input placeholder="10-digit mobile number" {...field} disabled={isFormDisabled} />
                   </FormControl>
-                  <FormDescription>Can be used for login if provided.</FormDescription>
+                  <FormDescription>Either Email or Phone is required. Can be used for login if provided.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -247,7 +244,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 name="loginId"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Login ID</FormLabel>
+                    <FormLabel>Login ID *</FormLabel>
                     <FormControl>
                         <Input placeholder="auto-generated from name" {...field} readOnly={!isCurrentUserAdmin && isEditing} disabled={isFormDisabled || (!isCurrentUserAdmin && isEditing)} />
                     </FormControl>
@@ -297,7 +294,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>Password *</FormLabel>
                             <FormControl>
                                 <Input 
                                     type="password"
@@ -371,7 +368,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm h-full">
                             <div className="space-y-0.5">
-                                <FormLabel>Administrator Privileges</FormLabel>
+                                <FormLabel>Administrator Privileges *</FormLabel>
                                 <FormDescription>
                                     Grants full access to all modules.
                                 </FormDescription>
@@ -391,7 +388,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     name="status"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Status</FormLabel>
+                        <FormLabel>Status *</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isFormDisabled}>
                             <FormControl>
                             <SelectTrigger>
