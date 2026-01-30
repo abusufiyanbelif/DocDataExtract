@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -31,9 +32,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -155,7 +153,7 @@ export default function CampaignDetailsPage() {
     return items.reduce((sum, item) => sum + Number(item.price || 0), 0);
   };
 
-  const handleDownload = (format: 'csv' | 'excel' | 'pdf') => {
+  const handleDownload = async (format: 'csv' | 'excel' | 'pdf') => {
     if (!campaign) {
       toast({
         title: 'No Data',
@@ -222,6 +220,7 @@ export default function CampaignDetailsPage() {
       document.body.removeChild(link);
 
     } else if (format === 'excel') {
+        const XLSX = await import('xlsx');
         const wb = XLSX.utils.book_new();
 
         sortedMemberCategories.forEach((memberCount) => {
@@ -263,6 +262,8 @@ export default function CampaignDetailsPage() {
         XLSX.writeFile(wb, `ration-details-${priceDate}.xlsx`);
 
     } else if (format === 'pdf') {
+        const { default: jsPDF } = await import('jspdf');
+        await import('jspdf-autotable');
         const doc = new jsPDF();
         let startY = 20;
 
@@ -862,3 +863,5 @@ export default function CampaignDetailsPage() {
     </div>
   );
 }
+
+    

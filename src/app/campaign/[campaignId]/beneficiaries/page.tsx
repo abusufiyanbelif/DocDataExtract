@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -49,7 +50,6 @@ import {
 import { BeneficiaryForm, type BeneficiaryFormData } from '@/components/beneficiary-form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import * as XLSX from 'xlsx';
 
 type SortKey = keyof Beneficiary | 'srNo';
 
@@ -238,7 +238,8 @@ export default function BeneficiariesPage() {
     }
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const XLSX = await import('xlsx');
     const headers = [
         'name', 'address', 'phone', 'members', 'earningMembers', 'male', 'female',
         'idProofType', 'idNumber', 'referralBy', 'kitAmount', 'status'
@@ -262,6 +263,7 @@ export default function BeneficiariesPage() {
     const reader = new FileReader();
     reader.onload = async (e) => {
         try {
+            const XLSX = await import('xlsx');
             const data = e.target?.result;
             const workbook = XLSX.read(data, { type: 'array' });
             const sheetName = workbook.SheetNames[0];
@@ -744,3 +746,5 @@ export default function BeneficiariesPage() {
     </div>
   );
 }
+
+    
