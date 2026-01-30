@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -73,7 +72,7 @@ export default function CampaignDetailsPage() {
   const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
   const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
   const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
-  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.update;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update || !!userProfile?.permissions?.campaigns?.ration?.update;
 
   const isLoading = isCampaignLoading || isProfileLoading;
 
@@ -863,5 +862,3 @@ export default function CampaignDetailsPage() {
     </div>
   );
 }
-
-    

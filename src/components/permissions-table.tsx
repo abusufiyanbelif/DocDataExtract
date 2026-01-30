@@ -86,7 +86,11 @@ export function PermissionsTable({ permissions, onPermissionChange, role, disabl
               />
             </TableCell>
             <TableCell className="text-center">
-              <Checkbox disabled={true} />
+              <Checkbox
+                checked={!!get(permissions, 'campaigns.update', false)}
+                onCheckedChange={handleCheckedChange('campaigns.update')}
+                disabled={isDisabled}
+              />
             </TableCell>
             <TableCell className="text-center">
               <Checkbox

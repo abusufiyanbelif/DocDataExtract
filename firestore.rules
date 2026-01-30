@@ -97,6 +97,7 @@ service cloud.firestore {
       
       // Updating a campaign document itself requires specific permissions
       allow update: if 
+        hasPermission(['campaigns'], 'update') ||
         isAdmin() ||
         (
           hasPermission(['campaigns', 'summary'], 'update') &&

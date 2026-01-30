@@ -105,7 +105,7 @@ export default function CampaignSummaryPage() {
     const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
     const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
     const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
-    const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.update;
+    const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update || !!userProfile?.permissions?.campaigns?.summary?.update;
 
     const handleSave = () => {
         if (!campaignDocRef || !userProfile || !canUpdate) return;
