@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -536,7 +535,7 @@ Please donate and share this message. Every contribution helps!
                         </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
+                                <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
                                 <Hourglass className="h-4 w-4 text-orange-500" />
                             </CardHeader>
                             <CardContent>
@@ -592,7 +591,7 @@ Please donate and share this message. Every contribution helps!
                                     </div>
                                     <div className="flex items-center">
                                         <span className="h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
-                                        Pending
+                                        Pending Verification
                                     </div>
                                 </div>
                             </CardContent>
@@ -712,5 +711,3 @@ Please donate and share this message. Every contribution helps!
         </div>
     );
 }
-
-    
