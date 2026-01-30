@@ -96,7 +96,6 @@ export default function CampaignSummaryPage() {
              setEditableCampaign({
                 name: campaign.name || '',
                 description: campaign.description || '',
-                targetAmount: campaign.targetAmount || 0,
                 startDate: campaign.startDate || '',
                 endDate: campaign.endDate || '',
                 category: campaign.category || 'General',
@@ -117,7 +116,6 @@ export default function CampaignSummaryPage() {
         const saveData = {
             name: editableCampaign.name || '',
             description: editableCampaign.description || '',
-            targetAmount: Number(editableCampaign.targetAmount) || 0,
             startDate: editableCampaign.startDate || '',
             endDate: editableCampaign.endDate || '',
             category: editableCampaign.category || 'General',
@@ -144,7 +142,6 @@ export default function CampaignSummaryPage() {
             setEditableCampaign({
                 name: campaign.name || '',
                 description: campaign.description || '',
-                targetAmount: campaign.targetAmount || 0,
                 startDate: campaign.startDate || '',
                 endDate: campaign.endDate || '',
                 category: campaign.category || 'General',
@@ -172,9 +169,9 @@ export default function CampaignSummaryPage() {
         const verifiedDonations = donationsByStatus['Verified'] || 0;
         const pendingDonations = donationsByStatus['Pending'] || 0;
 
-        const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + b.kitAmount, 0);
+        const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + (b.kitAmount || 0), 0);
         
-        const fundingGoal = campaign?.targetAmount || 0;
+        const fundingGoal = totalKitAmountRequired;
         const fundingProgress = fundingGoal > 0 ? (verifiedDonations / fundingGoal) * 100 : 0;
         const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
 
@@ -205,7 +202,12 @@ export default function CampaignSummaryPage() {
         })).sort((a, b) => {
             if (a.name === 'General') return 1;
             if (b.name === 'General') return -1;
-            return (parseInt(b.name) || 0) - (parseInt(a.name) || 0);
+            const aNum = parseInt(a.name);
+            const bNum = parseInt(b.name);
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return bNum - aNum;
+            }
+            return a.name.localeCompare(b.name);
         });
 
         const donationChartData = (() => {
@@ -232,8 +234,8 @@ export default function CampaignSummaryPage() {
             beneficiaryCategoryBreakdown,
             donationChartData,
             totalBeneficiaries: beneficiaries.length,
-            targetAmount: campaign.targetAmount,
-            remainingToCollect: Math.max(0, (campaign.targetAmount || 0) - verifiedDonations),
+            targetAmount: totalKitAmountRequired,
+            remainingToCollect: Math.max(0, totalKitAmountRequired - verifiedDonations),
         };
     }, [beneficiaries, donations, campaign, donationChartFilter]);
     
@@ -255,7 +257,7 @@ export default function CampaignSummaryPage() {
             : `*Goal Achieved! Thank you for your support!*`;
 
         const categoryBreakdownText = summaryData.beneficiaryCategoryBreakdown.length > 0 
-            ? `\n*Beneficiary Breakdown:*\n${summaryData.beneficiaryCategoryBreakdown.map(item => `${item.name}: ${item.count} beneficiaries (Rupee ${item.totalAmount.toLocaleString('en-IN')})`).join('\n')}`
+            ? `\n*Beneficiary Breakdown:*\n${summaryData.beneficiaryCategoryBreakdown.map(item => `${item.name}: ${item.count} ${item.count === 1 ? 'beneficiary' : 'beneficiaries'} (Rupee ${item.totalAmount.toLocaleString('en-IN')})`).join('\n')}`
             : '';
 
         const shareText = `
@@ -467,19 +469,8 @@ Please donate and share this message. Every contribution helps!
                             </div>
                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-1">
-                                    <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Target Amount</Label>
-                                    {editMode && canUpdate ? (
-                                        <Input
-                                            id="targetAmount"
-                                            type="number"
-                                            value={editableCampaign.targetAmount}
-                                            onChange={(e) => setEditableCampaign(p => ({...p, targetAmount: e.target.value as any}))}
-                                            className="mt-1"
-                                            placeholder="e.g. 100000"
-                                        />
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">Rupee {campaign.targetAmount?.toLocaleString('en-IN') ?? '0.00'}</p>
-                                    )}
+                                    <Label className="text-sm font-medium text-muted-foreground">Target Amount (Calculated)</Label>
+                                    <p className="mt-1 text-lg font-semibold">Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <Label htmlFor="category" className="text-sm font-medium text-muted-foreground">Category</Label>
@@ -533,7 +524,7 @@ Please donate and share this message. Every contribution helps!
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Verified Donations</CardTitle>
@@ -550,15 +541,6 @@ Please donate and share this message. Every contribution helps!
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Required for Beneficiaries</CardTitle>
-                                <Target className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -582,7 +564,7 @@ Please donate and share this message. Every contribution helps!
                             </CardContent>
                         </Card>
                         
-                        <Card className="col-span-1 lg:col-span-4">
+                        <Card className="col-span-1 lg:col-span-3">
                             <CardHeader>
                                 <CardTitle>Funding Progress</CardTitle>
                                 <CardDescription>
@@ -616,7 +598,7 @@ Please donate and share this message. Every contribution helps!
                             </CardContent>
                         </Card>
 
-                        <Card className="lg:col-span-4">
+                        <Card className="lg:col-span-3">
                             <CardHeader>
                                 <CardTitle>Beneficiaries by Category</CardTitle>
                                 <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
@@ -692,7 +674,7 @@ Please donate and share this message. Every contribution helps!
                             </CardContent>
                         </Card>
 
-                        <Card className="lg:col-span-2">
+                        <Card className="lg:col-span-1">
                             <CardHeader>
                                 <CardTitle>Beneficiary Status</CardTitle>
                             </CardHeader>
@@ -730,3 +712,5 @@ Please donate and share this message. Every contribution helps!
         </div>
     );
 }
+
+    
