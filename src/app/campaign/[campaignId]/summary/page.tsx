@@ -43,6 +43,7 @@ import {
 import type { ChartConfig } from '@/components/ui/chart';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { get } from '@/lib/utils';
 
 
 const donationTypeChartConfig = {
@@ -105,7 +106,7 @@ export default function CampaignSummaryPage() {
     const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
     const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
     const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
-    const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update || !!userProfile?.permissions?.campaigns?.summary?.update;
+    const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.update', false) || get(userProfile, 'permissions.campaigns.summary.update', false);
 
     const handleSave = () => {
         if (!campaignDocRef || !userProfile || !canUpdate) return;
@@ -337,7 +338,7 @@ Please donate and share this message. Every contribution helps!
                         {editMode ? (
                            <Input
                                 id="name"
-                                value={editableCampaign.name}
+                                value={editableCampaign.name || ''}
                                 onChange={(e) => setEditableCampaign(p => ({...p, name: e.target.value}))}
                                 className="text-3xl font-bold h-auto p-0 border-0 shadow-none focus-visible:ring-0"
                             />

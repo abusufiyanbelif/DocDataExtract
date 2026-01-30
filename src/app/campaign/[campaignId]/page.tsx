@@ -35,6 +35,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { get } from '@/lib/utils';
 
 export default function CampaignDetailsPage() {
   const params = useParams();
@@ -72,7 +73,7 @@ export default function CampaignDetailsPage() {
   const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
   const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
   const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
-  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update || !!userProfile?.permissions?.campaigns?.ration?.update;
+  const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.update', false) || get(userProfile, 'permissions.campaigns.ration.update', false);
 
   const isLoading = isCampaignLoading || isProfileLoading;
 
