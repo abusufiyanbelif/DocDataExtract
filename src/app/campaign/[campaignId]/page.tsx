@@ -427,15 +427,14 @@ export default function CampaignDetailsPage() {
               </div>
             )}
           </div>
-          <div className="overflow-x-auto">
-            <Table>
+          <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead className="w-[30%]">Item Name</TableHead>
-                  <TableHead className="w-[15%]">Quantity</TableHead>
-                  <TableHead>Notes</TableHead>
-                  <TableHead className="w-[120px] text-right">Price (Rupee)</TableHead>
+                  <TableHead className="min-w-[200px]">Item Name</TableHead>
+                  <TableHead className="min-w-[100px]">Quantity</TableHead>
+                  <TableHead className="min-w-[150px]">Notes</TableHead>
+                  <TableHead className="min-w-[120px] text-right">Price (Rupee)</TableHead>
                   {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -487,7 +486,6 @@ export default function CampaignDetailsPage() {
                 ))}
               </TableBody>
             </Table>
-          </div>
         </CardContent>
       </Card>
     );
