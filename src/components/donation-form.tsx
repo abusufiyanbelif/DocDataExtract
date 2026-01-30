@@ -34,6 +34,7 @@ const formSchema = z.object({
   amount: z.coerce.number().min(1, { message: "Amount must be at least 1." }),
   type: z.enum(['Zakat', 'Sadqa', 'Interest', 'Lillah', 'General']),
   paymentType: z.enum(['Cash', 'Online']),
+  transactionId: z.string().optional(),
   donationDate: z.string().min(1, { message: "Donation date is required."}),
   status: z.enum(['Verified', 'Pending', 'Canceled']),
   screenshotFile: z.any().optional(),
@@ -58,6 +59,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
       amount: donation?.amount || 0,
       type: donation?.type || 'General',
       paymentType: donation?.paymentType || 'Online',
+      transactionId: donation?.transactionId || '',
       donationDate: donation?.donationDate || new Date().toISOString().split('T')[0],
       status: donation?.status || 'Pending',
     },
@@ -66,6 +68,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   const { formState: { isSubmitting }, register, watch } = form;
   const [preview, setPreview] = useState<string | null>(donation?.screenshotUrl || null);
   const screenshotFile = watch('screenshotFile');
+  const paymentTypeValue = watch('paymentType');
 
   useEffect(() => {
     const fileList = screenshotFile as FileList | undefined;
@@ -200,6 +203,26 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 )}
             />
         </div>
+
+        {paymentTypeValue === 'Online' && (
+            <FormField
+                control={form.control}
+                name="transactionId"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Transaction ID</FormLabel>
+                    <FormControl>
+                        <Input placeholder="Optional, e.g., UPI ID" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormDescription>
+                        Providing a unique transaction ID helps prevent duplicate entries.
+                    </FormDescription>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+        )}
+        
         <div className="grid grid-cols-2 gap-4">
             <FormField
                 control={form.control}

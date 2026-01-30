@@ -83,6 +83,7 @@ export interface Donation extends DocumentData {
   referral: string;
   donationDate: string;
   status: 'Verified' | 'Pending' | 'Canceled';
+  transactionId?: string;
   screenshotUrl?: string;
   uploadedBy: string;
   uploadedById: string;

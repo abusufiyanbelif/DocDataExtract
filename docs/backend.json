@@ -438,6 +438,10 @@
           ],
           "description": "The method of payment for the donation."
         },
+        "transactionId": {
+          "type": "string",
+          "description": "A unique transaction identifier (e.g., UPI Transaction ID) for online payments. Helps prevent duplicate entries."
+        },
         "referral": {
           "type": "string",
           "description": "The person or entity that referred the donor."

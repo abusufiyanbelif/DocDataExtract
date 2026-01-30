@@ -142,16 +142,12 @@ export default function DonationsPage() {
     if (editingDonation && !canUpdate) return;
     if (!editingDonation && !canCreate) return;
 
-    if (!editingDonation && data.donorPhone && data.donorName) {
-        const isDuplicate = donations.some(d => 
-            d.donorName.toLowerCase() === data.donorName.toLowerCase() && 
-            d.donorPhone === data.donorPhone &&
-            d.campaignId === campaignId
-        );
+    if (data.transactionId && !editingDonation) {
+        const isDuplicate = donations.some(d => d.transactionId === data.transactionId && d.campaignId === campaignId);
         if (isDuplicate) {
             toast({
-                title: 'Duplicate Entry',
-                description: 'A donation with the same name and phone number already exists for this campaign.',
+                title: 'Duplicate Transaction ID',
+                description: 'A donation with this transaction ID already exists in this campaign.',
                 variant: 'destructive',
             });
             return;
@@ -298,7 +294,7 @@ export default function DonationsPage() {
                 <TableHeader>
                     <TableRow>
                         {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
-                        <TableHead className="w-[50px]">#</TableHead>
+                        <TableHead>#</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Donor Name</TableHead>
                         <TableHead>Receiver Name</TableHead>
@@ -307,6 +303,7 @@ export default function DonationsPage() {
                         <TableHead className="text-right">Amount (Rupee)</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Payment</TableHead>
+                        <TableHead>Transaction ID</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Screenshot</TableHead>
                         <TableHead>Uploaded By</TableHead>
@@ -316,7 +313,7 @@ export default function DonationsPage() {
                     {areDonationsLoading ? (
                     [...Array(3)].map((_, i) => (
                         <TableRow key={i}>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12}><Skeleton className="h-6 w-full" /></TableCell>
+                            <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13}><Skeleton className="h-6 w-full" /></TableCell>
                         </TableRow>
                     ))
                     ) : (donations && donations.length > 0) ? (
@@ -356,6 +353,7 @@ export default function DonationsPage() {
                             <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
                             <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
                             <TableCell><Badge variant="outline">{donation.paymentType}</Badge></TableCell>
+                            <TableCell>{donation.transactionId || 'N/A'}</TableCell>
                             <TableCell>{donation.donationDate}</TableCell>
                             <TableCell>
                                 {donation.screenshotUrl && (
@@ -369,7 +367,7 @@ export default function DonationsPage() {
                     ))
                     ) : (
                     <TableRow>
-                        <TableCell colSpan={(canUpdate || canDelete) ? 13 : 12} className="text-center h-24 text-muted-foreground">
+                        <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13} className="text-center h-24 text-muted-foreground">
                             No donations recorded yet.
                         </TableCell>
                     </TableRow>
