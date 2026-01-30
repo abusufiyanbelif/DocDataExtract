@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -33,7 +34,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { get } from '@/lib/utils';
 
@@ -594,50 +595,44 @@ export default function CampaignDetailsPage() {
                 <div>
                     <CardTitle>{editableCampaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</CardTitle>
                     {editableCampaign.category === 'Ration' && (
-                        <div className="text-sm text-muted-foreground mt-4 space-y-3">
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                                <div className="flex items-center gap-2">
-                                    <Label htmlFor="priceDate" className="text-nowrap">Price Date:</Label>
+                        <div className="text-sm text-muted-foreground mt-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                <div className="space-y-1">
+                                    <Label htmlFor="priceDate">Price Date</Label>
                                     <Input
                                     id="priceDate"
                                     type="date"
                                     value={editableCampaign.priceDate || ''}
                                     onChange={(e) => handleFieldChange( 'priceDate', e.target.value )}
-                                    className="w-fit"
                                     disabled={!editMode || !canUpdate}
                                     />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Label htmlFor="shopName" className="text-nowrap">Shop Name:</Label>
+                                <div className="space-y-1">
+                                    <Label htmlFor="shopName">Shop Name</Label>
                                     <Input
                                     id="shopName"
                                     value={editableCampaign.shopName || ''}
                                     onChange={(e) => handleFieldChange( 'shopName', e.target.value )}
-                                    className="w-fit"
                                     placeholder="Shop Name"
                                     disabled={!editMode || !canUpdate}
                                     />
                                 </div>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                                <div className="flex items-center gap-2">
-                                    <Label htmlFor="shopContact" className="text-nowrap">Shop Contact:</Label>
+                                <div className="space-y-1">
+                                    <Label htmlFor="shopContact">Shop Contact</Label>
                                     <Input
                                     id="shopContact"
                                     value={editableCampaign.shopContact || ''}
                                     onChange={(e) => handleFieldChange( 'shopContact', e.target.value )}
-                                    className="w-fit"
                                     placeholder="Contact Number"
                                     disabled={!editMode || !canUpdate}
                                     />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <Label htmlFor="shopAddress" className="text-nowrap">Shop Address:</Label>
+                                <div className="space-y-1">
+                                    <Label htmlFor="shopAddress">Shop Address</Label>
                                     <Input
                                     id="shopAddress"
                                     value={editableCampaign.shopAddress || ''}
                                     onChange={(e) => handleFieldChange( 'shopAddress', e.target.value )}
-                                    className="w-full max-w-xs"
                                     placeholder="Shop Address"
                                     disabled={!editMode || !canUpdate}
                                     />
@@ -718,16 +713,19 @@ export default function CampaignDetailsPage() {
              {editableCampaign.category === 'Ration' ? (
                 memberCategories.length > 0 ? (
                     <Tabs defaultValue={memberCategories[0]} className="w-full">
-                    <TabsList className="h-auto flex-wrap justify-start">
+                        <ScrollArea className="w-full whitespace-nowrap rounded-md">
+                            <TabsList className="justify-start">
+                                {memberCategories.map(count => (
+                                    <TabsTrigger key={count} value={count}>{count === 'General' ? 'General' : `For ${count} Members`}</TabsTrigger>
+                                ))}
+                            </TabsList>
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
                         {memberCategories.map(count => (
-                            <TabsTrigger key={count} value={count}>{count === 'General' ? 'General' : `For ${count} Members`}</TabsTrigger>
+                            <TabsContent key={count} value={count} className="mt-4">
+                                {renderRationTable(count)}
+                            </TabsContent>
                         ))}
-                    </TabsList>
-                    {memberCategories.map(count => (
-                        <TabsContent key={count} value={count} className="mt-4">
-                            {renderRationTable(count)}
-                        </TabsContent>
-                    ))}
                     </Tabs>
                 ) : (
                     <div className="text-center text-muted-foreground py-10">
