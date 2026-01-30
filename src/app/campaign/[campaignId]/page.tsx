@@ -91,7 +91,7 @@ export default function CampaignDetailsPage() {
   };
 
   const masterPriceList = useMemo(() => {
-    const generalList = editableCampaign?.rationLists?.['General Item List'] || editableCampaign?.rationLists?.['General Members'];
+    const generalList = editableCampaign?.rationLists?.['General Item List'];
     if (!generalList) {
         return {};
     }
@@ -169,25 +169,23 @@ export default function CampaignDetailsPage() {
     const updatedItems = newRationLists[memberCount].map(item => {
         if (item.id !== itemId) return item;
 
-        // Create a new item object with the changed field
         const newItem = { ...item, [field]: value };
 
-        const isGeneral = memberCount === 'General Item List' || memberCount === 'General Members';
-        if (!isGeneral) {
-            // Trim the name for a robust lookup
-            const itemNameLower = String(newItem.name || '').toLowerCase().trim();
-            const masterItem = masterPriceList[itemNameLower];
+        const isGeneral = memberCount === 'General Item List';
+        if (isGeneral) {
+            return newItem;
+        }
+        
+        const itemNameLower = String(newItem.name || '').toLowerCase().trim();
+        const masterItem = masterPriceList[itemNameLower];
 
-            if (masterItem) {
-                // If a matching item is found in the master list, update type and price
-                newItem.quantityType = masterItem.quantityType;
-                const newPrice = masterItem.price * (Number(newItem.quantity) || 0);
-                newItem.price = parseFloat(newPrice.toFixed(2));
-            } else {
-                // If no match, reset type and price
-                newItem.quantityType = '';
-                newItem.price = 0;
-            }
+        if (masterItem) {
+            newItem.quantityType = masterItem.quantityType;
+            const newPrice = masterItem.price * (Number(newItem.quantity) || 0);
+            newItem.price = parseFloat(newPrice.toFixed(2));
+        } else {
+            newItem.quantityType = '';
+            newItem.price = 0;
         }
         return newItem;
     });
@@ -407,10 +405,10 @@ export default function CampaignDetailsPage() {
   const memberCategories = useMemo(() => {
     if (!editableCampaign?.rationLists) return [];
     return Object.keys(editableCampaign.rationLists).sort((a, b) => {
-        const aIsGeneral = a.includes('General');
-        const bIsGeneral = b.includes('General');
-        if (aIsGeneral && !bIsGeneral) return -1;
-        if (!aIsGeneral && bIsGeneral) return 1;
+        const aIsGeneral = a === 'General Item List';
+        const bIsGeneral = b === 'General Item List';
+        if (aIsGeneral) return -1;
+        if (bIsGeneral) return 1;
         return Number(b) - Number(a);
     });
   }, [editableCampaign]);
@@ -444,10 +442,22 @@ export default function CampaignDetailsPage() {
   const handleConfirmCopy = () => {
     if (!editableCampaign || !copyTargetCategory || itemsToCopy.length === 0) return;
 
-    const newItems = itemsToCopy.map((item, index) => ({
-        ...item,
-        id: `${copyTargetCategory}-${Date.now()}-${index}`,
-    }));
+    const newItems = itemsToCopy.map((item, index) => {
+        const itemNameLower = String(item.name || '').toLowerCase().trim();
+        const masterItem = masterPriceList[itemNameLower];
+
+        const newItem: RationItem = {
+            id: `${copyTargetCategory}-${Date.now()}-${index}`,
+            name: item.name,
+            notes: item.notes || '',
+            // The quantity from the source list is copied over. The user can then change it.
+            quantity: item.quantity, 
+            // The quantity type and price are ALWAYS derived from the master list.
+            quantityType: masterItem ? masterItem.quantityType : '',
+            price: masterItem ? parseFloat((masterItem.price * (Number(item.quantity) || 0)).toFixed(2)) : 0
+        };
+        return newItem;
+    });
 
     const newRationLists = { ...editableCampaign.rationLists };
     const currentList = newRationLists[copyTargetCategory] || [];
@@ -501,9 +511,9 @@ export default function CampaignDetailsPage() {
                   <TableHead className="w-[50px]">#</TableHead>
                   <TableHead className="min-w-[250px]">Item Name</TableHead>
                   <TableHead className="w-28">Quantity</TableHead>
-                  <TableHead className="w-36">{isGeneral ? 'Quantity Type' : 'Type'}</TableHead>
+                  <TableHead className="w-36">Quantity Type</TableHead>
                   {!isGeneral && <TableHead className="min-w-[200px]">Notes</TableHead>}
-                  <TableHead className="w-48 text-right">{isGeneral ? 'Price per Unit (Rupee)' : 'Total Price (Rupee)'}</TableHead>
+                  <TableHead className="w-48 text-right">{isGeneral ? 'Price (Rupee)' : 'Total Price (Rupee)'}</TableHead>
                   {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
                 </TableRow>
               </TableHeader>
