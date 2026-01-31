@@ -41,7 +41,7 @@ export async function extractBillingDataFromText(
 
 const prompt = ai.definePrompt({
   name: 'extractBillingDataPrompt',
-  model: 'gemini-1.5-flash',
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are an expert in extracting data from bills and invoices.
 
   Please extract the following information from the text provided.

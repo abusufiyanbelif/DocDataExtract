@@ -10,7 +10,7 @@ import {ai} from '@/ai/genkit';
 export async function runDiagnosticCheck(): Promise<{ok: boolean; message: string}> {
     try {
         const response = await ai.generate({
-            model: 'gemini-1.5-flash',
+            model: 'googleai/gemini-1.5-flash',
             prompt: 'Reply with only the word: "OK"',
             config: {
                 temperature: 0,
@@ -25,17 +25,17 @@ export async function runDiagnosticCheck(): Promise<{ok: boolean; message: strin
         }
     } catch (error: any) {
         console.error("Genkit Diagnostics Check Failed:", error);
-        // Sanitize the error message for the client
+        
         let clientMessage = "An unexpected error occurred.";
         if (error.message) {
-            if (error.message.includes('API key not valid')) {
+            const lowerCaseMessage = error.message.toLowerCase();
+            if (lowerCaseMessage.includes('api key not valid')) {
                 clientMessage = 'The configured GEMINI_API_KEY is not valid. Please check your .env file.';
-            } else if (error.message.includes('404')) {
-                clientMessage = `The model was not found. This may indicate an API version mismatch or incorrect model name configuration. (Details: ${error.message})`;
-            } else if (error.message.includes('permission denied')) {
+            } else if (lowerCaseMessage.includes('not_found') || lowerCaseMessage.includes('not found') || lowerCaseMessage.includes('404')) {
+                clientMessage = `Model not found. The Genkit configuration or the model name might be incorrect. (Details: ${error.message})`;
+            } else if (lowerCaseMessage.includes('permission denied')) {
                  clientMessage = 'API permission denied. Ensure the Gemini API is enabled for your project in Google Cloud Console.';
-            }
-             else {
+            } else {
                  clientMessage = `The AI model returned an error: ${error.message}`;
             }
         }
