@@ -10,7 +10,7 @@ import {ai} from '@/ai/genkit';
 export async function runDiagnosticCheck(): Promise<{ok: boolean; message: string}> {
     try {
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-pro-latest',
+            model: 'googleai/gemini-1.5-pro',
             prompt: 'Reply with only the word: "OK"',
             config: {
                 temperature: 0,

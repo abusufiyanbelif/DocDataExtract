@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview AI flow to extract structured data from educational document text.
@@ -42,7 +41,7 @@ export async function extractEducationFindingsFromText(
 
 const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
-  model: 'googleai/gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-pro',
   prompt: `You are an expert academic registrar tasked with extracting key information from educational document text.
 
   Analyze the provided text and extract the institution name, degree/examination, and key achievements or grades.

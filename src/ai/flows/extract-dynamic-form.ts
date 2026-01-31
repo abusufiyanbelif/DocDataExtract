@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -50,7 +49,7 @@ export async function extractDynamicFormFromText(
 
 const prompt = ai.definePrompt({
   name: 'extractDynamicFormPrompt',
-  model: 'googleai/gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-pro',
   prompt: `You are an expert in document analysis and data extraction.
 
 Your task is to analyze the provided text from a document or form and extract all relevant information.

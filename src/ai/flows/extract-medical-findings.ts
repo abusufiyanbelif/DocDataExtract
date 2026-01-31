@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview AI flow to extract medical findings from report text.
@@ -41,7 +40,7 @@ export async function extractMedicalFindingsFromText(
 
 const prompt = ai.definePrompt({
   name: 'extractMedicalFindingsPrompt',
-  model: 'googleai/gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-pro',
   prompt: `You are an expert medical analyst tasked with extracting key information from medical report text.
 
   Analyze the provided text and extract the diagnosis and key findings.

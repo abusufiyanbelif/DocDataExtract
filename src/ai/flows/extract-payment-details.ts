@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview AI flow to extract key details from a payment confirmation text.
@@ -32,7 +31,7 @@ export async function extractPaymentDetailsFromText(
 
 const prompt = ai.definePrompt({
   name: 'extractPaymentDetailsPrompt',
-  model: 'googleai/gemini-1.5-pro-latest',
+  model: 'googleai/gemini-1.5-pro',
   prompt: `You are an expert OCR agent specializing in parsing financial transaction text from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided text and extract the following details precisely.
 
 1.  **receiverName**: The name of the person or entity who received the payment. Look for labels like "Paid to", "To:", or the primary name displayed as the recipient.
