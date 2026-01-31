@@ -214,12 +214,63 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         setIsAutofilling(false);
     }
   };
+  
+  const handleFormSubmit = async (data: DonationFormData) => {
+    if (!storage) return;
+
+    const oldScreenshotUrl = donation?.screenshotUrl;
+    let newScreenshotUrl = oldScreenshotUrl || '';
+    
+    const { screenshotFile, ...donationData } = data;
+
+    try {
+        const fileList = screenshotFile as FileList | undefined;
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0];
+            toast({
+                title: "Uploading Screenshot...",
+                description: `Please wait while '${file.name}' is uploaded.`,
+            });
+            
+            const transactionIdPart = data.transactionId || 'NULL';
+            const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate, transactionIdPart ];
+            const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
+            const fileExtension = file.name.split('.').pop() || 'jpg';
+            const finalFileName = `${sanitizedBaseName}.${fileExtension}`;
+            
+            const filePath = `donations/${finalFileName}`;
+            const fileRef = storageRef(storage, filePath);
+
+            const uploadResult = await uploadBytes(fileRef, file);
+            newScreenshotUrl = await getDownloadURL(uploadResult.ref);
+
+            if (oldScreenshotUrl && oldScreenshotUrl !== newScreenshotUrl) {
+                try {
+                    await deleteObject(storageRef(storage, oldScreenshotUrl));
+                } catch (deleteError: any) {
+                    if (deleteError.code !== 'storage/object-not-found') {
+                        console.warn("Failed to delete old screenshot file:", deleteError);
+                    }
+                }
+            }
+        }
+        
+        onSubmit({
+          ...donationData,
+          screenshotUrl: newScreenshotUrl,
+        } as DonationFormData);
+
+    } catch (error: any) {
+        console.warn("Error during file upload:", error);
+        toast({ title: 'Error', description: `Could not save donation screenshot. ${error.message}`, variant: 'destructive' });
+    }
+  };
 
 
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                   control={form.control}
@@ -475,3 +526,5 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     </>
   );
 }
+
+    

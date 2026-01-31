@@ -205,9 +205,73 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     }
   };
 
+  const handleFormSubmit = async (data: BeneficiaryFormData) => {
+    const oldIdProofUrl = beneficiary?.idProofUrl;
+    let newIdProofUrl = oldIdProofUrl || '';
+    
+    const { idProofFile, ...beneficiaryData } = data;
+    
+    try {
+        const fileList = idProofFile as FileList | undefined;
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0];
+            const uploadPromise = new Promise<string>(async (resolve, reject) => {
+                const { default: Resizer } = await import('react-image-file-resizer');
+                Resizer.imageFileResizer(
+                    file,
+                    1024, // max width
+                    1024, // max height
+                    'JPEG', // compress format
+                    80, // quality
+                    0, // rotation
+                    uri => resolve(uri as string),
+                    'base64'
+                );
+            });
+            const resizedDataUri = await uploadPromise;
+            const blob = await (await fetch(resizedDataUri)).blob();
+
+            toast({
+                title: "Uploading ID Proof...",
+                description: `Please wait while '${file.name}' is uploaded.`,
+            });
+            
+            const today = new Date().toISOString().split('T')[0];
+            const fileNameParts = [ data.name, data.phone || 'no-phone', today, 'referby', data.referralBy ];
+            const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
+            const finalFileName = `${sanitizedBaseName}.${'jpeg'}`;
+
+            const filePath = `beneficiaries/${finalFileName}`;
+            const fileRef = storageRef(storage!, filePath);
+
+            const uploadResult = await uploadBytes(fileRef, blob);
+            newIdProofUrl = await getDownloadURL(uploadResult.ref);
+            
+            if (oldIdProofUrl && oldIdProofUrl !== newIdProofUrl) {
+                try {
+                    await deleteObject(storageRef(storage!, oldIdProofUrl));
+                } catch (deleteError: any) {
+                    if (deleteError.code !== 'storage/object-not-found') {
+                        console.warn("Failed to delete old ID proof file:", deleteError);
+                    }
+                }
+            }
+        }
+        
+        onSubmit({
+          ...beneficiaryData,
+          idProofUrl: newIdProofUrl,
+        } as BeneficiaryFormData);
+
+    } catch (error) {
+        console.warn("Error during file upload:", error);
+        toast({ title: 'File Upload Error', description: 'Could not upload the ID proof file.', variant: 'destructive' });
+    }
+};
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
             control={form.control}
@@ -395,6 +459,9 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                             className={cn(isKitAmountReadOnly && "bg-muted/50 focus:ring-0 cursor-not-allowed")}
                          />
                     </FormControl>
+                     <FormDescription>
+                        This is auto-calculated if a ration list exists for the number of members.
+                    </FormDescription>
                     <FormMessage />
                     </FormItem>
                 )}
@@ -436,3 +503,5 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     </Form>
   );
 }
+
+    
