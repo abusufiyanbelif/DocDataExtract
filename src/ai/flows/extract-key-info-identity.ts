@@ -1,11 +1,11 @@
 'use server';
 /**
- * @fileOverview This file defines a Genkit flow for extracting key information from Aadhaar card text.
+ * @fileOverview This file defines a Genkit flow for extracting key information from an Aadhaar card image.
  *
- * The flow takes raw text from an Aadhaar card as input and uses an AI model to extract information
+ * The flow takes an image of an Aadhaar card as input and uses an AI model to extract information
  * such as name, date of birth, gender, Aadhaar number, and address.
  *
- * @exports `extractKeyInfoFromAadhaarText` - The main function to call to start the flow.
+ * @exports `extractKeyInfoFromAadhaar` - The main function to call to start the flow.
  * @exports `ExtractKeyInfoFromAadhaarInput` - The input type for the flow.
  * @exports `ExtractKeyInfoFromAadhaarOutput` - The output type for the flow.
  */
@@ -14,10 +14,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExtractKeyInfoFromAadhaarInputSchema = z.object({
-  text: z
+  photoDataUri: z
     .string()
     .describe(
-      'The raw text from an Aadhaar card from which to extract data.'
+      "A photo of an Aadhaar card, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
 export type ExtractKeyInfoFromAadhaarInput = z.infer<
@@ -35,15 +35,15 @@ export type ExtractKeyInfoFromAadhaarOutput = z.infer<
   typeof ExtractKeyInfoFromAadhaarOutputSchema
 >;
 
-export async function extractKeyInfoFromAadhaarText(
+export async function extractKeyInfoFromAadhaar(
   input: ExtractKeyInfoFromAadhaarInput
 ): Promise<ExtractKeyInfoFromAadhaarOutput> {
-  return extractKeyInfoFromAadhaarTextFlow(input);
+  return extractKeyInfoFromAadhaarFlow(input);
 }
 
 const prompt = ai.definePrompt({
   name: 'extractKeyInfoFromAadhaarPrompt',
-  prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided text from an Aadhaar card and extract the following details.
+  prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided image of an Aadhaar card and extract the following details.
 
 Return ONLY a single, valid JSON object with the extracted information. Do not include any text, markdown, or formatting before or after the JSON object.
 
@@ -54,16 +54,16 @@ The JSON object should have the following keys:
 - "aadhaarNumber" (string): The 12-digit Aadhaar number.
 - "address" (string): The full residential address printed on the card.
 
-Here is the text from the card:
+Here is the image of the card:
 ---
-{{{text}}}
+Image: {{media url=photoDataUri}}
 ---
   `,
 });
 
-const extractKeyInfoFromAadhaarTextFlow = ai.defineFlow(
+const extractKeyInfoFromAadhaarFlow = ai.defineFlow(
   {
-    name: 'extractKeyInfoFromAadhaarTextFlow',
+    name: 'extractKeyInfoFromAadhaarFlow',
     inputSchema: ExtractKeyInfoFromAadhaarInputSchema,
     outputSchema: ExtractKeyInfoFromAadhaarOutputSchema,
   },

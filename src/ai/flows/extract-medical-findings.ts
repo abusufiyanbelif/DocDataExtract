@@ -1,20 +1,20 @@
 'use server';
 /**
- * @fileOverview AI flow to extract medical findings from report text.
+ * @fileOverview AI flow to extract medical findings from a report image.
  *
- * - extractMedicalFindingsFromText - Function to extract medical details from text.
- * - ExtractMedicalFindingsInput - Input type for extractMedicalFindingsFromText.
- * - ExtractMedicalFindingsOutput - Output type for extractMedicalFindingsFromText.
+ * - extractMedicalFindings - Function to extract medical details from an image.
+ * - ExtractMedicalFindingsInput - Input type for extractMedicalFindings.
+ * - ExtractMedicalFindingsOutput - Output type for extractMedicalFindings.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExtractMedicalFindingsInputSchema = z.object({
-  text: z
+  reportDataUri: z
     .string()
     .describe(
-      "The raw text from a medical report from which to extract data."
+      "An image of a medical report as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
 
@@ -32,17 +32,17 @@ const ExtractMedicalFindingsOutputSchema = z.object({
 
 export type ExtractMedicalFindingsOutput = z.infer<typeof ExtractMedicalFindingsOutputSchema>;
 
-export async function extractMedicalFindingsFromText(
+export async function extractMedicalFindings(
   input: ExtractMedicalFindingsInput
 ): Promise<ExtractMedicalFindingsOutput> {
-  return extractMedicalFindingsFromTextFlow(input);
+  return extractMedicalFindingsFlow(input);
 }
 
 const prompt = ai.definePrompt({
   name: 'extractMedicalFindingsPrompt',
-  prompt: `You are an expert medical analyst tasked with extracting key information from medical report text.
+  prompt: `You are an expert medical analyst tasked with extracting key information from an image of a medical report.
 
-  Analyze the provided text and extract the diagnosis and key findings.
+  Analyze the provided image and extract the diagnosis and key findings.
   
   Return ONLY a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object.
 
@@ -50,18 +50,18 @@ const prompt = ai.definePrompt({
   - "diagnosis" (string): The main diagnosis or impression from the report.
   - "findings" (array): A list of findings. Each item in the array should be an object with "finding" (string) and "details" (string) keys.
 
-  Here is the text from the medical report:
+  Here is the image from the medical report:
   ---
-  {{{text}}}
+  Image: {{media url=reportDataUri}}
   ---
 
   Ensure that the diagnosis and findings are accurate and comprehensive.
 `,
 });
 
-const extractMedicalFindingsFromTextFlow = ai.defineFlow(
+const extractMedicalFindingsFlow = ai.defineFlow(
   {
-    name: 'extractMedicalFindingsFromTextFlow',
+    name: 'extractMedicalFindingsFlow',
     inputSchema: ExtractMedicalFindingsInputSchema,
     outputSchema: ExtractMedicalFindingsOutputSchema,
   },

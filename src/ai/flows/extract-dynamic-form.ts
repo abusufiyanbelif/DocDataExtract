@@ -1,11 +1,11 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow for dynamically extracting key-value pairs and tables from text.
+ * @fileOverview This file defines a Genkit flow for dynamically extracting key-value pairs and tables from an image.
  *
  * It includes:
- * - extractDynamicFormFromText: An async function to initiate the dynamic data extraction flow.
- * - ExtractDynamicFormInput: The input type definition for the function, specifying the raw text.
+ * - extractDynamicFormFromImage: An async function to initiate the dynamic data extraction flow.
+ * - ExtractDynamicFormInput: The input type definition for the function, specifying the raw image.
  * - ExtractDynamicFormOutput: The output type definition, detailing the extracted key-value pairs and tables.
  */
 
@@ -13,7 +13,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExtractDynamicFormInputSchema = z.object({
-  text: z.string().describe("The raw text from a form or document from which to extract data."),
+  photoDataUri: z
+    .string()
+    .describe(
+      "A photo of a form or document, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
 });
 export type ExtractDynamicFormInput = z.infer<typeof ExtractDynamicFormInputSchema>;
 
@@ -41,7 +45,7 @@ const ExtractDynamicFormOutputSchema = z.object({
 });
 export type ExtractDynamicFormOutput = z.infer<typeof ExtractDynamicFormOutputSchema>;
 
-export async function extractDynamicFormFromText(
+export async function extractDynamicFormFromImage(
   input: ExtractDynamicFormInput
 ): Promise<ExtractDynamicFormOutput> {
   return extractDynamicFormFlow(input);
@@ -51,7 +55,7 @@ const prompt = ai.definePrompt({
   name: 'extractDynamicFormPrompt',
   prompt: `You are an expert in document analysis and data extraction.
 
-Your task is to analyze the provided text from a document or form and extract all relevant information.
+Your task is to analyze the provided image of a document or form and extract all relevant information.
 
 - If a person's full name is present, extract their first, middle, and last names.
 - If an address is present, extract the country, state, city, and pin code.
@@ -64,9 +68,9 @@ Return ONLY a single, valid JSON object with the extracted data. Do not include 
 The JSON object should have the following optional top-level keys for specific personal data: "firstName", "lastName", "middleName", "country", "state", "city", "pinCode".
 It must also have a "fields" key containing an array of all other extracted key-value pairs (as objects with "key" and "value" properties), and a "tables" key containing an array of all extracted tables. A table object should have "name" (string), "headers" (array of strings), and "rows" (array of array of strings).
 
-Here is the text from the document:
+Here is the image of the document:
 ---
-{{{text}}}
+Image: {{media url=photoDataUri}}
 ---`,
 });
 

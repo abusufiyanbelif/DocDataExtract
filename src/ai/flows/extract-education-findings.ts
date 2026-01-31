@@ -1,20 +1,20 @@
 'use server';
 /**
- * @fileOverview AI flow to extract structured data from educational document text.
+ * @fileOverview AI flow to extract structured data from an educational document image.
  *
- * - extractEducationFindingsFromText - Function to extract educational details from text.
- * - ExtractEducationFindingsInput - Input type for extractEducationFindingsFromText.
- * - ExtractEducationFindingsOutput - Output type for extractEducationFindingsFromText.
+ * - extractEducationFindings - Function to extract educational details from an image.
+ * - ExtractEducationFindingsInput - Input type for extractEducationFindings.
+ * - ExtractEducationFindingsOutput - Output type for extractEducationFindings.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExtractEducationFindingsInputSchema = z.object({
-  text: z
+  reportDataUri: z
     .string()
     .describe(
-      "The raw text from an educational document from which to extract data."
+      "An image of an educational document as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
 
@@ -33,17 +33,17 @@ const ExtractEducationFindingsOutputSchema = z.object({
 
 export type ExtractEducationFindingsOutput = z.infer<typeof ExtractEducationFindingsOutputSchema>;
 
-export async function extractEducationFindingsFromText(
+export async function extractEducationFindings(
   input: ExtractEducationFindingsInput
 ): Promise<ExtractEducationFindingsOutput> {
-  return extractEducationFindingsFromTextFlow(input);
+  return extractEducationFindingsFlow(input);
 }
 
 const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
-  prompt: `You are an expert academic registrar tasked with extracting key information from educational document text.
+  prompt: `You are an expert academic registrar tasked with extracting key information from an image of an educational document.
 
-  Analyze the provided text and extract the institution name, degree/examination, and key achievements or grades.
+  Analyze the provided image and extract the institution name, degree/examination, and key achievements or grades.
   
   Return ONLY a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object.
 
@@ -52,18 +52,18 @@ const prompt = ai.definePrompt({
   - "degree" (string): The degree, course, or examination name.
   - "achievements" (array): A list of achievements. Each item in the array should be an object with "achievement" (string) and "details" (string) keys.
 
-  Here is the text from the educational document:
+  Here is the image from the educational document:
   ---
-  {{{text}}}
+  Image: {{media url=reportDataUri}}
   ---
 
   Ensure that the extracted information is accurate and comprehensive.
 `,
 });
 
-const extractEducationFindingsFromTextFlow = ai.defineFlow(
+const extractEducationFindingsFlow = ai.defineFlow(
   {
-    name: 'extractEducationFindingsFromTextFlow',
+    name: 'extractEducationFindingsFlow',
     inputSchema: ExtractEducationFindingsInputSchema,
     outputSchema: ExtractEducationFindingsOutputSchema,
   },
