@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +42,17 @@ import {
 import { DonationForm, type DonationFormData } from '@/components/donation-form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { cn } from '@/lib/utils';
+
+type SortKey = keyof Donation | 'srNo';
 
 export default function DonationsPage() {
   const params = useParams();
@@ -69,6 +80,12 @@ export default function DonationsPage() {
   const [donationToDelete, setDonationToDelete] = useState<string | null>(null);
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [imageToView, setImageToView] = useState<string | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [donationTypeFilter, setDonationTypeFilter] = useState('All');
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'donationDate', direction: 'descending'});
   
   const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
   const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
@@ -219,12 +236,82 @@ export default function DonationsPage() {
     }
   };
   
+  const handleSort = (key: SortKey) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const filteredAndSortedDonations = useMemo(() => {
+    if (!donations) return [];
+    let sortableItems = [...donations];
+
+    // Filtering logic
+    if (statusFilter !== 'All') {
+        sortableItems = sortableItems.filter(d => d.status === statusFilter);
+    }
+    if (typeFilter !== 'All') {
+        sortableItems = sortableItems.filter(d => d.type === typeFilter);
+    }
+    if (donationTypeFilter !== 'All') {
+        sortableItems = sortableItems.filter(d => d.donationType === donationTypeFilter);
+    }
+    if (searchTerm) {
+      const lowercasedTerm = searchTerm.toLowerCase();
+      sortableItems = sortableItems.filter(d => 
+        (d.donorName || '').toLowerCase().includes(lowercasedTerm) ||
+        (d.receiverName || '').toLowerCase().includes(lowercasedTerm) ||
+        (d.donorPhone || '').toLowerCase().includes(lowercasedTerm) ||
+        (d.referral || '').toLowerCase().includes(lowercasedTerm) ||
+        (d.transactionId || '').toLowerCase().includes(lowercasedTerm)
+      );
+    }
+
+    // Sorting
+    if (sortConfig !== null) {
+        sortableItems.sort((a, b) => {
+            if (sortConfig.key === 'srNo') return 0;
+            const aValue = a[sortConfig.key] ?? '';
+            const bValue = b[sortConfig.key] ?? '';
+            
+            if (sortConfig.key === 'amount') {
+                 return sortConfig.direction === 'ascending' ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number);
+            }
+            if (typeof aValue === 'string' && typeof bValue === 'string') {
+                 if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+            }
+            return 0;
+        });
+    }
+    
+    return sortableItems;
+  }, [donations, searchTerm, statusFilter, typeFilter, donationTypeFilter, sortConfig]);
+
   const totalDonationAmount = useMemo(() => {
-    if (!donations) return 0;
-    return donations.reduce((acc, d) => acc + (d.amount || 0), 0);
-  }, [donations]);
+    if (!filteredAndSortedDonations) return 0;
+    return filteredAndSortedDonations.reduce((acc, d) => acc + (d.amount || 0), 0);
+  }, [filteredAndSortedDonations]);
 
   const isLoading = isCampaignLoading || areDonationsLoading || isProfileLoading;
+  
+  const SortableHeader = ({ sortKey, children, className }: { sortKey: SortKey, children: React.ReactNode, className?: string }) => {
+    const isSorted = sortConfig?.key === sortKey;
+    return (
+        <TableHead className={cn("cursor-pointer hover:bg-muted/50", className)} onClick={() => handleSort(sortKey)}>
+            <div className="flex items-center gap-2">
+                {children}
+                {isSorted && (sortConfig?.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />)}
+            </div>
+        </TableHead>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -279,38 +366,84 @@ export default function DonationsPage() {
         </div>
 
         <Card>
-          <CardHeader className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
-            <div className="flex-1 space-y-1.5">
-              <CardTitle>Donation List ({donations?.length || 0})</CardTitle>
-              <p className="text-muted-foreground">
-                  Total Donations: <span className="font-bold text-foreground">Rupee {totalDonationAmount.toFixed(2)}</span>
-              </p>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
+              <div className="flex-1 space-y-1.5">
+                <CardTitle>Donation List ({filteredAndSortedDonations.length})</CardTitle>
+                <p className="text-muted-foreground">
+                    Total Donations for filtered results: <span className="font-bold text-foreground">Rupee {totalDonationAmount.toFixed(2)}</span>
+                </p>
+              </div>
+              {canCreate && (
+                  <Button onClick={handleAdd}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Donation
+                  </Button>
+              )}
             </div>
-            {canCreate && (
-                <Button onClick={handleAdd}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Donation
-                </Button>
-            )}
+            <div className="flex flex-wrap items-center gap-2 pt-4">
+                <Input
+                    placeholder="Search donor, receiver, phone, etc."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-sm"
+                />
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-auto md:w-[180px]">
+                        <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Statuses</SelectItem>
+                        <SelectItem value="Verified">Verified</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Canceled">Canceled</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-auto md:w-[180px]">
+                        <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Categories</SelectItem>
+                        <SelectItem value="Zakat">Zakat</SelectItem>
+                        <SelectItem value="Sadqa">Sadqa</SelectItem>
+                        <SelectItem value="Interest">Interest</SelectItem>
+                        <SelectItem value="Lillah">Lillah</SelectItem>
+                        <SelectItem value="General">General</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Select value={donationTypeFilter} onValueChange={setDonationTypeFilter}>
+                     <SelectTrigger className="w-auto md:w-[180px]">
+                        <SelectValue placeholder="Filter by donation type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="All">All Donation Types</SelectItem>
+                        <SelectItem value="Cash">Cash</SelectItem>
+                        <SelectItem value="Online Payment">Online Payment</SelectItem>
+                        <SelectItem value="Check">Check</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
                 <TableHeader>
                     <TableRow>
                         {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
-                        <TableHead>#</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Donor Name</TableHead>
-                        <TableHead>Receiver Name</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Referral</TableHead>
-                        <TableHead className="text-right">Amount (Rupee)</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Donation Type</TableHead>
-                        <TableHead>Transaction ID</TableHead>
-                        <TableHead>Date</TableHead>
+                        <SortableHeader sortKey="srNo">#</SortableHeader>
+                        <SortableHeader sortKey="status">Status</SortableHeader>
+                        <SortableHeader sortKey="donorName">Donor Name</SortableHeader>
+                        <SortableHeader sortKey="receiverName">Receiver Name</SortableHeader>
+                        <SortableHeader sortKey="donorPhone">Phone</SortableHeader>
+                        <SortableHeader sortKey="referral">Referral</SortableHeader>
+                        <SortableHeader sortKey="amount" className="text-right">Amount (Rupee)</SortableHeader>
+                        <SortableHeader sortKey="type">Category</SortableHeader>
+                        <SortableHeader sortKey="donationType">Donation Type</SortableHeader>
+                        <SortableHeader sortKey="transactionId">Transaction ID</SortableHeader>
+                        <SortableHeader sortKey="donationDate">Date</SortableHeader>
                         <TableHead>Screenshot</TableHead>
-                        <TableHead>Uploaded By</TableHead>
+                        <SortableHeader sortKey="uploadedBy">Uploaded By</SortableHeader>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -320,8 +453,8 @@ export default function DonationsPage() {
                             <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13}><Skeleton className="h-6 w-full" /></TableCell>
                         </TableRow>
                     ))
-                    ) : (donations && donations.length > 0) ? (
-                    donations.map((donation, index) => (
+                    ) : (filteredAndSortedDonations && filteredAndSortedDonations.length > 0) ? (
+                    filteredAndSortedDonations.map((donation, index) => (
                         <TableRow key={donation.id}>
                             {(canUpdate || canDelete) && (
                             <TableCell className="text-center sticky left-0 bg-card z-10">
@@ -372,7 +505,7 @@ export default function DonationsPage() {
                     ) : (
                     <TableRow>
                         <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13} className="text-center h-24 text-muted-foreground">
-                            No donations recorded yet.
+                            No donations found matching your criteria.
                         </TableCell>
                     </TableRow>
                     )}
@@ -429,3 +562,5 @@ export default function DonationsPage() {
     </div>
   );
 }
+
+    

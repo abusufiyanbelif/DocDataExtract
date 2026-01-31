@@ -90,6 +90,8 @@ export default function BeneficiariesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [referralFilter, setReferralFilter] = useState('All');
+  const [membersFilter, setMembersFilter] = useState('');
+  const [kitAmountFilter, setKitAmountFilter] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
   
   const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
@@ -465,6 +467,12 @@ export default function BeneficiariesPage() {
     if (referralFilter !== 'All') {
         sortableItems = sortableItems.filter(b => b.referralBy === referralFilter);
     }
+    if (membersFilter) {
+        sortableItems = sortableItems.filter(b => String(b.members) === membersFilter);
+    }
+    if (kitAmountFilter) {
+        sortableItems = sortableItems.filter(b => String(b.kitAmount) === kitAmountFilter);
+    }
     if (searchTerm) {
         const lowercasedTerm = searchTerm.toLowerCase();
         sortableItems = sortableItems.filter(b => 
@@ -498,7 +506,7 @@ export default function BeneficiariesPage() {
     }
 
     return sortableItems;
-  }, [beneficiaries, searchTerm, statusFilter, referralFilter, sortConfig]);
+  }, [beneficiaries, searchTerm, statusFilter, referralFilter, membersFilter, kitAmountFilter, sortConfig]);
 
   const totalKitAmount = useMemo(() => {
     return filteredAndSortedBeneficiaries.reduce((acc, b) => acc + (b.kitAmount || 0), 0);
@@ -651,6 +659,20 @@ export default function BeneficiariesPage() {
                         ))}
                     </SelectContent>
                 </Select>
+                <Input
+                    placeholder="Filter by members"
+                    type="number"
+                    value={membersFilter}
+                    onChange={(e) => setMembersFilter(e.target.value)}
+                    className="w-auto md:w-[160px]"
+                />
+                <Input
+                    placeholder="Filter by kit amount"
+                    type="number"
+                    value={kitAmountFilter}
+                    onChange={(e) => setKitAmountFilter(e.target.value)}
+                    className="w-auto md:w-[160px]"
+                />
             </div>
           </CardHeader>
           <CardContent>
@@ -826,5 +848,7 @@ export default function BeneficiariesPage() {
     </div>
   );
 }
+
+    
 
     
