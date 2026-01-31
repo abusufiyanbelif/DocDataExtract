@@ -45,9 +45,9 @@ export function BillingExtractor() {
     try {
       const response = await extractBillingDataFromImage({ photoDataUri: photoDataUris[0] });
       setBillingResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Billing scan failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not extract billing data. Please try another image or enter the data manually.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not extract billing data. Please try another image or enter the data manually.`, variant: 'destructive' });
     } finally {
       setIsLoadingBilling(false);
     }
@@ -64,9 +64,9 @@ export function BillingExtractor() {
     try {
       const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Get fields failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
     }

@@ -36,9 +36,9 @@ export function TextExtractor() {
     try {
       const response = await extractAndCorrectText({ photoDataUri: photoDataUris[0] });
       setTextResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Text extraction failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not extract text from the ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not extract text from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingText(false);
     }
@@ -55,9 +55,9 @@ export function TextExtractor() {
     try {
       const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Get fields failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
     }

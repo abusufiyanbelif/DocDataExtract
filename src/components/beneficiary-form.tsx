@@ -28,6 +28,7 @@ import type { Beneficiary, RationList, RationItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Loader2, ScanLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { extractKeyInfoFromAadhaar } from '@/ai/flows/extract-key-info-identity';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -143,7 +144,6 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     }
     setIsScanning(true);
     try {
-        const { extractKeyInfoFromAadhaar } = await import('@/ai/flows/extract-key-info-identity');
         const response = await extractKeyInfoFromAadhaar({ photoDataUri: preview });
 
         if (response) {
@@ -164,11 +164,11 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                 variant: "default",
             });
         }
-    } catch (error) {
+    } catch (error: any) {
         console.warn("ID Proof scan failed:", error);
         toast({
             title: "Scan Failed",
-            description: "Could not automatically read the document. Please enter the details manually.",
+            description: error.message || "Could not automatically read the document. Please enter the details manually.",
             variant: "destructive",
         });
     } finally {

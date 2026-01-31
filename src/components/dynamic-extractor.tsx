@@ -31,9 +31,9 @@ export function DynamicExtractor() {
     try {
       const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Dynamic extraction failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not extract dynamic data from the ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not extract dynamic data from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

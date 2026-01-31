@@ -61,9 +61,9 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
     try {
       const response = await extractMedicalFindings({ reportDataUri: reportDataUris[0] });
       setMedicalResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Medical scan failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not analyze the medical ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not analyze the medical ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingMedical(false);
     }
@@ -80,9 +80,9 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
     try {
       const response = await extractDynamicFormFromImage({ photoDataUri: reportDataUris[0] });
       setFieldsResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Get fields failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
     }
@@ -105,9 +105,9 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
           variant: 'default',
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Story creation failed:", error);
-      toast({ title: 'Story Creation Failed', description: 'Could not generate the lead story.', variant: 'destructive' });
+      toast({ title: 'Story Creation Failed', description: error.message || 'Could not generate the lead story.', variant: 'destructive' });
     } finally {
       setIsLoadingStory(false);
     }

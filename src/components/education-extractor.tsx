@@ -60,9 +60,9 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
     try {
       const response = await extractEducationFindings({ reportDataUri: reportDataUris[0] });
       setEducationResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Education scan failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not analyze the education ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not analyze the education ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingEducation(false);
     }
@@ -79,9 +79,9 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
     try {
       const response = await extractDynamicFormFromImage({ photoDataUri: reportDataUris[0] });
       setFieldsResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Get fields failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
     }
@@ -104,9 +104,9 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
           variant: 'default',
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Story creation failed:", error);
-      toast({ title: 'Story Creation Failed', description: 'Could not generate the academic summary.', variant: 'destructive' });
+      toast({ title: 'Story Creation Failed', description: error.message || 'Could not generate the academic summary.', variant: 'destructive' });
     } finally {
       setIsLoadingStory(false);
     }

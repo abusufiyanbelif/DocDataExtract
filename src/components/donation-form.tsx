@@ -135,11 +135,11 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 variant: "default",
             });
         }
-    } catch (error) {
+    } catch (error: any) {
         console.warn("Payment scan failed:", error);
         toast({
             title: "Scan Failed",
-            description: "Could not automatically read the screenshot. Please enter the details manually.",
+            description: error.message || "Could not automatically read the screenshot. Please enter the details manually.",
             variant: "destructive",
         });
     } finally {

@@ -38,13 +38,13 @@ const prompt = ai.definePrompt({
   model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractPaymentDetailsInputSchema},
   output: {schema: ExtractPaymentDetailsOutputSchema},
-  prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from services like Google Pay and Paytm. Your task is to find and extract the following details from the provided image:
+  prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image and extract the following details precisely as requested in the output format.
 
-- The transaction amount (as a number).
-- The unique transaction identifier (look for "Transaction ID", "UPI Transaction ID", "Ref No.").
-- The date of the transaction (format as YYYY-MM-DD).
+1.  **amount**: Find the main transaction amount. It may have a currency symbol like '₹'. You MUST extract only the numerical value. For example, if you see '₹200', the value should be \`200\`.
+2.  **transactionId**: Find the unique transaction identifier. Look for labels like "UPI Transaction ID", "Transaction ID", "UTR", or "Ref No.". Extract the alphanumeric code associated with it.
+3.  **date**: Find the date of the transaction. If you find a date (e.g., "Jan 31, 2026", "31-01-2026"), you MUST format it as YYYY-MM-DD.
 
-Return only the information you can find.
+If any of these fields are not clearly visible in the image, do not include them in your response. It is critical that you adhere to the data types specified in the output schema (e.g., amount must be a number).
 
 Image: {{media url=photoDataUri}}`,
 });

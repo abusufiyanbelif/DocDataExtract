@@ -44,9 +44,9 @@ export function IdentityExtractor() {
     try {
       const response = await extractKeyInfoFromAadhaar({ photoDataUri: photoDataUris[0] });
       setInfoResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Identity scan failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not extract information from the ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not extract information from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingInfo(false);
     }
@@ -63,9 +63,9 @@ export function IdentityExtractor() {
     try {
       const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Get fields failed:", error);
-      toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
+      toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
     }
