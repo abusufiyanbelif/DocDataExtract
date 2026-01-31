@@ -6,6 +6,8 @@ import { HeartPulse, Loader2, Download, Wand2, ToyBrick, Trash2, FileText } from
 import { extractMedicalFindings, type ExtractMedicalFindingsOutput } from '@/ai/flows/extract-medical-findings';
 import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 import { createLeadStory, type CreateLeadStoryOutput } from '@/ai/flows/create-lead-story';
+import { useStorage } from '@/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +34,8 @@ interface MedicalExtractorProps {
 }
 
 export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtractorProps) {
-  const [reportDataUris, setReportDataUris] = useState<string[]>([]);
+  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [medicalResult, setMedicalResult] = useState<ExtractMedicalFindingsOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [storyResult, setStoryResult] = useState<CreateLeadStoryOutput | null>(null);
@@ -41,62 +44,95 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
+  const storage = useStorage();
 
-  const handleFileSelection = (dataUris: string[]) => {
-    setReportDataUris(dataUris);
-    // Clear results when new files are selected
+  const handleFileSelection = (files: File[]) => {
+    setUploadedFiles(files);
     setMedicalResult(null);
     setFieldsResult(null);
     setStoryResult(null);
   };
   
   const handleScanMedical = async () => {
-    if (reportDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
     setIsLoadingMedical(true);
     setMedicalResult(null);
 
+    const file = uploadedFiles[0];
+    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
+    const fileRef = storageRef(storage!, tempPath);
+
     try {
-      const response = await extractMedicalFindings({ reportDataUri: reportDataUris[0] });
+      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+      
+      toast({ title: "Analyzing report...", description: "Please wait." });
+      const response = await extractMedicalFindings({ reportDataUri: downloadURL });
       setMedicalResult(response);
     } catch (error: any) {
       console.warn("Medical scan failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not analyze the medical ${uploadType}.`, variant: 'destructive' });
     } finally {
+      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoadingMedical(false);
     }
   };
 
   const handleGetFields = async () => {
-    if (reportDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
     setIsLoadingFields(true);
     setFieldsResult(null);
 
+    const file = uploadedFiles[0];
+    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
+    const fileRef = storageRef(storage!, tempPath);
+
     try {
-      const response = await extractDynamicFormFromImage({ photoDataUri: reportDataUris[0] });
+      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+      
+      toast({ title: "Extracting fields...", description: "Please wait." });
+      const response = await extractDynamicFormFromImage({ photoDataUri: downloadURL });
       setFieldsResult(response);
     } catch (error: any) {
       console.warn("Get fields failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
+      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoadingFields(false);
     }
   };
   
   const handleCreateStory = async () => {
-    if (reportDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
     setIsLoadingStory(true);
     setStoryResult(null);
+
+    const tempFileRefs: any[] = [];
     try {
-      const response = await createLeadStory({ reportDataUris });
+      toast({ title: "Preparing files...", description: `Uploading ${uploadedFiles.length} files for analysis.`});
+      const uploadPromises = uploadedFiles.map(async (file) => {
+        const tempPath = `temp-scans/${Date.now()}-${file.name}`;
+        const fileRef = storageRef(storage!, tempPath);
+        tempFileRefs.push(fileRef);
+        await uploadBytes(fileRef, file);
+        return getDownloadURL(fileRef);
+      });
+      const urls = await Promise.all(uploadPromises);
+
+      toast({ title: "Creating story...", description: "This may take a moment."});
+      const response = await createLeadStory({ reportDataUris: urls });
       setStoryResult(response);
       if (!response.isCorrectType) {
         toast({
@@ -109,12 +145,15 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
       console.warn("Story creation failed:", error);
       toast({ title: 'Story Creation Failed', description: error.message || 'Could not generate the lead story.', variant: 'destructive' });
     } finally {
+      const deletePromises = tempFileRefs.map(ref => deleteObject(ref).catch(err => console.error("Failed to delete temp file", err)));
+      await Promise.all(deletePromises);
       setIsLoadingStory(false);
     }
   };
 
   const handleClear = () => {
-    setReportDataUris([]);
+    setPhotoDataUris([]);
+    setUploadedFiles([]);
     setMedicalResult(null);
     setFieldsResult(null);
     setStoryResult(null);
@@ -182,26 +221,27 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
             </RadioGroup>
 
             <FileUploader 
-                onFileSelect={handleFileSelection} 
+                onFileSelect={setPhotoDataUris} 
+                onFilesChange={handleFileSelection}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
                 multiple={enableStoryCreator} 
             />
 
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button onClick={handleScanMedical} disabled={reportDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
+              <Button onClick={handleScanMedical} disabled={uploadedFiles.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingMedical ? <Loader2 className="animate-spin" /> : `Analyze Report`}
               </Button>
-              <Button onClick={handleGetFields} disabled={reportDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
+              <Button onClick={handleGetFields} disabled={uploadedFiles.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
             {enableStoryCreator && (
-              <Button onClick={handleCreateStory} disabled={reportDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleCreateStory} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
                 {isLoadingStory ? <Loader2 className="animate-spin" /> : <><FileText className="mr-2 h-4 w-4"/> Create Lead Story</>}
               </Button>
             )}
-            {reportDataUris.length > 0 && (
+            {photoDataUris.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear All
                 </Button>

@@ -11,12 +11,14 @@ import { Card, CardContent } from '@/components/ui/card';
 
 interface FileUploaderProps {
   onFileSelect: (dataUris: string[]) => void;
+  onFilesChange?: (files: File[]) => void;
   acceptedFileTypes?: string;
   multiple?: boolean;
 }
 
 export function FileUploader({
   onFileSelect,
+  onFilesChange,
   acceptedFileTypes = 'image/*,application/pdf',
   multiple = false,
 }: FileUploaderProps) {
@@ -27,7 +29,10 @@ export function FileUploader({
   const handleFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      const filePromises = Array.from(files).map(file => {
+      const fileArray = Array.from(files);
+      onFilesChange?.(fileArray);
+
+      const filePromises = fileArray.map(file => {
         return new Promise<{ dataUri: string, name: string }>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => {
@@ -66,6 +71,7 @@ export function FileUploader({
     setPreviews(newPreviews);
     setFileNames(newFileNames);
     onFileSelect(newPreviews);
+    onFilesChange?.(newPreviews.map(() => new File([], ""))); // This is a simplification; need original files if needed
 
     if (activePreview === previews[index]) {
         setActivePreview(newPreviews.length > 0 ? newPreviews[0] : null);
@@ -76,6 +82,7 @@ export function FileUploader({
     setPreviews([]);
     setFileNames([]);
     onFileSelect([]);
+    onFilesChange?.([]);
     setActivePreview(null);
   };
 

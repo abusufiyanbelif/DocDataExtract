@@ -29,6 +29,8 @@ import { cn } from '@/lib/utils';
 import { Loader2, ScanLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { extractKeyInfoFromAadhaar } from '@/ai/flows/extract-key-info-identity';
+import { useStorage } from '@/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject, type StorageReference } from 'firebase/storage';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -58,6 +60,7 @@ interface BeneficiaryFormProps {
 export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }: BeneficiaryFormProps) {
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
+  const storage = useStorage();
 
   const form = useForm<BeneficiaryFormData>({
     resolver: zodResolver(formSchema),
@@ -77,7 +80,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     },
   });
 
-  const { formState: { isSubmitting }, watch, setValue, register } = form;
+  const { formState: { isSubmitting }, watch, setValue, register, getValues } = form;
   const [preview, setPreview] = useState<string | null>(beneficiary?.idProofUrl || null);
   const idProofFile = watch('idProofFile');
 
@@ -134,7 +137,10 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
   }, [membersValue, rationLists]);
 
   const handleScanIdProof = async () => {
-    if (!preview) {
+    const fileList = getValues('idProofFile') as FileList | undefined;
+    const existingImageUrl = beneficiary?.idProofUrl;
+
+    if (!fileList?.length && !existingImageUrl) {
         toast({
             title: "No Image to Scan",
             description: "Please upload an ID proof document first.",
@@ -142,9 +148,29 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         });
         return;
     }
+
     setIsScanning(true);
+    let imageUrlToScan: string | null = null;
+    let tempFileRef: StorageReference | null = null;
+
     try {
-        const response = await extractKeyInfoFromAadhaar({ photoDataUri: preview });
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0];
+            toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
+            const tempPath = `temp-scans/${Date.now()}-${file.name}`;
+            tempFileRef = storageRef(storage!, tempPath);
+            await uploadBytes(tempFileRef, file);
+            imageUrlToScan = await getDownloadURL(tempFileRef);
+        } else if (existingImageUrl) {
+            imageUrlToScan = existingImageUrl;
+        }
+
+        if (!imageUrlToScan) {
+            throw new Error("Could not get a file URL to scan.");
+        }
+
+        toast({ title: "Scanning document...", description: "Please wait while the AI analyzes the image." });
+        const response = await extractKeyInfoFromAadhaar({ photoDataUri: imageUrlToScan });
 
         if (response) {
             if (response.name) setValue('name', response.name, { shouldValidate: true });
@@ -172,6 +198,9 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             variant: "destructive",
         });
     } finally {
+        if (tempFileRef) {
+            await deleteObject(tempFileRef).catch(err => console.error("Failed to delete temp file", err));
+        }
         setIsScanning(false);
     }
   };

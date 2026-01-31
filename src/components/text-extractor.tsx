@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { FileText, Loader2, Download, Wand2, ToyBrick, Trash2 } from 'lucide-react';
 import { extractAndCorrectText, type ExtractAndCorrectTextOutput } from '@/ai/flows/extract-and-correct-text';
 import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
+import { useStorage } from '@/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,53 +20,76 @@ import { Label } from './ui/label';
 
 export function TextExtractor() {
   const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [textResult, setTextResult] = useState<ExtractAndCorrectTextOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoadingText, setIsLoadingText] = useState(false);
   const [isLoadingFields, setIsLoadingFields] = useState(false);
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
+  const storage = useStorage();
 
   const handleScanText = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoadingText(true);
     setTextResult(null);
+    
+    const file = uploadedFiles[0];
+    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
+    const fileRef = storageRef(storage!, tempPath);
 
     try {
-      const response = await extractAndCorrectText({ photoDataUri: photoDataUris[0] });
+      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+
+      toast({ title: "Extracting text...", description: "Please wait." });
+      const response = await extractAndCorrectText({ photoDataUri: downloadURL });
       setTextResult(response);
     } catch (error: any) {
       console.warn("Text extraction failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not extract text from the ${uploadType}.`, variant: 'destructive' });
     } finally {
+      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoadingText(false);
     }
   };
 
   const handleGetFields = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoadingFields(true);
     setFieldsResult(null);
+    
+    const file = uploadedFiles[0];
+    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
+    const fileRef = storageRef(storage!, tempPath);
 
     try {
-      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
+      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+
+      toast({ title: "Extracting fields...", description: "Please wait." });
+      const response = await extractDynamicFormFromImage({ photoDataUri: downloadURL });
       setFieldsResult(response);
     } catch (error: any) {
       console.warn("Get fields failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
+      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoadingFields(false);
     }
   };
 
   const handleClear = () => {
     setPhotoDataUris([]);
+    setUploadedFiles([]);
     setTextResult(null);
     setFieldsResult(null);
   };
@@ -125,15 +150,16 @@ export function TextExtractor() {
             
             <FileUploader 
                 onFileSelect={setPhotoDataUris} 
+                onFilesChange={setUploadedFiles}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType} 
             />
 
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button onClick={handleScanText} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleScanText} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
                 {isLoadingText ? <Loader2 className="animate-spin" /> : `Extract Text`}
               </Button>
-              <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleGetFields} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>

@@ -31,6 +31,8 @@ import { extractPaymentDetails } from '@/ai/flows/extract-payment-details';
 import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
 import { Separator } from './ui/separator';
 import { Textarea } from './ui/textarea';
+import { useStorage } from '@/firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject, type StorageReference } from 'firebase/storage';
 
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -59,6 +61,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   const [isScanning, setIsScanning] = useState(false);
   const [isAutofilling, setIsAutofilling] = useState(false);
   const [scannedText, setScannedText] = useState('');
+  const storage = useStorage();
 
   const form = useForm<DonationFormData>({
     resolver: zodResolver(formSchema),
@@ -76,7 +79,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     },
   });
 
-  const { formState: { isSubmitting }, register, watch, setValue } = form;
+  const { formState: { isSubmitting }, register, watch, setValue, getValues } = form;
   const [preview, setPreview] = useState<string | null>(donation?.screenshotUrl || null);
   const screenshotFile = watch('screenshotFile');
   const donationTypeValue = watch('donationType');
@@ -99,7 +102,10 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   }, [screenshotFile, donation?.screenshotUrl]);
 
   const handleScanToText = async () => {
-    if (!preview) {
+    const fileList = getValues('screenshotFile') as FileList | undefined;
+    const existingImageUrl = donation?.screenshotUrl;
+
+    if (!fileList?.length && !existingImageUrl) {
         toast({
             title: "No Image to Scan",
             description: "Please upload a screenshot first.",
@@ -109,9 +115,27 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     }
     setIsScanning(true);
     setScannedText('');
-    toast({ title: "Scanning...", description: "Extracting text from the screenshot." });
+    toast({ title: "Scanning...", description: "Uploading and extracting text from the screenshot." });
+
+    let imageUrlToScan: string | null = null;
+    let tempFileRef: StorageReference | null = null;
+
     try {
-        const response = await extractAndCorrectText({ photoDataUri: preview });
+        if (fileList && fileList.length > 0) {
+            const file = fileList[0];
+            const tempPath = `temp-scans/${Date.now()}-${file.name}`;
+            tempFileRef = storageRef(storage!, tempPath);
+            await uploadBytes(tempFileRef, file);
+            imageUrlToScan = await getDownloadURL(tempFileRef);
+        } else if (existingImageUrl) {
+            imageUrlToScan = existingImageUrl;
+        }
+
+        if (!imageUrlToScan) {
+            throw new Error("Could not get a file URL to scan.");
+        }
+
+        const response = await extractAndCorrectText({ photoDataUri: imageUrlToScan });
         setScannedText(response.extractedText);
         toast({
             title: "Text Extracted",
@@ -126,6 +150,9 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
             variant: "destructive",
         });
     } finally {
+        if (tempFileRef) {
+            await deleteObject(tempFileRef).catch(err => console.error("Failed to delete temp file", err));
+        }
         setIsScanning(false);
     }
   };
