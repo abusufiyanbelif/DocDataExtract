@@ -1,8 +1,9 @@
+
 'use server';
 /**
- * @fileOverview This file defines a Genkit flow for extracting key information from an Aadhaar card.
+ * @fileOverview This file defines a Genkit flow for extracting key information from Aadhaar card text.
  *
- * The flow takes an image of an Aadhaar card as input and uses an AI model to extract information
+ * The flow takes raw text from an Aadhaar card as input and uses an AI model to extract information
  * such as name, date of birth, gender, Aadhaar number, and address.
  *
  * @exports `extractKeyInfoFromAadhaar` - The main function to call to start the flow.
@@ -14,10 +15,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExtractKeyInfoFromAadhaarInputSchema = z.object({
-  photoDataUri: z
+  text: z
     .string()
     .describe(
-      'A photo of an Aadhaar card, as a data URI that must include a MIME type and use Base64 encoding. Expected format: data:<mimetype>;base64,<encoded_data>.'
+      'The raw text from an Aadhaar card from which to extract data.'
     ),
 });
 export type ExtractKeyInfoFromAadhaarInput = z.infer<
@@ -44,7 +45,7 @@ export async function extractKeyInfoFromAadhaar(
 const prompt = ai.definePrompt({
   name: 'extractKeyInfoFromAadhaarPrompt',
   model: 'gemini-1.5-flash',
-  prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided image of an Aadhaar card and extract the following details.
+  prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided text from an Aadhaar card and extract the following details.
 
 Return ONLY a single, valid JSON object with the extracted information. Do not include any text, markdown, or formatting before or after the JSON object.
 
@@ -55,7 +56,10 @@ The JSON object should have the following keys:
 - "aadhaarNumber" (string): The 12-digit Aadhaar number.
 - "address" (string): The full residential address printed on the card.
 
-Image: {{media url=photoDataUri}}
+Here is the text from the card:
+---
+{{{text}}}
+---
   `,
 });
 

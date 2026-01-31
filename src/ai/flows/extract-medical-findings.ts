@@ -1,6 +1,7 @@
+
 'use server';
 /**
- * @fileOverview AI flow to extract medical findings from a report image.
+ * @fileOverview AI flow to extract medical findings from report text.
  *
  * - extractMedicalFindings - Function to extract medical details.
  * - ExtractMedicalFindingsInput - Input type for extractMedicalFindings.
@@ -11,10 +12,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExtractMedicalFindingsInputSchema = z.object({
-  reportDataUri: z
+  text: z
     .string()
     .describe(
-      "The medical report image as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "The raw text from a medical report from which to extract data."
     ),
 });
 
@@ -41,9 +42,9 @@ export async function extractMedicalFindings(
 const prompt = ai.definePrompt({
   name: 'extractMedicalFindingsPrompt',
   model: 'gemini-1.5-flash',
-  prompt: `You are an expert medical analyst tasked with extracting key information from medical reports.
+  prompt: `You are an expert medical analyst tasked with extracting key information from medical report text.
 
-  Analyze the provided medical report and extract the diagnosis and key findings.
+  Analyze the provided text and extract the diagnosis and key findings.
   
   Return ONLY a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object.
 
@@ -51,7 +52,10 @@ const prompt = ai.definePrompt({
   - "diagnosis" (string): The main diagnosis or impression from the report.
   - "findings" (array): A list of findings. Each item in the array should be an object with "finding" (string) and "details" (string) keys.
 
-  Medical Report Image: {{media url=reportDataUri}}
+  Here is the text from the medical report:
+  ---
+  {{{text}}}
+  ---
 
   Ensure that the diagnosis and findings are accurate and comprehensive.
 `,

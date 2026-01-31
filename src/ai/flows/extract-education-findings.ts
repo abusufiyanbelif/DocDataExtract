@@ -1,6 +1,7 @@
+
 'use server';
 /**
- * @fileOverview AI flow to extract structured data from an educational document image.
+ * @fileOverview AI flow to extract structured data from educational document text.
  *
  * - extractEducationFindings - Function to extract educational details.
  * - ExtractEducationFindingsInput - Input type for extractEducationFindings.
@@ -11,10 +12,10 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExtractEducationFindingsInputSchema = z.object({
-  reportDataUri: z
+  text: z
     .string()
     .describe(
-      "The educational document image as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "The raw text from an educational document from which to extract data."
     ),
 });
 
@@ -42,9 +43,9 @@ export async function extractEducationFindings(
 const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
   model: 'gemini-1.5-flash',
-  prompt: `You are an expert academic registrar tasked with extracting key information from educational documents.
+  prompt: `You are an expert academic registrar tasked with extracting key information from educational document text.
 
-  Analyze the provided document and extract the institution name, degree/examination, and key achievements or grades.
+  Analyze the provided text and extract the institution name, degree/examination, and key achievements or grades.
   
   Return ONLY a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object.
 
@@ -53,7 +54,10 @@ const prompt = ai.definePrompt({
   - "degree" (string): The degree, course, or examination name.
   - "achievements" (array): A list of achievements. Each item in the array should be an object with "achievement" (string) and "details" (string) keys.
 
-  Educational Document Image: {{media url=reportDataUri}}
+  Here is the text from the educational document:
+  ---
+  {{{text}}}
+  ---
 
   Ensure that the extracted information is accurate and comprehensive.
 `,

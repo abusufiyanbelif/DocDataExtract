@@ -26,11 +26,15 @@ import {
 } from "@/components/ui/select";
 import type { Beneficiary, RationList, RationItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Loader2, ScanLine, Trash2, Replace, FileIcon } from 'lucide-react';
+import { Loader2, ScanLine, Trash2, Replace, FileIcon, FileSignature } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { extractKeyInfoFromAadhaar } from '@/ai/flows/extract-key-info-identity';
+import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
 import { useStorage } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject, type StorageReference } from 'firebase/storage';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { Separator } from './ui/separator';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -61,6 +65,8 @@ interface BeneficiaryFormProps {
 export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }: BeneficiaryFormProps) {
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
+  const [isAutofilling, setIsAutofilling] = useState(false);
+  const [scannedText, setScannedText] = useState('');
   const storage = useStorage();
 
   const form = useForm<BeneficiaryFormData>({
@@ -98,12 +104,13 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
       };
       reader.readAsDataURL(file);
       setValue('idProofDeleted', false);
+      setScannedText('');
     } else if (!watch('idProofDeleted')) {
         setPreview(beneficiary?.idProofUrl || null);
     } else {
         setPreview(null);
     }
-  }, [idProofFile, beneficiary?.idProofUrl, watch]);
+  }, [idProofFile, beneficiary?.idProofUrl, watch, setValue]);
 
   useEffect(() => {
     const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + Number(item.price || 0), 0);
@@ -143,12 +150,13 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     setValue('idProofFile', null);
     setValue('idProofDeleted', true);
     setPreview(null);
+    setScannedText('');
     toast({ title: 'Image Marked for Deletion', description: 'The ID proof will be permanently deleted when you save the changes.', variant: 'default' });
   };
   
-  const handleScanIdProof = async () => {
+  const handleScanToText = async () => {
     const fileList = getValues('idProofFile') as FileList | undefined;
-    const existingImageUrl = beneficiary?.idProofUrl;
+    const existingImageUrl = preview;
 
     if (!fileList?.length && !existingImageUrl) {
         toast({
@@ -160,6 +168,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     }
 
     setIsScanning(true);
+    setScannedText('');
     let imageUrlToScan: string | null = null;
     let tempFileRef: StorageReference | null = null;
 
@@ -179,32 +188,24 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             throw new Error("Could not get a file URL to scan.");
         }
 
-        toast({ title: "Scanning document...", description: "Please wait while the AI analyzes the image." });
-        const response = await extractKeyInfoFromAadhaar({ photoDataUri: imageUrlToScan });
-
-        if (response) {
-            if (response.name) setValue('name', response.name, { shouldValidate: true });
-            if (response.address) setValue('address', response.address, { shouldValidate: true });
-            if (response.aadhaarNumber) setValue('idNumber', response.aadhaarNumber, { shouldValidate:true });
-            setValue('idProofType', 'Aadhaar', { shouldValidate: true });
-            
-            toast({
-                title: "Scan Successful",
-                description: "Beneficiary details have been populated from the ID proof.",
-                variant: "success",
-            });
-        } else {
-             toast({
-                title: "Scan Incomplete",
-                description: "Could not extract all details from the image. Please fill them manually.",
-                variant: "default",
-            });
+        toast({ title: "Scanning document...", description: "Please wait while the AI extracts the text." });
+        const response = await extractAndCorrectText({ photoDataUri: imageUrlToScan });
+        
+        if (!response.extractedText) {
+          throw new Error("The AI model failed to extract any text from the document.");
         }
+        setScannedText(response.extractedText);
+        toast({
+            title: "Text Extracted",
+            description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
+            variant: "success",
+        });
+
     } catch (error: any) {
-        console.warn("ID Proof scan failed:", error);
+        console.warn("ID Proof scan to text failed:", error);
         toast({
             title: "Scan Failed",
-            description: error.message || "Could not automatically read the document. Please enter the details manually.",
+            description: error.message || "Could not automatically read the document.",
             variant: "destructive",
         });
     } finally {
@@ -212,6 +213,42 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             await deleteObject(tempFileRef).catch(err => console.error("Failed to delete temp file", err));
         }
         setIsScanning(false);
+    }
+  };
+
+  const handleAutofillFromText = async () => {
+    if (!scannedText) {
+      toast({ title: 'No Text', description: 'Please scan a document to get text first.', variant: 'destructive'});
+      return;
+    }
+    setIsAutofilling(true);
+    toast({ title: "Autofilling...", description: "Parsing text and filling form fields." });
+    try {
+      const response = await extractKeyInfoFromAadhaar({ text: scannedText });
+
+      if (response) {
+          if (response.name) setValue('name', response.name, { shouldValidate: true });
+          if (response.address) setValue('address', response.address, { shouldValidate: true });
+          if (response.aadhaarNumber) setValue('idNumber', response.aadhaarNumber, { shouldValidate:true });
+          setValue('idProofType', 'Aadhaar', { shouldValidate: true });
+          
+          toast({
+              title: "Autofill Successful",
+              description: "Beneficiary details have been populated from the scanned text.",
+              variant: "success",
+          });
+      } else {
+           toast({
+              title: "Autofill Incomplete",
+              description: "Could not extract all details from the text. Please fill them manually.",
+              variant: "default",
+          });
+      }
+    } catch (error: any) {
+      console.warn("Autofill from text failed:", error);
+      toast({ title: 'Autofill Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsAutofilling(false);
     }
   };
 
@@ -316,49 +353,75 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             />
         </div>
 
-        <FormItem>
-            <FormLabel>ID Proof Document</FormLabel>
-            <div className="flex items-center gap-2">
-                <FormControl className="flex-grow">
+        <div className="space-y-4 rounded-md border p-4">
+            <h3 className="text-sm font-medium text-muted-foreground">ID Proof Scanning</h3>
+            <Separator />
+            <FormItem>
+                <FormLabel>ID Proof Document</FormLabel>
+                <FormControl>
                     <Input id="id-proof-file-input" type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
                 </FormControl>
+                <FormDescription>Optional. Upload an image or PDF of the ID proof.</FormDescription>
+                <FormMessage />
+            </FormItem>
+            
+            {preview && (
+                <>
+                <div className="relative group w-full h-48 mt-2 rounded-md overflow-hidden border">
+                    {preview.startsWith('data:application/pdf') ? (
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+                            <FileIcon className="w-12 h-12 mb-2" />
+                            <p className="text-sm text-center">PDF Document Uploaded</p>
+                        </div>
+                    ) : (
+                        <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
+                    )}
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('id-proof-file-input')?.click()}>
+                            <Replace className="h-5 w-5"/>
+                            <span className="sr-only">Replace Image</span>
+                        </Button>
+                        <Button type="button" size="icon" variant="destructive" onClick={handleDeleteProof}>
+                            <Trash2 className="h-5 w-5"/>
+                            <span className="sr-only">Delete Image</span>
+                        </Button>
+                    </div>
+                </div>
                 <Button 
                     type="button" 
-                    variant="outline" 
-                    onClick={handleScanIdProof} 
-                    disabled={isScanning || !preview}
-                    title="Scan ID Proof from Image"
+                    className="w-full"
+                    onClick={handleScanToText} 
+                    disabled={isScanning || isAutofilling || !preview}
                 >
                     {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                    Scan
+                    Scan to Text
                 </Button>
-            </div>
-            <FormDescription>Optional. Upload an image or PDF of the ID proof. You can scan it after uploading.</FormDescription>
-            <FormMessage />
-        </FormItem>
-        
-        {preview && (
-            <div className="relative group w-full h-48 mt-2 rounded-md overflow-hidden border">
-                 {preview.startsWith('data:application/pdf') ? (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
-                        <FileIcon className="w-12 h-12 mb-2" />
-                        <p className="text-sm text-center">PDF Document Uploaded</p>
-                    </div>
-                 ) : (
-                    <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
-                 )}
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('id-proof-file-input')?.click()}>
-                        <Replace className="h-5 w-5"/>
-                        <span className="sr-only">Replace Image</span>
-                    </Button>
-                     <Button type="button" size="icon" variant="destructive" onClick={handleDeleteProof}>
-                        <Trash2 className="h-5 w-5"/>
-                        <span className="sr-only">Delete Image</span>
-                    </Button>
-                 </div>
-            </div>
-        )}
+                </>
+            )}
+
+            {scannedText && (
+              <div className="space-y-2">
+                <Label htmlFor="scanned-text-beneficiary">Extracted Text</Label>
+                <Textarea
+                  id="scanned-text-beneficiary"
+                  value={scannedText}
+                  onChange={(e) => setScannedText(e.target.value)}
+                  rows={4}
+                  className="font-code"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={handleAutofillFromText}
+                  disabled={isScanning || isAutofilling}
+                >
+                  {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
+                  Autofill Form from Text
+                </Button>
+              </div>
+            )}
+        </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
@@ -462,5 +525,3 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     </Form>
   );
 }
-
-    
