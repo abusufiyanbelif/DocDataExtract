@@ -41,6 +41,7 @@ export async function extractEducationFindings(
 
 const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
+  model: 'gemini-pro-vision',
   input: {schema: ExtractEducationFindingsInputSchema},
   output: {schema: ExtractEducationFindingsOutputSchema},
   prompt: `You are an expert academic registrar tasked with extracting key information from educational documents.

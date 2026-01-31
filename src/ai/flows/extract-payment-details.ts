@@ -34,6 +34,7 @@ export async function extractPaymentDetails(
 
 const prompt = ai.definePrompt({
   name: 'extractPaymentDetailsPrompt',
+  model: 'gemini-pro-vision',
   input: {schema: ExtractPaymentDetailsInputSchema},
   output: {schema: ExtractPaymentDetailsOutputSchema},
   prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from services like Google Pay and Paytm. Your task is to find and extract the following details from the provided image:
