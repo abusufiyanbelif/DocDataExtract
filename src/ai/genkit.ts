@@ -6,11 +6,11 @@ import {googleAI} from '@genkit-ai/googleai';
 
 // The googleAI plugin is configured here. It's crucial to provide the API key
 // from the environment variables to authenticate with the Google AI services.
-// The key should be in your .env file as GOOGLE_API_KEY or GEMINI_API_KEY.
+// The key should be in your .env file as GEMINI_API_KEY.
 export const ai = genkit({
   plugins: [
     googleAI({
-      apiKey: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY,
+      apiKey: process.env.GEMINI_API_KEY,
     }),
   ],
 });
