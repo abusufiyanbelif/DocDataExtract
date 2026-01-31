@@ -35,7 +35,7 @@ export async function extractPaymentDetails(
 
 const prompt = ai.definePrompt({
   name: 'extractPaymentDetailsPrompt',
-  model: googleAI.model('gemini-1.5-flash-latest'),
+  model: googleAI.model('gemini-pro-vision'),
   prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image and extract the following details precisely.
 
 1.  **amount**: Find the main transaction amount. It may have a currency symbol like '₹'. The value should be a number. For example, if you see '₹200', the value should be \`200\`.
@@ -57,7 +57,7 @@ const extractPaymentDetailsFlow = ai.defineFlow(
     const response = await prompt(input);
     const text = response.text.trim();
     
-    // Find the JSON part in case the model adds extra text like ```json ... ```
+    // Find the JSON part in case the model adds extra text like \`\`\`json ... \`\`\`
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('Invalid response from AI. Expected a JSON object.');

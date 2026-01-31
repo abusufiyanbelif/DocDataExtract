@@ -42,7 +42,7 @@ export async function extractEducationFindings(
 
 const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
-  model: googleAI.model('gemini-1.5-flash-latest'),
+  model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractEducationFindingsInputSchema},
   output: {schema: ExtractEducationFindingsOutputSchema},
   prompt: `You are an expert academic registrar tasked with extracting key information from educational documents.
