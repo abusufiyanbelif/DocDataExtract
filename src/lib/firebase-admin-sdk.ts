@@ -1,3 +1,5 @@
+'use server';
+
 import * as admin from 'firebase-admin';
 
 // This file initializes the Firebase Admin SDK for use in server-side
