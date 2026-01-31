@@ -1,0 +1,9 @@
+src/app/users/edit/[userId]/page.tsx(112,9): error TS2353: Object literal may only specify known properties, and 'idProofUrl' does not exist in type 'Partial<UserFormData>'.
+src/billing-extractor.tsx(14,30): error TS2307: Cannot find module './file-uploader' or its corresponding type declarations.
+src/billing-extractor.tsx(17,31): error TS2307: Cannot find module './dynamic-fields' or its corresponding type declarations.
+src/billing-extractor.tsx(18,44): error TS2307: Cannot find module './ui/radio-group' or its corresponding type declarations.
+src/billing-extractor.tsx(19,23): error TS2307: Cannot find module './ui/label' or its corresponding type declarations.
+src/components/beneficiary-form.tsx(31,10): error TS2724: '"@/ai/flows/extract-key-info-identity"' has no exported member named 'extractKeyInfoFromAadhaarText'. Did you mean 'extractKeyInfoFromAadhaar'?
+src/components/ui/calendar.tsx(5,27): error TS2307: Cannot find module 'react-day-picker' or its corresponding type declarations.
+src/components/ui/calendar.tsx(57,22): error TS7031: Binding element 'className' implicitly has an 'any' type.
+src/components/ui/calendar.tsx(60,23): error TS7031: Binding element 'className' implicitly has an 'any' type.

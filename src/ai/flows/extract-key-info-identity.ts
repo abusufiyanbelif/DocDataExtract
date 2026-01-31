@@ -1,13 +1,13 @@
 'use server';
 /**
- * @fileOverview This file defines a Genkit flow for extracting key information from an Aadhaar card image.
+ * @fileOverview This file defines Genkit flows for extracting key information from an Aadhaar card.
  *
- * The flow takes an image of an Aadhaar card as input and uses an AI model to extract information
- * such as name, date of birth, gender, Aadhaar number, and address.
+ * It includes flows for extracting from both an image and from raw text.
  *
- * @exports `extractKeyInfoFromAadhaar` - The main function to call to start the flow.
- * @exports `ExtractKeyInfoFromAadhaarInput` - The input type for the flow.
- * @exports `ExtractKeyInfoFromAadhaarOutput` - The output type for the flow.
+ * @exports `extractKeyInfoFromAadhaar` - The main function to call for image-based extraction.
+ * @exports `extractKeyInfoFromAadhaarText` - The function to call for text-based extraction.
+ * @exports `ExtractKeyInfoFromAadhaarInput` - The input type for the image flow.
+ * @exports `ExtractKeyInfoFromAadhaarOutput` - The shared output type for both flows.
  */
 
 import {ai} from '@/ai/genkit';
@@ -70,6 +70,66 @@ const extractKeyInfoFromAadhaarFlow = ai.defineFlow(
   },
   async (input) => {
     const response = await prompt(input);
+    const text = response.text.trim();
+    
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid response from AI. Expected a JSON object.');
+    }
+
+    try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return ExtractKeyInfoFromAadhaarOutputSchema.parse(parsed);
+    } catch (e: any) {
+        console.warn("Failed to parse AI response:", text, e);
+        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
+    }
+  }
+);
+
+
+// --- Text-based extraction ---
+
+const ExtractKeyInfoFromAadhaarTextInputSchema = z.object({
+  text: z.string().describe("Raw text from an Aadhaar card."),
+});
+export type ExtractKeyInfoFromAadhaarTextInput = z.infer<typeof ExtractKeyInfoFromAadhaarTextInputSchema>;
+
+export async function extractKeyInfoFromAadhaarText(
+  input: ExtractKeyInfoFromAadhaarTextInput
+): Promise<ExtractKeyInfoFromAadhaarOutput> {
+  return extractKeyInfoFromAadhaarTextFlow(input);
+}
+
+const textPrompt = ai.definePrompt({
+  name: 'extractKeyInfoFromAadhaarTextPrompt',
+  model: 'googleai/gemini-1.5-flash',
+  prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided text from an Aadhaar card and extract the following details.
+
+Return ONLY a single, valid JSON object with the extracted information. Do not include any text, markdown, or formatting before or after the JSON object.
+
+The JSON object should have the following keys:
+- "name" (string): The person's full name.
+- "dob" (string): Their Date of Birth (dob).
+- "gender" (string): Their gender.
+- "aadhaarNumber" (string): The 12-digit Aadhaar number.
+- "address" (string): The full residential address printed on the card.
+
+Here is the text from the card:
+---
+{{{text}}}
+---
+  `,
+});
+
+const extractKeyInfoFromAadhaarTextFlow = ai.defineFlow(
+  {
+    name: 'extractKeyInfoFromAadhaarTextFlow',
+    inputSchema: ExtractKeyInfoFromAadhaarTextInputSchema,
+    outputSchema: ExtractKeyInfoFromAadhaarOutputSchema,
+  },
+  async (input) => {
+    const response = await textPrompt(input);
     const text = response.text.trim();
     
     const jsonMatch = text.match(/\{[\s\S]*\}/);

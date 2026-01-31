@@ -11,12 +11,12 @@ import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'fi
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { FileUploader } from './file-uploader';
+import { FileUploader } from '@/components/file-uploader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DynamicFields } from './dynamic-fields';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Label } from './ui/label';
+import { DynamicFields } from '@/components/dynamic-fields';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 function ResultDisplay({ label, value }: { label: string; value: string }) {
   return (

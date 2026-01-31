@@ -101,7 +101,7 @@ export default function EditUserPage() {
     const batch = writeBatch(firestore);
     const docRef = doc(firestore, 'users', userId);
     
-    const { idProofFile, idProofDeleted, ...updateData }: Partial<UserFormData> = {
+    const updateData: Partial<UserProfile> = {
         name: data.name,
         phone: data.phone,
         role: data.role,
