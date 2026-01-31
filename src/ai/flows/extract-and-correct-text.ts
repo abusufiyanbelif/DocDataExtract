@@ -31,6 +31,7 @@ export async function extractAndCorrectText(input: ExtractAndCorrectTextInput): 
 
 const extractTextPrompt = ai.definePrompt({
   name: 'extractTextPrompt',
+  model: 'gemini-1.5-flash-latest',
   prompt: `You are an OCR (Optical Character Recognition) expert.
 
   Extract all text from the following image. Return only the raw text content.
