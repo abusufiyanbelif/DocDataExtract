@@ -43,7 +43,7 @@ export async function extractKeyInfoFromAadhaarText(
 
 const prompt = ai.definePrompt({
   name: 'extractKeyInfoFromAadhaarPrompt',
-  model: 'googleai/gemini-1.5-pro',
+  model: 'googleai/gemini-1.5-flash',
   prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided text from an Aadhaar card and extract the following details.
 
 Return ONLY a single, valid JSON object with the extracted information. Do not include any text, markdown, or formatting before or after the JSON object.

@@ -10,7 +10,7 @@ import {ai} from '@/ai/genkit';
 export async function runDiagnosticCheck(): Promise<{ok: boolean; message: string}> {
     try {
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-pro',
+            model: 'googleai/gemini-1.5-flash',
             prompt: 'Reply with only the word: "OK"',
             config: {
                 temperature: 0,
@@ -32,7 +32,7 @@ export async function runDiagnosticCheck(): Promise<{ok: boolean; message: strin
             if (lowerCaseMessage.includes('api key not valid')) {
                 clientMessage = 'The configured GEMINI_API_KEY is not valid. Please check your .env file.';
             } else if (lowerCaseMessage.includes('not_found') || lowerCaseMessage.includes('not found') || lowerCaseMessage.includes('404')) {
-                clientMessage = `Model not found. This usually means the API is not enabled or the model name is incorrect. Please check the following in your Google Cloud project: 1) Ensure the "Generative Language API" is enabled. 2) Verify your project has billing enabled. 3) Check that your GEMINI_API_KEY has no restrictions or that it allows the Generative Language API. (Details: ${error.message})`;
+                clientMessage = `Model not found. This can be caused by two main issues: 1) The model name in the code (e.g., 'googleai/gemini-1.5-flash') is incorrect or not recognized by the Genkit plugin. 2) The API is not enabled in your Google Cloud project. Please check the following: 1) Ensure the "Generative Language API" is enabled in your GCP project. 2) Verify your project has billing enabled. 3) Check that your GEMINI_API_KEY has no restrictions. (Details: ${error.message})`;
             } else if (lowerCaseMessage.includes('permission denied')) {
                  clientMessage = 'API permission denied. Ensure the Generative Language API is enabled for your project in Google Cloud Console.';
             } else {
