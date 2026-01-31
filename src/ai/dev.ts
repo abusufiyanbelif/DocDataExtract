@@ -1,14 +1,14 @@
-import { config } from 'dotenv';
+import {config} from 'dotenv';
 config();
 
 import '@/ai/genkit';
-import '@/ai/flows/extract-medical-findings.ts';
-import '@/ai/flows/extract-and-correct-text.ts';
-import '@/ai/flows/extract-billing-data.ts';
-import '@/ai/flows/extract-key-info-identity.ts';
-import '@/ai/flows/extract-dynamic-form.ts';
-import '@/ai/flows/create-lead-story.ts';
-import '@/ai/flows/extract-education-findings.ts';
-import '@/ai/flows/create-education-story.ts';
-import '@/ai/flows/extract-payment-details.ts';
-import '@/ai/flows/run-diagnostic-check.ts';
+import '@/ai/flows/extract-medical-findings';
+import '@/ai/flows/extract-and-correct-text';
+import '@/ai/flows/extract-billing-data';
+import '@/ai/flows/extract-key-info-identity';
+import '@/ai/flows/extract-dynamic-form';
+import '@/ai/flows/create-lead-story';
+import '@/ai/flows/extract-education-findings';
+import '@/ai/flows/create-education-story';
+import '@/ai/flows/extract-payment-details';
+import '@/ai/flows/run-diagnostic-check';

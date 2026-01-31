@@ -58,7 +58,6 @@ const extractPaymentDetailsFromTextFlow = ai.defineFlow(
     const response = await prompt(input);
     const text = response.text.trim();
     
-    // Find the JSON part in case the model adds extra text like \`\`\`json ... \`\`\`
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('The AI model did not return a valid JSON object. Please check the extracted text quality.');
@@ -66,7 +65,6 @@ const extractPaymentDetailsFromTextFlow = ai.defineFlow(
 
     try {
         const parsed = JSON.parse(jsonMatch[0]);
-        // Validate with Zod schema before returning
         return ExtractPaymentDetailsOutputSchema.parse(parsed);
     } catch (e: any) {
         console.warn("Failed to parse AI response:", text, e);
