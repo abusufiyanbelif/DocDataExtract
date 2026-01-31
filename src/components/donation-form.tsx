@@ -25,12 +25,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { Donation } from '@/lib/types';
-import { Loader2, ScanLine, FileSignature, Replace, Trash2 } from 'lucide-react';
+import { Loader2, ScanLine, Replace, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { extractPaymentDetailsFromText } from '@/ai/flows/extract-payment-details';
-import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
+import { extractPaymentDetails } from '@/ai/flows/extract-payment-details';
 import { Separator } from './ui/separator';
-import { Textarea } from './ui/textarea';
 import { Checkbox } from './ui/checkbox';
 
 const formSchema = z.object({
@@ -68,8 +66,6 @@ interface DonationFormProps {
 export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps) {
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
-  const [isAutofilling, setIsAutofilling] = useState(false);
-  const [scannedText, setScannedText] = useState('');
 
   const form = useForm<DonationFormData>({
     resolver: zodResolver(formSchema),
@@ -97,7 +93,6 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   useEffect(() => {
     const fileList = screenshotFile as FileList | undefined;
     if (fileList && fileList.length > 0) {
-        setScannedText('');
         const file = fileList[0];
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -116,11 +111,10 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     setValue('screenshotFile', null);
     setValue('screenshotDeleted', true);
     setPreview(null);
-    setScannedText('');
     toast({ title: 'Image Marked for Deletion', description: 'The screenshot will be permanently deleted when you save the changes.', variant: 'default' });
   };
-
-  const handleScanToText = async () => {
+  
+  const handleScanScreenshot = async () => {
     const fileList = getValues('screenshotFile') as FileList | undefined;
     if (!fileList || fileList.length === 0) {
         toast({ title: "No File", description: "Please upload a screenshot to scan.", variant: "destructive" });
@@ -128,8 +122,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     }
     
     setIsScanning(true);
-    setScannedText('');
-    toast({ title: "Scanning screenshot...", description: "Please wait while the AI extracts the text." });
+    toast({ title: "Scanning screenshot...", description: "Please wait while the AI extracts the details." });
 
     const file = fileList[0];
     const reader = new FileReader();
@@ -143,19 +136,43 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         }
 
         try {
-            const response = await extractAndCorrectText({ photoDataUri: dataUri });
-            if (!response.extractedText) {
-                throw new Error("The AI model failed to extract any text from the document.");
+            const response = await extractPaymentDetails({ photoDataUri: dataUri });
+            
+            const filledFields: string[] = [];
+            if (response.receiverName) {
+                setValue('receiverName', response.receiverName, { shouldValidate: true });
+                filledFields.push('Receiver Name');
             }
-            setScannedText(response.extractedText);
-            toast({
-                title: "Text Extracted",
-                description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
-                variant: "success",
-            });
+            if (response.amount) {
+                setValue('amount', response.amount, { shouldValidate: true });
+                filledFields.push('Amount');
+            }
+            if (response.transactionId) {
+                setValue('transactionId', response.transactionId, { shouldValidate: true });
+                filledFields.push('Transaction ID');
+            }
+            if (response.date && /^\d{4}-\d{2}-\d{2}$/.test(response.date)) {
+                setValue('donationDate', response.date, { shouldValidate: true });
+                filledFields.push('Donation Date');
+            }
+
+            if (filledFields.length > 0) {
+                toast({
+                    title: "Autofill Successful",
+                    description: `Filled: ${filledFields.join(', ')}.`,
+                    variant: "success",
+                });
+            } else {
+                toast({
+                    title: "No Details Found",
+                    description: "Could not find any details to autofill from the image.",
+                    variant: "default",
+                });
+            }
+
         } catch (error: any) {
-            console.warn("Scan to text failed:", error);
-            toast({
+             console.warn("Screenshot scan failed:", error);
+             toast({
                 title: "Scan Failed",
                 description: error.message || "Could not automatically read the screenshot.",
                 variant: "destructive",
@@ -169,64 +186,6 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         setIsScanning(false);
     };
     reader.readAsDataURL(file);
-  };
-  
-  const handleAutofillFromText = async () => {
-    if (!scannedText) {
-        toast({
-            title: "No Text to Process",
-            description: "Please scan an image first to extract text.",
-            variant: "destructive",
-        });
-        return;
-    }
-    setIsAutofilling(true);
-    toast({ title: "Autofilling...", description: "Parsing text and filling form fields." });
-    try {
-        const response = await extractPaymentDetailsFromText({ text: scannedText });
-        
-        const filledFields: string[] = [];
-        if (response.receiverName) {
-            setValue('receiverName', response.receiverName, { shouldValidate: true });
-            filledFields.push('Receiver Name');
-        }
-        if (response.amount) {
-            setValue('amount', response.amount, { shouldValidate: true });
-            filledFields.push('Amount');
-        }
-        if (response.transactionId) {
-            setValue('transactionId', response.transactionId, { shouldValidate: true });
-            filledFields.push('Transaction ID');
-        }
-        if (response.date && /^\d{4}-\d{2}-\d{2}$/.test(response.date)) {
-            setValue('donationDate', response.date, { shouldValidate: true });
-            filledFields.push('Donation Date');
-        }
-
-        if (filledFields.length > 0) {
-            toast({
-                title: "Autofill Successful",
-                description: `Filled: ${filledFields.join(', ')}.`,
-                variant: "success",
-            });
-        } else {
-            toast({
-                title: "No Details Found",
-                description: "Could not find any details to autofill from the text.",
-                variant: "default",
-            });
-        }
-
-    } catch (error: any) {
-         console.warn("Autofill from text failed:", error);
-         toast({
-            title: "Autofill Failed",
-            description: error.message || "Could not parse details from the text.",
-            variant: "destructive",
-        });
-    } finally {
-        setIsAutofilling(false);
-    }
   };
 
   return (
@@ -392,40 +351,15 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                       </div>
                   )}
                   {screenshotFile?.length > 0 && (
-                      <>
-                        <Button 
-                            type="button" 
-                            className="w-full"
-                            onClick={handleScanToText}
-                            disabled={isScanning || isAutofilling}
-                        >
-                            {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                            Scan Screenshot to Text
-                        </Button>
-                        {scannedText && (
-                              <div className="space-y-2">
-                                  <FormLabel htmlFor="scanned-text">Extracted Text</FormLabel>
-                                  <Textarea
-                                      id="scanned-text"
-                                      placeholder="Raw text from the image will appear here..."
-                                      value={scannedText}
-                                      onChange={(e) => setScannedText(e.target.value)}
-                                      rows={6}
-                                      className="font-code"
-                                  />
-                                  <Button
-                                      type="button"
-                                      variant="secondary"
-                                      className="w-full"
-                                      onClick={handleAutofillFromText}
-                                      disabled={isScanning || isAutofilling}
-                                  >
-                                      {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
-                                      Autofill Form from Text
-                                  </Button>
-                              </div>
-                        )}
-                      </>
+                    <Button 
+                        type="button" 
+                        className="w-full"
+                        onClick={handleScanScreenshot}
+                        disabled={isScanning}
+                    >
+                        {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
+                        Scan Screenshot
+                    </Button>
                   )}
                   <FormField
                     control={form.control}

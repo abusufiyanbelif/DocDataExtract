@@ -41,15 +41,11 @@ export async function extractMedicalFindings(
 const prompt = ai.definePrompt({
   name: 'extractMedicalFindingsPrompt',
   model: 'googleai/gemini-pro',
+  input: { schema: ExtractMedicalFindingsInputSchema },
+  output: { schema: ExtractMedicalFindingsOutputSchema },
   prompt: `You are an expert medical analyst tasked with extracting key information from an image of a medical report.
 
   Analyze the provided image and extract the diagnosis and key findings.
-  
-  Return ONLY a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object.
-
-  The JSON object should have the following keys:
-  - "diagnosis" (string): The main diagnosis or impression from the report.
-  - "findings" (array): A list of findings. Each item in the array should be an object with "finding" (string) and "details" (string) keys.
 
   Here is the image from the medical report:
   ---
@@ -67,20 +63,10 @@ const extractMedicalFindingsFlow = ai.defineFlow(
     outputSchema: ExtractMedicalFindingsOutputSchema,
   },
   async (input) => {
-    const response = await prompt(input);
-    const text = response.text.trim();
-    
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Invalid response from AI. Expected a JSON object.');
+    const { output } = await prompt(input);
+    if (!output) {
+      throw new Error("The AI model did not return a valid output.");
     }
-
-    try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return ExtractMedicalFindingsOutputSchema.parse(parsed);
-    } catch (e: any) {
-        console.warn("Failed to parse AI response:", text, e);
-        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
-    }
+    return output;
   }
 );

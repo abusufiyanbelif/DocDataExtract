@@ -45,16 +45,11 @@ export async function extractBillingDataFromImage(
 const prompt = ai.definePrompt({
   name: 'extractBillingDataPrompt',
   model: 'googleai/gemini-pro',
+  input: { schema: ExtractBillingDataInputSchema },
+  output: { schema: ExtractBillingDataOutputSchema },
   prompt: `You are an expert in extracting data from bills and invoices.
 
-  Please extract the following information from the image provided.
-  Return ONLY a single, valid JSON object with the extracted information. Do not include any text, markdown, or formatting before or after the JSON object.
-
-  The JSON object should have the following keys:
-  - "vendorInformation" (string): The name and contact information of the vendor.
-  - "dates" (string): The billing date and due date, if available.
-  - "amounts" (string): The total amount due and any other relevant amounts.
-  - "purchasedItems" (array): A list of items or services. Each item in the array should be an object with keys: "item" (string), "quantity" (number, optional), "unitPrice" (number, optional), and "totalPrice" (number).
+  Please extract the vendor information, dates, amounts, and purchased items from the image provided.
 
   Here is the image from the bill:
   ---
@@ -69,20 +64,10 @@ const extractBillingDataFlow = ai.defineFlow(
     outputSchema: ExtractBillingDataOutputSchema,
   },
   async (input) => {
-    const response = await prompt(input);
-    const text = response.text.trim();
-    
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Invalid response from AI. Expected a JSON object.');
+    const { output } = await prompt(input);
+    if (!output) {
+      throw new Error("The AI model did not return a valid output.");
     }
-
-    try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return ExtractBillingDataOutputSchema.parse(parsed);
-    } catch (e: any) {
-        console.warn("Failed to parse AI response:", text, e);
-        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
-    }
+    return output;
   }
 );

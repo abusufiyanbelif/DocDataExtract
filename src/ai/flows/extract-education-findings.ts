@@ -42,16 +42,11 @@ export async function extractEducationFindings(
 const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
   model: 'googleai/gemini-pro',
+  input: { schema: ExtractEducationFindingsInputSchema },
+  output: { schema: ExtractEducationFindingsOutputSchema },
   prompt: `You are an expert academic registrar tasked with extracting key information from an image of an educational document.
 
   Analyze the provided image and extract the institution name, degree/examination, and key achievements or grades.
-  
-  Return ONLY a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object.
-
-  The JSON object should have the following keys:
-  - "institution" (string): The name of the educational institution.
-  - "degree" (string): The degree, course, or examination name.
-  - "achievements" (array): A list of achievements. Each item in the array should be an object with "achievement" (string) and "details" (string) keys.
 
   Here is the image from the educational document:
   ---
@@ -69,20 +64,10 @@ const extractEducationFindingsFlow = ai.defineFlow(
     outputSchema: ExtractEducationFindingsOutputSchema,
   },
   async (input) => {
-    const response = await prompt(input);
-    const text = response.text.trim();
-    
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Invalid response from AI. Expected a JSON object.');
+    const { output } = await prompt(input);
+    if (!output) {
+      throw new Error("The AI model did not return a valid output.");
     }
-
-    try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return ExtractEducationFindingsOutputSchema.parse(parsed);
-    } catch (e: any) {
-        console.warn("Failed to parse AI response:", text, e);
-        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
-    }
+    return output;
   }
 );

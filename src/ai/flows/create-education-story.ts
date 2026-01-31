@@ -36,15 +36,13 @@ export async function createEducationStory(
 const prompt = ai.definePrompt({
   name: 'createEducationStoryPrompt',
   model: 'googleai/gemini-pro',
+  input: { schema: CreateEducationStoryInputSchema },
+  output: { schema: CreateEducationStoryOutputSchema },
   prompt: `You are an expert academic advisor. Your goal is to create a concise summary of a student's academic journey. First, determine if the documents appear to be educational (transcripts, mark sheets, certificates, etc.).
 
 If the documents are not educational, create a general summary of their content.
 
 Analyze the following documents and generate a summary that highlights key achievements, academic progression, and areas of focus.
-
-Return ONLY a single, valid JSON object with the following keys:
-- "story" (string): The summary of the student's academic journey.
-- "isCorrectType" (boolean): True if the documents are educational, false otherwise.
 
 Documents:
   {{#each reportDataUris}}
@@ -60,20 +58,10 @@ const createEducationStoryFlow = ai.defineFlow(
     outputSchema: CreateEducationStoryOutputSchema,
   },
   async (input) => {
-    const response = await prompt(input);
-    const text = response.text.trim();
-    
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Invalid response from AI. Expected a JSON object.');
+    const { output } = await prompt(input);
+    if (!output) {
+      throw new Error("The AI model did not return a valid output.");
     }
-
-    try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return CreateEducationStoryOutputSchema.parse(parsed);
-    } catch (e: any) {
-        console.warn("Failed to parse AI response:", text, e);
-        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
-    }
+    return output;
   }
 );

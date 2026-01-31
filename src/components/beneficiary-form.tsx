@@ -26,12 +26,9 @@ import {
 } from "@/components/ui/select";
 import type { Beneficiary, RationList, RationItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Loader2, ScanLine, Trash2, Replace, FileIcon, FileSignature } from 'lucide-react';
+import { Loader2, ScanLine, Trash2, Replace, FileIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { extractKeyInfoFromAadhaarText } from '@/ai/flows/extract-key-info-identity';
-import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
+import { extractKeyInfoFromAadhaar } from '@/ai/flows/extract-key-info-identity';
 import { Separator } from './ui/separator';
 
 const formSchema = z.object({
@@ -63,8 +60,6 @@ interface BeneficiaryFormProps {
 export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }: BeneficiaryFormProps) {
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
-  const [isAutofilling, setIsAutofilling] = useState(false);
-  const [scannedText, setScannedText] = useState('');
 
   const form = useForm<BeneficiaryFormData>({
     resolver: zodResolver(formSchema),
@@ -101,7 +96,6 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
       };
       reader.readAsDataURL(file);
       setValue('idProofDeleted', false);
-      setScannedText('');
     } else if (!watch('idProofDeleted')) {
         setPreview(beneficiary?.idProofUrl || null);
     } else {
@@ -147,11 +141,10 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     setValue('idProofFile', null);
     setValue('idProofDeleted', true);
     setPreview(null);
-    setScannedText('');
     toast({ title: 'Image Marked for Deletion', description: 'The ID proof will be permanently deleted when you save the changes.', variant: 'default' });
   };
   
-  const handleScanToText = async () => {
+  const handleScanIdProof = async () => {
     const fileList = getValues('idProofFile') as FileList | undefined;
 
     if (!fileList || fileList.length === 0) {
@@ -160,8 +153,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     }
     
     setIsScanning(true);
-    setScannedText('');
-    toast({ title: "Scanning document...", description: "Please wait while the AI extracts the text." });
+    toast({ title: "Scanning document...", description: "Please wait while the AI extracts the details." });
 
     const file = fileList[0];
     const reader = new FileReader();
@@ -175,18 +167,27 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         }
 
         try {
-            const response = await extractAndCorrectText({ photoDataUri: dataUri });
-            if (!response.extractedText) {
-                throw new Error("The AI model failed to extract any text from the document.");
+            const response = await extractKeyInfoFromAadhaar({ photoDataUri: dataUri });
+            if (response) {
+                if (response.name) setValue('name', response.name, { shouldValidate: true });
+                if (response.address) setValue('address', response.address, { shouldValidate: true });
+                if (response.aadhaarNumber) setValue('idNumber', response.aadhaarNumber, { shouldValidate:true });
+                setValue('idProofType', 'Aadhaar', { shouldValidate: true });
+                
+                toast({
+                    title: "Autofill Successful",
+                    description: "Beneficiary details have been populated from the scanned document.",
+                    variant: "success",
+                });
+            } else {
+                 toast({
+                    title: "Autofill Incomplete",
+                    description: "Could not extract all details from the document. Please fill them manually.",
+                    variant: "default",
+                });
             }
-            setScannedText(response.extractedText);
-            toast({
-                title: "Text Extracted",
-                description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
-                variant: "success",
-            });
         } catch (error: any) {
-            console.warn("ID Proof scan to text failed:", error);
+            console.warn("ID Proof scan failed:", error);
             toast({
                 title: "Scan Failed",
                 description: error.message || "Could not automatically read the document.",
@@ -203,41 +204,6 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     reader.readAsDataURL(file);
   };
 
-  const handleAutofillFromText = async () => {
-    if (!scannedText) {
-      toast({ title: 'No Text', description: 'Please scan a document to get text first.', variant: 'destructive'});
-      return;
-    }
-    setIsAutofilling(true);
-    toast({ title: "Autofilling...", description: "Parsing text and filling form fields." });
-    try {
-      const response = await extractKeyInfoFromAadhaarText({ text: scannedText });
-
-      if (response) {
-          if (response.name) setValue('name', response.name, { shouldValidate: true });
-          if (response.address) setValue('address', response.address, { shouldValidate: true });
-          if (response.aadhaarNumber) setValue('idNumber', response.aadhaarNumber, { shouldValidate:true });
-          setValue('idProofType', 'Aadhaar', { shouldValidate: true });
-          
-          toast({
-              title: "Autofill Successful",
-              description: "Beneficiary details have been populated from the scanned text.",
-              variant: "success",
-          });
-      } else {
-           toast({
-              title: "Autofill Incomplete",
-              description: "Could not extract all details from the text. Please fill them manually.",
-              variant: "default",
-          });
-      }
-    } catch (error: any) {
-      console.warn("Autofill from text failed:", error);
-      toast({ title: 'Autofill Failed', description: error.message, variant: 'destructive' });
-    } finally {
-      setIsAutofilling(false);
-    }
-  };
 
   return (
     <Form {...form}>
@@ -341,7 +307,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         </div>
 
         <div className="space-y-4 rounded-md border p-4">
-            <h3 className="text-sm font-medium text-muted-foreground">ID Proof Scanning</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">ID Proof Details</h3>
             <Separator />
             <FormItem>
                 <FormLabel>ID Proof Document</FormLabel>
@@ -353,7 +319,6 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             </FormItem>
             
             {preview && (
-                <>
                 <div className="relative group w-full h-48 mt-2 rounded-md overflow-hidden border">
                     {preview.startsWith('data:application/pdf') ? (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
@@ -374,43 +339,18 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                         </Button>
                     </div>
                 </div>
-                </>
             )}
 
             {idProofFile?.length > 0 && (
-              <>
-                <Button 
-                    type="button" 
-                    className="w-full"
-                    onClick={handleScanToText} 
-                    disabled={isScanning || isAutofilling}
-                >
-                    {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                    Scan to Text
-                </Button>
-                {scannedText && (
-                  <div className="space-y-2">
-                    <Label htmlFor="scanned-text-beneficiary">Extracted Text</Label>
-                    <Textarea
-                      id="scanned-text-beneficiary"
-                      value={scannedText}
-                      onChange={(e) => setScannedText(e.target.value)}
-                      rows={4}
-                      className="font-code"
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="w-full"
-                      onClick={handleAutofillFromText}
-                      disabled={isScanning || isAutofilling}
-                    >
-                      {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
-                      Autofill Form from Text
-                    </Button>
-                  </div>
-                )}
-              </>
+              <Button 
+                  type="button" 
+                  className="w-full"
+                  onClick={handleScanIdProof} 
+                  disabled={isScanning}
+              >
+                  {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
+                  Scan ID Proof & Autofill
+              </Button>
             )}
         </div>
         

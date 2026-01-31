@@ -31,14 +31,11 @@ import { useAuth } from '@/firebase';
 import { createAdminPermissions, type UserPermissions } from '@/lib/modules';
 import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { Loader2, Send, Replace, Trash2, FileIcon, ScanLine, FileSignature } from 'lucide-react';
+import { Loader2, Send, Replace, Trash2, FileIcon, ScanLine } from 'lucide-react';
 import { PermissionsTable } from './permissions-table';
 import { get, set } from '@/lib/utils';
 import { useUserProfile as useCurrentUserProfile } from '@/hooks/use-user-profile';
-import { extractKeyInfoFromAadhaarText } from '@/ai/flows/extract-key-info-identity';
-import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
+import { extractKeyInfoFromAadhaar } from '@/ai/flows/extract-key-info-identity';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -87,10 +84,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const { toast } = useToast();
   const auth = useAuth();
   const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || {});
-
   const [isScanning, setIsScanning] = useState(false);
-  const [isAutofilling, setIsAutofilling] = useState(false);
-  const [scannedText, setScannedText] = useState('');
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -144,7 +138,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       };
       reader.readAsDataURL(file);
       setValue('idProofDeleted', false);
-      setScannedText('');
     } else if (!watch('idProofDeleted')) {
         setPreview(user?.idProofUrl || null);
     } else {
@@ -156,7 +149,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     setValue('idProofFile', null);
     setValue('idProofDeleted', true);
     setPreview(null);
-    setScannedText('');
     toast({ title: 'Image Marked for Deletion', description: 'The ID proof will be permanently deleted when you save the changes.', variant: 'default' });
   };
 
@@ -202,7 +194,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       });
   };
   
-  const handleScanToText = async () => {
+  const handleScanIdProof = async () => {
     const fileList = getValues('idProofFile') as FileList | undefined;
 
     if (!fileList || fileList.length === 0) {
@@ -211,8 +203,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     }
     
     setIsScanning(true);
-    setScannedText('');
-    toast({ title: "Scanning document...", description: "Please wait while the AI extracts the text." });
+    toast({ title: "Scanning document...", description: "Please wait while the AI extracts the details." });
 
     const file = fileList[0];
     const reader = new FileReader();
@@ -226,18 +217,27 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         }
 
         try {
-            const response = await extractAndCorrectText({ photoDataUri: dataUri });
-            if (!response.extractedText) {
-                throw new Error("The AI model failed to extract any text from the document.");
+            const response = await extractKeyInfoFromAadhaar({ photoDataUri: dataUri });
+
+            if (response) {
+                if (response.name) setValue('name', response.name, { shouldValidate: true });
+                if (response.aadhaarNumber) setValue('idNumber', response.aadhaarNumber, { shouldValidate:true });
+                setValue('idProofType', 'Aadhaar', { shouldValidate: true });
+                
+                toast({
+                    title: "Autofill Successful",
+                    description: "User details have been populated from the scanned document.",
+                    variant: "success",
+                });
+            } else {
+                 toast({
+                    title: "Autofill Incomplete",
+                    description: "Could not extract all details from the document. Please fill them manually.",
+                    variant: "default",
+                });
             }
-            setScannedText(response.extractedText);
-            toast({
-                title: "Text Extracted",
-                description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
-                variant: "success",
-            });
         } catch (error: any) {
-            console.warn("ID Proof scan to text failed:", error);
+            console.warn("ID Proof scan failed:", error);
             toast({
                 title: "Scan Failed",
                 description: error.message || "Could not automatically read the document.",
@@ -252,41 +252,6 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         setIsScanning(false);
     };
     reader.readAsDataURL(file);
-  };
-  
-   const handleAutofillFromText = async () => {
-    if (!scannedText) {
-      toast({ title: 'No Text', description: 'Please scan a document to get text first.', variant: 'destructive'});
-      return;
-    }
-    setIsAutofilling(true);
-    toast({ title: "Autofilling...", description: "Parsing text and filling form fields." });
-    try {
-      const response = await extractKeyInfoFromAadhaarText({ text: scannedText });
-
-      if (response) {
-          if (response.name) setValue('name', response.name, { shouldValidate: true });
-          if (response.aadhaarNumber) setValue('idNumber', response.aadhaarNumber, { shouldValidate:true });
-          setValue('idProofType', 'Aadhaar', { shouldValidate: true });
-          
-          toast({
-              title: "Autofill Successful",
-              description: "User details have been populated from the scanned text.",
-              variant: "success",
-          });
-      } else {
-           toast({
-              title: "Autofill Incomplete",
-              description: "Could not extract all details from the text. Please fill them manually.",
-              variant: "default",
-          });
-      }
-    } catch (error: any) {
-      console.warn("Autofill from text failed:", error);
-      toast({ title: 'Autofill Failed', description: error.message, variant: 'destructive' });
-    } finally {
-      setIsAutofilling(false);
-    }
   };
 
   const finalSubmitHandler = (formData: z.infer<typeof formSchema>) => {
@@ -481,39 +446,15 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     </div>
                 )}
                  {idProofFile?.length > 0 && (
-                    <>
                     <Button 
                         type="button" 
                         className="w-full"
-                        onClick={handleScanToText} 
-                        disabled={isScanning || isAutofilling || !preview}
+                        onClick={handleScanIdProof} 
+                        disabled={isScanning}
                     >
                         {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                        Scan to Text
+                        Scan ID Proof & Autofill
                     </Button>
-                    {scannedText && (
-                        <div className="space-y-2">
-                        <Label htmlFor="scanned-text-user">Extracted Text</Label>
-                        <Textarea
-                            id="scanned-text-user"
-                            value={scannedText}
-                            onChange={(e) => setScannedText(e.target.value)}
-                            rows={4}
-                            className="font-code"
-                        />
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            className="w-full"
-                            onClick={handleAutofillFromText}
-                            disabled={isScanning || isAutofilling}
-                        >
-                            {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
-                            Autofill Form from Text
-                        </Button>
-                        </div>
-                    )}
-                    </>
                 )}
             </div>
 
