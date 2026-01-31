@@ -77,21 +77,7 @@ const extractDynamicFormFlow = ai.defineFlow(
     outputSchema: ExtractDynamicFormOutputSchema,
   },
   async (input) => {
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        const {output} = await prompt(input);
-        return output!;
-      } catch (e: any) {
-        if (e.message.includes('503') && retries > 1) {
-          console.log(`Retrying... (${3 - retries + 1})`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        } else {
-          throw e;
-        }
-      }
-      retries--;
-    }
-    throw new Error('Flow failed after multiple retries.');
+    const {output} = await prompt(input);
+    return output!;
   }
 );
