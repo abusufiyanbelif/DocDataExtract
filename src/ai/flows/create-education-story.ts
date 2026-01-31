@@ -35,7 +35,7 @@ export async function createEducationStory(
 
 const prompt = ai.definePrompt({
   name: 'createEducationStoryPrompt',
-  model: 'gemini-1.5-flash-latest',
+  model: 'gemini-1.5-flash',
   prompt: `You are an expert academic advisor. Your goal is to create a concise summary of a student's academic journey. First, determine if the documents appear to be educational (transcripts, mark sheets, certificates, etc.).
 
 If the documents are not educational, create a general summary of their content.
