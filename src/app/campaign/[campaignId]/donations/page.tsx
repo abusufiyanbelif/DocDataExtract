@@ -54,13 +54,13 @@ export default function DonationsPage() {
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId || !userProfile) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
-  }, [firestore, campaignId, userProfile]);
+  }, [firestore, campaignId, userProfile?.id]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const donationsCollectionRef = useMemo(() => {
     if (!firestore || !campaignId || !userProfile) return null;
     return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-  }, [firestore, campaignId, userProfile]);
+  }, [firestore, campaignId, userProfile?.id]);
   const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -208,7 +208,7 @@ export default function DonationsPage() {
             });
 
     } catch (error) {
-        console.error("Error during file upload:", error);
+        console.warn("Error during file upload:", error);
         toast({ title: 'Error', description: 'Could not save donation screenshot.', variant: 'destructive' });
         setIsFormOpen(false);
         setEditingDonation(null);

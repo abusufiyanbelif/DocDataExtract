@@ -57,7 +57,7 @@ export default function CampaignDetailsPage() {
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId || !userProfile) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
-  }, [firestore, campaignId, userProfile]);
+  }, [firestore, campaignId, userProfile?.id]);
 
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
 

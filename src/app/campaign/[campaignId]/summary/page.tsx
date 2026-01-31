@@ -79,12 +79,12 @@ export default function CampaignSummaryPage() {
     const [isSharing, setIsSharing] = useState(false);
 
     // Data fetching
-    const campaignDocRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId, isProfileLoading, userProfile]);
-    const beneficiariesCollectionRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId, isProfileLoading, userProfile]);
+    const campaignDocRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId, isProfileLoading, userProfile?.id]);
+    const beneficiariesCollectionRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId, isProfileLoading, userProfile?.id]);
     const donationsCollectionRef = useMemo(() => {
         if (!firestore || !campaignId || isProfileLoading || !userProfile) return null;
         return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-    }, [firestore, campaignId, isProfileLoading, userProfile]);
+    }, [firestore, campaignId, isProfileLoading, userProfile?.id]);
 
     const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
@@ -288,7 +288,7 @@ Please donate and share this message. Every contribution helps!
             } catch (err) {
                 // Don't show toast if user cancels share dialog.
                 if ((err as Error).name !== 'AbortError') {
-                    console.log('Share failed, falling back to clipboard.', err);
+                    console.warn('Share failed, falling back to clipboard.', err);
                     try {
                         await navigator.clipboard.writeText(shareText);
                         toast({

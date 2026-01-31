@@ -59,7 +59,7 @@ export default function CampaignPage() {
   const campaignsCollectionRef = useMemo(() => {
     if (!firestore || !userProfile) return null;
     return collection(firestore, 'campaigns');
-  }, [firestore, userProfile]);
+  }, [firestore, userProfile?.id]);
 
   const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
 
@@ -109,7 +109,7 @@ export default function CampaignPage() {
             return deleteObject(fileRef).catch(error => {
                 // Don't throw an error, just continue
                 if (error.code !== 'storage/object-not-found') {
-                    console.error(`Failed to delete file ${url}`, error);
+                    console.warn(`Failed to delete file ${url}`, error);
                 }
             });
         });

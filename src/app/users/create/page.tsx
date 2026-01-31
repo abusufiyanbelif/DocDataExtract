@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -31,9 +32,9 @@ export default function CreateUserPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const usersCollectionRef = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || !userProfile) return null;
     return collection(firestore, 'users');
-  }, [firestore]);
+  }, [firestore, userProfile?.id]);
   const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
   
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.create;

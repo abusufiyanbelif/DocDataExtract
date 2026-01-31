@@ -47,7 +47,7 @@ export default function UsersPage() {
   const usersCollectionRef = useMemo(() => {
     if (!firestore || !userProfile) return null;
     return collection(firestore, 'users');
-  }, [firestore, userProfile]);
+  }, [firestore, userProfile?.id]);
   
   const { data: users, isLoading: areUsersLoading } = useCollection<UserProfile>(usersCollectionRef);
 

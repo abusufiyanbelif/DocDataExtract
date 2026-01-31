@@ -66,13 +66,13 @@ export default function BeneficiariesPage() {
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId || !userProfile) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
-  }, [firestore, campaignId, userProfile]);
+  }, [firestore, campaignId, userProfile?.id]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const beneficiariesCollectionRef = useMemo(() => {
     if (!firestore || !campaignId || !userProfile) return null;
     return collection(firestore, `campaigns/${campaignId}/beneficiaries`);
-  }, [firestore, campaignId, userProfile]);
+  }, [firestore, campaignId, userProfile?.id]);
   const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -234,7 +234,7 @@ export default function BeneficiariesPage() {
             });
 
     } catch (error) {
-        console.error("Error during file upload:", error);
+        console.warn("Error during file upload:", error);
         toast({ title: 'File Upload Error', description: 'Could not upload the ID proof file.', variant: 'destructive' });
         setIsFormOpen(false);
         setEditingBeneficiary(null);
