@@ -37,14 +37,13 @@ const prompt = ai.definePrompt({
   name: 'extractPaymentDetailsPrompt',
   model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractPaymentDetailsInputSchema},
-  output: {schema: ExtractPaymentDetailsOutputSchema},
-  prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image and extract the following details precisely as requested in the output format.
+  prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image and extract the following details precisely.
 
-1.  **amount**: Find the main transaction amount. It may have a currency symbol like '₹'. You MUST extract only the numerical value. For example, if you see '₹200', the value should be \`200\`.
+1.  **amount**: Find the main transaction amount. It may have a currency symbol like '₹'. The value should be a number. For example, if you see '₹200', the value should be \`200\`.
 2.  **transactionId**: Find the unique transaction identifier. Look for labels like "UPI Transaction ID", "Transaction ID", "UTR", or "Ref No.". Extract the alphanumeric code associated with it.
 3.  **date**: Find the date of the transaction. If you find a date (e.g., "Jan 31, 2026", "31-01-2026"), you MUST format it as YYYY-MM-DD.
 
-If any of these fields are not clearly visible in the image, do not include them in your response. It is critical that you adhere to the data types specified in the output schema (e.g., amount must be a number).
+Return the extracted information as a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object. The JSON object should have the following keys: "amount" (number), "transactionId" (string), "date" (string in YYYY-MM-DD format). If any of these fields are not clearly visible in the image, omit them from the JSON object. It is critical that you adhere to the data types specified.
 
 Image: {{media url=photoDataUri}}`,
 });
@@ -56,7 +55,22 @@ const extractPaymentDetailsFlow = ai.defineFlow(
     outputSchema: ExtractPaymentDetailsOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    return output!;
+    const response = await prompt(input);
+    const text = response.text.trim();
+    
+    // Find the JSON part in case the model adds extra text like ```json ... ```
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid response from AI. Expected a JSON object.');
+    }
+
+    try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        // Validate with Zod schema before returning
+        return ExtractPaymentDetailsOutputSchema.parse(parsed);
+    } catch (e) {
+        console.warn("Failed to parse AI response:", text, e);
+        throw new Error('Failed to parse JSON response from AI.');
+    }
   }
 );
