@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  srcDir: 'src',
-};
+const nextConfig = {};
 
 module.exports = nextConfig;
