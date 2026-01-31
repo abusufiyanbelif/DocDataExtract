@@ -207,9 +207,9 @@ export default function DonationsPage() {
                 setEditingDonation(null);
             });
 
-    } catch (error) {
+    } catch (error: any) {
         console.warn("Error during file upload:", error);
-        toast({ title: 'Error', description: 'Could not save donation screenshot.', variant: 'destructive' });
+        toast({ title: 'Error', description: `Could not save donation screenshot. ${error.message}`, variant: 'destructive' });
         setIsFormOpen(false);
         setEditingDonation(null);
     }
@@ -301,8 +301,8 @@ export default function DonationsPage() {
                         <TableHead>Phone</TableHead>
                         <TableHead>Referral</TableHead>
                         <TableHead className="text-right">Amount (Rupee)</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Payment</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Donation Type</TableHead>
                         <TableHead>Transaction ID</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Screenshot</TableHead>
@@ -352,7 +352,7 @@ export default function DonationsPage() {
                             <TableCell>{donation.referral}</TableCell>
                             <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
                             <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
-                            <TableCell><Badge variant="outline">{donation.paymentType}</Badge></TableCell>
+                            <TableCell><Badge variant="outline">{donation.donationType}</Badge></TableCell>
                             <TableCell>{donation.transactionId || 'N/A'}</TableCell>
                             <TableCell>{donation.donationDate}</TableCell>
                             <TableCell>
@@ -379,7 +379,7 @@ export default function DonationsPage() {
       </main>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
                 <DialogTitle>{editingDonation ? 'Edit' : 'Add'} Donation</DialogTitle>
             </DialogHeader>

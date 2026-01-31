@@ -79,7 +79,7 @@ export interface Donation extends DocumentData {
   receiverName: string;
   amount: number;
   type: 'Zakat' | 'Sadqa' | 'Interest' | 'Lillah' | 'General';
-  paymentType: 'Cash' | 'Online';
+  donationType: 'Cash' | 'Online Payment' | 'Check' | 'Other';
   referral: string;
   donationDate: string;
   status: 'Verified' | 'Pending' | 'Canceled';

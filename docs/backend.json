@@ -435,11 +435,13 @@
           ],
           "description": "The type of donation."
         },
-        "paymentType": {
+        "donationType": {
           "type": "string",
           "enum": [
             "Cash",
-            "Online"
+            "Online Payment",
+            "Check",
+            "Other"
           ],
           "description": "The method of payment for the donation."
         },
@@ -496,7 +498,7 @@
         "receiverName",
         "amount",
         "type",
-        "paymentType",
+        "donationType",
         "referral",
         "donationDate",
         "status",

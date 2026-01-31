@@ -57,12 +57,11 @@ const donationTypeChartConfig = {
     General: { label: "General", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
-const beneficiaryStatusConfig = {
-    Given: { label: "Given", color: "hsl(var(--chart-1))" },
-    Pending: { label: "Pending", color: "hsl(var(--chart-2))" },
-    Hold: { label: "Hold", color: "hsl(var(--chart-3))" },
-    "NeedMoreDetails": { label: "Need More Details", color: "hsl(var(--chart-4))" },
-    "Verified": { label: "Verified", color: "hsl(var(--chart-5))" },
+const donationPaymentTypeChartConfig = {
+    Cash: { label: "Cash", color: "hsl(var(--chart-1))" },
+    OnlinePayment: { label: "Online Payment", color: "hsl(var(--chart-2))" },
+    Check: { label: "Check", color: "hsl(var(--chart-3))" },
+    Other: { label: "Other", color: "hsl(var(--chart-4))" },
 } satisfies ChartConfig;
 
 export default function CampaignSummaryPage() {
@@ -181,8 +180,6 @@ export default function CampaignSummaryPage() {
             return acc;
         }, {} as Record<string, number>);
 
-        const beneficiaryChartData = Object.entries(beneficiaryStatusData).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
-
         const beneficiaryCategoryData = beneficiaries.reduce((acc, beneficiary) => {
             const members = beneficiary.members;
             const categoryKey = members && members > 0 ? `${members} Members` : 'General';
@@ -210,7 +207,7 @@ export default function CampaignSummaryPage() {
             return a.name.localeCompare(b.name);
         });
 
-        const donationChartData = (() => {
+        const { donationChartData, donationPaymentTypeChartData } = (() => {
             let filteredDonations = donations;
             if (donationChartFilter !== 'All') {
                 filteredDonations = donations.filter(d => d.status === donationChartFilter);
@@ -220,8 +217,17 @@ export default function CampaignSummaryPage() {
                     acc[d.type] = (acc[d.type] || 0) + d.amount;
                     return acc;
                 }, {} as Record<string, number>);
+                
+            const paymentTypeData = filteredDonations.reduce((acc, d) => {
+                const key = d.donationType.replace(/\s+/g, '');
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
 
-            return Object.entries(donationTypeData).map(([name, value]) => ({ name, value }));
+            return {
+                donationChartData: Object.entries(donationTypeData).map(([name, value]) => ({ name, value })),
+                donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value }))
+            };
         })();
 
         return {
@@ -230,9 +236,10 @@ export default function CampaignSummaryPage() {
             totalKitAmountRequired,
             fundingProgress,
             pendingProgress,
-            beneficiaryChartData,
+            beneficiaryStatusData,
             beneficiaryCategoryBreakdown,
             donationChartData,
+            donationPaymentTypeChartData,
             totalBeneficiaries: beneficiaries.length,
             targetAmount: totalKitAmountRequired,
             remainingToCollect: Math.max(0, totalKitAmountRequired - verifiedDonations),
@@ -585,13 +592,13 @@ Please donate and share this message. Every contribution helps!
                             <CardContent>
                                 <div className="text-2xl font-bold mb-2">{summaryData?.totalBeneficiaries ?? 0} Total</div>
                                 <div className="space-y-1 text-sm">
-                                    {summaryData?.beneficiaryChartData.map((item) => (
-                                        <div key={item.name} className="flex justify-between items-center">
+                                    {summaryData?.beneficiaryStatusData && Object.entries(summaryData.beneficiaryStatusData).map(([name, value]) => (
+                                        <div key={name} className="flex justify-between items-center">
                                             <div className="flex items-center gap-2 text-muted-foreground">
-                                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: `var(--color-${item.name.replace(/\s+/g, '')})` }} />
-                                                <span>{item.name}</span>
+                                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: `var(--color-${name.replace(/\s+/g, '')})` }} />
+                                                <span>{name}</span>
                                             </div>
-                                            <span className="font-medium text-foreground">{item.value}</span>
+                                            <span className="font-medium text-foreground">{value}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -628,11 +635,11 @@ Please donate and share this message. Every contribution helps!
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-6 lg:grid-cols-3">
-                        <Card className="lg:col-span-2">
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        <Card>
                             <CardHeader>
                                 <div className="flex justify-between items-center">
-                                <CardTitle>{donationChartFilter} Donations by Type</CardTitle>
+                                <CardTitle>{donationChartFilter} Donations by Category</CardTitle>
                                     <Select value={donationChartFilter} onValueChange={(value: any) => setDonationChartFilter(value)}>
                                         <SelectTrigger className="w-[140px]">
                                             <SelectValue placeholder="Filter status" />
@@ -676,13 +683,14 @@ Please donate and share this message. Every contribution helps!
                             </CardContent>
                         </Card>
 
-                        <Card className="lg:col-span-1">
+                        <Card>
                             <CardHeader>
-                                <CardTitle>Beneficiary Status</CardTitle>
+                                <CardTitle>{donationChartFilter} Donations by Payment Type</CardTitle>
+                                <CardDescription>Count of donations per payment type.</CardDescription>
                             </CardHeader>
                             <CardContent className="h-[300px] flex items-center justify-center">
                                 <ChartContainer
-                                    config={beneficiaryStatusConfig}
+                                    config={donationPaymentTypeChartConfig}
                                     className="mx-auto aspect-square h-full"
                                 >
                                     <PieChart>
@@ -690,14 +698,14 @@ Please donate and share this message. Every contribution helps!
                                             content={<ChartTooltipContent nameKey="name" />}
                                         />
                                         <Pie
-                                            data={summaryData?.beneficiaryChartData}
+                                            data={summaryData?.donationPaymentTypeChartData}
                                             dataKey="value"
                                             nameKey="name"
                                             cx="50%"
                                             cy="50%"
                                             outerRadius={80}
                                         >
-                                            {summaryData?.beneficiaryChartData.map((entry) => (
+                                            {summaryData?.donationPaymentTypeChartData.map((entry) => (
                                                 <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
                                             ))}
                                         </Pie>
