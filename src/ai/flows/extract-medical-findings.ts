@@ -3,9 +3,9 @@
 /**
  * @fileOverview AI flow to extract medical findings from report text.
  *
- * - extractMedicalFindings - Function to extract medical details.
- * - ExtractMedicalFindingsInput - Input type for extractMedicalFindings.
- * - ExtractMedicalFindingsOutput - Output type for extractMedicalFindings.
+ * - extractMedicalFindingsFromText - Function to extract medical details from text.
+ * - ExtractMedicalFindingsInput - Input type for extractMedicalFindingsFromText.
+ * - ExtractMedicalFindingsOutput - Output type for extractMedicalFindingsFromText.
  */
 
 import {ai} from '@/ai/genkit';
@@ -33,10 +33,10 @@ const ExtractMedicalFindingsOutputSchema = z.object({
 
 export type ExtractMedicalFindingsOutput = z.infer<typeof ExtractMedicalFindingsOutputSchema>;
 
-export async function extractMedicalFindings(
+export async function extractMedicalFindingsFromText(
   input: ExtractMedicalFindingsInput
 ): Promise<ExtractMedicalFindingsOutput> {
-  return extractMedicalFindingsFlow(input);
+  return extractMedicalFindingsFromTextFlow(input);
 }
 
 const prompt = ai.definePrompt({
@@ -61,9 +61,9 @@ const prompt = ai.definePrompt({
 `,
 });
 
-const extractMedicalFindingsFlow = ai.defineFlow(
+const extractMedicalFindingsFromTextFlow = ai.defineFlow(
   {
-    name: 'extractMedicalFindingsFlow',
+    name: 'extractMedicalFindingsFromTextFlow',
     inputSchema: ExtractMedicalFindingsInputSchema,
     outputSchema: ExtractMedicalFindingsOutputSchema,
   },

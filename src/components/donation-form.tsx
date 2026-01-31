@@ -27,7 +27,7 @@ import {
 import type { Donation } from '@/lib/types';
 import { Loader2, ScanLine, FileSignature, Replace, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { extractPaymentDetails } from '@/ai/flows/extract-payment-details';
+import { extractPaymentDetailsFromText } from '@/ai/flows/extract-payment-details';
 import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
 import { Separator } from './ui/separator';
 import { Textarea } from './ui/textarea';
@@ -183,7 +183,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     setIsAutofilling(true);
     toast({ title: "Autofilling...", description: "Parsing text and filling form fields." });
     try {
-        const response = await extractPaymentDetails({ text: scannedText });
+        const response = await extractPaymentDetailsFromText({ text: scannedText });
         
         const filledFields: string[] = [];
         if (response.receiverName) {
@@ -404,7 +404,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                   )}
                    {scannedText && (
                         <div className="space-y-2">
-                             <Label htmlFor="scanned-text">Extracted Text</Label>
+                             <FormLabel htmlFor="scanned-text">Extracted Text</FormLabel>
                              <Textarea
                                 id="scanned-text"
                                 placeholder="Raw text from the image will appear here..."
@@ -498,5 +498,3 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     </>
   );
 }
-
-

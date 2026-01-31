@@ -3,9 +3,9 @@
 /**
  * @fileOverview AI flow to extract structured data from educational document text.
  *
- * - extractEducationFindings - Function to extract educational details.
- * - ExtractEducationFindingsInput - Input type for extractEducationFindings.
- * - ExtractEducationFindingsOutput - Output type for extractEducationFindings.
+ * - extractEducationFindingsFromText - Function to extract educational details from text.
+ * - ExtractEducationFindingsInput - Input type for extractEducationFindingsFromText.
+ * - ExtractEducationFindingsOutput - Output type for extractEducationFindingsFromText.
  */
 
 import {ai} from '@/ai/genkit';
@@ -34,10 +34,10 @@ const ExtractEducationFindingsOutputSchema = z.object({
 
 export type ExtractEducationFindingsOutput = z.infer<typeof ExtractEducationFindingsOutputSchema>;
 
-export async function extractEducationFindings(
+export async function extractEducationFindingsFromText(
   input: ExtractEducationFindingsInput
 ): Promise<ExtractEducationFindingsOutput> {
-  return extractEducationFindingsFlow(input);
+  return extractEducationFindingsFromTextFlow(input);
 }
 
 const prompt = ai.definePrompt({
@@ -63,9 +63,9 @@ const prompt = ai.definePrompt({
 `,
 });
 
-const extractEducationFindingsFlow = ai.defineFlow(
+const extractEducationFindingsFromTextFlow = ai.defineFlow(
   {
-    name: 'extractEducationFindingsFlow',
+    name: 'extractEducationFindingsFromTextFlow',
     inputSchema: ExtractEducationFindingsInputSchema,
     outputSchema: ExtractEducationFindingsOutputSchema,
   },

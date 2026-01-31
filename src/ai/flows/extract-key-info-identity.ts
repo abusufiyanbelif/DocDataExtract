@@ -6,7 +6,7 @@
  * The flow takes raw text from an Aadhaar card as input and uses an AI model to extract information
  * such as name, date of birth, gender, Aadhaar number, and address.
  *
- * @exports `extractKeyInfoFromAadhaar` - The main function to call to start the flow.
+ * @exports `extractKeyInfoFromAadhaarText` - The main function to call to start the flow.
  * @exports `ExtractKeyInfoFromAadhaarInput` - The input type for the flow.
  * @exports `ExtractKeyInfoFromAadhaarOutput` - The output type for the flow.
  */
@@ -36,10 +36,10 @@ export type ExtractKeyInfoFromAadhaarOutput = z.infer<
   typeof ExtractKeyInfoFromAadhaarOutputSchema
 >;
 
-export async function extractKeyInfoFromAadhaar(
+export async function extractKeyInfoFromAadhaarText(
   input: ExtractKeyInfoFromAadhaarInput
 ): Promise<ExtractKeyInfoFromAadhaarOutput> {
-  return extractKeyInfoFromAadhaarFlow(input);
+  return extractKeyInfoFromAadhaarTextFlow(input);
 }
 
 const prompt = ai.definePrompt({
@@ -63,9 +63,9 @@ Here is the text from the card:
   `,
 });
 
-const extractKeyInfoFromAadhaarFlow = ai.defineFlow(
+const extractKeyInfoFromAadhaarTextFlow = ai.defineFlow(
   {
-    name: 'extractKeyInfoFromAadhaarFlow',
+    name: 'extractKeyInfoFromAadhaarTextFlow',
     inputSchema: ExtractKeyInfoFromAadhaarInputSchema,
     outputSchema: ExtractKeyInfoFromAadhaarOutputSchema,
   },

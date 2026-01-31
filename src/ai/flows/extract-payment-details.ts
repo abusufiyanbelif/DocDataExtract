@@ -1,10 +1,11 @@
+
 'use server';
 /**
  * @fileOverview AI flow to extract key details from a payment confirmation text.
  *
- * - extractPaymentDetails - Function to extract amount, transaction ID, and date.
- * - ExtractPaymentDetailsInput - Input type for extractPaymentDetails.
- * - ExtractPaymentDetailsOutput - Output type for extractPaymentDetails.
+ * - extractPaymentDetailsFromText - Function to extract amount, transaction ID, and date from text.
+ * - ExtractPaymentDetailsInput - Input type for extractPaymentDetailsFromText.
+ * - ExtractPaymentDetailsOutput - Output type for extractPaymentDetailsFromText.
  */
 
 import {ai} from '@/ai/genkit';
@@ -23,10 +24,10 @@ const ExtractPaymentDetailsOutputSchema = z.object({
 });
 export type ExtractPaymentDetailsOutput = z.infer<typeof ExtractPaymentDetailsOutputSchema>;
 
-export async function extractPaymentDetails(
+export async function extractPaymentDetailsFromText(
   input: ExtractPaymentDetailsInput
 ): Promise<ExtractPaymentDetailsOutput> {
-  return extractPaymentDetailsFlow(input);
+  return extractPaymentDetailsFromTextFlow(input);
 }
 
 const prompt = ai.definePrompt({
@@ -48,9 +49,9 @@ EXTRACT FROM THIS TEXT:
 `,
 });
 
-const extractPaymentDetailsFlow = ai.defineFlow(
+const extractPaymentDetailsFromTextFlow = ai.defineFlow(
   {
-    name: 'extractPaymentDetailsFlow',
+    name: 'extractPaymentDetailsFromTextFlow',
     inputSchema: ExtractPaymentDetailsInputSchema,
     outputSchema: ExtractPaymentDetailsOutputSchema,
   },

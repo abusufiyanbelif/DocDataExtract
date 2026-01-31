@@ -28,7 +28,7 @@ import type { Beneficiary, RationList, RationItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Loader2, ScanLine, Trash2, Replace, FileIcon, FileSignature } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { extractKeyInfoFromAadhaar } from '@/ai/flows/extract-key-info-identity';
+import { extractKeyInfoFromAadhaarText } from '@/ai/flows/extract-key-info-identity';
 import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
 import { useStorage } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject, type StorageReference } from 'firebase/storage';
@@ -224,7 +224,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     setIsAutofilling(true);
     toast({ title: "Autofilling...", description: "Parsing text and filling form fields." });
     try {
-      const response = await extractKeyInfoFromAadhaar({ text: scannedText });
+      const response = await extractKeyInfoFromAadhaarText({ text: scannedText });
 
       if (response) {
           if (response.name) setValue('name', response.name, { shouldValidate: true });
