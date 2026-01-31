@@ -1,4 +1,4 @@
-import "@/lib/genkit";
+import "@/ai/genkit"; // Point to the correct, centralized Genkit config
 import { NextResponse } from "next/server";
 
 export async function GET() {
