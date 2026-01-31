@@ -26,7 +26,7 @@ import {
 import type { Donation } from '@/lib/types';
 import { Loader2, ScanLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { extractTransactionIdFromImage } from '@/ai/flows/extract-transaction-id';
+import { extractPaymentDetails } from '@/ai/flows/extract-payment-details';
 import { Separator } from './ui/separator';
 
 const formSchema = z.object({
@@ -91,7 +91,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     }
   }, [screenshotFile, donation?.screenshotUrl]);
 
-  const handleScanTransactionId = async () => {
+  const handleScanPaymentDetails = async () => {
     if (!preview) {
         toast({
             title: "No Image to Scan",
@@ -101,24 +101,41 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         return;
     }
     setIsScanning(true);
+    toast({ title: "Scanning...", description: "Extracting details from the payment screenshot." });
     try {
-        const response = await extractTransactionIdFromImage({ photoDataUri: preview });
+        const response = await extractPaymentDetails({ photoDataUri: preview });
+        let detailsFound = false;
+        if (response?.amount) {
+            setValue('amount', response.amount, { shouldValidate: true });
+            detailsFound = true;
+        }
         if (response?.transactionId) {
             setValue('transactionId', response.transactionId, { shouldValidate: true });
+            detailsFound = true;
+        }
+        if (response?.date) {
+            // Validate date format before setting
+            if (/^\d{4}-\d{2}-\d{2}$/.test(response.date)) {
+                setValue('donationDate', response.date, { shouldValidate: true });
+                detailsFound = true;
+            }
+        }
+
+        if (detailsFound) {
             toast({
-                title: "ID Extracted",
-                description: `Found Transaction ID: ${response.transactionId}`,
+                title: "Scan Successful",
+                description: "Donation details have been populated from the screenshot.",
                 variant: "success",
             });
         } else {
              toast({
-                title: "Not Found",
-                description: "Could not find a transaction ID in the image.",
+                title: "Scan Incomplete",
+                description: "Could not find any details to extract. Please fill them manually.",
                 variant: "default",
             });
         }
     } catch (error) {
-        console.error("Transaction ID scan failed:", error);
+        console.error("Payment scan failed:", error);
         toast({
             title: "Scan Failed",
             description: "An error occurred while trying to scan the image.",
@@ -256,40 +273,6 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
             <div className="space-y-4 rounded-md border p-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Online Payment Details</h3>
                 <Separator />
-                <FormField
-                    control={form.control}
-                    name="transactionId"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Transaction ID</FormLabel>
-                            <div className="relative">
-                                <FormControl>
-                                    <Input 
-                                        placeholder="Optional, e.g., UPI ID" 
-                                        {...field} 
-                                        value={field.value ?? ''}
-                                        className="pr-12"
-                                    />
-                                </FormControl>
-                                <Button 
-                                    type="button" 
-                                    size="icon"
-                                    variant="ghost"
-                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-10 text-muted-foreground hover:text-primary disabled:text-muted-foreground"
-                                    onClick={handleScanTransactionId}
-                                    disabled={isScanning || !preview}
-                                    title="Scan Transaction ID from Image"
-                                >
-                                    {isScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <ScanLine className="h-5 w-5" />}
-                                </Button>
-                            </div>
-                        <FormDescription>
-                            Enter manually or scan from the uploaded screenshot. Helps prevent duplicate entries.
-                        </FormDescription>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
                  <FormField
                     control={form.control}
                     name="screenshotFile"
@@ -300,7 +283,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                                 <Input type="file" accept="image/*" {...register('screenshotFile')} />
                             </FormControl>
                             <FormDescription>
-                                Optional. Upload a screenshot of the transaction. You can scan it to get the Transaction ID.
+                                Upload a screenshot of the transaction.
                             </FormDescription>
                             <FormMessage />
                         </FormItem>
@@ -311,6 +294,37 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                         <Image src={preview} alt="Donation screenshot preview" fill style={{ objectFit: 'contain' }} />
                     </div>
                 )}
+                {preview && (
+                    <Button 
+                        type="button" 
+                        className="w-full"
+                        onClick={handleScanPaymentDetails}
+                        disabled={isScanning}
+                    >
+                        {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
+                        Scan Screenshot & Fill Details
+                    </Button>
+                )}
+                <FormField
+                    control={form.control}
+                    name="transactionId"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Transaction ID</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    placeholder="Optional, e.g., UPI ID" 
+                                    {...field} 
+                                    value={field.value ?? ''}
+                                />
+                            </FormControl>
+                            <FormDescription>
+                                Helps prevent duplicate entries. Can be auto-filled by scanning.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
             </div>
         )}
         
