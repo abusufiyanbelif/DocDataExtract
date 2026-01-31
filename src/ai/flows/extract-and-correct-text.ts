@@ -35,17 +35,12 @@ const extractTextPrompt = ai.definePrompt({
   name: 'extractTextPrompt',
   model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractAndCorrectTextInputSchema},
-  output: {schema: ExtractAndCorrectTextOutputSchema},
   prompt: `You are an OCR (Optical Character Recognition) expert.
 
-  Extract the text from the following image. If the user has provided a correction, use that instead.
+  Extract the text from the following image.
 
   Image: {{media url=photoDataUri}}
-
-  {{#if userCorrection}}
-  User Correction: {{{userCorrection}}}
-  {{/if}}
-  `, 
+  `,
 });
 
 const extractAndCorrectTextFlow = ai.defineFlow(
@@ -55,10 +50,17 @@ const extractAndCorrectTextFlow = ai.defineFlow(
     outputSchema: ExtractAndCorrectTextOutputSchema,
   },
   async (input) => {
-    const {output} = await extractTextPrompt(input);
-    if (!output) {
+    // If the user has provided a correction, use that instead of calling the AI.
+    if (input.userCorrection) {
+      return { extractedText: input.userCorrection };
+    }
+
+    const response = await extractTextPrompt(input);
+    const extractedText = response.text;
+
+    if (!extractedText) {
       throw new Error('The AI model failed to extract text. Please check the document quality or try again.');
     }
-    return output;
+    return { extractedText };
   }
 );
