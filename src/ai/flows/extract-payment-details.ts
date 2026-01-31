@@ -35,8 +35,7 @@ export async function extractPaymentDetails(
 
 const prompt = ai.definePrompt({
   name: 'extractPaymentDetailsPrompt',
-  model: googleAI.model('gemini-pro-vision'),
-  input: {schema: ExtractPaymentDetailsInputSchema},
+  model: googleAI.model('gemini-1.5-flash-latest'),
   prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image and extract the following details precisely.
 
 1.  **amount**: Find the main transaction amount. It may have a currency symbol like '₹'. The value should be a number. For example, if you see '₹200', the value should be \`200\`.
