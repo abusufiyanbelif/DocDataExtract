@@ -34,7 +34,7 @@ const extractTextPrompt = ai.definePrompt({
   name: 'extractTextPrompt',
   input: {schema: ExtractAndCorrectTextInputSchema},
   output: {schema: ExtractAndCorrectTextOutputSchema},
-  model: 'gemini-pro-vision',
+  model: 'gemini-1.5-flash-latest',
   prompt: `You are an OCR (Optical Character Recognition) expert.
 
   Extract the text from the following image. If the user has provided a correction, use that instead.

@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
   input: {schema: ExtractEducationFindingsInputSchema},
   output: {schema: ExtractEducationFindingsOutputSchema},
-  model: 'gemini-pro-vision',
+  model: 'gemini-1.5-flash-latest',
   prompt: `You are an expert academic registrar tasked with extracting key information from educational documents.
 
   Analyze the provided document and extract the institution name, degree/examination, and key achievements or grades. Present the achievements as a structured list.

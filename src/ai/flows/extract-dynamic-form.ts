@@ -55,7 +55,7 @@ const prompt = ai.definePrompt({
   name: 'extractDynamicFormPrompt',
   input: {schema: ExtractDynamicFormInputSchema},
   output: {schema: ExtractDynamicFormOutputSchema},
-  model: 'gemini-pro-vision',
+  model: 'gemini-1.5-flash-latest',
   prompt: `You are an expert in document analysis and data extraction.
 
 Your task is to analyze the provided image of a document or form and extract all relevant information.
