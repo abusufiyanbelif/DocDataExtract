@@ -5,6 +5,7 @@ import { FirebaseClientProvider } from '@/firebase';
 import { AuthProvider } from '@/components/auth-provider';
 import { PT_Sans, Source_Code_Pro } from 'next/font/google';
 import { cn } from '@/lib/utils';
+import "@/ai/genkit";
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
