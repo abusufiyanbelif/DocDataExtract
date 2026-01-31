@@ -1,2 +1,29 @@
-// This file is intentionally left blank. 
-// The configuration has been moved to next.config.js to support this version of Next.js.
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  srcDir: 'src',
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'picsum.photos',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+        port: '',
+        pathname: '/**',
+      }
+    ],
+  },
+};
+
+export default nextConfig;
