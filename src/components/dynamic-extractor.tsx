@@ -4,8 +4,6 @@
 import { useState } from 'react';
 import { ToyBrick, Loader2, Wand2, Trash2 } from 'lucide-react';
 import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
-import { useStorage } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,45 +15,33 @@ import { Label } from './ui/label';
 
 export function DynamicExtractor() {
   const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [result, setResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
-  const storage = useStorage();
 
   const handleScan = async () => {
-    if (uploadedFiles.length === 0) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoading(true);
     setResult(null);
 
-    const file = uploadedFiles[0];
-    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-    const fileRef = storageRef(storage!, tempPath);
-
     try {
-      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-
       toast({ title: "Extracting data...", description: "Please wait." });
-      const response = await extractDynamicFormFromImage({ photoDataUri: downloadURL });
+      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setResult(response);
     } catch (error: any) {
       console.warn("Dynamic extraction failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not extract dynamic data from the ${uploadType}.`, variant: 'destructive' });
     } finally {
-      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoading(false);
     }
   };
 
   const handleClear = () => {
     setPhotoDataUris([]);
-    setUploadedFiles([]);
     setResult(null);
   };
   
@@ -103,12 +89,11 @@ export function DynamicExtractor() {
 
             <FileUploader 
                 onFileSelect={setPhotoDataUris} 
-                onFilesChange={setUploadedFiles}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
             />
 
-            <Button onClick={handleScan} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
+            <Button onClick={handleScan} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
               {isLoading ? <Loader2 className="animate-spin" /> : `Extract Dynamic Data from ${uploadType === 'image' ? 'Image' : 'PDF'}`}
             </Button>
             {photoDataUris.length > 0 && (

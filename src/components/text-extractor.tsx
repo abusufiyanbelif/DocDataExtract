@@ -4,8 +4,6 @@
 import { useState } from 'react';
 import { FileText, Loader2, Download, Trash2, ScanLine } from 'lucide-react';
 import { extractAndCorrectText, type ExtractAndCorrectTextOutput } from '@/ai/flows/extract-and-correct-text';
-import { useStorage } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,45 +16,33 @@ import { Label } from './ui/label';
 
 export function TextExtractor() {
   const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [textResult, setTextResult] = useState<ExtractAndCorrectTextOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
-  const storage = useStorage();
 
   const handleScanText = async () => {
-    if (uploadedFiles.length === 0) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoading(true);
     setTextResult(null);
     
-    const file = uploadedFiles[0];
-    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-    const fileRef = storageRef(storage!, tempPath);
-
     try {
-      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-
       toast({ title: "Extracting text...", description: "Please wait." });
-      const response = await extractAndCorrectText({ photoDataUri: downloadURL });
+      const response = await extractAndCorrectText({ photoDataUri: photoDataUris[0] });
       setTextResult(response);
     } catch (error: any) {
       console.warn("Text extraction failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not extract text from the ${uploadType}.`, variant: 'destructive' });
     } finally {
-      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoading(false);
     }
   };
 
   const handleClear = () => {
     setPhotoDataUris([]);
-    setUploadedFiles([]);
     setTextResult(null);
   };
   
@@ -114,12 +100,11 @@ export function TextExtractor() {
           
           <FileUploader 
               onFileSelect={setPhotoDataUris} 
-              onFilesChange={setUploadedFiles}
               acceptedFileTypes={acceptedFileTypes}
               key={uploadType} 
           />
 
-          <Button onClick={handleScanText} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
+          <Button onClick={handleScanText} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
             {isLoading ? <Loader2 className="animate-spin mr-2" /> : <ScanLine className="mr-2" />}
             Extract Text
           </Button>

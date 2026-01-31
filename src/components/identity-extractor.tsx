@@ -5,8 +5,6 @@ import { useState } from 'react';
 import { User, Loader2, Download, Wand2, ToyBrick, Trash2 } from 'lucide-react';
 import { extractKeyInfoFromAadhaar, type ExtractKeyInfoFromAadhaarOutput } from '@/ai/flows/extract-key-info-identity';
 import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
-import { useStorage } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,76 +26,55 @@ function ResultDisplay({ label, value }: { label: string; value: string }) {
 
 export function IdentityExtractor() {
   const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [infoResult, setInfoResult] = useState<ExtractKeyInfoFromAadhaarOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoadingInfo, setIsLoadingInfo] = useState(false);
   const [isLoadingFields, setIsLoadingFields] = useState(false);
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
-  const storage = useStorage();
 
   const handleScanInfo = async () => {
-    if (uploadedFiles.length === 0) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoadingInfo(true);
     setInfoResult(null);
 
-    const file = uploadedFiles[0];
-    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-    const fileRef = storageRef(storage!, tempPath);
-
     try {
-      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-
       toast({ title: "Extracting info...", description: "Please wait." });
-      const response = await extractKeyInfoFromAadhaar({ photoDataUri: downloadURL });
+      const response = await extractKeyInfoFromAadhaar({ photoDataUri: photoDataUris[0] });
       setInfoResult(response);
     } catch (error: any) {
       console.warn("Identity scan failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not extract information from the ${uploadType}.`, variant: 'destructive' });
     } finally {
-      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoadingInfo(false);
     }
   };
   
   const handleGetFields = async () => {
-    if (uploadedFiles.length === 0) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoadingFields(true);
     setFieldsResult(null);
 
-    const file = uploadedFiles[0];
-    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-    const fileRef = storageRef(storage!, tempPath);
-
     try {
-      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-      
       toast({ title: "Extracting fields...", description: "Please wait." });
-      const response = await extractDynamicFormFromImage({ photoDataUri: downloadURL });
+      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
     } catch (error: any) {
       console.warn("Get fields failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
-      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoadingFields(false);
     }
   };
   
   const handleClear = () => {
     setPhotoDataUris([]);
-    setUploadedFiles([]);
     setInfoResult(null);
     setFieldsResult(null);
   };
@@ -164,15 +141,14 @@ export function IdentityExtractor() {
             
             <FileUploader 
                 onFileSelect={setPhotoDataUris} 
-                onFilesChange={setUploadedFiles}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
             />
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button onClick={handleScanInfo} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleScanInfo} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingInfo ? <Loader2 className="animate-spin" /> : `Extract Info`}
               </Button>
-              <Button onClick={handleGetFields} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>

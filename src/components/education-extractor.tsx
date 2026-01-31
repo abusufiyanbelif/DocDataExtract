@@ -6,8 +6,6 @@ import { BookUser, Loader2, Download, Wand2, ToyBrick, Trash2, FileText } from '
 import { extractEducationFindings, type ExtractEducationFindingsOutput } from '@/ai/flows/extract-education-findings';
 import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 import { createEducationStory, type CreateEducationStoryOutput } from '@/ai/flows/create-education-story';
-import { useStorage } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +33,6 @@ interface EducationExtractorProps {
 
 export function EducationExtractor({ enableStoryCreator = false }: EducationExtractorProps) {
   const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [educationResult, setEducationResult] = useState<ExtractEducationFindingsOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [storyResult, setStoryResult] = useState<CreateEducationStoryOutput | null>(null);
@@ -44,95 +41,65 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
   const [isLoadingStory, setIsLoadingStory] = useState(false);
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
-  const storage = useStorage();
 
-  const handleFileSelection = (files: File[]) => {
-    setUploadedFiles(files);
+  const handleFileSelection = (dataUris: string[]) => {
+    setPhotoDataUris(dataUris);
     setEducationResult(null);
     setFieldsResult(null);
     setStoryResult(null);
   };
   
   const handleScanEducation = async () => {
-    if (uploadedFiles.length === 0) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
     setIsLoadingEducation(true);
     setEducationResult(null);
 
-    const file = uploadedFiles[0];
-    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-    const fileRef = storageRef(storage!, tempPath);
-
     try {
-      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-
       toast({ title: "Analyzing document...", description: "Please wait." });
-      const response = await extractEducationFindings({ reportDataUri: downloadURL });
+      const response = await extractEducationFindings({ reportDataUri: photoDataUris[0] });
       setEducationResult(response);
     } catch (error: any) {
       console.warn("Education scan failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not analyze the education ${uploadType}.`, variant: 'destructive' });
     } finally {
-      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoadingEducation(false);
     }
   };
 
   const handleGetFields = async () => {
-    if (uploadedFiles.length === 0) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
     setIsLoadingFields(true);
     setFieldsResult(null);
 
-    const file = uploadedFiles[0];
-    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-    const fileRef = storageRef(storage!, tempPath);
-
     try {
-      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-      
       toast({ title: "Extracting fields...", description: "Please wait." });
-      const response = await extractDynamicFormFromImage({ photoDataUri: downloadURL });
+      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
     } catch (error: any) {
       console.warn("Get fields failed:", error);
       toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
-      await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
       setIsLoadingFields(false);
     }
   };
   
   const handleCreateStory = async () => {
-    if (uploadedFiles.length === 0) {
+    if (photoDataUris.length === 0) {
       toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
     setIsLoadingStory(true);
     setStoryResult(null);
 
-    const tempFileRefs: any[] = [];
     try {
-      toast({ title: "Preparing files...", description: `Uploading ${uploadedFiles.length} files for analysis.`});
-      const uploadPromises = uploadedFiles.map(async (file) => {
-        const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-        const fileRef = storageRef(storage!, tempPath);
-        tempFileRefs.push(fileRef);
-        await uploadBytes(fileRef, file);
-        return getDownloadURL(fileRef);
-      });
-      const urls = await Promise.all(uploadPromises);
-
       toast({ title: "Creating story...", description: "This may take a moment."});
-      const response = await createEducationStory({ reportDataUris: urls });
+      const response = await createEducationStory({ reportDataUris: photoDataUris });
       setStoryResult(response);
       if (!response.isCorrectType) {
         toast({
@@ -145,15 +112,12 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
       console.warn("Story creation failed:", error);
       toast({ title: 'Story Creation Failed', description: error.message || 'Could not generate the academic summary.', variant: 'destructive' });
     } finally {
-      const deletePromises = tempFileRefs.map(ref => deleteObject(ref).catch(err => console.error("Failed to delete temp file", err)));
-      await Promise.all(deletePromises);
       setIsLoadingStory(false);
     }
   };
 
   const handleClear = () => {
     setPhotoDataUris([]);
-    setUploadedFiles([]);
     setEducationResult(null);
     setFieldsResult(null);
     setStoryResult(null);
@@ -221,23 +185,22 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
             </RadioGroup>
 
             <FileUploader 
-                onFileSelect={setPhotoDataUris} 
-                onFilesChange={handleFileSelection}
+                onFileSelect={handleFileSelection}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
                 multiple={enableStoryCreator} 
             />
 
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button onClick={handleScanEducation} disabled={uploadedFiles.length === 0 || isLoading || enableStoryCreator} className="w-full">
+              <Button onClick={handleScanEducation} disabled={photoDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingEducation ? <Loader2 className="animate-spin" /> : `Analyze Document`}
               </Button>
-              <Button onClick={handleGetFields} disabled={uploadedFiles.length === 0 || isLoading || enableStoryCreator} className="w-full">
+              <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
             {enableStoryCreator && (
-              <Button onClick={handleCreateStory} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleCreateStory} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
                 {isLoadingStory ? <Loader2 className="animate-spin" /> : <><FileText className="mr-2 h-4 w-4"/> Create Academic Summary</>}
               </Button>
             )}
