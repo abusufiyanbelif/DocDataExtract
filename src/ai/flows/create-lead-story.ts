@@ -8,7 +8,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const CreateLeadStoryInputSchema = z.object({
@@ -36,14 +35,16 @@ export async function createLeadStory(
 
 const prompt = ai.definePrompt({
   name: 'createLeadStoryPrompt',
-  model: googleAI.model('gemini-pro-vision'),
-  input: {schema: CreateLeadStoryInputSchema},
-  output: {schema: CreateLeadStoryOutputSchema},
+  model: 'gemini-pro-vision',
   prompt: `You are an expert analyst. Your primary goal is to create a lead story abstract for a disease diagnostic by synthesizing findings from medical reports. First, determine if the documents appear to be medical reports. Set the 'isCorrectType' flag to true if they are, and false otherwise.
 
 If the provided documents are not medical reports, create a concise summary or a coherent narrative based on the information available in them. Do not state that you cannot perform the medical analysis. Instead, adapt to the content provided.
 
 Analyze the following documents and generate the most relevant story or summary.
+
+Return ONLY a single, valid JSON object with the following keys:
+- "story" (string): The generated story or summary.
+- "isCorrectType" (boolean): True if the documents appear to be medical reports, false otherwise.
 
 Documents:
   {{#each reportDataUris}}
@@ -59,10 +60,20 @@ const createLeadStoryFlow = ai.defineFlow(
     outputSchema: CreateLeadStoryOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('The AI model failed to generate a story. Please check the document quality or try again.');
+    const response = await prompt(input);
+    const text = response.text.trim();
+    
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid response from AI. Expected a JSON object.');
     }
-    return output;
+
+    try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return CreateLeadStoryOutputSchema.parse(parsed);
+    } catch (e: any) {
+        console.warn("Failed to parse AI response:", text, e);
+        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
+    }
   }
 );

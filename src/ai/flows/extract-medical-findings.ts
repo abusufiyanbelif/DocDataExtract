@@ -8,7 +8,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractMedicalFindingsInputSchema = z.object({
@@ -41,18 +40,20 @@ export async function extractMedicalFindings(
 
 const prompt = ai.definePrompt({
   name: 'extractMedicalFindingsPrompt',
-  model: googleAI.model('gemini-pro-vision'),
-  input: {schema: ExtractMedicalFindingsInputSchema},
-  output: {schema: ExtractMedicalFindingsOutputSchema},
+  model: 'gemini-pro-vision',
   prompt: `You are an expert medical analyst tasked with extracting key information from medical reports.
 
-  Analyze the provided medical report and extract the diagnosis and key findings. Present the findings as a structured list, where each item in the list has a 'finding' and its associated 'details'.
+  Analyze the provided medical report and extract the diagnosis and key findings.
+  
+  Return ONLY a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object.
+
+  The JSON object should have the following keys:
+  - "diagnosis" (string): The main diagnosis or impression from the report.
+  - "findings" (array): A list of findings. Each item in the array should be an object with "finding" (string) and "details" (string) keys.
 
   Medical Report Image: {{media url=reportDataUri}}
 
   Ensure that the diagnosis and findings are accurate and comprehensive.
-
-  Output the diagnosis and structured findings.
 `,
 });
 
@@ -63,10 +64,20 @@ const extractMedicalFindingsFlow = ai.defineFlow(
     outputSchema: ExtractMedicalFindingsOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('The AI model failed to extract medical findings. Please check the document quality or try again.');
+    const response = await prompt(input);
+    const text = response.text.trim();
+    
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid response from AI. Expected a JSON object.');
     }
-    return output;
+
+    try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return ExtractMedicalFindingsOutputSchema.parse(parsed);
+    } catch (e: any) {
+        console.warn("Failed to parse AI response:", text, e);
+        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
+    }
   }
 );

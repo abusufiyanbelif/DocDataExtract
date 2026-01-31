@@ -8,7 +8,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractEducationFindingsInputSchema = z.object({
@@ -42,18 +41,21 @@ export async function extractEducationFindings(
 
 const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
-  model: googleAI.model('gemini-pro-vision'),
-  input: {schema: ExtractEducationFindingsInputSchema},
-  output: {schema: ExtractEducationFindingsOutputSchema},
+  model: 'gemini-pro-vision',
   prompt: `You are an expert academic registrar tasked with extracting key information from educational documents.
 
-  Analyze the provided document and extract the institution name, degree/examination, and key achievements or grades. Present the achievements as a structured list.
+  Analyze the provided document and extract the institution name, degree/examination, and key achievements or grades.
+  
+  Return ONLY a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object.
+
+  The JSON object should have the following keys:
+  - "institution" (string): The name of the educational institution.
+  - "degree" (string): The degree, course, or examination name.
+  - "achievements" (array): A list of achievements. Each item in the array should be an object with "achievement" (string) and "details" (string) keys.
 
   Educational Document Image: {{media url=reportDataUri}}
 
   Ensure that the extracted information is accurate and comprehensive.
-
-  Output the institution, degree, and structured achievements.
 `,
 });
 
@@ -64,10 +66,20 @@ const extractEducationFindingsFlow = ai.defineFlow(
     outputSchema: ExtractEducationFindingsOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('The AI model failed to extract education findings. Please check the document quality or try again.');
+    const response = await prompt(input);
+    const text = response.text.trim();
+    
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid response from AI. Expected a JSON object.');
     }
-    return output;
+
+    try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return ExtractEducationFindingsOutputSchema.parse(parsed);
+    } catch (e: any) {
+        console.warn("Failed to parse AI response:", text, e);
+        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
+    }
   }
 );

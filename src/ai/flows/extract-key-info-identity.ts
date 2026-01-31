@@ -11,7 +11,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractKeyInfoFromAadhaarInputSchema = z.object({
@@ -44,18 +43,17 @@ export async function extractKeyInfoFromAadhaar(
 
 const prompt = ai.definePrompt({
   name: 'extractKeyInfoFromAadhaarPrompt',
-  model: googleAI.model('gemini-pro-vision'),
-  input: {schema: ExtractKeyInfoFromAadhaarInputSchema},
-  output: {schema: ExtractKeyInfoFromAadhaarOutputSchema},
-  prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided image of an Aadhaar card and extract the following details:
+  model: 'gemini-pro-vision',
+  prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided image of an Aadhaar card and extract the following details.
 
-- The person's full name.
-- Their Date of Birth (dob).
-- Their gender.
-- The 12-digit Aadhaar number.
-- The full residential address printed on the card.
+Return ONLY a single, valid JSON object with the extracted information. Do not include any text, markdown, or formatting before or after the JSON object.
 
-Return the information in the structured format requested.
+The JSON object should have the following keys:
+- "name" (string): The person's full name.
+- "dob" (string): Their Date of Birth (dob).
+- "gender" (string): Their gender.
+- "aadhaarNumber" (string): The 12-digit Aadhaar number.
+- "address" (string): The full residential address printed on the card.
 
 Image: {{media url=photoDataUri}}
   `,
@@ -68,10 +66,20 @@ const extractKeyInfoFromAadhaarFlow = ai.defineFlow(
     outputSchema: ExtractKeyInfoFromAadhaarOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('The AI model failed to extract identity information. Please check the document quality or try again.');
+    const response = await prompt(input);
+    const text = response.text.trim();
+    
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid response from AI. Expected a JSON object.');
     }
-    return output;
+
+    try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return ExtractKeyInfoFromAadhaarOutputSchema.parse(parsed);
+    } catch (e: any) {
+        console.warn("Failed to parse AI response:", text, e);
+        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
+    }
   }
 );

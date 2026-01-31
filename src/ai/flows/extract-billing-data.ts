@@ -10,7 +10,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractBillingDataInputSchema = z.object({
@@ -45,17 +44,17 @@ export async function extractBillingDataFromImage(
 
 const prompt = ai.definePrompt({
   name: 'extractBillingDataPrompt',
-  model: googleAI.model('gemini-pro-vision'),
-  input: {schema: ExtractBillingDataInputSchema},
-  output: {schema: ExtractBillingDataOutputSchema},
+  model: 'gemini-pro-vision',
   prompt: `You are an expert in extracting data from bills and invoices.
 
-  Please extract the following information from the image of the bill provided:
+  Please extract the following information from the image of the bill provided.
+  Return ONLY a single, valid JSON object with the extracted information. Do not include any text, markdown, or formatting before or after the JSON object.
 
-  - Vendor Information: The name and contact information of the vendor.
-  - Dates: The billing date and due date, if available.
-  - Amounts: The total amount due and any other relevant amounts.
-  - Purchased Items: A list of the items or services purchased. For each item, extract the item description, quantity, unit price, and total price.
+  The JSON object should have the following keys:
+  - "vendorInformation" (string): The name and contact information of the vendor.
+  - "dates" (string): The billing date and due date, if available.
+  - "amounts" (string): The total amount due and any other relevant amounts.
+  - "purchasedItems" (array): A list of items or services. Each item in the array should be an object with keys: "item" (string), "quantity" (number, optional), "unitPrice" (number, optional), and "totalPrice" (number).
 
   Here is the image of the bill: {{media url=photoDataUri}}`,
 });
@@ -67,10 +66,20 @@ const extractBillingDataFlow = ai.defineFlow(
     outputSchema: ExtractBillingDataOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('The AI model failed to extract billing data. Please check the document quality or try again.');
+    const response = await prompt(input);
+    const text = response.text.trim();
+    
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid response from AI. Expected a JSON object.');
     }
-    return output;
+
+    try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return ExtractBillingDataOutputSchema.parse(parsed);
+    } catch (e: any) {
+        console.warn("Failed to parse AI response:", text, e);
+        throw new Error(`Failed to parse JSON response from AI: ${e.message}`);
+    }
   }
 );

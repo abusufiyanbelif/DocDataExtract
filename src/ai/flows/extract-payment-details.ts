@@ -9,7 +9,6 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractPaymentDetailsInputSchema = z.object({
@@ -39,7 +38,7 @@ export async function extractPaymentDetails(
 
 const prompt = ai.definePrompt({
   name: 'extractPaymentDetailsPrompt',
-  model: googleAI.model('gemini-pro-vision'),
+  model: 'gemini-pro-vision',
   prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image or text and extract the following details precisely.
 
 1.  **receiverName**: The name of the person or entity who received the payment. Look for labels like "Paid to", "To:", or the primary name displayed as the recipient.
@@ -47,7 +46,7 @@ const prompt = ai.definePrompt({
 3.  **transactionId**: Find the unique transaction identifier. Look for labels like "UPI Transaction ID", "Transaction ID", "UTR", or "Ref No.". Extract the alphanumeric code associated with it.
 4.  **date**: Find the date of the transaction. If you find a date (e.g., "Jan 31, 2026", "31-01-2026"), you MUST format it as YYYY-MM-DD.
 
-Return the extracted information as a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object. The JSON object should have the following keys: "receiverName" (string), "amount" (number), "transactionId" (string), "date" (string in YYYY-MM-DD format). If any of these fields are not clearly visible, omit them from the JSON object. It is critical that you adhere to the data types specified.
+Return ONLY a single, valid JSON object with the extracted information. Do not include any text, markdown, or formatting before or after the JSON object. The JSON object should have the following keys: "receiverName" (string), "amount" (number), "transactionId" (string), "date" (string in YYYY-MM-DD format). If any of these fields are not clearly visible, omit them from the JSON object. It is critical that you adhere to the data types specified.
 
 {{#if text}}
 ---
