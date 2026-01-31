@@ -122,16 +122,16 @@ export default function CreateUserPage() {
         batch.set(docRef, dataToSave);
 
         const loginIdLookupRef = doc(firestore, 'user_lookups', data.loginId);
-        batch.set(loginIdLookupRef, { email: email });
+        batch.set(loginIdLookupRef, { email: email, userKey: data.userKey });
 
         if (data.phone) {
             const phoneLookupRef = doc(firestore, 'user_lookups', data.phone);
-            batch.set(phoneLookupRef, { email: email });
+            batch.set(phoneLookupRef, { email: email, userKey: data.userKey });
         }
         
         if (data.userKey) {
             const userKeyLookupRef = doc(firestore, 'user_lookups', data.userKey);
-            batch.set(userKeyLookupRef, { email: email });
+            batch.set(userKeyLookupRef, { email: email, userKey: data.userKey });
         }
         
         await batch.commit();

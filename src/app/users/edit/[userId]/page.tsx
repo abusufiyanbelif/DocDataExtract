@@ -76,19 +76,10 @@ export default function EditUserPage() {
 
     const batch = writeBatch(firestore);
     const docRef = doc(firestore, 'users', userId);
-
-    const oldLoginId = user.loginId;
-    const newLoginId = (currentUserProfile?.role === 'Admin' && data.loginId !== oldLoginId) ? data.loginId : oldLoginId;
     
-    const oldEmail = user.email;
-    const newEmail = (currentUserProfile?.role === 'Admin' && data.email !== oldEmail) ? data.email : oldEmail;
-
-    const oldPhone = user.phone;
-    const newPhone = data.phone !== oldPhone ? data.phone : oldPhone;
-    
-    const updateData: any = {
+    const updateData: Partial<UserProfile> = {
         name: data.name,
-        phone: newPhone,
+        phone: data.phone,
         role: data.role,
         status: data.status,
         permissions: permissionsToSave,
@@ -97,9 +88,18 @@ export default function EditUserPage() {
         idProofUrl,
     };
     
+    let newEmail = user.email;
+    let newLoginId = user.loginId;
+
     if (currentUserProfile?.role === 'Admin') {
-        updateData.loginId = newLoginId;
-        updateData.email = newEmail;
+        if (data.email && data.email !== user.email) {
+            updateData.email = data.email;
+            newEmail = data.email;
+        }
+        if (data.loginId && data.loginId !== user.loginId) {
+            updateData.loginId = data.loginId;
+            newLoginId = data.loginId;
+        }
     }
     
     batch.update(docRef, updateData);
@@ -107,25 +107,23 @@ export default function EditUserPage() {
     // --- Handle lookup table updates ---
 
     // 1. Handle Login ID change
-    if (oldLoginId !== newLoginId) {
-        if (oldLoginId) batch.delete(doc(firestore, 'user_lookups', oldLoginId));
-        if (newLoginId) batch.set(doc(firestore, 'user_lookups', newLoginId), { email: newEmail });
-    } else if (oldEmail !== newEmail && newLoginId) {
-        // If loginId didn't change but email did, update the existing record
+    if (user.loginId !== newLoginId) {
+        if (user.loginId) batch.delete(doc(firestore, 'user_lookups', user.loginId));
+        if (newLoginId) batch.set(doc(firestore, 'user_lookups', newLoginId), { email: newEmail, userKey: user.userKey });
+    } else if (user.email !== newEmail && newLoginId) {
         batch.update(doc(firestore, 'user_lookups', newLoginId), { email: newEmail });
     }
     
     // 2. Handle Phone change
-    if (oldPhone !== newPhone) {
-        if (oldPhone) batch.delete(doc(firestore, 'user_lookups', oldPhone));
-        if (newPhone) batch.set(doc(firestore, 'user_lookups', newPhone), { email: newEmail });
-    } else if (oldEmail !== newEmail && newPhone) {
-        // If phone didn't change but email did, update the existing record
-        batch.update(doc(firestore, 'user_lookups', newPhone), { email: newEmail });
+    if (user.phone !== data.phone) {
+        if (user.phone) batch.delete(doc(firestore, 'user_lookups', user.phone));
+        if (data.phone) batch.set(doc(firestore, 'user_lookups', data.phone), { email: newEmail, userKey: user.userKey });
+    } else if (user.email !== newEmail && data.phone) {
+        batch.update(doc(firestore, 'user_lookups', data.phone), { email: newEmail });
     }
 
     // 3. Handle User Key lookup (always exists, only email can change)
-    if (oldEmail !== newEmail && user.userKey) {
+    if (user.email !== newEmail && user.userKey) {
         batch.update(doc(firestore, 'user_lookups', user.userKey), { email: newEmail });
     }
 

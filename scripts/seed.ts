@@ -55,12 +55,12 @@ async function main() {
       });
     }
 
-    const lookupsToVerify: {[key: string]: {email: string}} = {};
-    lookupsToVerify[adminLoginId] = { email: adminEmail };
+    const lookupsToVerify: {[key: string]: {email: string, userKey: string}} = {};
+    lookupsToVerify[adminLoginId] = { email: adminEmail, userKey: adminUserKey };
     if (adminLoginId !== adminUserKey) {
-      lookupsToVerify[adminUserKey] = { email: adminEmail };
+      lookupsToVerify[adminUserKey] = { email: adminEmail, userKey: adminUserKey };
     }
-    lookupsToVerify[adminPhone] = { email: adminEmail };
+    lookupsToVerify[adminPhone] = { email: adminEmail, userKey: adminUserKey };
 
     for (const [lookupId, lookupData] of Object.entries(lookupsToVerify)) {
       const lookupDocRef = db.collection('user_lookups').doc(lookupId);
@@ -106,9 +106,9 @@ async function main() {
         });
 
         const lookupsRef = db.collection('user_lookups');
-        batch.set(lookupsRef.doc(adminLoginId), { email: adminEmail });
-        batch.set(lookupsRef.doc(adminUserKey), { email: adminEmail });
-        batch.set(lookupsRef.doc(adminPhone), { email: adminEmail });
+        batch.set(lookupsRef.doc(adminLoginId), { email: adminEmail, userKey: adminUserKey });
+        batch.set(lookupsRef.doc(adminUserKey), { email: adminEmail, userKey: adminUserKey });
+        batch.set(lookupsRef.doc(adminPhone), { email: adminEmail, userKey: adminUserKey });
 
         await batch.commit();
         console.log('✅ New admin user and all database records created successfully.');

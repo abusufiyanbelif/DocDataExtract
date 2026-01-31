@@ -99,8 +99,7 @@ export default function ProfilePage() {
             }
             if (phone) {
                 const newLookupRef = doc(firestore, 'user_lookups', phone);
-                // Corrected to set the email, which is required for phone-based login.
-                batch.set(newLookupRef, { email: userProfile.email });
+                batch.set(newLookupRef, { email: userProfile.email, userKey: userProfile.userKey });
             }
         }
         
