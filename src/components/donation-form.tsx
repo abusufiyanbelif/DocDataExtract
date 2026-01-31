@@ -27,6 +27,7 @@ import type { Donation } from '@/lib/types';
 import { Loader2, ScanLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { extractTransactionIdFromImage } from '@/ai/flows/extract-transaction-id';
+import { Separator } from './ui/separator';
 
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -159,32 +160,37 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 )}
             />
         </div>
-        <FormField
-            control={form.control}
-            name="receiverName"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Receiver Name *</FormLabel>
-                <FormControl>
-                    <Input placeholder="e.g. Asif Shaikh" {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-        />
-        <FormField
-            control={form.control}
-            name="referral"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Referral *</FormLabel>
-                <FormControl>
-                    <Input placeholder="Referred by..." {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-        />
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+                control={form.control}
+                name="receiverName"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Receiver Name *</FormLabel>
+                    <FormControl>
+                        <Input placeholder="e.g. Asif Shaikh" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="referral"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Referral *</FormLabel>
+                    <FormControl>
+                        <Input placeholder="Referred by..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
+
+
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <FormField
                 control={form.control}
@@ -247,40 +253,65 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         </div>
 
         {paymentTypeValue === 'Online' && (
-            <FormField
-                control={form.control}
-                name="transactionId"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Transaction ID</FormLabel>
-                        <div className="relative">
+            <div className="space-y-4 rounded-md border p-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Online Payment Details</h3>
+                <Separator />
+                <FormField
+                    control={form.control}
+                    name="transactionId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Transaction ID</FormLabel>
+                            <div className="relative">
+                                <FormControl>
+                                    <Input 
+                                        placeholder="Optional, e.g., UPI ID" 
+                                        {...field} 
+                                        value={field.value ?? ''}
+                                        className="pr-12"
+                                    />
+                                </FormControl>
+                                <Button 
+                                    type="button" 
+                                    size="icon"
+                                    variant="ghost"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-10 text-muted-foreground hover:text-primary disabled:text-muted-foreground"
+                                    onClick={handleScanTransactionId}
+                                    disabled={isScanning || !preview}
+                                    title="Scan Transaction ID from Image"
+                                >
+                                    {isScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <ScanLine className="h-5 w-5" />}
+                                </Button>
+                            </div>
+                        <FormDescription>
+                            Enter manually or scan from the uploaded screenshot. Helps prevent duplicate entries.
+                        </FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="screenshotFile"
+                    render={() => (
+                        <FormItem>
+                            <FormLabel>Screenshot</FormLabel>
                             <FormControl>
-                                <Input 
-                                    placeholder="Optional, e.g., UPI ID" 
-                                    {...field} 
-                                    value={field.value ?? ''}
-                                    className="pr-12"
-                                />
+                                <Input type="file" accept="image/*" {...register('screenshotFile')} />
                             </FormControl>
-                            <Button 
-                                type="button" 
-                                size="icon"
-                                variant="ghost"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-10 text-muted-foreground hover:text-primary disabled:text-muted-foreground"
-                                onClick={handleScanTransactionId}
-                                disabled={isScanning || !preview}
-                                title="Scan Transaction ID from Image"
-                            >
-                                {isScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <ScanLine className="h-5 w-5" />}
-                            </Button>
-                        </div>
-                    <FormDescription>
-                        Enter manually or scan from the uploaded screenshot. Helps prevent duplicate entries.
-                    </FormDescription>
-                    <FormMessage />
-                    </FormItem>
+                            <FormDescription>
+                                Optional. Upload a screenshot of the transaction. You can scan it to get the Transaction ID.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                {preview && (
+                    <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
+                        <Image src={preview} alt="Donation screenshot preview" fill style={{ objectFit: 'contain' }} />
+                    </div>
                 )}
-            />
+            </div>
         )}
         
         <div className="grid grid-cols-2 gap-4">
@@ -320,23 +351,6 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                 )}
             />
         </div>
-
-        <FormItem>
-            <FormLabel>Screenshot</FormLabel>
-            <FormControl>
-                <Input type="file" accept="image/*" {...register('screenshotFile')} />
-            </FormControl>
-            <FormDescription>
-                Optional. Upload a screenshot of the donation transaction.
-            </FormDescription>
-            <FormMessage />
-        </FormItem>
-
-        {preview && (
-            <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
-                <Image src={preview} alt="Donation screenshot preview" fill style={{ objectFit: 'contain' }} />
-            </div>
-        )}
         
         <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
