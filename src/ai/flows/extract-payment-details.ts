@@ -1,7 +1,6 @@
-
 'use server';
 /**
- * @fileOverview AI flow to extract key details from a payment screenshot or text.
+ * @fileOverview AI flow to extract key details from a payment confirmation text.
  *
  * - extractPaymentDetails - Function to extract amount, transaction ID, and date.
  * - ExtractPaymentDetailsInput - Input type for extractPaymentDetails.
@@ -12,13 +11,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ExtractPaymentDetailsInputSchema = z.object({
-  photoDataUri: z
-    .string()
-    .describe(
-      "A screenshot of a payment confirmation (e.g., Google Pay, Paytm), as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    )
-    .optional(),
-  text: z.string().optional().describe("Raw text from a payment confirmation to be parsed."),
+  text: z.string().describe("Raw text from a payment confirmation to be parsed."),
 });
 export type ExtractPaymentDetailsInput = z.infer<typeof ExtractPaymentDetailsInputSchema>;
 
@@ -38,8 +31,7 @@ export async function extractPaymentDetails(
 
 const prompt = ai.definePrompt({
   name: 'extractPaymentDetailsPrompt',
-  model: 'gemini-pro-vision',
-  prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image or text and extract the following details precisely.
+  prompt: `You are an expert OCR agent specializing in parsing financial transaction text from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided text and extract the following details precisely.
 
 1.  **receiverName**: The name of the person or entity who received the payment. Look for labels like "Paid to", "To:", or the primary name displayed as the recipient.
 2.  **amount**: Find the main transaction amount. It may have a currency symbol like '₹'. The value should be a number. For example, if you see '₹200', the value should be \`200\`.
@@ -48,14 +40,10 @@ const prompt = ai.definePrompt({
 
 Return ONLY a single, valid JSON object with the extracted information. Do not include any text, markdown, or formatting before or after the JSON object. The JSON object should have the following keys: "receiverName" (string), "amount" (number), "transactionId" (string), "date" (string in YYYY-MM-DD format). If any of these fields are not clearly visible, omit them from the JSON object. It is critical that you adhere to the data types specified.
 
-{{#if text}}
 ---
 EXTRACT FROM THIS TEXT:
 {{{text}}}
 ---
-{{else}}
-Image: {{media url=photoDataUri}}
-{{/if}}
 `,
 });
 
@@ -72,7 +60,7 @@ const extractPaymentDetailsFlow = ai.defineFlow(
     // Find the JSON part in case the model adds extra text like \`\`\`json ... \`\`\`
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('Invalid response from AI. Expected a JSON object.');
+      throw new Error('The AI model did not return a valid JSON object. Please check the extracted text quality.');
     }
 
     try {
