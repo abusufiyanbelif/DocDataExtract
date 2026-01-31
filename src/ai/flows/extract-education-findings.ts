@@ -42,7 +42,7 @@ export async function extractEducationFindingsFromText(
 
 const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-1.5-pro-latest',
   prompt: `You are an expert academic registrar tasked with extracting key information from educational document text.
 
   Analyze the provided text and extract the institution name, degree/examination, and key achievements or grades.
