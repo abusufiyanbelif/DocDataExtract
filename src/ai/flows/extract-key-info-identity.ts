@@ -45,7 +45,6 @@ const prompt = ai.definePrompt({
   name: 'extractKeyInfoFromAadhaarPrompt',
   input: {schema: ExtractKeyInfoFromAadhaarInputSchema},
   output: {schema: ExtractKeyInfoFromAadhaarOutputSchema},
-  model: 'gemini-1.5-flash-latest',
   prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided image of an Aadhaar card and extract the following details:
 
 - The person's full name.

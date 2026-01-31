@@ -37,7 +37,6 @@ const prompt = ai.definePrompt({
   name: 'createEducationStoryPrompt',
   input: {schema: CreateEducationStoryInputSchema},
   output: {schema: CreateEducationStoryOutputSchema},
-  model: 'gemini-1.5-flash-latest',
   prompt: `You are an expert academic advisor. Your goal is to create a concise summary of a student's academic journey. First, determine if the documents appear to be educational (transcripts, mark sheets, certificates, etc.). Set the 'isCorrectType' flag to true if they are, and false otherwise.
 
 If the documents are not educational, create a general summary of their content.

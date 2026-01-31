@@ -46,7 +46,6 @@ const prompt = ai.definePrompt({
   name: 'extractBillingDataPrompt',
   input: {schema: ExtractBillingDataInputSchema},
   output: {schema: ExtractBillingDataOutputSchema},
-  model: 'gemini-1.5-flash-latest',
   prompt: `You are an expert in extracting data from bills and invoices.
 
   Please extract the following information from the image of the bill provided:
