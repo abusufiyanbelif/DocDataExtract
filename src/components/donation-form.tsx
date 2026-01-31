@@ -15,14 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,10 +25,12 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { Donation } from '@/lib/types';
-import { Loader2, ScanLine } from 'lucide-react';
+import { Loader2, ScanLine, FileSignature } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { extractPaymentDetails, ExtractPaymentDetailsOutput } from '@/ai/flows/extract-payment-details';
+import { extractPaymentDetails } from '@/ai/flows/extract-payment-details';
+import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
 import { Separator } from './ui/separator';
+import { Textarea } from './ui/textarea';
 
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -63,8 +57,8 @@ interface DonationFormProps {
 export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps) {
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<ExtractPaymentDetailsOutput | null>(null);
-  const [isScanPreviewOpen, setIsScanPreviewOpen] = useState(false);
+  const [isAutofilling, setIsAutofilling] = useState(false);
+  const [scannedText, setScannedText] = useState('');
 
   const form = useForm<DonationFormData>({
     resolver: zodResolver(formSchema),
@@ -103,7 +97,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     }
   }, [screenshotFile, donation?.screenshotUrl]);
 
-  const handleScanPaymentDetails = async () => {
+  const handleScanToText = async () => {
     if (!preview) {
         toast({
             title: "No Image to Scan",
@@ -113,16 +107,21 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         return;
     }
     setIsScanning(true);
-    toast({ title: "Scanning...", description: "Extracting details from the payment screenshot." });
+    setScannedText('');
+    toast({ title: "Scanning...", description: "Extracting text from the screenshot." });
     try {
-        const response = await extractPaymentDetails({ photoDataUri: preview });
-        setScanResult(response);
-        setIsScanPreviewOpen(true);
+        const response = await extractAndCorrectText({ photoDataUri: preview });
+        setScannedText(response.extractedText);
+        toast({
+            title: "Text Extracted",
+            description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
+            variant: "success",
+        });
     } catch (error: any) {
-        console.warn("Payment scan failed:", error);
+        console.warn("Scan to text failed:", error);
         toast({
             title: "Scan Failed",
-            description: error.message || "Could not automatically read the screenshot. Please enter the details manually.",
+            description: error.message || "Could not automatically read the screenshot.",
             variant: "destructive",
         });
     } finally {
@@ -130,42 +129,62 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     }
   };
   
-  const handleApplyScan = () => {
-    if (!scanResult) return;
-    
-    let detailsFound = false;
-    if (scanResult.receiverName) {
-        setValue('receiverName', scanResult.receiverName, { shouldValidate: true });
-        detailsFound = true;
-    }
-    if (scanResult.amount) {
-        setValue('amount', scanResult.amount, { shouldValidate: true });
-        detailsFound = true;
-    }
-    if (scanResult.transactionId) {
-        setValue('transactionId', scanResult.transactionId, { shouldValidate: true });
-        detailsFound = true;
-    }
-    if (scanResult.date && /^\d{4}-\d{2}-\d{2}$/.test(scanResult.date)) {
-        setValue('donationDate', scanResult.date, { shouldValidate: true });
-        detailsFound = true;
-    }
-
-    if (detailsFound) {
+  const handleAutofillFromText = async () => {
+    if (!scannedText) {
         toast({
-            title: "Scan Applied",
-            description: "Donation details have been populated from the scan.",
-            variant: "success",
+            title: "No Text to Process",
+            description: "Please scan an image first to extract text.",
+            variant: "destructive",
         });
-    } else {
-         toast({
-            title: "Scan Incomplete",
-            description: "Could not find any details to extract. Please fill them manually.",
-            variant: "default",
-        });
+        return;
     }
-    setIsScanPreviewOpen(false);
-    setScanResult(null);
+    setIsAutofilling(true);
+    toast({ title: "Autofilling...", description: "Parsing text and filling form fields." });
+    try {
+        const response = await extractPaymentDetails({ text: scannedText });
+        
+        const filledFields: string[] = [];
+        if (response.receiverName) {
+            setValue('receiverName', response.receiverName, { shouldValidate: true });
+            filledFields.push('Receiver Name');
+        }
+        if (response.amount) {
+            setValue('amount', response.amount, { shouldValidate: true });
+            filledFields.push('Amount');
+        }
+        if (response.transactionId) {
+            setValue('transactionId', response.transactionId, { shouldValidate: true });
+            filledFields.push('Transaction ID');
+        }
+        if (response.date && /^\d{4}-\d{2}-\d{2}$/.test(response.date)) {
+            setValue('donationDate', response.date, { shouldValidate: true });
+            filledFields.push('Donation Date');
+        }
+
+        if (filledFields.length > 0) {
+            toast({
+                title: "Autofill Successful",
+                description: `Filled: ${filledFields.join(', ')}.`,
+                variant: "success",
+            });
+        } else {
+            toast({
+                title: "No Details Found",
+                description: "Could not find any details to autofill from the text.",
+                variant: "default",
+            });
+        }
+
+    } catch (error: any) {
+         console.warn("Autofill from text failed:", error);
+         toast({
+            title: "Autofill Failed",
+            description: error.message || "Could not parse details from the text.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsAutofilling(false);
+    }
   };
 
 
@@ -325,13 +344,36 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                       <Button 
                           type="button" 
                           className="w-full"
-                          onClick={handleScanPaymentDetails}
-                          disabled={isScanning}
+                          onClick={handleScanToText}
+                          disabled={isScanning || isAutofilling}
                       >
                           {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                          Scan Screenshot
+                          Scan Screenshot to Text
                       </Button>
                   )}
+                   {scannedText && (
+                        <div className="space-y-2">
+                             <Label htmlFor="scanned-text">Extracted Text</Label>
+                             <Textarea
+                                id="scanned-text"
+                                placeholder="Raw text from the image will appear here..."
+                                value={scannedText}
+                                onChange={(e) => setScannedText(e.target.value)}
+                                rows={6}
+                                className="font-code"
+                             />
+                             <Button
+                                type="button"
+                                variant="secondary"
+                                className="w-full"
+                                onClick={handleAutofillFromText}
+                                disabled={isScanning || isAutofilling}
+                             >
+                                 {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
+                                 Autofill Form from Text
+                             </Button>
+                        </div>
+                   )}
                   <FormField
                       control={form.control}
                       name="transactionId"
@@ -402,35 +444,6 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
           </div>
         </form>
       </Form>
-
-      <Dialog open={isScanPreviewOpen} onOpenChange={setIsScanPreviewOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Review Scan Results</DialogTitle>
-                <DialogDescription>
-                    Review the extracted data below. Click "Fill Form" to apply it to your donation.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4 space-y-4">
-                {scanResult ? (
-                    Object.entries(scanResult).map(([key, value]) => value ? (
-                        <div key={key} className="grid grid-cols-3 items-center gap-4">
-                            <Label htmlFor={key} className="text-right capitalize">
-                                {key.replace(/([A-Z])/g, ' $1')}
-                            </Label>
-                            <Input id={key} value={value} readOnly className="col-span-2" />
-                        </div>
-                    ) : null)
-                ) : (
-                    <p className="text-center text-muted-foreground">No details could be extracted.</p>
-                )}
-            </div>
-            <DialogFooter>
-                <Button variant="outline" onClick={() => setIsScanPreviewOpen(false)}>Cancel</Button>
-                <Button onClick={handleApplyScan}>Fill Form</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

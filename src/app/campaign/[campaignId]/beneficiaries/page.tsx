@@ -64,13 +64,13 @@ export default function BeneficiariesPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || !userProfile) return null;
+    if (!firestore || !campaignId || !userProfile?.id) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
   }, [firestore, campaignId, userProfile?.id]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const beneficiariesCollectionRef = useMemo(() => {
-    if (!firestore || !campaignId || !userProfile) return null;
+    if (!firestore || !campaignId || !userProfile?.id) return null;
     return collection(firestore, `campaigns/${campaignId}/beneficiaries`);
   }, [firestore, campaignId, userProfile?.id]);
   const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
@@ -159,7 +159,7 @@ export default function BeneficiariesPage() {
   };
   
   const handleFormSubmit = async (data: BeneficiaryFormData) => {
-    if (!firestore || !storage || !campaignId || !userProfile) return;
+    if (!firestore || !storage || !campaignId || !userProfile || !campaign) return;
     if (editingBeneficiary && !canUpdate) return;
     if (!editingBeneficiary && !canCreate) return;
 
@@ -192,13 +192,16 @@ export default function BeneficiariesPage() {
                 title: "Uploading ID Proof...",
                 description: `Please wait while '${file.name}' is uploaded.`,
             });
+
+            const campaignCreatedDate = campaign.createdAt?.toDate ? campaign.createdAt.toDate().toISOString().split('T')[0] : (campaign.startDate || 'nodate');
+            const campaignFolderName = `${campaign.name.replace(/[\s/]/g, '_')}_${campaignCreatedDate}`;
             
             const today = new Date().toISOString().split('T')[0];
             const fileNameParts = [ data.name, data.phone || 'no-phone', today, 'referby', data.referralBy ];
             const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
             const fileExtension = file.name.split('.').pop() || 'jpg';
             const finalFileName = `${docRef.id}_${sanitizedBaseName}.${fileExtension}`;
-            const filePath = `campaigns/${campaignId}/beneficiaries/${finalFileName}`;
+            const filePath = `campaigns/${campaignFolderName}/beneficiaries/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 
             const uploadResult = await uploadBytes(fileRef, file);

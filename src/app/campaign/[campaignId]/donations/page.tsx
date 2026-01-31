@@ -52,13 +52,13 @@ export default function DonationsPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || !userProfile) return null;
+    if (!firestore || !campaignId || !userProfile?.id) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
   }, [firestore, campaignId, userProfile?.id]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const donationsCollectionRef = useMemo(() => {
-    if (!firestore || !campaignId || !userProfile) return null;
+    if (!firestore || !campaignId || !userProfile?.id) return null;
     return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
   }, [firestore, campaignId, userProfile?.id]);
   const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
@@ -169,11 +169,15 @@ export default function DonationsPage() {
                 description: `Please wait while '${file.name}' is uploaded.`,
             });
             
-            const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate, 'referby', userProfile.name ];
+            const campaignCreatedDate = campaign.createdAt?.toDate ? campaign.createdAt.toDate().toISOString().split('T')[0] : (campaign.startDate || 'nodate');
+            const campaignFolderName = `${campaign.name.replace(/[\s/]/g, '_')}_${campaignCreatedDate}`;
+
+            const transactionIdPart = data.transactionId || 'NULL';
+            const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate, transactionIdPart, 'referby', userProfile.name ];
             const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
             const fileExtension = file.name.split('.').pop() || 'jpg';
             const finalFileName = `${docRef.id}_${sanitizedBaseName}.${fileExtension}`;
-            const filePath = `campaigns/${campaignId}/donations/${finalFileName}`;
+            const filePath = `campaigns/${campaignFolderName}/donations/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 
             const uploadResult = await uploadBytes(fileRef, file);

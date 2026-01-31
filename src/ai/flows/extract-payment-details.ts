@@ -1,6 +1,7 @@
+
 'use server';
 /**
- * @fileOverview AI flow to extract key details from a payment screenshot.
+ * @fileOverview AI flow to extract key details from a payment screenshot or text.
  *
  * - extractPaymentDetails - Function to extract amount, transaction ID, and date.
  * - ExtractPaymentDetailsInput - Input type for extractPaymentDetails.
@@ -16,7 +17,9 @@ const ExtractPaymentDetailsInputSchema = z.object({
     .string()
     .describe(
       "A screenshot of a payment confirmation (e.g., Google Pay, Paytm), as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
-    ),
+    )
+    .optional(),
+  text: z.string().optional().describe("Raw text from a payment confirmation to be parsed."),
 });
 export type ExtractPaymentDetailsInput = z.infer<typeof ExtractPaymentDetailsInputSchema>;
 
@@ -37,16 +40,24 @@ export async function extractPaymentDetails(
 const prompt = ai.definePrompt({
   name: 'extractPaymentDetailsPrompt',
   model: googleAI.model('gemini-pro-vision'),
-  prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image and extract the following details precisely.
+  prompt: `You are an expert OCR agent specializing in reading financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image or text and extract the following details precisely.
 
 1.  **receiverName**: The name of the person or entity who received the payment. Look for labels like "Paid to", "To:", or the primary name displayed as the recipient.
 2.  **amount**: Find the main transaction amount. It may have a currency symbol like '₹'. The value should be a number. For example, if you see '₹200', the value should be \`200\`.
 3.  **transactionId**: Find the unique transaction identifier. Look for labels like "UPI Transaction ID", "Transaction ID", "UTR", or "Ref No.". Extract the alphanumeric code associated with it.
 4.  **date**: Find the date of the transaction. If you find a date (e.g., "Jan 31, 2026", "31-01-2026"), you MUST format it as YYYY-MM-DD.
 
-Return the extracted information as a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object. The JSON object should have the following keys: "receiverName" (string), "amount" (number), "transactionId" (string), "date" (string in YYYY-MM-DD format). If any of these fields are not clearly visible in the image, omit them from the JSON object. It is critical that you adhere to the data types specified.
+Return the extracted information as a single, valid JSON object. Do not include any text, markdown, or formatting before or after the JSON object. The JSON object should have the following keys: "receiverName" (string), "amount" (number), "transactionId" (string), "date" (string in YYYY-MM-DD format). If any of these fields are not clearly visible, omit them from the JSON object. It is critical that you adhere to the data types specified.
 
-Image: {{media url=photoDataUri}}`,
+{{#if text}}
+---
+EXTRACT FROM THIS TEXT:
+{{{text}}}
+---
+{{else}}
+Image: {{media url=photoDataUri}}
+{{/if}}
+`,
 });
 
 const extractPaymentDetailsFlow = ai.defineFlow(
