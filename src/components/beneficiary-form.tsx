@@ -30,8 +30,6 @@ import { Loader2, ScanLine, Trash2, Replace, FileIcon, FileSignature } from 'luc
 import { useToast } from '@/hooks/use-toast';
 import { extractKeyInfoFromAadhaarText } from '@/ai/flows/extract-key-info-identity';
 import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
-import { useStorage } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject, type StorageReference } from 'firebase/storage';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Separator } from './ui/separator';
@@ -67,7 +65,6 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
   const [isScanning, setIsScanning] = useState(false);
   const [isAutofilling, setIsAutofilling] = useState(false);
   const [scannedText, setScannedText] = useState('');
-  const storage = useStorage();
 
   const form = useForm<BeneficiaryFormData>({
     resolver: zodResolver(formSchema),
@@ -156,64 +153,54 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
   
   const handleScanToText = async () => {
     const fileList = getValues('idProofFile') as FileList | undefined;
-    const existingImageUrl = preview;
 
-    if (!fileList?.length && !existingImageUrl) {
-        toast({
-            title: "No Image to Scan",
-            description: "Please upload an ID proof document first.",
-            variant: "destructive",
-        });
+    if (!fileList || fileList.length === 0) {
+        toast({ title: "No File", description: "Please upload an ID proof document to scan.", variant: "destructive" });
         return;
     }
-
+    
     setIsScanning(true);
     setScannedText('');
-    let imageUrlToScan: string | null = null;
-    let tempFileRef: StorageReference | null = null;
+    toast({ title: "Scanning document...", description: "Please wait while the AI extracts the text." });
 
-    try {
-        if (fileList && fileList.length > 0) {
-            const file = fileList[0];
-            toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
-            const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-            tempFileRef = storageRef(storage!, tempPath);
-            await uploadBytes(tempFileRef, file);
-            imageUrlToScan = await getDownloadURL(tempFileRef);
-        } else if (existingImageUrl) {
-            imageUrlToScan = existingImageUrl;
+    const file = fileList[0];
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+        const dataUri = e.target?.result as string;
+        if (!dataUri) {
+            toast({ title: "Read Error", description: "Could not read the uploaded file.", variant: "destructive" });
+            setIsScanning(false);
+            return;
         }
 
-        if (!imageUrlToScan) {
-            throw new Error("Could not get a file URL to scan.");
+        try {
+            const response = await extractAndCorrectText({ photoDataUri: dataUri });
+            if (!response.extractedText) {
+                throw new Error("The AI model failed to extract any text from the document.");
+            }
+            setScannedText(response.extractedText);
+            toast({
+                title: "Text Extracted",
+                description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
+                variant: "success",
+            });
+        } catch (error: any) {
+            console.warn("ID Proof scan to text failed:", error);
+            toast({
+                title: "Scan Failed",
+                description: error.message || "Could not automatically read the document.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsScanning(false);
         }
-
-        toast({ title: "Scanning document...", description: "Please wait while the AI extracts the text." });
-        const response = await extractAndCorrectText({ photoDataUri: imageUrlToScan });
-        
-        if (!response.extractedText) {
-          throw new Error("The AI model failed to extract any text from the document.");
-        }
-        setScannedText(response.extractedText);
-        toast({
-            title: "Text Extracted",
-            description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
-            variant: "success",
-        });
-
-    } catch (error: any) {
-        console.warn("ID Proof scan to text failed:", error);
-        toast({
-            title: "Scan Failed",
-            description: error.message || "Could not automatically read the document.",
-            variant: "destructive",
-        });
-    } finally {
-        if (tempFileRef) {
-            await deleteObject(tempFileRef).catch(err => console.error("Failed to delete temp file", err));
-        }
+    };
+    reader.onerror = () => {
+        toast({ title: "File Error", description: "An error occurred while reading the file.", variant: "destructive" });
         setIsScanning(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAutofillFromText = async () => {
@@ -387,39 +374,43 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                         </Button>
                     </div>
                 </div>
+                </>
+            )}
+
+            {idProofFile?.length > 0 && (
+              <>
                 <Button 
                     type="button" 
                     className="w-full"
                     onClick={handleScanToText} 
-                    disabled={isScanning || isAutofilling || !preview}
+                    disabled={isScanning || isAutofilling}
                 >
                     {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
                     Scan to Text
                 </Button>
-                </>
-            )}
-
-            {scannedText && (
-              <div className="space-y-2">
-                <Label htmlFor="scanned-text-beneficiary">Extracted Text</Label>
-                <Textarea
-                  id="scanned-text-beneficiary"
-                  value={scannedText}
-                  onChange={(e) => setScannedText(e.target.value)}
-                  rows={4}
-                  className="font-code"
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={handleAutofillFromText}
-                  disabled={isScanning || isAutofilling}
-                >
-                  {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
-                  Autofill Form from Text
-                </Button>
-              </div>
+                {scannedText && (
+                  <div className="space-y-2">
+                    <Label htmlFor="scanned-text-beneficiary">Extracted Text</Label>
+                    <Textarea
+                      id="scanned-text-beneficiary"
+                      value={scannedText}
+                      onChange={(e) => setScannedText(e.target.value)}
+                      rows={4}
+                      className="font-code"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full"
+                      onClick={handleAutofillFromText}
+                      disabled={isScanning || isAutofilling}
+                    >
+                      {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
+                      Autofill Form from Text
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
         </div>
         

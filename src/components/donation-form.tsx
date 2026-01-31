@@ -31,8 +31,6 @@ import { extractPaymentDetailsFromText } from '@/ai/flows/extract-payment-detail
 import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
 import { Separator } from './ui/separator';
 import { Textarea } from './ui/textarea';
-import { useStorage } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject, type StorageReference } from 'firebase/storage';
 
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -62,7 +60,6 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   const [isScanning, setIsScanning] = useState(false);
   const [isAutofilling, setIsAutofilling] = useState(false);
   const [scannedText, setScannedText] = useState('');
-  const storage = useStorage();
 
   const form = useForm<DonationFormData>({
     resolver: zodResolver(formSchema),
@@ -114,61 +111,53 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
 
   const handleScanToText = async () => {
     const fileList = getValues('screenshotFile') as FileList | undefined;
-    const existingImageUrl = preview; // Use the current preview URL
-
-    if (!fileList?.length && !existingImageUrl) {
-        toast({
-            title: "No Image to Scan",
-            description: "Please upload a screenshot first.",
-            variant: "destructive",
-        });
+    if (!fileList || fileList.length === 0) {
+        toast({ title: "No File", description: "Please upload a screenshot to scan.", variant: "destructive" });
         return;
     }
+    
     setIsScanning(true);
     setScannedText('');
-    toast({ title: "Scanning...", description: "Uploading and extracting text from the screenshot." });
+    toast({ title: "Scanning screenshot...", description: "Please wait while the AI extracts the text." });
 
-    let imageUrlToScan: string | null = null;
-    let tempFileRef: StorageReference | null = null;
+    const file = fileList[0];
+    const reader = new FileReader();
 
-    try {
-        if (fileList && fileList.length > 0) {
-            const file = fileList[0];
-            const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-            tempFileRef = storageRef(storage!, tempPath);
-            await uploadBytes(tempFileRef, file);
-            imageUrlToScan = await getDownloadURL(tempFileRef);
-        } else if (existingImageUrl) {
-            imageUrlToScan = existingImageUrl;
+    reader.onload = async (e) => {
+        const dataUri = e.target?.result as string;
+        if (!dataUri) {
+            toast({ title: "Read Error", description: "Could not read the uploaded file.", variant: "destructive" });
+            setIsScanning(false);
+            return;
         }
 
-        if (!imageUrlToScan) {
-            throw new Error("Could not get a file URL to scan.");
+        try {
+            const response = await extractAndCorrectText({ photoDataUri: dataUri });
+            if (!response.extractedText) {
+                throw new Error("The AI model failed to extract any text from the document.");
+            }
+            setScannedText(response.extractedText);
+            toast({
+                title: "Text Extracted",
+                description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
+                variant: "success",
+            });
+        } catch (error: any) {
+            console.warn("Scan to text failed:", error);
+            toast({
+                title: "Scan Failed",
+                description: error.message || "Could not automatically read the screenshot.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsScanning(false);
         }
-
-        const response = await extractAndCorrectText({ photoDataUri: imageUrlToScan });
-        if (!response.extractedText) {
-          throw new Error("The AI model failed to extract any text from the document.");
-        }
-        setScannedText(response.extractedText);
-        toast({
-            title: "Text Extracted",
-            description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
-            variant: "success",
-        });
-    } catch (error: any) {
-        console.warn("Scan to text failed:", error);
-        toast({
-            title: "Scan Failed",
-            description: error.message || "Could not automatically read the screenshot.",
-            variant: "destructive",
-        });
-    } finally {
-        if (tempFileRef) {
-            await deleteObject(tempFileRef).catch(err => console.error("Failed to delete temp file", err));
-        }
+    };
+    reader.onerror = () => {
+        toast({ title: "File Error", description: "An error occurred while reading the file.", variant: "destructive" });
         setIsScanning(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
   
   const handleAutofillFromText = async () => {
@@ -391,40 +380,42 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                             </div>
                       </div>
                   )}
-                  {preview && (
-                      <Button 
-                          type="button" 
-                          className="w-full"
-                          onClick={handleScanToText}
-                          disabled={isScanning || isAutofilling}
-                      >
-                          {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                          Scan Screenshot to Text
-                      </Button>
+                  {screenshotFile?.length > 0 && (
+                      <>
+                        <Button 
+                            type="button" 
+                            className="w-full"
+                            onClick={handleScanToText}
+                            disabled={isScanning || isAutofilling}
+                        >
+                            {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
+                            Scan Screenshot to Text
+                        </Button>
+                        {scannedText && (
+                              <div className="space-y-2">
+                                  <FormLabel htmlFor="scanned-text">Extracted Text</FormLabel>
+                                  <Textarea
+                                      id="scanned-text"
+                                      placeholder="Raw text from the image will appear here..."
+                                      value={scannedText}
+                                      onChange={(e) => setScannedText(e.target.value)}
+                                      rows={6}
+                                      className="font-code"
+                                  />
+                                  <Button
+                                      type="button"
+                                      variant="secondary"
+                                      className="w-full"
+                                      onClick={handleAutofillFromText}
+                                      disabled={isScanning || isAutofilling}
+                                  >
+                                      {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
+                                      Autofill Form from Text
+                                  </Button>
+                              </div>
+                        )}
+                      </>
                   )}
-                   {scannedText && (
-                        <div className="space-y-2">
-                             <FormLabel htmlFor="scanned-text">Extracted Text</FormLabel>
-                             <Textarea
-                                id="scanned-text"
-                                placeholder="Raw text from the image will appear here..."
-                                value={scannedText}
-                                onChange={(e) => setScannedText(e.target.value)}
-                                rows={6}
-                                className="font-code"
-                             />
-                             <Button
-                                type="button"
-                                variant="secondary"
-                                className="w-full"
-                                onClick={handleAutofillFromText}
-                                disabled={isScanning || isAutofilling}
-                             >
-                                 {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
-                                 Autofill Form from Text
-                             </Button>
-                        </div>
-                   )}
                   <FormField
                       control={form.control}
                       name="transactionId"

@@ -31,10 +31,14 @@ import { useAuth } from '@/firebase';
 import { createAdminPermissions, type UserPermissions } from '@/lib/modules';
 import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { Loader2, Send, Replace, Trash2, FileIcon } from 'lucide-react';
+import { Loader2, Send, Replace, Trash2, FileIcon, ScanLine, FileSignature } from 'lucide-react';
 import { PermissionsTable } from './permissions-table';
 import { get, set } from '@/lib/utils';
 import { useUserProfile as useCurrentUserProfile } from '@/hooks/use-user-profile';
+import { extractKeyInfoFromAadhaarText } from '@/ai/flows/extract-key-info-identity';
+import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -83,6 +87,10 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const { toast } = useToast();
   const auth = useAuth();
   const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || {});
+
+  const [isScanning, setIsScanning] = useState(false);
+  const [isAutofilling, setIsAutofilling] = useState(false);
+  const [scannedText, setScannedText] = useState('');
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -102,7 +110,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     },
   });
 
-  const { watch, setValue, register, control, handleSubmit } = form;
+  const { watch, setValue, register, control, handleSubmit, getValues } = form;
   const nameValue = watch('name');
   const roleValue = watch('role');
   const idProofFile = watch('idProofFile');
@@ -136,6 +144,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       };
       reader.readAsDataURL(file);
       setValue('idProofDeleted', false);
+      setScannedText('');
     } else if (!watch('idProofDeleted')) {
         setPreview(user?.idProofUrl || null);
     } else {
@@ -147,6 +156,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     setValue('idProofFile', null);
     setValue('idProofDeleted', true);
     setPreview(null);
+    setScannedText('');
     toast({ title: 'Image Marked for Deletion', description: 'The ID proof will be permanently deleted when you save the changes.', variant: 'default' });
   };
 
@@ -192,6 +202,93 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       });
   };
   
+  const handleScanToText = async () => {
+    const fileList = getValues('idProofFile') as FileList | undefined;
+
+    if (!fileList || fileList.length === 0) {
+        toast({ title: "No File", description: "Please upload an ID proof document to scan.", variant: "destructive" });
+        return;
+    }
+    
+    setIsScanning(true);
+    setScannedText('');
+    toast({ title: "Scanning document...", description: "Please wait while the AI extracts the text." });
+
+    const file = fileList[0];
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+        const dataUri = e.target?.result as string;
+        if (!dataUri) {
+            toast({ title: "Read Error", description: "Could not read the uploaded file.", variant: "destructive" });
+            setIsScanning(false);
+            return;
+        }
+
+        try {
+            const response = await extractAndCorrectText({ photoDataUri: dataUri });
+            if (!response.extractedText) {
+                throw new Error("The AI model failed to extract any text from the document.");
+            }
+            setScannedText(response.extractedText);
+            toast({
+                title: "Text Extracted",
+                description: "Raw text is now available. Click 'Autofill From Text' to populate the form.",
+                variant: "success",
+            });
+        } catch (error: any) {
+            console.warn("ID Proof scan to text failed:", error);
+            toast({
+                title: "Scan Failed",
+                description: error.message || "Could not automatically read the document.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsScanning(false);
+        }
+    };
+    reader.onerror = () => {
+        toast({ title: "File Error", description: "An error occurred while reading the file.", variant: "destructive" });
+        setIsScanning(false);
+    };
+    reader.readAsDataURL(file);
+  };
+  
+   const handleAutofillFromText = async () => {
+    if (!scannedText) {
+      toast({ title: 'No Text', description: 'Please scan a document to get text first.', variant: 'destructive'});
+      return;
+    }
+    setIsAutofilling(true);
+    toast({ title: "Autofilling...", description: "Parsing text and filling form fields." });
+    try {
+      const response = await extractKeyInfoFromAadhaarText({ text: scannedText });
+
+      if (response) {
+          if (response.name) setValue('name', response.name, { shouldValidate: true });
+          if (response.aadhaarNumber) setValue('idNumber', response.aadhaarNumber, { shouldValidate:true });
+          setValue('idProofType', 'Aadhaar', { shouldValidate: true });
+          
+          toast({
+              title: "Autofill Successful",
+              description: "User details have been populated from the scanned text.",
+              variant: "success",
+          });
+      } else {
+           toast({
+              title: "Autofill Incomplete",
+              description: "Could not extract all details from the text. Please fill them manually.",
+              variant: "default",
+          });
+      }
+    } catch (error: any) {
+      console.warn("Autofill from text failed:", error);
+      toast({ title: 'Autofill Failed', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsAutofilling(false);
+    }
+  };
+
   const finalSubmitHandler = (formData: z.infer<typeof formSchema>) => {
       const dataWithPermissions: UserFormData = {
           ...formData,
@@ -320,68 +417,106 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             )}
             
             <Separator />
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                control={control}
-                name="idProofType"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>ID Proof Type</FormLabel>
+
+             <div className="space-y-4 rounded-md border p-4">
+                <h3 className="text-sm font-medium text-muted-foreground">ID Proof Details</h3>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                    control={control}
+                    name="idProofType"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>ID Proof Type</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Aadhaar, PAN, etc." {...field} disabled={isFormDisabled}/>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={control}
+                    name="idNumber"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>ID Number</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g. XXXX XXXX 1234" {...field} disabled={isFormDisabled}/>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+
+                <FormItem>
+                    <FormLabel>ID Proof Document</FormLabel>
                     <FormControl>
-                        <Input placeholder="Aadhaar, PAN, etc." {...field} disabled={isFormDisabled}/>
+                        <Input id="user-id-proof-file-input" type="file" accept="image/*,application/pdf" {...register('idProofFile')} disabled={isFormDisabled}/>
                     </FormControl>
+                    <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
                     <FormMessage />
-                    </FormItem>
+                </FormItem>
+                
+                {preview && (
+                    <div className="relative group w-full h-48 mt-2 rounded-md overflow-hidden border">
+                        {preview.startsWith('data:application/pdf') ? (
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+                                <FileIcon className="w-12 h-12 mb-2" />
+                                <p className="text-sm text-center">PDF Document Uploaded</p>
+                            </div>
+                        ) : (
+                            <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
+                        )}
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('user-id-proof-file-input')?.click()}>
+                                <Replace className="h-5 w-5"/>
+                                <span className="sr-only">Replace Image</span>
+                            </Button>
+                            <Button type="button" size="icon" variant="destructive" onClick={handleDeleteProof}>
+                                <Trash2 className="h-5 w-5"/>
+                                <span className="sr-only">Delete Image</span>
+                            </Button>
+                        </div>
+                    </div>
                 )}
-                />
-                <FormField
-                control={control}
-                name="idNumber"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>ID Number</FormLabel>
-                    <FormControl>
-                        <Input placeholder="e.g. XXXX XXXX 1234" {...field} disabled={isFormDisabled}/>
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
+                 {idProofFile?.length > 0 && (
+                    <>
+                    <Button 
+                        type="button" 
+                        className="w-full"
+                        onClick={handleScanToText} 
+                        disabled={isScanning || isAutofilling || !preview}
+                    >
+                        {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
+                        Scan to Text
+                    </Button>
+                    {scannedText && (
+                        <div className="space-y-2">
+                        <Label htmlFor="scanned-text-user">Extracted Text</Label>
+                        <Textarea
+                            id="scanned-text-user"
+                            value={scannedText}
+                            onChange={(e) => setScannedText(e.target.value)}
+                            rows={4}
+                            className="font-code"
+                        />
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            className="w-full"
+                            onClick={handleAutofillFromText}
+                            disabled={isScanning || isAutofilling}
+                        >
+                            {isAutofilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileSignature className="mr-2 h-4 w-4" />}
+                            Autofill Form from Text
+                        </Button>
+                        </div>
+                    )}
+                    </>
                 )}
-                />
             </div>
 
-            <FormItem>
-                <FormLabel>ID Proof Document</FormLabel>
-                <FormControl>
-                    <Input id="user-id-proof-file-input" type="file" accept="image/*,application/pdf" {...register('idProofFile')} disabled={isFormDisabled}/>
-                </FormControl>
-                <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
-                <FormMessage />
-            </FormItem>
-            
-            {preview && (
-                <div className="relative group w-full h-48 mt-2 rounded-md overflow-hidden border">
-                    {preview.startsWith('data:application/pdf') ? (
-                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
-                            <FileIcon className="w-12 h-12 mb-2" />
-                            <p className="text-sm text-center">PDF Document Uploaded</p>
-                        </div>
-                    ) : (
-                        <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
-                    )}
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('user-id-proof-file-input')?.click()}>
-                            <Replace className="h-5 w-5"/>
-                            <span className="sr-only">Replace Image</span>
-                        </Button>
-                        <Button type="button" size="icon" variant="destructive" onClick={handleDeleteProof}>
-                            <Trash2 className="h-5 w-5"/>
-                            <span className="sr-only">Delete Image</span>
-                        </Button>
-                    </div>
-                </div>
-            )}
-            
             <Separator />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
