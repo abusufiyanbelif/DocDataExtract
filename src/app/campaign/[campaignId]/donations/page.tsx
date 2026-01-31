@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,7 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
@@ -78,8 +79,11 @@ export default function DonationsPage() {
   const [editingDonation, setEditingDonation] = useState<Donation | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [donationToDelete, setDonationToDelete] = useState<string | null>(null);
+  
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [imageToView, setImageToView] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -116,6 +120,8 @@ export default function DonationsPage() {
 
   const handleViewImage = (url: string) => {
     setImageToView(url);
+    setZoom(1);
+    setRotation(0);
     setIsImageViewerOpen(true);
   };
 
@@ -178,12 +184,35 @@ export default function DonationsPage() {
     let screenshotUrl = editingDonation?.screenshotUrl || '';
     
     try {
+        if (data.screenshotDeleted && screenshotUrl) {
+            toast({ title: "Deleting Screenshot...", description: 'Removing the old file from storage.'});
+            await deleteObject(storageRef(storage, screenshotUrl));
+            screenshotUrl = '';
+        }
+        
         const fileList = data.screenshotFile as FileList | undefined;
         if (fileList && fileList.length > 0) {
+            if (screenshotUrl) {
+                 await deleteObject(storageRef(storage, screenshotUrl)).catch(err => {
+                    if (err.code !== 'storage/object-not-found') {
+                        console.warn("Failed to delete old screenshot during replacement:", err);
+                    }
+                });
+            }
             const file = fileList[0];
             toast({
                 title: "Uploading Screenshot...",
                 description: `Please wait while '${file.name}' is uploaded.`,
+            });
+            
+            const { default: Resizer } = await import('react-image-file-resizer');
+            const resizedBlob = await new Promise<Blob>((resolve) => {
+                 Resizer.imageFileResizer(
+                    file, 1024, 1024, 'JPEG', 80, 0,
+                    blob => {
+                        resolve(blob as Blob);
+                    }, 'blob'
+                );
             });
             
             const campaignCreatedDate = campaign.createdAt?.toDate ? campaign.createdAt.toDate().toISOString().split('T')[0] : (campaign.startDate || 'nodate');
@@ -192,16 +221,16 @@ export default function DonationsPage() {
             const transactionIdPart = data.transactionId || 'NULL';
             const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate, transactionIdPart, 'referby', userProfile.name ];
             const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
-            const fileExtension = file.name.split('.').pop() || 'jpg';
+            const fileExtension = 'jpeg';
             const finalFileName = `${docRef.id}_${sanitizedBaseName}.${fileExtension}`;
             const filePath = `campaigns/${campaignFolderName}/donations/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 
-            const uploadResult = await uploadBytes(fileRef, file);
+            const uploadResult = await uploadBytes(fileRef, resizedBlob);
             screenshotUrl = await getDownloadURL(uploadResult.ref);
         }
 
-        const { screenshotFile, ...donationData } = data;
+        const { screenshotFile, screenshotDeleted, ...donationData } = data;
         
         const finalData = {
             ...donationData,
@@ -553,10 +582,16 @@ export default function DonationsPage() {
                 <DialogTitle>Donation Screenshot</DialogTitle>
             </DialogHeader>
             {imageToView && (
-                <div className="relative h-[70vh] w-full mt-4">
-                    <Image src={imageToView} alt="Donation screenshot" fill className="object-contain" />
+                <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
+                    <Image src={imageToView} alt="Donation screenshot" fill className="object-contain" style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, transition: 'transform 0.2s ease-out' }} />
                 </div>
             )}
+             <DialogFooter className="sm:justify-center pt-4">
+                <Button variant="outline" onClick={() => setZoom(z => z * 1.2)}><ZoomIn className="mr-2"/> Zoom In</Button>
+                <Button variant="outline" onClick={() => setZoom(z => z / 1.2)}><ZoomOut className="mr-2"/> Zoom Out</Button>
+                <Button variant="outline" onClick={() => setRotation(r => r + 90)}><RotateCw className="mr-2"/> Rotate</Button>
+                <Button variant="outline" onClick={() => { setZoom(1); setRotation(0); }}><RefreshCw className="mr-2"/> Reset</Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -7,7 +7,7 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { updateDoc, doc, writeBatch, DocumentReference } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { createAdminPermissions } from '@/lib/modules';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -51,20 +51,44 @@ export default function EditUserPage() {
 
     let idProofUrl = user?.idProofUrl || '';
     try {
+        if (data.idProofDeleted && idProofUrl) {
+            toast({ title: "Deleting ID Proof...", description: 'Removing the old file from storage.'});
+            await deleteObject(storageRef(storage, idProofUrl));
+            idProofUrl = '';
+        }
+
         const fileList = data.idProofFile as FileList | undefined;
         if (fileList && fileList.length > 0) {
+            if (idProofUrl) {
+                await deleteObject(storageRef(storage, idProofUrl)).catch(err => {
+                    if (err.code !== 'storage/object-not-found') {
+                        console.warn("Failed to delete old file during replacement:", err);
+                    }
+                });
+            }
+            
             const file = fileList[0];
             toast({
                 title: "Uploading ID Proof...",
                 description: `Please wait while '${file.name}' is uploaded.`,
             });
+
+            const { default: Resizer } = await import('react-image-file-resizer');
+            const resizedBlob = await new Promise<Blob>((resolve) => {
+                 Resizer.imageFileResizer(
+                    file, 1024, 1024, 'JPEG', 80, 0,
+                    blob => {
+                        resolve(blob as Blob);
+                    }, 'blob'
+                );
+            });
             
-            const fileExtension = file.name.split('.').pop() || 'jpg';
+            const fileExtension = 'jpeg';
             const finalFileName = `${userId}_id_proof.${fileExtension}`;
             const filePath = `users/${userId}/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 
-            const uploadResult = await uploadBytes(fileRef, file);
+            const uploadResult = await uploadBytes(fileRef, resizedBlob);
             idProofUrl = await getDownloadURL(uploadResult.ref);
         }
     } catch (uploadError) {
@@ -77,7 +101,7 @@ export default function EditUserPage() {
     const batch = writeBatch(firestore);
     const docRef = doc(firestore, 'users', userId);
     
-    const updateData: Partial<UserProfile> = {
+    const { idProofFile, idProofDeleted, ...updateData }: Partial<UserFormData> = {
         name: data.name,
         phone: data.phone,
         role: data.role,
@@ -102,7 +126,7 @@ export default function EditUserPage() {
         }
     }
     
-    batch.update(docRef, updateData);
+    batch.update(docRef, updateData as any); // Use any to bypass strict type checking for partial update
 
     // --- Handle lookup table updates ---
 

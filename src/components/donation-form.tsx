@@ -25,7 +25,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { Donation } from '@/lib/types';
-import { Loader2, ScanLine, FileSignature } from 'lucide-react';
+import { Loader2, ScanLine, FileSignature, Replace, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { extractPaymentDetails } from '@/ai/flows/extract-payment-details';
 import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
@@ -46,6 +46,7 @@ const formSchema = z.object({
   donationDate: z.string().min(1, { message: "Donation date is required."}),
   status: z.enum(['Verified', 'Pending', 'Canceled']),
   screenshotFile: z.any().optional(),
+  screenshotDeleted: z.boolean().optional(),
 });
 
 export type DonationFormData = z.infer<typeof formSchema>;
@@ -76,6 +77,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
       transactionId: donation?.transactionId || '',
       donationDate: donation?.donationDate || new Date().toISOString().split('T')[0],
       status: donation?.status || 'Pending',
+      screenshotDeleted: false,
     },
   });
 
@@ -94,16 +96,25 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
             setPreview(reader.result as string);
         };
         reader.readAsDataURL(file);
-    } else if (donation?.screenshotUrl) {
-        setPreview(donation.screenshotUrl);
+        setValue('screenshotDeleted', false);
+    } else if (!watch('screenshotDeleted')) {
+        setPreview(donation?.screenshotUrl || null);
     } else {
         setPreview(null);
     }
-  }, [screenshotFile, donation?.screenshotUrl]);
+  }, [screenshotFile, donation?.screenshotUrl, watch, setValue]);
+  
+  const handleDeleteScreenshot = () => {
+    setValue('screenshotFile', null);
+    setValue('screenshotDeleted', true);
+    setPreview(null);
+    setScannedText('');
+    toast({ title: 'Image Marked for Deletion', description: 'The screenshot will be permanently deleted when you save the changes.', variant: 'default' });
+  };
 
   const handleScanToText = async () => {
     const fileList = getValues('screenshotFile') as FileList | undefined;
-    const existingImageUrl = donation?.screenshotUrl;
+    const existingImageUrl = preview; // Use the current preview URL
 
     if (!fileList?.length && !existingImageUrl) {
         toast({
@@ -217,74 +228,11 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         setIsAutofilling(false);
     }
   };
-  
-  const handleFormSubmit = async (data: DonationFormData) => {
-    if (!storage) return;
-
-    const oldScreenshotUrl = donation?.screenshotUrl;
-    let newScreenshotUrl = oldScreenshotUrl || '';
-    
-    const { screenshotFile, ...donationData } = data;
-
-    try {
-        const fileList = screenshotFile as FileList | undefined;
-        if (fileList && fileList.length > 0) {
-            const file = fileList[0];
-            const uploadPromise = new Promise<string>(async (resolve) => {
-                const { default: Resizer } = await import('react-image-file-resizer');
-                Resizer.imageFileResizer(
-                    file, 1024, 1024, 'JPEG', 80, 0,
-                    uri => resolve(uri as string),
-                    'base64'
-                );
-            });
-            const resizedDataUri = await uploadPromise;
-            const blob = await (await fetch(resizedDataUri)).blob();
-
-            toast({
-                title: "Uploading Screenshot...",
-                description: `Please wait while '${file.name}' is uploaded.`,
-            });
-            
-            const transactionIdPart = data.transactionId || 'NULL';
-            const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate, transactionIdPart ];
-            const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
-            const fileExtension = 'jpeg';
-            const finalFileName = `${sanitizedBaseName}.${fileExtension}`;
-            
-            const filePath = `donations/${finalFileName}`;
-            const fileRef = storageRef(storage, filePath);
-
-            const uploadResult = await uploadBytes(fileRef, blob);
-            newScreenshotUrl = await getDownloadURL(uploadResult.ref);
-
-            if (oldScreenshotUrl && oldScreenshotUrl !== newScreenshotUrl) {
-                try {
-                    await deleteObject(storageRef(storage, oldScreenshotUrl));
-                } catch (deleteError: any) {
-                    if (deleteError.code !== 'storage/object-not-found') {
-                        console.warn("Failed to delete old screenshot file:", deleteError);
-                    }
-                }
-            }
-        }
-        
-        onSubmit({
-          ...donationData,
-          screenshotUrl: newScreenshotUrl,
-        } as DonationFormData);
-
-    } catch (error: any) {
-        console.warn("Error during file upload:", error);
-        toast({ title: 'Error', description: `Could not save donation screenshot. ${error.message}`, variant: 'destructive' });
-    }
-  };
-
 
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                   control={form.control}
@@ -419,7 +367,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                           <FormItem>
                               <FormLabel>Screenshot</FormLabel>
                               <FormControl>
-                                  <Input type="file" accept="image/*" {...register('screenshotFile')} />
+                                  <Input id="screenshot-file-input" type="file" accept="image/*" {...register('screenshotFile')} />
                               </FormControl>
                               <FormDescription>
                                   Upload a screenshot of the transaction.
@@ -429,8 +377,18 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                       )}
                   />
                   {preview && (
-                      <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
+                      <div className="relative group w-full h-48 mt-2 rounded-md overflow-hidden border">
                           <Image src={preview} alt="Donation screenshot preview" fill style={{ objectFit: 'contain' }} />
+                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('screenshot-file-input')?.click()}>
+                                    <Replace className="h-5 w-5"/>
+                                    <span className="sr-only">Replace Image</span>
+                                </Button>
+                                <Button type="button" size="icon" variant="destructive" onClick={handleDeleteScreenshot}>
+                                    <Trash2 className="h-5 w-5"/>
+                                    <span className="sr-only">Delete Image</span>
+                                </Button>
+                            </div>
                       </div>
                   )}
                   {preview && (
@@ -540,4 +498,5 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     </>
   );
 }
+
 

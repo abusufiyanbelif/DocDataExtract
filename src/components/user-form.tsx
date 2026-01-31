@@ -31,7 +31,7 @@ import { useAuth } from '@/firebase';
 import { createAdminPermissions, type UserPermissions } from '@/lib/modules';
 import type { UserProfile } from '@/lib/types';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send, Replace, Trash2, FileIcon } from 'lucide-react';
 import { PermissionsTable } from './permissions-table';
 import { get, set } from '@/lib/utils';
 import { useUserProfile as useCurrentUserProfile } from '@/hooks/use-user-profile';
@@ -47,6 +47,7 @@ const formSchema = z.object({
   idProofType: z.string().optional(),
   idNumber: z.string().optional(),
   idProofFile: z.any().optional(),
+  idProofDeleted: z.boolean().optional(),
   password: z.string().optional(),
   _isEditing: z.boolean(),
 })
@@ -97,6 +98,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       idProofType: user?.idProofType || '',
       idNumber: user?.idNumber || '',
       _isEditing: isEditing,
+      idProofDeleted: false,
     },
   });
 
@@ -133,12 +135,20 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         setPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-    } else if (user?.idProofUrl) {
-      setPreview(user.idProofUrl);
+      setValue('idProofDeleted', false);
+    } else if (!watch('idProofDeleted')) {
+        setPreview(user?.idProofUrl || null);
     } else {
         setPreview(null);
     }
-  }, [idProofFile, user?.idProofUrl]);
+  }, [idProofFile, user?.idProofUrl, watch, setValue]);
+  
+  const handleDeleteProof = () => {
+    setValue('idProofFile', null);
+    setValue('idProofDeleted', true);
+    setPreview(null);
+    toast({ title: 'Image Marked for Deletion', description: 'The ID proof will be permanently deleted when you save the changes.', variant: 'default' });
+  };
 
   const handleSendPasswordReset = async () => {
     if (!auth || !user?.email) {
@@ -343,19 +353,32 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
             <FormItem>
                 <FormLabel>ID Proof Document</FormLabel>
                 <FormControl>
-                    <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} disabled={isFormDisabled}/>
+                    <Input id="user-id-proof-file-input" type="file" accept="image/*,application/pdf" {...register('idProofFile')} disabled={isFormDisabled}/>
                 </FormControl>
                 <FormDescription>Optional. Upload an image of the ID proof.</FormDescription>
                 <FormMessage />
             </FormItem>
             
             {preview && (
-                <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
+                <div className="relative group w-full h-48 mt-2 rounded-md overflow-hidden border">
                     {preview.startsWith('data:application/pdf') ? (
-                        <div className="flex items-center justify-center h-full text-muted-foreground">PDF Preview</div>
+                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+                            <FileIcon className="w-12 h-12 mb-2" />
+                            <p className="text-sm text-center">PDF Document Uploaded</p>
+                        </div>
                     ) : (
                         <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
                     )}
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('user-id-proof-file-input')?.click()}>
+                            <Replace className="h-5 w-5"/>
+                            <span className="sr-only">Replace Image</span>
+                        </Button>
+                        <Button type="button" size="icon" variant="destructive" onClick={handleDeleteProof}>
+                            <Trash2 className="h-5 w-5"/>
+                            <span className="sr-only">Delete Image</span>
+                        </Button>
+                    </div>
                 </div>
             )}
             

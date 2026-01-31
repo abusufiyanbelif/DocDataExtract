@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
@@ -6,9 +7,9 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle, LogIn, FileText, BadgeInfo, Hash, Eye, Edit, Save, Mail } from 'lucide-react';
+import { ArrowLeft, Loader2, User, Shield, Phone, KeyRound, CheckCircle, XCircle, LogIn, FileText, BadgeInfo, Hash, Eye, Edit, Save, Mail, ZoomIn, ZoomOut, RotateCw, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -41,9 +42,13 @@ export default function ProfilePage() {
 
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
     const [imageToView, setImageToView] = useState<string | null>(null);
+    const [zoom, setZoom] = useState(1);
+    const [rotation, setRotation] = useState(0);
 
     const handleViewImage = (url: string) => {
         setImageToView(url);
+        setZoom(1);
+        setRotation(0);
         setIsImageViewerOpen(true);
     };
 
@@ -229,10 +234,16 @@ export default function ProfilePage() {
                         <DialogTitle>ID Proof</DialogTitle>
                     </DialogHeader>
                     {imageToView && (
-                        <div className="relative h-[70vh] w-full mt-4">
-                            <Image src={imageToView} alt="ID proof" fill className="object-contain" />
+                        <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
+                            <Image src={imageToView} alt="ID proof" fill className="object-contain" style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, transition: 'transform 0.2s ease-out' }} />
                         </div>
                     )}
+                    <DialogFooter className="sm:justify-center pt-4">
+                        <Button variant="outline" onClick={() => setZoom(z => z * 1.2)}><ZoomIn className="mr-2"/> Zoom In</Button>
+                        <Button variant="outline" onClick={() => setZoom(z => z / 1.2)}><ZoomOut className="mr-2"/> Zoom Out</Button>
+                        <Button variant="outline" onClick={() => setRotation(r => r + 90)}><RotateCw className="mr-2"/> Rotate</Button>
+                        <Button variant="outline" onClick={() => { setZoom(1); setRotation(0); }}><RefreshCw className="mr-2"/> Reset</Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

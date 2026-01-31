@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import type { Beneficiary, RationList, RationItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Loader2, ScanLine } from 'lucide-react';
+import { Loader2, ScanLine, Trash2, Replace, FileIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { extractKeyInfoFromAadhaar } from '@/ai/flows/extract-key-info-identity';
 import { useStorage } from '@/firebase';
@@ -46,6 +46,7 @@ const formSchema = z.object({
   kitAmount: z.coerce.number().min(0),
   status: z.enum(['Given', 'Pending', 'Hold', 'Need More Details', 'Verified']),
   idProofFile: z.any().optional(),
+  idProofDeleted: z.boolean().optional(),
 });
 
 export type BeneficiaryFormData = z.infer<typeof formSchema>;
@@ -77,6 +78,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
       referralBy: beneficiary?.referralBy || '',
       kitAmount: beneficiary?.kitAmount || 0,
       status: beneficiary?.status || 'Pending',
+      idProofDeleted: false,
     },
   });
 
@@ -95,12 +97,13 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         setPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-    } else if (beneficiary?.idProofUrl) {
-      setPreview(beneficiary.idProofUrl);
+      setValue('idProofDeleted', false);
+    } else if (!watch('idProofDeleted')) {
+        setPreview(beneficiary?.idProofUrl || null);
     } else {
         setPreview(null);
     }
-  }, [idProofFile, beneficiary?.idProofUrl]);
+  }, [idProofFile, beneficiary?.idProofUrl, watch]);
 
   useEffect(() => {
     const calculateTotal = (items: RationItem[]) => items.reduce((sum, item) => sum + Number(item.price || 0), 0);
@@ -136,6 +139,13 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     return false;
   }, [membersValue, rationLists]);
 
+  const handleDeleteProof = () => {
+    setValue('idProofFile', null);
+    setValue('idProofDeleted', true);
+    setPreview(null);
+    toast({ title: 'Image Marked for Deletion', description: 'The ID proof will be permanently deleted when you save the changes.', variant: 'default' });
+  };
+  
   const handleScanIdProof = async () => {
     const fileList = getValues('idProofFile') as FileList | undefined;
     const existingImageUrl = beneficiary?.idProofUrl;
@@ -205,73 +215,9 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     }
   };
 
-  const handleFormSubmit = async (data: BeneficiaryFormData) => {
-    const oldIdProofUrl = beneficiary?.idProofUrl;
-    let newIdProofUrl = oldIdProofUrl || '';
-    
-    const { idProofFile, ...beneficiaryData } = data;
-    
-    try {
-        const fileList = idProofFile as FileList | undefined;
-        if (fileList && fileList.length > 0) {
-            const file = fileList[0];
-            const uploadPromise = new Promise<string>(async (resolve, reject) => {
-                const { default: Resizer } = await import('react-image-file-resizer');
-                Resizer.imageFileResizer(
-                    file,
-                    1024, // max width
-                    1024, // max height
-                    'JPEG', // compress format
-                    80, // quality
-                    0, // rotation
-                    uri => resolve(uri as string),
-                    'base64'
-                );
-            });
-            const resizedDataUri = await uploadPromise;
-            const blob = await (await fetch(resizedDataUri)).blob();
-
-            toast({
-                title: "Uploading ID Proof...",
-                description: `Please wait while '${file.name}' is uploaded.`,
-            });
-            
-            const today = new Date().toISOString().split('T')[0];
-            const fileNameParts = [ data.name, data.phone || 'no-phone', today, 'referby', data.referralBy ];
-            const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
-            const finalFileName = `${sanitizedBaseName}.${'jpeg'}`;
-
-            const filePath = `beneficiaries/${finalFileName}`;
-            const fileRef = storageRef(storage!, filePath);
-
-            const uploadResult = await uploadBytes(fileRef, blob);
-            newIdProofUrl = await getDownloadURL(uploadResult.ref);
-            
-            if (oldIdProofUrl && oldIdProofUrl !== newIdProofUrl) {
-                try {
-                    await deleteObject(storageRef(storage!, oldIdProofUrl));
-                } catch (deleteError: any) {
-                    if (deleteError.code !== 'storage/object-not-found') {
-                        console.warn("Failed to delete old ID proof file:", deleteError);
-                    }
-                }
-            }
-        }
-        
-        onSubmit({
-          ...beneficiaryData,
-          idProofUrl: newIdProofUrl,
-        } as BeneficiaryFormData);
-
-    } catch (error) {
-        console.warn("Error during file upload:", error);
-        toast({ title: 'File Upload Error', description: 'Could not upload the ID proof file.', variant: 'destructive' });
-    }
-};
-
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
             control={form.control}
@@ -374,7 +320,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             <FormLabel>ID Proof Document</FormLabel>
             <div className="flex items-center gap-2">
                 <FormControl className="flex-grow">
-                    <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
+                    <Input id="id-proof-file-input" type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
                 </FormControl>
                 <Button 
                     type="button" 
@@ -392,12 +338,25 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         </FormItem>
         
         {preview && (
-            <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
+            <div className="relative group w-full h-48 mt-2 rounded-md overflow-hidden border">
                  {preview.startsWith('data:application/pdf') ? (
-                    <div className="flex items-center justify-center h-full text-muted-foreground">PDF Preview</div>
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
+                        <FileIcon className="w-12 h-12 mb-2" />
+                        <p className="text-sm text-center">PDF Document Uploaded</p>
+                    </div>
                  ) : (
                     <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
                  )}
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('id-proof-file-input')?.click()}>
+                        <Replace className="h-5 w-5"/>
+                        <span className="sr-only">Replace Image</span>
+                    </Button>
+                     <Button type="button" size="icon" variant="destructive" onClick={handleDeleteProof}>
+                        <Trash2 className="h-5 w-5"/>
+                        <span className="sr-only">Delete Image</span>
+                    </Button>
+                 </div>
             </div>
         )}
         
