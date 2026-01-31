@@ -84,6 +84,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   useEffect(() => {
     const fileList = screenshotFile as FileList | undefined;
     if (fileList && fileList.length > 0) {
+        setScannedText('');
         const file = fileList[0];
         const reader = new FileReader();
         reader.onloadend = () => {

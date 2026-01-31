@@ -80,6 +80,9 @@ const extractDynamicFormFlow = ai.defineFlow(
   },
   async (input) => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('The AI model failed to extract form data. Please check the document quality or try again.');
+    }
+    return output;
   }
 );
