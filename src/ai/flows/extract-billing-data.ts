@@ -10,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractBillingDataInputSchema = z.object({
@@ -44,7 +45,7 @@ export async function extractBillingDataFromImage(
 
 const prompt = ai.definePrompt({
   name: 'extractBillingDataPrompt',
-  model: 'gemini-pro-vision',
+  model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractBillingDataInputSchema},
   output: {schema: ExtractBillingDataOutputSchema},
   prompt: `You are an expert in extracting data from bills and invoices.

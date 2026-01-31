@@ -9,6 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractAndCorrectTextInputSchema = z.object({
@@ -32,7 +33,7 @@ export async function extractAndCorrectText(input: ExtractAndCorrectTextInput): 
 
 const extractTextPrompt = ai.definePrompt({
   name: 'extractTextPrompt',
-  model: 'gemini-pro-vision',
+  model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractAndCorrectTextInputSchema},
   output: {schema: ExtractAndCorrectTextOutputSchema},
   prompt: `You are an OCR (Optical Character Recognition) expert.

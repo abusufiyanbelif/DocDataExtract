@@ -10,6 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractDynamicFormInputSchema = z.object({
@@ -53,7 +54,7 @@ export async function extractDynamicFormFromImage(
 
 const prompt = ai.definePrompt({
   name: 'extractDynamicFormPrompt',
-  model: 'gemini-pro-vision',
+  model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractDynamicFormInputSchema},
   output: {schema: ExtractDynamicFormOutputSchema},
   prompt: `You are an expert in document analysis and data extraction.

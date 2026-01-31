@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractEducationFindingsInputSchema = z.object({
@@ -41,7 +42,7 @@ export async function extractEducationFindings(
 
 const prompt = ai.definePrompt({
   name: 'extractEducationFindingsPrompt',
-  model: 'gemini-pro-vision',
+  model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractEducationFindingsInputSchema},
   output: {schema: ExtractEducationFindingsOutputSchema},
   prompt: `You are an expert academic registrar tasked with extracting key information from educational documents.

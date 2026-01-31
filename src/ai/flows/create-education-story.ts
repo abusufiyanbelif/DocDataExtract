@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const CreateEducationStoryInputSchema = z.object({
@@ -35,7 +36,7 @@ export async function createEducationStory(
 
 const prompt = ai.definePrompt({
   name: 'createEducationStoryPrompt',
-  model: 'gemini-pro-vision',
+  model: googleAI.model('gemini-pro-vision'),
   input: {schema: CreateEducationStoryInputSchema},
   output: {schema: CreateEducationStoryOutputSchema},
   prompt: `You are an expert academic advisor. Your goal is to create a concise summary of a student's academic journey. First, determine if the documents appear to be educational (transcripts, mark sheets, certificates, etc.). Set the 'isCorrectType' flag to true if they are, and false otherwise.

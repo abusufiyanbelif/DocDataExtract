@@ -11,6 +11,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractKeyInfoFromAadhaarInputSchema = z.object({
@@ -43,7 +44,7 @@ export async function extractKeyInfoFromAadhaar(
 
 const prompt = ai.definePrompt({
   name: 'extractKeyInfoFromAadhaarPrompt',
-  model: 'gemini-pro-vision',
+  model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractKeyInfoFromAadhaarInputSchema},
   output: {schema: ExtractKeyInfoFromAadhaarOutputSchema},
   prompt: `You are an expert in extracting information from Indian identity documents. Analyze the provided image of an Aadhaar card and extract the following details:

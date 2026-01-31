@@ -8,6 +8,7 @@
  */
 
 import {ai} from '@/ai/genkit';
+import {googleAI} from '@genkit-ai/google-genai';
 import {z} from 'genkit';
 
 const ExtractMedicalFindingsInputSchema = z.object({
@@ -40,7 +41,7 @@ export async function extractMedicalFindings(
 
 const prompt = ai.definePrompt({
   name: 'extractMedicalFindingsPrompt',
-  model: 'gemini-pro-vision',
+  model: googleAI.model('gemini-pro-vision'),
   input: {schema: ExtractMedicalFindingsInputSchema},
   output: {schema: ExtractMedicalFindingsOutputSchema},
   prompt: `You are an expert medical analyst tasked with extracting key information from medical reports.
