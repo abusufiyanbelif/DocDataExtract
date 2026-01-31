@@ -1,7 +1,7 @@
-import { configureGenkit } from "@genkit-ai/core";
-import { googleAI } from "@genkit-ai/googleai";
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
 
-configureGenkit({
+export const ai = genkit({
   plugins: [
     googleAI({
       apiKey: process.env.GEMINI_API_KEY!,
