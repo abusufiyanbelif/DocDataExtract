@@ -136,6 +136,9 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         }
 
         const response = await extractAndCorrectText({ photoDataUri: imageUrlToScan });
+        if (!response.extractedText) {
+          throw new Error("The AI model failed to extract any text from the document.");
+        }
         setScannedText(response.extractedText);
         toast({
             title: "Text Extracted",
@@ -227,6 +230,17 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         const fileList = screenshotFile as FileList | undefined;
         if (fileList && fileList.length > 0) {
             const file = fileList[0];
+            const uploadPromise = new Promise<string>(async (resolve) => {
+                const { default: Resizer } = await import('react-image-file-resizer');
+                Resizer.imageFileResizer(
+                    file, 1024, 1024, 'JPEG', 80, 0,
+                    uri => resolve(uri as string),
+                    'base64'
+                );
+            });
+            const resizedDataUri = await uploadPromise;
+            const blob = await (await fetch(resizedDataUri)).blob();
+
             toast({
                 title: "Uploading Screenshot...",
                 description: `Please wait while '${file.name}' is uploaded.`,
@@ -235,13 +249,13 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
             const transactionIdPart = data.transactionId || 'NULL';
             const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate, transactionIdPart ];
             const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
-            const fileExtension = file.name.split('.').pop() || 'jpg';
+            const fileExtension = 'jpeg';
             const finalFileName = `${sanitizedBaseName}.${fileExtension}`;
             
             const filePath = `donations/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 
-            const uploadResult = await uploadBytes(fileRef, file);
+            const uploadResult = await uploadBytes(fileRef, blob);
             newScreenshotUrl = await getDownloadURL(uploadResult.ref);
 
             if (oldScreenshotUrl && oldScreenshotUrl !== newScreenshotUrl) {
@@ -527,4 +541,3 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   );
 }
 
-    
