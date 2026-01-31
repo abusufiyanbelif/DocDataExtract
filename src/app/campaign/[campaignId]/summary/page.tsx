@@ -219,8 +219,10 @@ export default function CampaignSummaryPage() {
                 }, {} as Record<string, number>);
                 
             const paymentTypeData = filteredDonations.reduce((acc, d) => {
-                const key = d.donationType.replace(/\s+/g, '');
-                acc[key] = (acc[key] || 0) + 1;
+                if (d.donationType) {
+                    const key = d.donationType.replace(/\s+/g, '');
+                    acc[key] = (acc[key] || 0) + 1;
+                }
                 return acc;
             }, {} as Record<string, number>);
 
