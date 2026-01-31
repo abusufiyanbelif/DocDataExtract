@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['handlebars', 'genkit', '@genkit-ai/google-genai', '@genkit-ai/next', 'firebase-admin'],
   images: {
     remotePatterns: [
       {
