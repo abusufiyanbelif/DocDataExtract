@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -61,7 +62,7 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
       const response = await extractMedicalFindings({ reportDataUri: reportDataUris[0] });
       setMedicalResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Medical scan failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not analyze the medical ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingMedical(false);
@@ -80,7 +81,7 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
       const response = await extractDynamicFormFromImage({ photoDataUri: reportDataUris[0] });
       setFieldsResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Get fields failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
@@ -105,7 +106,7 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
         });
       }
     } catch (error) {
-      console.error(error);
+      console.warn("Story creation failed:", error);
       toast({ title: 'Story Creation Failed', description: 'Could not generate the lead story.', variant: 'destructive' });
     } finally {
       setIsLoadingStory(false);

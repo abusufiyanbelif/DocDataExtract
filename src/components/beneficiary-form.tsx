@@ -165,10 +165,10 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             });
         }
     } catch (error) {
-        console.error("ID Proof scan failed:", error);
+        console.warn("ID Proof scan failed:", error);
         toast({
             title: "Scan Failed",
-            description: "An error occurred while trying to scan the document.",
+            description: "Could not automatically read the document. Please enter the details manually.",
             variant: "destructive",
         });
     } finally {

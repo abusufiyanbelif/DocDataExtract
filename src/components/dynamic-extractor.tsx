@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -31,7 +32,7 @@ export function DynamicExtractor() {
       const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Dynamic extraction failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not extract dynamic data from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoading(false);

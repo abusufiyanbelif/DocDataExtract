@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -45,8 +46,8 @@ export function BillingExtractor() {
       const response = await extractBillingDataFromImage({ photoDataUri: photoDataUris[0] });
       setBillingResult(response);
     } catch (error) {
-      console.error(error);
-      toast({ title: 'Extraction Failed', description: `Could not extract billing data from the ${uploadType}.`, variant: 'destructive' });
+      console.warn("Billing scan failed:", error);
+      toast({ title: 'Extraction Failed', description: `Could not extract billing data. Please try another image or enter the data manually.`, variant: 'destructive' });
     } finally {
       setIsLoadingBilling(false);
     }
@@ -64,7 +65,7 @@ export function BillingExtractor() {
       const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Get fields failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);

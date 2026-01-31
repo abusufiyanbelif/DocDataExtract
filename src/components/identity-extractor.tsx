@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -44,7 +45,7 @@ export function IdentityExtractor() {
       const response = await extractKeyInfoFromAadhaar({ photoDataUri: photoDataUris[0] });
       setInfoResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Identity scan failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not extract information from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingInfo(false);
@@ -63,7 +64,7 @@ export function IdentityExtractor() {
       const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Get fields failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);

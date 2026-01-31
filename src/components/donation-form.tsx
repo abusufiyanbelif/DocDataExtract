@@ -1,3 +1,4 @@
+
 'use client';
 
 import { z } from 'zod';
@@ -135,10 +136,10 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
             });
         }
     } catch (error) {
-        console.error("Payment scan failed:", error);
+        console.warn("Payment scan failed:", error);
         toast({
             title: "Scan Failed",
-            description: "An error occurred while trying to scan the image.",
+            description: "Could not automatically read the screenshot. Please enter the details manually.",
             variant: "destructive",
         });
     } finally {

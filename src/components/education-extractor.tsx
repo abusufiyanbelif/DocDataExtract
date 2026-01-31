@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -60,7 +61,7 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
       const response = await extractEducationFindings({ reportDataUri: reportDataUris[0] });
       setEducationResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Education scan failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not analyze the education ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingEducation(false);
@@ -79,7 +80,7 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
       const response = await extractDynamicFormFromImage({ photoDataUri: reportDataUris[0] });
       setFieldsResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Get fields failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
@@ -104,7 +105,7 @@ export function EducationExtractor({ enableStoryCreator = false }: EducationExtr
         });
       }
     } catch (error) {
-      console.error(error);
+      console.warn("Story creation failed:", error);
       toast({ title: 'Story Creation Failed', description: 'Could not generate the academic summary.', variant: 'destructive' });
     } finally {
       setIsLoadingStory(false);

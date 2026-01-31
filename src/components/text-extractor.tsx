@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -36,7 +37,7 @@ export function TextExtractor() {
       const response = await extractAndCorrectText({ photoDataUri: photoDataUris[0] });
       setTextResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Text extraction failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not extract text from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingText(false);
@@ -55,7 +56,7 @@ export function TextExtractor() {
       const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
       setFieldsResult(response);
     } catch (error) {
-      console.error(error);
+      console.warn("Get fields failed:", error);
       toast({ title: 'Extraction Failed', description: `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
     } finally {
       setIsLoadingFields(false);
