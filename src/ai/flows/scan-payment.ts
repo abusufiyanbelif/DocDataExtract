@@ -2,42 +2,42 @@
 /**
  * @fileOverview AI flow to extract key details from a payment confirmation image.
  *
- * - extractPaymentDetails - Function to extract amount, transaction ID, and date from an image.
- * - ExtractPaymentDetailsInput - Input type for extractPaymentDetails.
- * - ExtractPaymentDetailsOutput - Output type for extractPaymentDetails.
+ * - scanPaymentScreenshot - Function to extract amount, transaction ID, and date from an image.
+ * - ScanPaymentScreenshotInput - Input type for scanPaymentScreenshot.
+ * - ScanPaymentScreenshotOutput - Output type for scanPaymentScreenshot.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const ExtractPaymentDetailsInputSchema = z.object({
+const ScanPaymentScreenshotInputSchema = z.object({
   photoDataUri: z
     .string()
     .describe(
       "A photo of a payment confirmation, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
-export type ExtractPaymentDetailsInput = z.infer<typeof ExtractPaymentDetailsInputSchema>;
+export type ScanPaymentScreenshotInput = z.infer<typeof ScanPaymentScreenshotInputSchema>;
 
-const ExtractPaymentDetailsOutputSchema = z.object({
+const ScanPaymentScreenshotOutputSchema = z.object({
   receiverName: z.string().optional().describe('The name of the person or entity who received the payment.'),
   amount: z.number().optional().describe('The transaction amount, as a number without currency symbols.'),
   transactionId: z.string().optional().describe('The Transaction ID, UPI Transaction ID, or any other unique reference number.'),
   date: z.string().optional().describe('The date of the transaction in YYYY-MM-DD format.'),
 });
-export type ExtractPaymentDetailsOutput = z.infer<typeof ExtractPaymentDetailsOutputSchema>;
+export type ScanPaymentScreenshotOutput = z.infer<typeof ScanPaymentScreenshotOutputSchema>;
 
-export async function extractPaymentDetails(
-  input: ExtractPaymentDetailsInput
-): Promise<ExtractPaymentDetailsOutput> {
-  return extractPaymentDetailsFlow(input);
+export async function scanPaymentScreenshot(
+  input: ScanPaymentScreenshotInput
+): Promise<ScanPaymentScreenshotOutput> {
+  return scanPaymentScreenshotFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'extractPaymentDetailsPrompt',
+  name: 'scanPaymentScreenshotPrompt',
   model: 'googleai/gemini-pro',
-  input: { schema: ExtractPaymentDetailsInputSchema },
-  output: { schema: ExtractPaymentDetailsOutputSchema },
+  input: { schema: ScanPaymentScreenshotInputSchema },
+  output: { schema: ScanPaymentScreenshotOutputSchema },
   prompt: `You are an expert OCR agent specializing in parsing financial transaction screenshots from Indian payment apps like Google Pay and Paytm. Your task is to analyze the provided image and extract the following details precisely.
 
 1.  **receiverName**: The name of the person or entity who received the payment. Look for labels like "Paid to", "To:", or the primary name displayed as the recipient.
@@ -54,11 +54,11 @@ EXTRACT FROM THIS IMAGE:
 `,
 });
 
-const extractPaymentDetailsFlow = ai.defineFlow(
+const scanPaymentScreenshotFlow = ai.defineFlow(
   {
-    name: 'extractPaymentDetailsFlow',
-    inputSchema: ExtractPaymentDetailsInputSchema,
-    outputSchema: ExtractPaymentDetailsOutputSchema,
+    name: 'scanPaymentScreenshotFlow',
+    inputSchema: ScanPaymentScreenshotInputSchema,
+    outputSchema: ScanPaymentScreenshotOutputSchema,
   },
   async (input) => {
     const { output } = await prompt(input);

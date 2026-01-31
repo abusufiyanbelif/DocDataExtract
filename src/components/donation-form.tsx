@@ -27,7 +27,6 @@ import {
 import type { Donation } from '@/lib/types';
 import { Loader2, ScanLine, Replace, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { extractPaymentDetails } from '@/ai/flows/extract-payment-details';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
 
@@ -136,7 +135,18 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
         }
 
         try {
-            const response = await extractPaymentDetails({ photoDataUri: dataUri });
+            const apiResponse = await fetch('/api/scan-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ photoDataUri: dataUri }),
+            });
+
+            if (!apiResponse.ok) {
+                const errorData = await apiResponse.json();
+                throw new Error(errorData.error || 'The server returned an error.');
+            }
+            
+            const response = await apiResponse.json();
             
             const filledFields: string[] = [];
             if (response.receiverName) {

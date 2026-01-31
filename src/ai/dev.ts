@@ -1,3 +1,4 @@
+'use server';
 import {config} from 'dotenv';
 config();
 
@@ -10,5 +11,5 @@ import '@/ai/flows/extract-dynamic-form';
 import '@/ai/flows/create-lead-story';
 import '@/ai/flows/extract-education-findings';
 import '@/ai/flows/create-education-story';
-import '@/ai/flows/extract-payment-details';
+import '@/ai/flows/scan-payment';
 import '@/ai/flows/run-diagnostic-check';
