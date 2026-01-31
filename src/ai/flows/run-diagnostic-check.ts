@@ -23,7 +23,7 @@ export async function runDiagnosticCheck(): Promise<{ok: boolean; message: strin
         } else {
             return { ok: false, message: `Received an unexpected response: "${text}"` };
         }
-    } catch (error: any) => {
+    } catch (error: any) {
         console.error("Genkit Diagnostics Check Failed:", error);
         // Sanitize the error message for the client
         let clientMessage = "An unexpected error occurred.";
