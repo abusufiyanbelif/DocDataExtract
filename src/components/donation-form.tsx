@@ -31,6 +31,7 @@ import { extractPaymentDetailsFromText } from '@/ai/flows/extract-payment-detail
 import { extractAndCorrectText } from '@/ai/flows/extract-and-correct-text';
 import { Separator } from './ui/separator';
 import { Textarea } from './ui/textarea';
+import { Checkbox } from './ui/checkbox';
 
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -45,6 +46,15 @@ const formSchema = z.object({
   status: z.enum(['Verified', 'Pending', 'Canceled']),
   screenshotFile: z.any().optional(),
   screenshotDeleted: z.boolean().optional(),
+  isTransactionIdRequired: z.boolean().default(true),
+}).refine(data => {
+    if (data.donationType === 'Online Payment' && data.isTransactionIdRequired) {
+        return data.transactionId && data.transactionId.trim().length > 0;
+    }
+    return true;
+}, {
+    message: "Transaction ID is required when this option is enabled.",
+    path: ['transactionId'],
 });
 
 export type DonationFormData = z.infer<typeof formSchema>;
@@ -75,6 +85,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
       donationDate: donation?.donationDate || new Date().toISOString().split('T')[0],
       status: donation?.status || 'Pending',
       screenshotDeleted: false,
+      isTransactionIdRequired: true,
     },
   });
 
@@ -417,14 +428,37 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                       </>
                   )}
                   <FormField
+                    control={form.control}
+                    name="isTransactionIdRequired"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                            <FormControl>
+                                <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    id="isTransactionIdRequired"
+                                />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                                <FormLabel htmlFor="isTransactionIdRequired">
+                                    Require & Verify Transaction ID
+                                </FormLabel>
+                                <FormDescription>
+                                    If checked, the ID is mandatory and checked for duplicates.
+                                </FormDescription>
+                            </div>
+                        </FormItem>
+                    )}
+                    />
+                  <FormField
                       control={form.control}
                       name="transactionId"
                       render={({ field }) => (
                           <FormItem>
-                              <FormLabel>Transaction ID</FormLabel>
+                              <FormLabel>Transaction ID {watch('isTransactionIdRequired') && <span className="text-destructive">*</span>}</FormLabel>
                               <FormControl>
                                   <Input 
-                                      placeholder="Optional, e.g., UPI ID" 
+                                      placeholder="e.g., UPI ID" 
                                       {...field} 
                                       value={field.value ?? ''}
                                   />

@@ -165,7 +165,7 @@ export default function DonationsPage() {
     if (editingDonation && !canUpdate) return;
     if (!editingDonation && !canCreate) return;
 
-    if (data.transactionId && !editingDonation) {
+    if (data.isTransactionIdRequired && data.transactionId && !editingDonation) {
         const isDuplicate = donations.some(d => d.transactionId === data.transactionId && d.campaignId === campaignId);
         if (isDuplicate) {
             toast({
@@ -230,7 +230,7 @@ export default function DonationsPage() {
             screenshotUrl = await getDownloadURL(uploadResult.ref);
         }
 
-        const { screenshotFile, screenshotDeleted, ...donationData } = data;
+        const { screenshotFile, screenshotDeleted, isTransactionIdRequired, ...donationData } = data;
         
         const finalData = {
             ...donationData,
