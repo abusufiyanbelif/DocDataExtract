@@ -42,6 +42,7 @@ const prompt = ai.definePrompt({
   name: 'extractMedicalFindingsPrompt',
   input: {schema: ExtractMedicalFindingsInputSchema},
   output: {schema: ExtractMedicalFindingsOutputSchema},
+  model: 'gemini-pro-vision',
   prompt: `You are an expert medical analyst tasked with extracting key information from medical reports.
 
   Analyze the provided medical report and extract the diagnosis and key findings. Present the findings as a structured list, where each item in the list has a 'finding' and its associated 'details'.
