@@ -276,6 +276,37 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             )}
             />
         </div>
+
+        <FormItem>
+            <FormLabel>ID Proof Document</FormLabel>
+            <div className="flex items-center gap-2">
+                <FormControl className="flex-grow">
+                    <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
+                </FormControl>
+                <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleScanIdProof} 
+                    disabled={isScanning || !preview}
+                    title="Scan ID Proof from Image"
+                >
+                    {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
+                    Scan
+                </Button>
+            </div>
+            <FormDescription>Optional. Upload an image or PDF of the ID proof. You can scan it after uploading.</FormDescription>
+            <FormMessage />
+        </FormItem>
+        
+        {preview && (
+            <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
+                 {preview.startsWith('data:application/pdf') ? (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">PDF Preview</div>
+                 ) : (
+                    <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
+                 )}
+            </div>
+        )}
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
@@ -364,37 +395,6 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             )}
             />
         </div>
-        
-        <FormItem>
-            <FormLabel>ID Proof Document</FormLabel>
-            <div className="flex items-center gap-2">
-                <FormControl className="flex-grow">
-                    <Input type="file" accept="image/*,application/pdf" {...register('idProofFile')} />
-                </FormControl>
-                <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={handleScanIdProof} 
-                    disabled={isScanning || !preview}
-                    title="Scan ID Proof from Image"
-                >
-                    {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                    Scan
-                </Button>
-            </div>
-            <FormDescription>Optional. Upload an image or PDF of the ID proof. You can scan it after uploading.</FormDescription>
-            <FormMessage />
-        </FormItem>
-        
-        {preview && (
-            <div className="relative w-full h-48 mt-2 rounded-md overflow-hidden border">
-                 {preview.startsWith('data:application/pdf') ? (
-                    <div className="flex items-center justify-center h-full text-muted-foreground">PDF Preview</div>
-                 ) : (
-                    <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
-                 )}
-            </div>
-        )}
 
         <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
