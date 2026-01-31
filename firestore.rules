@@ -50,6 +50,14 @@ service cloud.firestore {
       // Check the final permission
       return (permission in perms) && perms[permission] == true;
     }
+    
+    function canReadCampaign() {
+      return hasPermission(['campaigns'], 'read') || 
+             hasPermission(['campaigns', 'summary'], 'read') ||
+             hasPermission(['campaigns', 'ration'], 'read') ||
+             hasPermission(['campaigns', 'beneficiaries'], 'read') ||
+             hasPermission(['campaigns', 'donations'], 'read');
+    }
 
     function campaignSummaryKeys() { 
       return ['name', 'category', 'description', 'targetAmount', 'startDate', 'endDate', 'status']; 
@@ -89,8 +97,8 @@ service cloud.firestore {
     }
 
     match /campaigns/{campaignId} {
-      // Anyone with any campaign read permission can list/get campaigns
-      allow read: if hasPermission(['campaigns'], 'read');
+      // Allow read if user has general campaign read OR read access to any submodule.
+      allow read: if canReadCampaign();
       
       // Creating a campaign
       allow create: if hasPermission(['campaigns'], 'create');

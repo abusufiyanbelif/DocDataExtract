@@ -1,3 +1,4 @@
+
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -33,6 +34,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 
 type SortKey = keyof Campaign | 'srNo';
@@ -195,10 +197,10 @@ export default function CampaignPage() {
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
   const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.delete;
   
-  const SortableHeader = ({ sortKey, children }: { sortKey: SortKey, children: React.ReactNode }) => {
+  const SortableHeader = ({ sortKey, children, className }: { sortKey: SortKey, children: React.ReactNode, className?: string }) => {
     const isSorted = sortConfig?.key === sortKey;
     return (
-        <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort(sortKey)}>
+        <TableHead className={cn("cursor-pointer hover:bg-muted/50", className)} onClick={() => handleSort(sortKey)}>
             <div className="flex items-center gap-2">
                 {children}
                 {isSorted && (sortConfig?.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />)}
@@ -295,7 +297,7 @@ export default function CampaignPage() {
               <TableHeader>
                 <TableRow>
                   {canDelete && <TableHead className="w-[50px] text-center">Actions</TableHead>}
-                  <SortableHeader sortKey="srNo">#</SortableHeader>
+                  <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
                   <SortableHeader sortKey="name">Campaign Name</SortableHeader>
                   <SortableHeader sortKey="category">Category</SortableHeader>
                   <SortableHeader sortKey="startDate">Start Date</SortableHeader>
@@ -312,9 +314,9 @@ export default function CampaignPage() {
                   ))
                 )}
                 {!isLoading && filteredAndSortedCampaigns.map((campaign, index) => (
-                  <TableRow key={campaign.id} className="group">
+                  <TableRow key={campaign.id} className="cursor-pointer" onClick={() => handleRowClick(campaign.id)}>
                     {canDelete && (
-                      <TableCell className="text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="icon">
@@ -332,12 +334,12 @@ export default function CampaignPage() {
                           </DropdownMenu>
                       </TableCell>
                     )}
-                    <TableCell onClick={() => handleRowClick(campaign.id)} className="cursor-pointer">{index + 1}</TableCell>
-                    <TableCell onClick={() => handleRowClick(campaign.id)} className="font-medium cursor-pointer">{campaign.name}</TableCell>
-                    <TableCell onClick={() => handleRowClick(campaign.id)} className="cursor-pointer">{campaign.category}</TableCell>
-                    <TableCell onClick={() => handleRowClick(campaign.id)} className="cursor-pointer">{campaign.startDate}</TableCell>
-                    <TableCell onClick={() => handleRowClick(campaign.id)} className="cursor-pointer">{campaign.endDate}</TableCell>
-                    <TableCell onClick={() => handleRowClick(campaign.id)} className="cursor-pointer">{campaign.status}</TableCell>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell className="font-medium">{campaign.name}</TableCell>
+                    <TableCell>{campaign.category}</TableCell>
+                    <TableCell>{campaign.startDate}</TableCell>
+                    <TableCell>{campaign.endDate}</TableCell>
+                    <TableCell>{campaign.status}</TableCell>
                   </TableRow>
                 ))}
                 {!isLoading && filteredAndSortedCampaigns.length === 0 && (

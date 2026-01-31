@@ -79,7 +79,6 @@ export default function EditUserPage() {
 
     const updateData: any = {
         name: data.name,
-        email: data.email,
         phone: data.phone,
         role: data.role,
         status: data.status,
@@ -89,11 +88,27 @@ export default function EditUserPage() {
         idProofUrl,
     };
     
-    // Handle Login ID change, which is only possible for admins
-    if (user.loginId !== data.loginId && currentUserProfile?.role === 'Admin') {
-        updateData.loginId = data.loginId;
-        batch.delete(doc(firestore, 'user_lookups', user.loginId));
-        batch.set(doc(firestore, 'user_lookups', data.loginId), { email: user.email });
+    // Only admins can change these critical fields
+    if (currentUserProfile?.role === 'Admin') {
+        if (user.loginId !== data.loginId) {
+            updateData.loginId = data.loginId;
+            batch.delete(doc(firestore, 'user_lookups', user.loginId));
+            batch.set(doc(firestore, 'user_lookups', data.loginId), { email: user.email });
+        }
+        if (user.email !== data.email) {
+            updateData.email = data.email;
+            // Note: Updating email in Firebase Auth is a separate, sensitive operation not handled here.
+            // This only updates the Firestore record. We need to update lookups if email changes.
+             if (user.loginId) {
+                batch.update(doc(firestore, 'user_lookups', user.loginId), { email: data.email });
+             }
+             if (user.phone) {
+                batch.update(doc(firestore, 'user_lookups', user.phone), { email: data.email });
+             }
+             if (user.userKey) {
+                batch.update(doc(firestore, 'user_lookups', user.userKey), { email: data.email });
+             }
+        }
     }
     
     // If phone number changes, update the lookup table

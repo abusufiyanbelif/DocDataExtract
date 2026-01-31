@@ -215,10 +215,10 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 <FormItem>
                   <FormLabel>Contact Email *</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled} />
+                    <Input type="email" placeholder="user@example.com" {...field} disabled={isFormDisabled || (isEditing && !isCurrentUserAdmin)} />
                   </FormControl>
                   <FormDescription>
-                    Either Email or Phone is required. This is the user's contact email.
+                    Either Email or Phone is required. This is the user's contact and authentication email. Cannot be changed by non-admins after creation.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -246,9 +246,9 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     <FormItem>
                     <FormLabel>Login ID *</FormLabel>
                     <FormControl>
-                        <Input placeholder="auto-generated from name" {...field} readOnly={!isCurrentUserAdmin && isEditing} disabled={isFormDisabled || (!isCurrentUserAdmin && isEditing)} />
+                        <Input placeholder="auto-generated from name" {...field} disabled={isFormDisabled || (!isCurrentUserAdmin && isEditing)} />
                     </FormControl>
-                    <FormDescription>Used for signing in. Can only be changed by an Admin.</FormDescription>
+                    <FormDescription>Unique ID for signing in. Can only be changed by an Admin. Must be lowercase letters, numbers, underscores, or periods.</FormDescription>
                     <FormMessage />
                     </FormItem>
                 )}
