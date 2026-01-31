@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useCallback } from 'react';
 import { useFirestore, useUser, useAuth, useStorage } from '@/firebase';
@@ -188,7 +189,17 @@ export default function DiagnosticsPage() {
                         )};
                     }
                 } catch (error: any) {
-                    return { status: 'failure', details: `The diagnostic check itself failed to run. Error: ${error.message}` };
+                    let details: React.ReactNode = `The diagnostic check itself failed to run. Error: ${error.message}`;
+                    if (error.message.includes('can only export async functions')) {
+                        details = (
+                            <div className="space-y-2">
+                                <p><strong>`'use server'` Configuration Error.</strong> A file marked with `'use server'` is improperly exporting a non-function object. This commonly happens if the core Genkit configuration file (`src/ai/genkit.ts`) contains the `'use server'` directive.</p>
+                                <p><strong>Solution:</strong> Ensure that `'use server'` is removed from `src/ai/genkit.ts`. This directive should only be in your flow files (e.g., `src/ai/flows/your-flow.ts`).</p>
+                                <p className="font-mono text-xs bg-muted p-2 rounded-md">Error Details: {error.message}</p>
+                            </div>
+                        );
+                    }
+                    return { status: 'failure', details };
                 }
             },
         }
