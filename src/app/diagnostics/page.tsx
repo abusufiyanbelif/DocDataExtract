@@ -4,11 +4,14 @@ import { useFirestore, useUser, useAuth, useStorage } from '@/firebase';
 import { firebaseConfig } from '@/firebase/config';
 import { collection, query, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
+import { runDiagnosticCheck } from '@/ai/flows/run-diagnostic-check';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle2, XCircle, Loader2, PlayCircle, ExternalLink } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Loader2, PlayCircle, ExternalLink, BrainCircuit } from 'lucide-react';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 
 type TestResult = 'success' | 'failure' | 'pending';
 
@@ -16,6 +19,7 @@ interface DiagnosticCheck {
     name: string;
     status: TestResult;
     details: React.ReactNode;
+    icon: React.ReactNode;
 }
 
 export default function DiagnosticsPage() {
@@ -31,7 +35,7 @@ export default function DiagnosticsPage() {
         const checks: DiagnosticCheck[] = [];
 
         // 1. Firebase App Initialization
-        const appCheck: DiagnosticCheck = { name: 'Firebase Initialization', status: 'pending', details: 'Checking if Firebase app is initialized...' };
+        const appCheck: DiagnosticCheck = { name: 'Firebase Initialization', status: 'pending', details: 'Checking if Firebase app is initialized...', icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" /> };
         checks.push(appCheck);
         setResults([...checks]);
         await new Promise(res => setTimeout(res, 300));
@@ -48,7 +52,7 @@ export default function DiagnosticsPage() {
         setResults([...checks]);
         
         // 2. Firebase Configuration Check
-        const configCheck: DiagnosticCheck = { name: 'Firebase Configuration', status: 'pending', details: 'Verifying essential configuration values...' };
+        const configCheck: DiagnosticCheck = { name: 'Firebase Configuration', status: 'pending', details: 'Verifying essential configuration values...', icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" /> };
         checks.push(configCheck);
         setResults([...checks]);
         await new Promise(res => setTimeout(res, 300));
@@ -66,13 +70,12 @@ export default function DiagnosticsPage() {
                 </span>
             );
             setResults([...checks]);
-            // Do not stop here, allow other tests to run
         }
         setResults([...checks]);
 
 
         // 3. Firebase Authentication
-        const authCheck: DiagnosticCheck = { name: 'Firebase Authentication', status: 'pending', details: 'Checking user authentication status...' };
+        const authCheck: DiagnosticCheck = { name: 'Firebase Authentication', status: 'pending', details: 'Checking user authentication status...', icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" /> };
         checks.push(authCheck);
         setResults([...checks]);
         await new Promise(res => setTimeout(res, 300));
@@ -86,7 +89,7 @@ export default function DiagnosticsPage() {
         setResults([...checks]);
         
         // 4. Firestore Connectivity & Permissions
-        const firestoreCheck: DiagnosticCheck = { name: 'Firestore Connectivity', status: 'pending', details: 'Attempting a public test read from the "user_lookups" collection...' };
+        const firestoreCheck: DiagnosticCheck = { name: 'Firestore Connectivity', status: 'pending', details: 'Attempting a public test read from the "user_lookups" collection...', icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" /> };
         checks.push(firestoreCheck);
         setResults([...checks]);
         await new Promise(res => setTimeout(res, 300));
@@ -108,7 +111,7 @@ export default function DiagnosticsPage() {
         setResults([...checks]);
 
         // 5. Firebase Storage Connectivity & Permissions
-        const storageCheck: DiagnosticCheck = { name: 'Firebase Storage Write', status: 'pending', details: 'Attempting a test write to the "diagnostics" folder...' };
+        const storageCheck: DiagnosticCheck = { name: 'Firebase Storage Write', status: 'pending', details: 'Attempting a test write to the "diagnostics" folder...', icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" /> };
         checks.push(storageCheck);
         setResults([...checks]);
         await new Promise(res => setTimeout(res, 300));
@@ -119,7 +122,6 @@ export default function DiagnosticsPage() {
                 await uploadBytes(testFileRef, testBlob);
                 storageCheck.status = 'success';
                 storageCheck.details = 'Successfully wrote a file to Firebase Storage.';
-                // Clean up the test file
                 await deleteObject(testFileRef);
             } catch (error: any) {
                 storageCheck.status = 'failure';
@@ -165,17 +167,57 @@ export default function DiagnosticsPage() {
         }
         setResults([...checks]);
         
+        // 6. Genkit AI Connectivity
+        const genkitCheck: DiagnosticCheck = { name: 'Genkit AI Connectivity', status: 'pending', details: 'Pinging the Gemini model via Genkit...', icon: <BrainCircuit className="h-6 w-6 text-primary" /> };
+        checks.push(genkitCheck);
+        setResults([...checks]);
+        await new Promise(res => setTimeout(res, 300));
+        try {
+            const genkitResult = await runDiagnosticCheck();
+            if (genkitResult.ok) {
+                genkitCheck.status = 'success';
+                genkitCheck.details = genkitResult.message;
+            } else {
+                genkitCheck.status = 'failure';
+                genkitCheck.details = (
+                    <div className="space-y-2">
+                        <p>{genkitResult.message}</p>
+                        {genkitResult.message.includes('API key') && (
+                            <Alert variant="destructive">
+                                <AlertTitle>Action Required</AlertTitle>
+                                <AlertDescription>
+                                    Please ensure you have a `GEMINI_API_KEY` environment variable set in a `.env` file in your project root.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                         {genkitResult.message.includes('permission denied') && (
+                            <Alert variant="destructive">
+                                <AlertTitle>Action Required</AlertTitle>
+                                <AlertDescription>
+                                    The API request was denied. Go to your Google Cloud project and ensure the 'Generative Language API' is enabled.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                    </div>
+                );
+            }
+        } catch (error: any) {
+            genkitCheck.status = 'failure';
+            genkitCheck.details = `The diagnostic check itself failed to run. Error: ${error.message}`;
+        }
+        setResults([...checks]);
+
         setIsLoading(false);
     };
 
     const getStatusIcon = (status: TestResult) => {
         switch (status) {
             case 'success':
-                return <CheckCircle2 className="h-6 w-6 text-green-500" />;
+                return <CheckCircle2 className="h-5 w-5 text-green-500" />;
             case 'failure':
-                return <XCircle className="h-6 w-6 text-destructive" />;
+                return <XCircle className="h-5 w-5 text-destructive" />;
             case 'pending':
-                return <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />;
+                return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />;
         }
     };
     
@@ -210,10 +252,13 @@ export default function DiagnosticsPage() {
                              <div className="space-y-4">
                                 {results.map((result, index) => (
                                     <div key={index} className="flex items-start gap-4 p-4 border rounded-lg">
-                                        <div className="mt-1">{getStatusIcon(result.status)}</div>
+                                        <div className="mt-1">{result.icon}</div>
                                         <div className="flex-1">
-                                            <h3 className="font-semibold">{result.name}</h3>
-                                            <div className="text-sm text-muted-foreground">{result.details}</div>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-semibold">{result.name}</h3>
+                                                {getStatusIcon(result.status)}
+                                            </div>
+                                            <div className="text-sm text-muted-foreground mt-1">{result.details}</div>
                                         </div>
                                     </div>
                                 ))}

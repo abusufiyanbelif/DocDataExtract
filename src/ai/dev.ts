@@ -10,3 +10,4 @@ import '@/ai/flows/create-lead-story.ts';
 import '@/ai/flows/extract-education-findings.ts';
 import '@/ai/flows/create-education-story.ts';
 import '@/ai/flows/extract-payment-details.ts';
+import '@/ai/flows/run-diagnostic-check.ts';
