@@ -1,16 +1,10 @@
 import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
+import {googleAI, gemini15Flash} from '@genkit-ai/googleai';
 
 // This file is the central configuration for Genkit.
 // It initializes the framework and sets up the plugins.
-
-// The googleAI plugin is configured here. It's crucial to provide the API key
-// from the environment variables to authenticate with the Google AI services.
-// The key should be in your .env file as GEMINI_API_KEY.
+// It uses the GOOGLE_API_KEY from the environment variables.
 export const ai = genkit({
-  plugins: [
-    googleAI({
-      apiKey: process.env.GEMINI_API_KEY,
-    }),
-  ],
+  plugins: [googleAI()],
+  model: gemini15Flash, // Sets gemini-1.5-flash as the default model for all flows
 });
