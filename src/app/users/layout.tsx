@@ -3,7 +3,7 @@ import '../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'User Management - DocDataExtract AB',
+  title: 'User Management',
   description: 'Manage users for the application.',
 };
 

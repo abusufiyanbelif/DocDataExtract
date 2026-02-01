@@ -9,7 +9,10 @@ import type { BrandingSettings } from '@/lib/types';
 import * as React from 'react';
 
 export const metadata: Metadata = {
-  title: 'Welcome to Baitulmal Samajik Sanstha Solapur',
+  title: {
+    template: '%s | Baitulmal Samajik Sanstha Solapur',
+    default: 'Welcome to Baitulmal Samajik Sanstha Solapur',
+  },
   description: 'Managing and tracking community support campaigns efficiently.',
 };
 
@@ -35,7 +38,6 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body style={watermarkStyle}>
-        {/* The global watermark is now applied via CSS on the body::before pseudo-element */}
         <div className="app-root">
           <FirebaseClientProvider>
               <SessionProvider>

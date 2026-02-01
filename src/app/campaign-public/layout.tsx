@@ -3,7 +3,7 @@ import '../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Campaigns - Baitulmal Samajik Sanstha Solapur',
+  title: 'Public Campaigns',
   description: 'View our ongoing and completed campaigns.',
 };
 

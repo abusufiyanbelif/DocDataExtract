@@ -3,7 +3,7 @@ import '../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Login - DocDataExtract AB',
+  title: 'Login',
   description: 'Login to access the application.',
 };
 

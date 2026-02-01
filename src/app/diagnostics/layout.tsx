@@ -3,7 +3,7 @@ import '../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'System Diagnostics - DocDataExtract AB',
+  title: 'System Diagnostics',
   description: 'Check the status of system connections and resources.',
 };
 

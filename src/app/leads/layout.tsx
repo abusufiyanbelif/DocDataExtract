@@ -3,7 +3,7 @@ import '../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Leads - DocDataExtract AB',
+  title: 'Leads',
   description: 'Manage and track leads.',
 };
 

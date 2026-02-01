@@ -1,9 +1,9 @@
 import type {Metadata} from 'next';
-import '../../../globals.css';
+import '../../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Edit User - DocDataExtract AB',
+  title: 'Edit User',
   description: 'Edit a user for the application.',
 };
 

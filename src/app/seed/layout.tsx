@@ -3,7 +3,7 @@ import '../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Setup & Data Migration - DocDataExtract AB',
+  title: 'Setup & Data Migration',
   description: 'Initialize and migrate the database.',
 };
 

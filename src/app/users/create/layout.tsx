@@ -3,7 +3,7 @@ import '../../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Create User - DocDataExtract AB',
+  title: 'Create User',
   description: 'Create a new user for the application.',
 };
 

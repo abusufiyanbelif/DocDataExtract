@@ -3,7 +3,7 @@ import '../../globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Create Campaign - DocDataExtract AB',
+  title: 'Create Campaign',
   description: 'Create a new campaign.',
 };
 
