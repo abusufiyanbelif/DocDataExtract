@@ -57,9 +57,9 @@ export default function CampaignPage() {
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
   const campaignsCollectionRef = useMemo(() => {
-    if (!firestore || !userProfile) return null;
+    if (!firestore) return null;
     return collection(firestore, 'campaigns');
-  }, [firestore, userProfile?.id]);
+  }, [firestore]);
 
   const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
 
@@ -209,7 +209,8 @@ export default function CampaignPage() {
     );
   };
   
-  if (!isLoading && !canViewCampaigns) {
+  // Deny access only if a user is logged in but lacks permissions. Public users can view.
+  if (!isLoading && userProfile && !canViewCampaigns) {
     return (
         <div className="min-h-screen bg-background text-foreground">
             <DocuExtractHeader />
