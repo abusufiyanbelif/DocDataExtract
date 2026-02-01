@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Plus, ArrowUp, ArrowDown, ShieldAlert, MoreHorizontal, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, ArrowUp, ArrowDown, ShieldAlert, MoreHorizontal, Trash2, Edit, Copy } from 'lucide-react';
 import { useCollection, useFirestore, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import type { Campaign, Beneficiary, Donation } from '@/lib/types';
@@ -20,6 +20,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -35,6 +36,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { CopyCampaignDialog } from '@/components/copy-campaign-dialog';
+import { copyCampaignAction } from './actions';
 
 
 type SortKey = keyof Campaign | 'srNo';
@@ -53,6 +56,9 @@ export default function CampaignPage() {
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
+
+  const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
+  const [campaignToCopy, setCampaignToCopy] = useState<Campaign | null>(null);
   
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
@@ -67,6 +73,32 @@ export default function CampaignPage() {
     if (!canDelete) return;
     setCampaignToDelete(campaign);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handleCopyClick = (campaign: Campaign) => {
+    if (!canCreate) return;
+    setCampaignToCopy(campaign);
+    setIsCopyDialogOpen(true);
+  };
+
+  const handleCopyConfirm = async (options: { newName: string; copyBeneficiaries: boolean; copyDonations: boolean; copyRationLists: boolean; }) => {
+    if (!campaignToCopy || !canCreate) return;
+
+    setIsCopyDialogOpen(false);
+    toast({ title: 'Copying campaign...', description: `Please wait while '${campaignToCopy.name}' is being copied.`});
+    
+    const result = await copyCampaignAction({
+        sourceCampaignId: campaignToCopy.id,
+        ...options
+    });
+
+    if (result.success) {
+        toast({ title: 'Campaign Copied', description: result.message, variant: 'success' });
+    } else {
+        toast({ title: 'Copy Failed', description: result.message, variant: 'destructive' });
+    }
+
+    setCampaignToCopy(null);
   };
 
   const handleDeleteConfirm = async () => {
@@ -195,6 +227,7 @@ export default function CampaignPage() {
     !!campaignPerms?.donations?.read;
   const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.create || !!campaignPerms?.update || !!campaignPerms?.delete || canReadAnySubmodule;
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update;
   const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.delete;
   
   
@@ -291,14 +324,33 @@ export default function CampaignPage() {
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
                                 <CardTitle className="truncate flex-1">{campaign.name}</CardTitle>
-                                {canDelete && (
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
+                                 <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {canUpdate && (
+                                            <DropdownMenuItem
+                                                onClick={() => router.push(`/campaign-members/${campaign.id}/summary`)}
+                                                className="cursor-pointer"
+                                            >
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </DropdownMenuItem>
+                                        )}
+                                        {canCreate && (
+                                            <DropdownMenuItem
+                                                onClick={() => handleCopyClick(campaign)}
+                                                className="cursor-pointer"
+                                            >
+                                                <Copy className="mr-2 h-4 w-4" />
+                                                Copy
+                                            </DropdownMenuItem>
+                                        )}
+                                        {(canUpdate || canCreate) && canDelete && <DropdownMenuSeparator />}
+                                        {canDelete && (
                                             <DropdownMenuItem
                                                 onClick={(e) => { e.stopPropagation(); handleDeleteClick(campaign); }}
                                                 className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer"
@@ -306,9 +358,9 @@ export default function CampaignPage() {
                                                 <Trash2 className="mr-2 h-4 w-4" />
                                                 Delete
                                             </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                )}
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                             <CardDescription>{campaign.startDate} to {campaign.endDate}</CardDescription>
                         </CardHeader>
@@ -365,6 +417,13 @@ export default function CampaignPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+        <CopyCampaignDialog
+            open={isCopyDialogOpen}
+            onOpenChange={setIsCopyDialogOpen}
+            campaign={campaignToCopy}
+            onCopyConfirm={handleCopyConfirm}
+        />
 
     </div>
   );
