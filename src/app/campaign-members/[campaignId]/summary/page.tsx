@@ -47,6 +47,7 @@ import { Label } from '@/components/ui/label';
 import { get } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { ShareDialog } from '@/components/share-dialog';
 
 
 const donationTypeChartConfig = {
@@ -75,7 +76,9 @@ export default function CampaignSummaryPage() {
     const [editMode, setEditMode] = useState(false);
     const [editableCampaign, setEditableCampaign] = useState<Partial<Campaign>>({});
     const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('All');
-    const [isSharing, setIsSharing] = useState(false);
+    
+    const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+    const [shareDialogData, setShareDialogData] = useState({ title: '', text: '', url: '' });
 
     // Data fetching
     const campaignDocRef = useMemo(() => (firestore && campaignId) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
@@ -265,7 +268,6 @@ export default function CampaignSummaryPage() {
             });
             return;
         }
-        setIsSharing(true);
 
         const remainingToCollectText = summaryData.remainingToCollect > 0 
             ? `*Remaining for Kits: Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*`
@@ -293,54 +295,14 @@ Please donate and share this message. Every contribution helps!
         `.trim().replace(/^\s+/gm, '');
 
 
-        const shareData = {
+        const dataToShare = {
             title: `Campaign Summary: ${campaign.name}`,
             text: shareText,
+            url: `${window.location.origin}/campaign-public/${campaignId}/summary`,
         };
-
-        if (navigator.share) {
-            try {
-                await navigator.share(shareData);
-            } catch (err) {
-                // Don't show toast if user cancels share dialog.
-                if ((err as Error).name !== 'AbortError') {
-                    console.warn('Share failed, falling back to clipboard.', err);
-                    try {
-                        await navigator.clipboard.writeText(shareText);
-                        toast({
-                            title: 'Share Failed, Copied to Clipboard',
-                            description: 'The summary has been copied to your clipboard.',
-                            variant: 'success'
-                        });
-                    } catch (copyErr) {
-                        toast({
-                            title: 'Share and Copy Failed',
-                            description: 'Could not share or copy the summary.',
-                            variant: 'destructive',
-                        });
-                    }
-                }
-            } finally {
-                setIsSharing(false);
-            }
-        } else {
-            try {
-                await navigator.clipboard.writeText(shareText);
-                toast({
-                    title: 'Copied to Clipboard',
-                    description: 'Campaign summary has been copied successfully.',
-                    variant: 'success'
-                });
-            } catch (err) {
-                toast({
-                    title: 'Copy Failed',
-                    description: 'Could not copy summary to clipboard.',
-                    variant: 'destructive',
-                });
-            } finally {
-                setIsSharing(false);
-            }
-        }
+        
+        setShareDialogData(dataToShare);
+        setIsShareDialogOpen(true);
     };
 
 
@@ -413,8 +375,8 @@ Please donate and share this message. Every contribution helps!
                     </div>
                     <div className="flex gap-2">
                         {!editMode && (
-                            <Button onClick={handleShare} variant="outline" disabled={isSharing}>
-                                {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
+                            <Button onClick={handleShare} variant="outline">
+                                <Share2 className="mr-2 h-4 w-4" />
                                 Share
                             </Button>
                         )}
@@ -744,6 +706,12 @@ Please donate and share this message. Every contribution helps!
                         </Card>
                     </div>
                 </div>
+
+                <ShareDialog 
+                    open={isShareDialogOpen} 
+                    onOpenChange={setIsShareDialogOpen} 
+                    shareData={shareDialogData} 
+                />
             </main>
         </div>
     );
