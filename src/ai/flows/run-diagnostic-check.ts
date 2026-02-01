@@ -29,7 +29,7 @@ const runDiagnosticCheckFlow = ai.defineFlow(
   async (): Promise<RunDiagnosticOutput> => {
     try {
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: 'googleai/gemini-pro-vision',
             prompt: 'Reply with only the word: "OK"',
             config: {
                 temperature: 0,
@@ -53,7 +53,7 @@ const runDiagnosticCheckFlow = ai.defineFlow(
             } else if (lowerCaseMessage.includes('permission denied')) {
                  clientMessage = 'API permission denied. This usually means the "Generative Language API" is not enabled for your project in the Google Cloud Console, or your API key has restrictions.';
             } else if (lowerCaseMessage.includes('not_found') || lowerCaseMessage.includes('not found') || lowerCaseMessage.includes('404')) {
-                clientMessage = `Model not found. This can be caused by several issues: 1) The model name in the code is incorrect (it should be a format like 'googleai/gemini-1.5-flash'). 2) The "Generative Language API" is not enabled in your Google Cloud project. 3) Your API key may have restrictions. Please check your GEMINI_API_KEY and Google Cloud project configuration. (Details: ${error.message})`;
+                clientMessage = `Model not found. This can be caused by several issues: 1) The model name in the code is incorrect (it should be a format like 'googleai/gemini-pro-vision'). 2) The "Generative Language API" is not enabled in your Google Cloud project. 3) Your API key may have restrictions. Please check your GEMINI_API_KEY and Google Cloud project configuration. (Details: ${error.message})`;
             } else if (lowerCaseMessage.includes('a "use server" file can only export async functions')) {
                  clientMessage = 'A "use server" file can only export async functions, found object. Read more: https://nextjs.org/docs/messages/invalid-use-server-value';
             }
