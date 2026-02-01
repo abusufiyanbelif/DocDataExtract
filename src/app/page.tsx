@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShoppingBasket, ArrowRight, FileText, Users, ShieldCheck, LogIn, GanttChart } from 'lucide-react';
+import { ShoppingBasket, ArrowRight, FileText, Users, ShieldCheck, LogIn, GanttChart, Settings } from 'lucide-react';
 import { useSession } from '@/hooks/use-session';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -24,6 +24,7 @@ export default function LandingPage() {
   const canViewExtractor = userProfile?.role === 'Admin' || !!userProfile?.permissions?.extractor?.read;
   const canViewStoryCreator = userProfile?.role === 'Admin' || !!userProfile?.permissions?.storyCreator?.read;
   const canViewDiagnostics = userProfile?.role === 'Admin' || !!userProfile?.permissions?.diagnostics?.read;
+  const canViewSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.read;
 
 
   return (
@@ -108,6 +109,14 @@ export default function LandingPage() {
                           <Button size="lg" variant="outline" className="text-lg">
                           <ShieldCheck className="mr-2 h-5 w-5" />
                           Diagnostics
+                          </Button>
+                      </Link>
+                  )}
+                  {canViewSettings && (
+                      <Link href="/settings">
+                          <Button size="lg" variant="outline" className="text-lg">
+                          <Settings className="mr-2 h-5 w-5" />
+                          Settings
                           </Button>
                       </Link>
                   )}

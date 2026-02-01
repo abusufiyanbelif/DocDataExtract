@@ -42,6 +42,9 @@ export default function SettingsPage() {
         }
     }, [logoFile, brandingSettings]);
 
+    const canReadSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.read;
+    const canUpdateSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.update;
+
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
             setLogoFile(event.target.files[0]);
@@ -49,7 +52,7 @@ export default function SettingsPage() {
     };
 
     const handleSave = async () => {
-        if (!logoFile || !storage || !firestore || userProfile?.role !== 'Admin') {
+        if (!logoFile || !storage || !firestore || !canUpdateSettings) {
             toast({
                 title: 'Error',
                 description: 'No file selected or insufficient permissions.',
@@ -110,7 +113,6 @@ export default function SettingsPage() {
     };
 
     const isLoading = isSessionLoading || isBrandingLoading;
-    const canManageSettings = userProfile?.role === 'Admin';
 
     if (isLoading) {
         return (
@@ -120,7 +122,7 @@ export default function SettingsPage() {
         )
     }
 
-    if (!canManageSettings) {
+    if (!canReadSettings) {
         return (
             <div className="min-h-screen bg-background text-foreground">
                 <DocuExtractHeader />
@@ -173,8 +175,8 @@ export default function SettingsPage() {
                                     </div>
                                 )}
                             </div>
-                            <Input id="logo-upload" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={handleFileChange} />
-                            <Button onClick={handleSave} disabled={!logoFile || isSubmitting} className="w-full">
+                            <Input id="logo-upload" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={handleFileChange} disabled={!canUpdateSettings} />
+                            <Button onClick={handleSave} disabled={!logoFile || isSubmitting || !canUpdateSettings} className="w-full">
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                 Upload and Save Logo
                             </Button>
