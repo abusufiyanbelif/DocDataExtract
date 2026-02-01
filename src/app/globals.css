@@ -40,3 +40,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+.watermark-container {
+  min-height: 100vh;
+  position: relative;
+}
+
+.watermark-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--watermark-url);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 400px;
+  background-attachment: fixed;
+  opacity: 0.1; /* Increased for visibility */
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.watermark-container > * {
+  position: relative;
+  z-index: 1;
+}

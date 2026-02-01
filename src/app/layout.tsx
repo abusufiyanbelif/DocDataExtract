@@ -6,7 +6,7 @@ import { FirebaseClientProvider } from '@/firebase';
 import { SessionProvider } from '@/components/session-provider';
 import { PT_Sans, Source_Code_Pro } from 'next/font/google';
 import { cn } from '@/lib/utils';
-import { Watermark } from '@/components/watermark';
+import { WatermarkProvider } from '@/components/watermark-provider';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -37,8 +37,9 @@ export default async function RootLayout({
       <body className={cn("font-body antialiased", ptSans.variable, sourceCodePro.variable)}>
         <FirebaseClientProvider>
             <SessionProvider>
-                <Watermark />
-                {children}
+                <WatermarkProvider>
+                  {children}
+                </WatermarkProvider>
             </SessionProvider>
         </FirebaseClientProvider>
         <Toaster />
