@@ -705,99 +705,101 @@ export default function BeneficiariesPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 bg-card text-center w-[100px]">Actions</TableHead>}
-                        <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
-                        <SortableHeader sortKey="name">Name</SortableHeader>
-                        <SortableHeader sortKey="address">Address</SortableHeader>
-                        <SortableHeader sortKey="phone">Phone</SortableHeader>
-                        <SortableHeader sortKey="members" className="text-center">Members</SortableHeader>
-                        <SortableHeader sortKey="earningMembers" className="text-center">Earning</SortableHeader>
-                        <SortableHeader sortKey="male" className="text-center">M/F</SortableHeader>
-                        <SortableHeader sortKey="addedDate">Added Date</SortableHeader>
-                        <TableHead>ID Proof Type</TableHead>
-                        <TableHead>ID Number</TableHead>
-                        <TableHead>ID Proof</TableHead>
-                        <SortableHeader sortKey="referralBy">Referred By</SortableHeader>
-                        <SortableHeader sortKey="kitAmount" className="text-right">Kit Amount (Rupee)</SortableHeader>
-                        <SortableHeader sortKey="status">Status</SortableHeader>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {areBeneficiariesLoading && (
-                    [...Array(3)].map((_, i) => (
-                        <TableRow key={i}>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14}><Skeleton className="h-6 w-full" /></TableCell>
+            <div className="w-full overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 bg-card text-center w-[100px]">Actions</TableHead>}
+                            <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
+                            <SortableHeader sortKey="name">Name</SortableHeader>
+                            <SortableHeader sortKey="address">Address</SortableHeader>
+                            <SortableHeader sortKey="phone">Phone</SortableHeader>
+                            <SortableHeader sortKey="members" className="text-center">Members</SortableHeader>
+                            <SortableHeader sortKey="earningMembers" className="text-center">Earning</SortableHeader>
+                            <SortableHeader sortKey="male" className="text-center">M/F</SortableHeader>
+                            <SortableHeader sortKey="addedDate">Added Date</SortableHeader>
+                            <TableHead>ID Proof Type</TableHead>
+                            <TableHead>ID Number</TableHead>
+                            <TableHead>ID Proof</TableHead>
+                            <SortableHeader sortKey="referralBy">Referred By</SortableHeader>
+                            <SortableHeader sortKey="kitAmount" className="text-right">Kit Amount (Rupee)</SortableHeader>
+                            <SortableHeader sortKey="status">Status</SortableHeader>
                         </TableRow>
-                    ))
-                    )}
-                    {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.map((beneficiary, index) => (
-                        <TableRow key={beneficiary.id}>
-                            {(canUpdate || canDelete) && (
-                            <TableCell className="sticky left-0 z-10 bg-card text-center">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {canUpdate && (
-                                            <DropdownMenuItem onClick={() => handleEdit(beneficiary)}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </DropdownMenuItem>
-                                        )}
-                                        {canDelete && (
-                                            <DropdownMenuItem onClick={() => handleDeleteClick(beneficiary.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                            )}
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell className="font-medium">{beneficiary.name}</TableCell>
-                            <TableCell>{beneficiary.address}</TableCell>
-                            <TableCell>{beneficiary.phone}</TableCell>
-                            <TableCell className="text-center">{beneficiary.members}</TableCell>
-                            <TableCell className="text-center">{beneficiary.earningMembers}</TableCell>
-                            <TableCell className="text-center">{beneficiary.male}/{beneficiary.female}</TableCell>
-                            <TableCell>{beneficiary.addedDate}</TableCell>
-                            <TableCell>{beneficiary.idProofType}</TableCell>
-                            <TableCell>{beneficiary.idNumber}</TableCell>
-                            <TableCell>
-                                {beneficiary.idProofUrl ? (
-                                <Button variant="outline" size="sm" onClick={() => handleViewImage(beneficiary.idProofUrl!)}>
-                                    <Eye className="mr-2 h-4 w-4" /> View
-                                </Button>
-                                ) : "N/A"}
-                            </TableCell>
-                            <TableCell>{beneficiary.referralBy}</TableCell>
-                            <TableCell className="text-right font-medium">Rupee {(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
-                            <TableCell>
-                                <Badge variant={
-                                    beneficiary.status === 'Given' ? 'success' :
-                                    beneficiary.status === 'Verified' ? 'success' :
-                                    beneficiary.status === 'Pending' ? 'secondary' :
-                                    beneficiary.status === 'Hold' ? 'destructive' : 'outline'
-                                }>{beneficiary.status}</Badge>
+                    </TableHeader>
+                    <TableBody>
+                        {areBeneficiariesLoading && (
+                        [...Array(3)].map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14}><Skeleton className="h-6 w-full" /></TableCell>
+                            </TableRow>
+                        ))
+                        )}
+                        {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.map((beneficiary, index) => (
+                            <TableRow key={beneficiary.id}>
+                                {(canUpdate || canDelete) && (
+                                <TableCell className="sticky left-0 z-10 bg-card text-center">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            {canUpdate && (
+                                                <DropdownMenuItem onClick={() => handleEdit(beneficiary)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                            )}
+                                            {canDelete && (
+                                                <DropdownMenuItem onClick={() => handleDeleteClick(beneficiary.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                                )}
+                                <TableCell>{index + 1}</TableCell>
+                                <TableCell className="font-medium">{beneficiary.name}</TableCell>
+                                <TableCell>{beneficiary.address}</TableCell>
+                                <TableCell>{beneficiary.phone}</TableCell>
+                                <TableCell className="text-center">{beneficiary.members}</TableCell>
+                                <TableCell className="text-center">{beneficiary.earningMembers}</TableCell>
+                                <TableCell className="text-center">{beneficiary.male}/{beneficiary.female}</TableCell>
+                                <TableCell>{beneficiary.addedDate}</TableCell>
+                                <TableCell>{beneficiary.idProofType}</TableCell>
+                                <TableCell>{beneficiary.idNumber}</TableCell>
+                                <TableCell>
+                                    {beneficiary.idProofUrl ? (
+                                    <Button variant="outline" size="sm" onClick={() => handleViewImage(beneficiary.idProofUrl!)}>
+                                        <Eye className="mr-2 h-4 w-4" /> View
+                                    </Button>
+                                    ) : "N/A"}
+                                </TableCell>
+                                <TableCell>{beneficiary.referralBy}</TableCell>
+                                <TableCell className="text-right font-medium">Rupee {(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
+                                <TableCell>
+                                    <Badge variant={
+                                        beneficiary.status === 'Given' ? 'success' :
+                                        beneficiary.status === 'Verified' ? 'success' :
+                                        beneficiary.status === 'Pending' ? 'secondary' :
+                                        beneficiary.status === 'Hold' ? 'destructive' : 'outline'
+                                    }>{beneficiary.status}</Badge>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14} className="text-center h-24 text-muted-foreground">
+                                No beneficiaries found matching your criteria.
                             </TableCell>
                         </TableRow>
-                    ))}
-                    {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.length === 0 && (
-                    <TableRow>
-                        <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14} className="text-center h-24 text-muted-foreground">
-                            No beneficiaries found matching your criteria.
-                        </TableCell>
-                    </TableRow>
-                    )}
-                </TableBody>
-            </Table>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
           </CardContent>
         </Card>
       </main>

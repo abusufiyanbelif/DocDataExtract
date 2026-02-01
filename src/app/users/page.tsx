@@ -220,83 +220,85 @@ export default function UsersPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
-                        <TableHead className="w-[50px]">#</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Phone</TableHead>
-                        <TableHead>Login ID</TableHead>
-                        <TableHead>User Key</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Status</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {users.map((user, index) => (
-                        <TableRow key={user.id}>
-                            {(canUpdate || canDelete) && (
-                            <TableCell className="text-center sticky left-0 bg-card z-10">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {canUpdate && (
-                                            <DropdownMenuItem onClick={() => handleEdit(user)} className="cursor-pointer">
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </DropdownMenuItem>
-                                        )}
-                                        {canUpdate && canDelete && <DropdownMenuSeparator />}
-                                        {canUpdate && user.status === 'Active' ? (
-                                            <DropdownMenuItem onClick={() => handleToggleStatus(user)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="cursor-pointer">
-                                                <UserX className="mr-2 h-4 w-4" />
-                                                Deactivate
-                                            </DropdownMenuItem>
-                                        ) : canUpdate ? (
-                                            <DropdownMenuItem onClick={() => handleToggleStatus(user)} className="cursor-pointer">
-                                                <UserCheck className="mr-2 h-4 w-4" />
-                                                Activate
-                                            </DropdownMenuItem>
-                                        ) : null}
-                                        {canDelete && (
-                                            <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                            )}
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell className="font-medium">{user.name}</TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>{user.phone}</TableCell>
-                            <TableCell>{user.loginId}</TableCell>
-                            <TableCell>{user.userKey}</TableCell>
-                            <TableCell>
-                            <Badge variant={user.role === 'Admin' ? 'destructive' : 'secondary'}>{user.role}</Badge>
-                            </TableCell>
-                            <TableCell>
-                            <Badge variant={user.status === 'Active' ? 'default' : 'outline'}>{user.status}</Badge>
+            <div className="w-full overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
+                            <TableHead className="w-[50px]">#</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Phone</TableHead>
+                            <TableHead>Login ID</TableHead>
+                            <TableHead>User Key</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {users.map((user, index) => (
+                            <TableRow key={user.id}>
+                                {(canUpdate || canDelete) && (
+                                <TableCell className="text-center sticky left-0 bg-card z-10">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            {canUpdate && (
+                                                <DropdownMenuItem onClick={() => handleEdit(user)} className="cursor-pointer">
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                            )}
+                                            {canUpdate && canDelete && <DropdownMenuSeparator />}
+                                            {canUpdate && user.status === 'Active' ? (
+                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="cursor-pointer">
+                                                    <UserX className="mr-2 h-4 w-4" />
+                                                    Deactivate
+                                                </DropdownMenuItem>
+                                            ) : canUpdate ? (
+                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)} className="cursor-pointer">
+                                                    <UserCheck className="mr-2 h-4 w-4" />
+                                                    Activate
+                                                </DropdownMenuItem>
+                                            ) : null}
+                                            {canDelete && (
+                                                <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                                )}
+                                <TableCell>{index + 1}</TableCell>
+                                <TableCell className="font-medium">{user.name}</TableCell>
+                                <TableCell>{user.email}</TableCell>
+                                <TableCell>{user.phone}</TableCell>
+                                <TableCell>{user.loginId}</TableCell>
+                                <TableCell>{user.userKey}</TableCell>
+                                <TableCell>
+                                <Badge variant={user.role === 'Admin' ? 'destructive' : 'secondary'}>{user.role}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                <Badge variant={user.status === 'Active' ? 'default' : 'outline'}>{user.status}</Badge>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                        {users.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={canUpdate || canDelete ? 9 : 8} className="text-center h-24 text-muted-foreground">
+                                No users found. The database may be empty.
                             </TableCell>
                         </TableRow>
-                    ))}
-                    {users.length === 0 && (
-                    <TableRow>
-                        <TableCell colSpan={canUpdate || canDelete ? 9 : 8} className="text-center h-24 text-muted-foreground">
-                            No users found. The database may be empty.
-                        </TableCell>
-                    </TableRow>
-                    )}
-                </TableBody>
-            </Table>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
           </CardContent>
         </Card>
       </main>

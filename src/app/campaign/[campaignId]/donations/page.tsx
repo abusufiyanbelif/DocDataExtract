@@ -456,90 +456,92 @@ export default function DonationsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
-                        <SortableHeader sortKey="srNo">#</SortableHeader>
-                        <SortableHeader sortKey="status">Status</SortableHeader>
-                        <SortableHeader sortKey="donorName">Donor Name</SortableHeader>
-                        <SortableHeader sortKey="receiverName">Receiver Name</SortableHeader>
-                        <SortableHeader sortKey="donorPhone">Phone</SortableHeader>
-                        <SortableHeader sortKey="referral">Referral</SortableHeader>
-                        <SortableHeader sortKey="amount" className="text-right">Amount (Rupee)</SortableHeader>
-                        <SortableHeader sortKey="type">Category</SortableHeader>
-                        <SortableHeader sortKey="donationType">Donation Type</SortableHeader>
-                        <SortableHeader sortKey="transactionId">Transaction ID</SortableHeader>
-                        <SortableHeader sortKey="donationDate">Date</SortableHeader>
-                        <TableHead>Screenshot</TableHead>
-                        <SortableHeader sortKey="uploadedBy">Uploaded By</SortableHeader>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {areDonationsLoading ? (
-                    [...Array(3)].map((_, i) => (
-                        <TableRow key={i}>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13}><Skeleton className="h-6 w-full" /></TableCell>
+            <div className="w-full overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
+                            <SortableHeader sortKey="srNo">#</SortableHeader>
+                            <SortableHeader sortKey="status">Status</SortableHeader>
+                            <SortableHeader sortKey="donorName">Donor Name</SortableHeader>
+                            <SortableHeader sortKey="receiverName">Receiver Name</SortableHeader>
+                            <SortableHeader sortKey="donorPhone">Phone</SortableHeader>
+                            <SortableHeader sortKey="referral">Referral</SortableHeader>
+                            <SortableHeader sortKey="amount" className="text-right">Amount (Rupee)</SortableHeader>
+                            <SortableHeader sortKey="type">Category</SortableHeader>
+                            <SortableHeader sortKey="donationType">Donation Type</SortableHeader>
+                            <SortableHeader sortKey="transactionId">Transaction ID</SortableHeader>
+                            <SortableHeader sortKey="donationDate">Date</SortableHeader>
+                            <TableHead>Screenshot</TableHead>
+                            <SortableHeader sortKey="uploadedBy">Uploaded By</SortableHeader>
                         </TableRow>
-                    ))
-                    ) : (filteredAndSortedDonations && filteredAndSortedDonations.length > 0) ? (
-                    filteredAndSortedDonations.map((donation, index) => (
-                        <TableRow key={donation.id}>
-                            {(canUpdate || canDelete) && (
-                            <TableCell className="text-center sticky left-0 bg-card z-10">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {canUpdate && (
-                                            <DropdownMenuItem onClick={() => handleEdit(donation)}>
-                                                <Edit className="mr-2 h-4 w-4" /> Edit
-                                            </DropdownMenuItem>
-                                        )}
-                                        {canDelete && (
-                                            <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                            )}
-                            <TableCell>{index + 1}</TableCell>
-                            <TableCell>
-                                <Badge variant={donation.status === 'Verified' ? 'success' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
-                            </TableCell>
-                            <TableCell className="font-medium">{donation.donorName}</TableCell>
-                            <TableCell>{donation.receiverName}</TableCell>
-                            <TableCell>{donation.donorPhone}</TableCell>
-                            <TableCell>{donation.referral}</TableCell>
-                            <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
-                            <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
-                            <TableCell><Badge variant="outline">{donation.donationType}</Badge></TableCell>
-                            <TableCell>{donation.transactionId || 'N/A'}</TableCell>
-                            <TableCell>{donation.donationDate}</TableCell>
-                            <TableCell>
-                                {donation.screenshotUrl && (
-                                <Button variant="outline" size="sm" onClick={() => donation.screenshotUrl && handleViewImage(donation.screenshotUrl)}>
-                                    <Eye className="mr-2 h-4 w-4" /> View
-                                </Button>
+                    </TableHeader>
+                    <TableBody>
+                        {areDonationsLoading ? (
+                        [...Array(3)].map((_, i) => (
+                            <TableRow key={i}>
+                                <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13}><Skeleton className="h-6 w-full" /></TableCell>
+                            </TableRow>
+                        ))
+                        ) : (filteredAndSortedDonations && filteredAndSortedDonations.length > 0) ? (
+                        filteredAndSortedDonations.map((donation, index) => (
+                            <TableRow key={donation.id}>
+                                {(canUpdate || canDelete) && (
+                                <TableCell className="text-center sticky left-0 bg-card z-10">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            {canUpdate && (
+                                                <DropdownMenuItem onClick={() => handleEdit(donation)}>
+                                                    <Edit className="mr-2 h-4 w-4" /> Edit
+                                                </DropdownMenuItem>
+                                            )}
+                                            {canDelete && (
+                                                <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
                                 )}
+                                <TableCell>{index + 1}</TableCell>
+                                <TableCell>
+                                    <Badge variant={donation.status === 'Verified' ? 'success' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
+                                </TableCell>
+                                <TableCell className="font-medium">{donation.donorName}</TableCell>
+                                <TableCell>{donation.receiverName}</TableCell>
+                                <TableCell>{donation.donorPhone}</TableCell>
+                                <TableCell>{donation.referral}</TableCell>
+                                <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
+                                <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
+                                <TableCell><Badge variant="outline">{donation.donationType}</Badge></TableCell>
+                                <TableCell>{donation.transactionId || 'N/A'}</TableCell>
+                                <TableCell>{donation.donationDate}</TableCell>
+                                <TableCell>
+                                    {donation.screenshotUrl && (
+                                    <Button variant="outline" size="sm" onClick={() => donation.screenshotUrl && handleViewImage(donation.screenshotUrl)}>
+                                        <Eye className="mr-2 h-4 w-4" /> View
+                                    </Button>
+                                    )}
+                                </TableCell>
+                                <TableCell>{donation.uploadedBy}</TableCell>
+                            </TableRow>
+                        ))
+                        ) : (
+                        <TableRow>
+                            <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13} className="text-center h-24 text-muted-foreground">
+                                No donations found matching your criteria.
                             </TableCell>
-                            <TableCell>{donation.uploadedBy}</TableCell>
                         </TableRow>
-                    ))
-                    ) : (
-                    <TableRow>
-                        <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13} className="text-center h-24 text-muted-foreground">
-                            No donations found matching your criteria.
-                        </TableCell>
-                    </TableRow>
-                    )}
-                </TableBody>
-            </Table>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
           </CardContent>
         </Card>
       </main>
