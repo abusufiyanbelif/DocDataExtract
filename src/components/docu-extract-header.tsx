@@ -40,7 +40,7 @@ export function DocuExtractHeader() {
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
             {brandingSettings?.logoUrl ? (
-                <div className="relative h-10 w-40">
+                <div className="relative h-10 w-10">
                      <Image src={brandingSettings.logoUrl} alt="Company Logo" layout="fill" objectFit="contain" />
                 </div>
             ) : (
