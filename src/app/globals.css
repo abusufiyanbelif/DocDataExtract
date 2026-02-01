@@ -46,11 +46,12 @@
 .global-watermark {
   position: fixed;
   inset: 0;
+  /* z-index: 0 sits above the body but below the z-index: 1 app-root */
   z-index: 0;
   background-repeat: no-repeat;
   background-position: center;
   background-size: 420px;
-  opacity: 0.08;
+  opacity: 0.12; /* Increased for better visibility */
   pointer-events: none;
 }
 
