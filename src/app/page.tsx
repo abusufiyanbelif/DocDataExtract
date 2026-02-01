@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ScanSearch, ArrowRight, FileText, ShoppingBasket, Users, ShieldCheck, LogIn } from 'lucide-react';
+import { ShoppingBasket, ArrowRight, FileText, Users, ShieldCheck, LogIn } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -30,12 +30,12 @@ export default function LandingPage() {
       <DocuExtractHeader />
       <main className="flex flex-grow flex-col items-center justify-center">
         <div className="container mx-auto flex flex-col items-center justify-center text-center p-8">
-            <ScanSearch className="h-24 w-24 text-primary mb-6" />
+            <ShoppingBasket className="h-24 w-24 text-primary mb-6" />
             <h1 className="text-5xl md:text-6xl font-bold font-headline text-foreground mb-4">
-            Welcome to DocDataExtract AB
+            Welcome to Baitulmal Samajik Sanstha Solapur Activities
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-            Effortlessly scan images and documents to extract text, or synthesize multiple documents into a single story.
+            Managing and tracking community support campaigns efficiently.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link href="/campaign">

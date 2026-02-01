@@ -1,7 +1,7 @@
 
 'use client';
 
-import { LogOut, ScanSearch, User, LogIn } from 'lucide-react';
+import { LogOut, User, LogIn, ShoppingBasket } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth, useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -35,9 +35,9 @@ export function DocuExtractHeader() {
     <header className="bg-card border-b p-4 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
-            <ScanSearch className="h-8 w-8 text-primary" />
+            <ShoppingBasket className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold font-headline text-foreground">
-            DocDataExtract AB
+            Baitulmal Samajik Sanstha Solapur
             </h1>
         </Link>
         

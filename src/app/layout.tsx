@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
@@ -19,8 +20,8 @@ const sourceCodePro = Source_Code_Pro({
 });
 
 export const metadata: Metadata = {
-  title: 'Welcome to DocDataExtract AB',
-  description: 'Scan images and documents to extract text and structured data.',
+  title: 'Welcome to Baitulmal Samajik Sanstha Solapur',
+  description: 'Managing and tracking community support campaigns efficiently.',
   icons: null,
 };
 

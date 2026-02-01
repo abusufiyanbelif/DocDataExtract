@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -25,7 +26,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, ScanSearch, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Loader2, ScanSearch, AlertTriangle, ExternalLink, ShoppingBasket } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 
@@ -135,8 +136,8 @@ export default function LoginPage() {
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <div className="flex justify-center items-center gap-3 mb-4">
-                         <ScanSearch className="h-8 w-8 text-primary" />
-                         <h1 className="text-3xl font-bold font-headline text-foreground">DocDataExtract AB</h1>
+                         <ShoppingBasket className="h-8 w-8 text-primary" />
+                         <h1 className="text-3xl font-bold font-headline text-foreground">Baitulmal Samajik Sanstha Solapur</h1>
                     </div>
                     <CardTitle className="text-destructive">Application Not Configured</CardTitle>
                 </CardHeader>
@@ -160,9 +161,9 @@ export default function LoginPage() {
        <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-3 mb-4">
-                <ScanSearch className="h-8 w-8 text-primary" />
+                <ShoppingBasket className="h-8 w-8 text-primary" />
                 <h1 className="text-3xl font-bold font-headline text-foreground">
-                DocDataExtract AB
+                Baitulmal Samajik Sanstha Solapur
                 </h1>
             </div>
           <CardTitle>Welcome Back!</CardTitle>
