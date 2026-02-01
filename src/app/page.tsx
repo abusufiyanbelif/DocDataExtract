@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShoppingBasket, ArrowRight, FileText, Users, ShieldCheck, LogIn, GanttChart, Settings } from 'lucide-react';
+import { ArrowRight, FileText, Users, ShieldCheck, LogIn, GanttChart, Settings } from 'lucide-react';
 import { useSession } from '@/hooks/use-session';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -32,7 +32,6 @@ export default function LandingPage() {
       <DocuExtractHeader />
       <main className="flex flex-grow flex-col items-center justify-center">
         <div className="container mx-auto flex flex-col items-center justify-center text-center p-8">
-            <ShoppingBasket className="h-24 w-24 text-primary mb-6" />
             <h1 className="text-5xl md:text-6xl font-bold font-headline text-foreground mb-4">
             Welcome to Baitulmal Samajik Sanstha Solapur Activities
             </h1>
