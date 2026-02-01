@@ -13,6 +13,13 @@ export const campaignSubModules = [
   { id: 'donations', name: 'Donations', permissions: crudPermissions },
 ] as const;
 
+export const leadSubModules = [
+  { id: 'summary', name: 'Summary', permissions: readUpdatePermissions },
+  { id: 'ration', name: 'Ration Details', permissions: readUpdatePermissions },
+  { id: 'beneficiaries', name: 'Beneficiary List', permissions: crudPermissions },
+  { id: 'donations', name: 'Donations', permissions: crudPermissions },
+] as const;
+
 export const modules = [
   { id: 'users', name: 'User Management', permissions: crudPermissions },
   {
@@ -20,6 +27,12 @@ export const modules = [
     name: 'Campaigns',
     permissions: crudPermissions,
     subModules: campaignSubModules,
+  },
+  {
+    id: 'leads',
+    name: 'Leads',
+    permissions: crudPermissions,
+    subModules: leadSubModules,
   },
   { id: 'extractor', name: 'Extractor', permissions: simpleReadPermission },
   { id: 'storyCreator', name: 'Story Creator', permissions: simpleReadPermission },
@@ -31,15 +44,20 @@ export const permissions = ['create', 'read', 'update', 'delete'] as const;
 export type ModuleId = typeof modules[number]['id'];
 export type Permission = typeof permissions[number];
 
-type SubModulePermissions = {
-  [K in typeof campaignSubModules[number]['id']]?: Partial<Record<typeof campaignSubModules[number]['permissions'][number], boolean>>;
+type SubModulePermissions<T extends Readonly<any[]>> = {
+  [K in T[number]['id']]?: Partial<Record<T[number]['permissions'][number], boolean>>;
 };
 
+type CampaignPermissions = Partial<Record<Permission, boolean>> & SubModulePermissions<typeof campaignSubModules>;
+type LeadPermissions = Partial<Record<Permission, boolean>> & SubModulePermissions<typeof leadSubModules>;
+
 export type UserPermissions = Partial<
-  Record<Exclude<ModuleId, 'campaigns'>, Partial<Record<Permission, boolean>>>
+  Record<Exclude<ModuleId, 'campaigns' | 'leads'>, Partial<Record<Permission, boolean>>>
 > & {
-  campaigns?: Partial<Record<Permission, boolean>> & SubModulePermissions;
+  campaigns?: CampaignPermissions;
+  leads?: LeadPermissions;
 };
+
 
 export function createAdminPermissions(): UserPermissions {
   const allPermissions: any = {};
@@ -49,7 +67,7 @@ export function createAdminPermissions(): UserPermissions {
       allPermissions[mod.id][perm] = true;
     }
     if ('subModules' in mod && mod.subModules) {
-      for (const subMod of mod.subModules) {
+      for (const subMod of (mod.subModules as any[])) {
         allPermissions[mod.id][subMod.id] = {};
         for (const perm of subMod.permissions) {
           allPermissions[mod.id][subMod.id][perm] = true;

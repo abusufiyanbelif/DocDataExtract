@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShoppingBasket, ArrowRight, FileText, Users, ShieldCheck, LogIn } from 'lucide-react';
+import { ShoppingBasket, ArrowRight, FileText, Users, ShieldCheck, LogIn, GanttChart } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -19,6 +19,7 @@ export default function LandingPage() {
     !!campaignPerms?.donations?.read;
 
   const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.read || canReadAnyCampaignSubmodule;
+  const canViewLeads = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.read;
   const canViewUsers = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.read;
   const canViewExtractor = userProfile?.role === 'Admin' || !!userProfile?.permissions?.extractor?.read;
   const canViewStoryCreator = userProfile?.role === 'Admin' || !!userProfile?.permissions?.storyCreator?.read;
@@ -38,7 +39,7 @@ export default function LandingPage() {
             Managing and tracking community support campaigns efficiently.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/campaign">
+              <Link href="/public">
                   <Button size="lg" className="text-lg">
                   View Campaigns
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -53,6 +54,14 @@ export default function LandingPage() {
               )}
               {!isLoading && userProfile && (
                 <>
+                  {canViewLeads && (
+                      <Link href="/leads">
+                          <Button size="lg" variant="outline" className="text-lg">
+                          <GanttChart className="mr-2 h-5 w-5" />
+                          Leads
+                          </Button>
+                      </Link>
+                  )}
                   {canViewExtractor && (
                       <Link href="/extractor">
                           <Button size="lg" variant="outline" className="text-lg">

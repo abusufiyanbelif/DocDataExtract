@@ -92,6 +92,7 @@ async function main() {
   console.log('\n--- 2. Erasing Firestore Data ---');
   await Promise.all([
     deleteCollection('campaigns'),
+    deleteCollection('leads'),
     deleteCollection('donations'),
     deleteCollection('user_lookups'),
     deleteCollection('users', adminUid ? [adminUid] : []),
@@ -119,6 +120,7 @@ async function main() {
   console.log('\n--- 4. Erasing Firebase Storage Data ---');
   await Promise.all([
       deleteStorageFolder('campaigns/'),
+      deleteStorageFolder('leads/'),
       deleteStorageFolder('users/')
   ]);
 

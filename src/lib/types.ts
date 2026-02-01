@@ -1,6 +1,12 @@
 import type { DocumentData } from 'firebase/firestore';
 import type { UserPermissions } from './modules';
 
+export interface CampaignDocument {
+  name: string;
+  url: string;
+  isPublic: boolean;
+}
+
 export interface RationItem {
   id: string;
   name: string;
@@ -27,6 +33,27 @@ export interface Campaign extends DocumentData {
   shopName: string;
   shopContact: string;
   shopAddress: string;
+  documents?: CampaignDocument[];
+  rationLists: RationList;
+  createdAt?: any;
+  createdById?: string;
+  createdByName?: string;
+}
+
+export interface Lead extends DocumentData {
+  id: string;
+  name: string;
+  category: 'Ration' | 'Relief' | 'General';
+  description?: string;
+  targetAmount?: number;
+  startDate: string;
+  endDate: string;
+  status: 'Upcoming' | 'Active' | 'Completed';
+  priceDate: string;
+  shopName: string;
+  shopContact: string;
+  shopAddress: string;
+  documents?: CampaignDocument[];
   rationLists: RationList;
   createdAt?: any;
   createdById?: string;
@@ -49,6 +76,7 @@ export interface Beneficiary extends DocumentData {
     kitAmount: number;
     status: 'Given' | 'Pending' | 'Hold' | 'Need More Details' | 'Verified';
     idProofUrl?: string;
+    idProofIsPublic?: boolean;
     createdAt?: any;
     createdById?: string;
     createdByName?: string;
@@ -85,6 +113,7 @@ export interface Donation extends DocumentData {
   status: 'Verified' | 'Pending' | 'Canceled';
   transactionId?: string;
   screenshotUrl?: string;
+  screenshotIsPublic?: boolean;
   uploadedBy: string;
   uploadedById: string;
   campaignId: string;

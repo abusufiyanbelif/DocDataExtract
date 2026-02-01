@@ -111,6 +111,52 @@
                 }
               }
             },
+            "leads": {
+              "type": "object",
+              "description": "Permissions for the Leads module.",
+              "properties": {
+                "read": {
+                  "type": "boolean"
+                },
+                "create": {
+                  "type": "boolean"
+                },
+                "update": {
+                  "type": "boolean"
+                },
+                "delete": {
+                  "type": "boolean"
+                },
+                "summary": {
+                  "type": "object",
+                  "properties": {
+                    "read": {
+                      "type": "boolean"
+                    },
+                    "update": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "ration": {
+                  "type": "object",
+                  "properties": {
+                    "read": {
+                      "type": "boolean"
+                    },
+                    "update": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "beneficiaries": {
+                  "$ref": "#/backend/entities/CrudPermissions"
+                },
+                "donations": {
+                  "$ref": "#/backend/entities/CrudPermissions"
+                }
+              }
+            },
             "extractor": {
               "type": "object",
               "properties": {
@@ -295,6 +341,10 @@
           "type": "string",
           "description": "URL of the uploaded ID proof document."
         },
+        "idProofIsPublic": {
+          "type": "boolean",
+          "description": "Whether the ID proof document is publicly visible."
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time",
@@ -371,6 +421,19 @@
           "type": "string",
           "description": "The address of the shop."
         },
+        "documents": {
+          "type": "array",
+          "description": "A list of related documents for the campaign.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "url": { "type": "string" },
+              "isPublic": { "type": "boolean" }
+            },
+            "required": ["name", "url", "isPublic"]
+          }
+        },
         "rationLists": {
           "type": "object",
           "description": "A map where keys are member counts (e.g., '5', 'General Item List') and values are the corresponding lists of ration items.",
@@ -393,6 +456,108 @@
         "createdByName": {
           "type": "string",
           "description": "Name of the user who created the campaign."
+        }
+      },
+      "required": [
+        "name",
+        "category",
+        "status",
+        "startDate",
+        "endDate"
+      ]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "A lead for a potential campaign or initiative.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the lead."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the lead (e.g., Ration, Relief).",
+          "enum": [
+            "Ration",
+            "Relief",
+            "General"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the lead's goals and purpose."
+        },
+        "targetAmount": {
+          "type": "number",
+          "description": "The fundraising goal for the lead in Rupees."
+        },
+        "startDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The start date of the lead."
+        },
+        "endDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The end date of the lead."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the lead (e.g., 'Upcoming', 'Active', 'Completed')."
+        },
+        "priceDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The date for which the ration prices are valid."
+        },
+        "shopName": {
+          "type": "string",
+          "description": "The name of the shop where items are purchased."
+        },
+        "shopContact": {
+          "type": "string",
+          "description": "The contact number for the shop."
+        },
+        "shopAddress": {
+          "type": "string",
+          "description": "The address of the shop."
+        },
+        "documents": {
+          "type": "array",
+          "description": "A list of related documents for the lead.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "url": { "type": "string" },
+              "isPublic": { "type": "boolean" }
+            },
+            "required": ["name", "url", "isPublic"]
+          }
+        },
+        "rationLists": {
+          "type": "object",
+          "description": "A map where keys are member counts (e.g., '5', 'General Item List') and values are the corresponding lists of ration items.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/backend/entities/RationItem"
+            }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of when the lead was created."
+        },
+        "createdById": {
+          "type": "string",
+          "description": "ID of the user who created the lead."
+        },
+        "createdByName": {
+          "type": "string",
+          "description": "Name of the user who created the lead."
         }
       },
       "required": [
@@ -470,6 +635,10 @@
         "screenshotUrl": {
           "type": "string",
           "description": "URL of the uploaded donation screenshot."
+        },
+        "screenshotIsPublic": {
+          "type": "boolean",
+          "description": "Whether the donation screenshot is publicly visible."
         },
         "uploadedBy": {
           "type": "string",
@@ -559,6 +728,18 @@
         "$ref": "#/backend/entities/Beneficiary"
       },
       "description": "Stores the list of beneficiaries for a specific campaign."
+    },
+    "/leads/{leadId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Lead"
+      },
+      "description": "Stores details for each lead."
+    },
+    "/leads/{leadId}/beneficiaries/{beneficiaryId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Beneficiary"
+      },
+      "description": "Stores the list of beneficiaries for a specific lead."
     },
     "/donations/{donationId}": {
       "schema": {

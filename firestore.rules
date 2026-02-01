@@ -66,6 +66,14 @@ service cloud.firestore {
       return ['priceDate', 'shopName', 'shopContact', 'shopAddress', 'rationLists']; 
     }
     
+    function canReadLead() {
+      return hasPermission(['leads'], 'read') || 
+             hasPermission(['leads', 'summary'], 'read') ||
+             hasPermission(['leads', 'ration'], 'read') ||
+             hasPermission(['leads', 'beneficiaries'], 'read') ||
+             hasPermission(['leads', 'donations'], 'read');
+    }
+
     // --- Collection Rules ---
 
     match /user_lookups/{lookupId} {
@@ -121,15 +129,39 @@ service cloud.firestore {
 
       match /beneficiaries/{beneficiaryId} {
         allow get, list: if true; // Required for public summary calculation
-        allow create: if hasPermission(['campaigns'], 'beneficiaries'], 'create');
+        allow create: if hasPermission(['campaigns', 'beneficiaries'], 'create');
         allow update: if hasPermission(['campaigns', 'beneficiaries'], 'update');
         allow delete: if hasPermission(['campaigns', 'beneficiaries'], 'delete');
       }
     }
 
+    match /leads/{leadId} {
+      allow get, list: if true;
+      allow create: if hasPermission(['leads'], 'create');
+      allow update: if 
+        hasPermission(['leads'], 'update') ||
+        isAdmin() ||
+        (
+          hasPermission(['leads', 'summary'], 'update') &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(campaignSummaryKeys())
+        ) ||
+        (
+          hasPermission(['leads', 'ration'], 'update') &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(campaignRationKeys())
+        );
+      allow delete: if hasPermission(['leads'], 'delete');
+
+      match /beneficiaries/{beneficiaryId} {
+        allow get, list: if canReadLead();
+        allow create: if hasPermission(['leads', 'beneficiaries'], 'create');
+        allow update: if hasPermission(['leads', 'beneficiaries'], 'update');
+        allow delete: if hasPermission(['leads', 'beneficiaries'], 'delete');
+      }
+    }
+
     match /donations/{donationId} {
         allow get, list: if true; // Required for public summary calculation
-        allow create: if hasPermission(['campaigns'], 'donations'], 'create');
+        allow create: if hasPermission(['campaigns', 'donations'], 'create');
         allow update: if hasPermission(['campaigns', 'donations'], 'update');
         allow delete: if hasPermission(['campaigns', 'donations'], 'delete');
     }

@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { Loader2, ScanLine, Trash2, Replace, FileIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from './ui/separator';
+import { Checkbox } from './ui/checkbox';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -45,6 +46,7 @@ const formSchema = z.object({
   status: z.enum(['Given', 'Pending', 'Hold', 'Need More Details', 'Verified']),
   idProofFile: z.any().optional(),
   idProofDeleted: z.boolean().optional(),
+  idProofIsPublic: z.boolean().optional(),
 });
 
 export type BeneficiaryFormData = z.infer<typeof formSchema>;
@@ -76,6 +78,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
       kitAmount: beneficiary?.kitAmount || 0,
       status: beneficiary?.status || 'Pending',
       idProofDeleted: false,
+      idProofIsPublic: beneficiary?.idProofIsPublic || false,
     },
   });
 
@@ -351,18 +354,37 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                     </div>
                 </div>
             )}
-
-            {idProofFile?.length > 0 && (
-              <Button 
-                  type="button" 
-                  className="w-full"
-                  onClick={handleScanIdProof} 
-                  disabled={isScanning}
-              >
-                  {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
-                  Scan ID Proof & Autofill
-              </Button>
-            )}
+            
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                {idProofFile?.length > 0 && (
+                <Button 
+                    type="button" 
+                    className="flex-1"
+                    onClick={handleScanIdProof} 
+                    disabled={isScanning}
+                >
+                    {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
+                    Scan ID Proof & Autofill
+                </Button>
+                )}
+                 <FormField
+                    control={form.control}
+                    name="idProofIsPublic"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                            <FormControl>
+                                <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                                Make ID Proof public
+                            </FormLabel>
+                        </FormItem>
+                    )}
+                />
+            </div>
         </div>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

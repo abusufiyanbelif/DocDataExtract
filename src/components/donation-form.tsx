@@ -43,6 +43,7 @@ const formSchema = z.object({
   status: z.enum(['Verified', 'Pending', 'Canceled']),
   screenshotFile: z.any().optional(),
   screenshotDeleted: z.boolean().optional(),
+  screenshotIsPublic: z.boolean().optional(),
   isTransactionIdRequired: z.boolean().default(true),
 }).refine(data => {
     if (data.donationType === 'Online Payment' && data.isTransactionIdRequired) {
@@ -80,6 +81,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
       donationDate: donation?.donationDate || new Date().toISOString().split('T')[0],
       status: donation?.status || 'Pending',
       screenshotDeleted: false,
+      screenshotIsPublic: donation?.screenshotIsPublic || false,
       isTransactionIdRequired: true,
     },
   });
@@ -371,6 +373,23 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                         Scan Screenshot
                     </Button>
                   )}
+                  <FormField
+                      control={form.control}
+                      name="screenshotIsPublic"
+                      render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                              <FormControl>
+                                  <Checkbox
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                  />
+                              </FormControl>
+                              <FormLabel className="text-sm font-normal">
+                                  Make screenshot public
+                              </FormLabel>
+                          </FormItem>
+                      )}
+                  />
                   <FormField
                     control={form.control}
                     name="isTransactionIdRequired"
