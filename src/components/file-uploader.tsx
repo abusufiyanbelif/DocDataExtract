@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent, useEffect } from 'react';
 import { UploadCloud, X, File as FileIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -24,42 +24,43 @@ export function FileUploader({
   const [files, setFiles] = useState<File[]>([]);
   const [activePreview, setActivePreview] = useState<string | null>(null);
 
+  useEffect(() => {
+    // This effect handles cleanup of object URLs
+    return () => {
+      previews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [previews]);
+
   const handleFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = event.target.files;
     if (selectedFiles && selectedFiles.length > 0) {
       const fileArray = Array.from(selectedFiles);
-      
-      const filePromises = fileArray.map(file => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            resolve(reader.result as string);
-          };
-          reader.readAsDataURL(file);
-        });
-      });
+      const newPreviews = fileArray.map(file => URL.createObjectURL(file));
 
-      Promise.all(filePromises).then(newPreviews => {
-        if (multiple) {
-            const allFiles = [...files, ...fileArray];
-            const allPreviews = [...previews, ...newPreviews];
-            setFiles(allFiles);
-            setPreviews(allPreviews);
-            onFilesChange(allFiles);
-            if (!activePreview) {
-              setActivePreview(newPreviews[0]);
-            }
-        } else {
-            setFiles(fileArray);
-            setPreviews(newPreviews);
-            onFilesChange(fileArray);
+      if (multiple) {
+          const allFiles = [...files, ...fileArray];
+          const allPreviews = [...previews, ...newPreviews];
+          setFiles(allFiles);
+          setPreviews(allPreviews);
+          onFilesChange(allFiles);
+          if (!activePreview) {
             setActivePreview(newPreviews[0]);
-        }
-      });
+          }
+      } else {
+          // Revoke old previews before setting new ones
+          previews.forEach(url => URL.revokeObjectURL(url));
+          setFiles(fileArray);
+          setPreviews(newPreviews);
+          onFilesChange(fileArray);
+          setActivePreview(newPreviews[0]);
+      }
     }
   };
   
   const handleRemoveFile = (index: number) => {
+    // Revoke the specific object URL to prevent memory leaks
+    URL.revokeObjectURL(previews[index]);
+
     const newFiles = files.filter((_, i) => i !== index);
     const newPreviews = previews.filter((_, i) => i !== index);
 
@@ -73,22 +74,25 @@ export function FileUploader({
   };
 
   const handleReset = () => {
+    previews.forEach(url => URL.revokeObjectURL(url));
     setFiles([]);
     setPreviews([]);
     onFilesChange([]);
     setActivePreview(null);
   };
 
-  const isPdf = (preview: string) => preview.startsWith('data:application/pdf');
+  const isPdf = (previewUrl: string, file: File) => {
+    return file.type === 'application/pdf' || (previewUrl.startsWith('blob:') && file.name.endsWith('.pdf'));
+  };
 
-  if (previews.length > 0) {
+  if (files.length > 0) {
     return (
       <div className="flex flex-col items-center gap-4 w-full">
         <div 
           className="relative w-full max-w-sm h-64 border-2 border-dashed rounded-lg overflow-hidden bg-secondary/20 flex items-center justify-center"
         >
-          {activePreview ? (
-            isPdf(activePreview) ? (
+          {activePreview && previews.indexOf(activePreview) !== -1 ? (
+            isPdf(activePreview, files[previews.indexOf(activePreview)]) ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 text-center">
                 <FileIcon className="w-16 h-16" />
                 <p className="mt-2 text-sm font-medium break-all">{files[previews.indexOf(activePreview)]?.name}</p>
@@ -111,7 +115,7 @@ export function FileUploader({
           <div className="w-full flex flex-wrap gap-2 justify-center">
             {previews.map((preview, index) => (
               <Card 
-                key={index} 
+                key={preview} 
                 className={cn(
                   "p-1 w-20 h-20 relative cursor-pointer", 
                   activePreview === preview && "ring-2 ring-primary"
@@ -119,7 +123,7 @@ export function FileUploader({
                 onClick={() => setActivePreview(preview)}
               >
                 <CardContent className="p-0 relative w-full h-full flex items-center justify-center bg-secondary/20 rounded-md overflow-hidden">
-                  {isPdf(preview) ? (
+                  {isPdf(preview, files[index]) ? (
                     <FileIcon className="w-8 h-8 text-muted-foreground" />
                   ) : (
                     <Image src={preview} alt={files[index]?.name || ''} fill style={{objectFit: 'cover'}} />

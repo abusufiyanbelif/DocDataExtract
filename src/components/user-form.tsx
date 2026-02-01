@@ -35,7 +35,6 @@ import { Loader2, Send, Replace, Trash2, FileIcon, ScanLine } from 'lucide-react
 import { PermissionsTable } from './permissions-table';
 import { get, set } from '@/lib/utils';
 import { useUserProfile as useCurrentUserProfile } from '@/hooks/use-user-profile';
-import { extractKeyInfoFromAadhaar } from '@/ai/flows/extract-key-info-identity';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -217,7 +216,18 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
         }
 
         try {
-            const response = await extractKeyInfoFromAadhaar({ photoDataUri: dataUri });
+            const apiResponse = await fetch('/api/scan-id', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ photoDataUri: dataUri }),
+            });
+
+            if (!apiResponse.ok) {
+                const errorData = await apiResponse.json();
+                throw new Error(errorData.error || 'The server returned an error.');
+            }
+            
+            const response = await apiResponse.json();
 
             if (response) {
                 if (response.name) setValue('name', response.name, { shouldValidate: true });
@@ -320,7 +330,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                     <FormControl>
                         <Input placeholder="auto-generated from name" {...field} disabled={isFormDisabled || (!isCurrentUserAdmin && isEditing)} />
                     </FormControl>
-                    <FormDescription>Unique ID for signing in. Can only be changed by an Admin. Must be lowercase letters, numbers, underscores, or periods.</FormDescription>
+                    <FormDescription>Unique ID for signing in. Can only be changed by an Admin.</FormDescription>
                     <FormMessage />
                     </FormItem>
                 )}
@@ -450,7 +460,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         type="button" 
                         className="w-full"
                         onClick={handleScanIdProof} 
-                        disabled={isScanning}
+                        disabled={isScanning || isFormDisabled}
                     >
                         {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ScanLine className="mr-2 h-4 w-4" />}
                         Scan ID Proof & Autofill
