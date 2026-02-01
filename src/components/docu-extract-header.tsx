@@ -1,6 +1,7 @@
+
 'use client';
 
-import { LogOut, ScanSearch, User } from 'lucide-react';
+import { LogOut, ScanSearch, User, LogIn } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth, useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -40,7 +41,7 @@ export function DocuExtractHeader() {
             </h1>
         </Link>
         
-        {user && (
+        {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -84,6 +85,15 @@ export function DocuExtractHeader() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        ) : (
+          !isLoading && (
+            <Button asChild>
+                <Link href="/login">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login
+                </Link>
+            </Button>
+          )
         )}
       </div>
     </header>

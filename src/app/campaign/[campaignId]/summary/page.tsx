@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, Wallet, Share2, Hourglass } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, Wallet, Share2, Hourglass, LogIn } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -78,12 +78,12 @@ export default function CampaignSummaryPage() {
     const [isSharing, setIsSharing] = useState(false);
 
     // Data fetching
-    const campaignDocRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId, isProfileLoading, userProfile?.id]);
-    const beneficiariesCollectionRef = useMemo(() => (firestore && !isProfileLoading && userProfile) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId, isProfileLoading, userProfile?.id]);
+    const campaignDocRef = useMemo(() => (firestore) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
+    const beneficiariesCollectionRef = useMemo(() => (firestore) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId]);
     const donationsCollectionRef = useMemo(() => {
-        if (!firestore || !campaignId || isProfileLoading || !userProfile) return null;
+        if (!firestore || !campaignId) return null;
         return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-    }, [firestore, campaignId, isProfileLoading, userProfile?.id]);
+    }, [firestore, campaignId]);
 
     const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
@@ -418,7 +418,7 @@ Please donate and share this message. Every contribution helps!
                                 Share
                             </Button>
                         )}
-                        {canUpdate && (
+                        {canUpdate && userProfile && (
                             !editMode ? (
                                 <Button onClick={handleEditClick}>
                                     <Edit className="mr-2 h-4 w-4" /> Edit Summary
@@ -432,28 +432,41 @@ Please donate and share this message. Every contribution helps!
                                 </div>
                             )
                         )}
+                        {!isProfileLoading && !userProfile && (
+                            <Button asChild>
+                                <Link href="/login">
+                                    <LogIn className="mr-2 h-4 w-4" />
+                                    Login to Manage
+                                </Link>
+                            </Button>
+                        )}
                     </div>
                 </div>
 
                 <div className="border-b mb-4">
                     <ScrollArea className="w-full whitespace-nowrap">
                         <div className="flex w-max space-x-4">
-                            {canReadSummary && (
+                            {userProfile && canReadSummary && (
                               <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
                                   <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
                               </Button>
                             )}
-                            {canReadRation && (
+                            {!userProfile && (
+                                <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
+                                    <span className="cursor-default">Summary</span>
+                                </Button>
+                            )}
+                            {userProfile && canReadRation && (
                               <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
                                   <Link href={`/campaign/${campaignId}`}>{campaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
                               </Button>
                             )}
-                            {canReadBeneficiaries && (
+                            {userProfile && canReadBeneficiaries && (
                               <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
                                   <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
                               </Button>
                             )}
-                            {canReadDonations && (
+                            {userProfile && canReadDonations && (
                               <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
                                   <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
                               </Button>
