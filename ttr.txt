@@ -1,1 +1,2 @@
-src/ai/genkit.ts(10,3): error TS2353: Object literal may only specify known properties, and 'logLevel' does not exist in type 'GenkitOptions'.
+src/billing-extractor.tsx(179,17): error TS2322: Type '{ onFileSelect: Dispatch<SetStateAction<string[]>>; onFilesChange: Dispatch<SetStateAction<File[]>>; acceptedFileTypes: string; key: "image" | "pdf"; }' is not assignable to type 'IntrinsicAttributes & FileUploaderProps'.
+  Property 'onFileSelect' does not exist on type 'IntrinsicAttributes & FileUploaderProps'.

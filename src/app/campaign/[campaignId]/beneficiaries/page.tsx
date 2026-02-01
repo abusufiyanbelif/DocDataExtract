@@ -188,10 +188,12 @@ export default function BeneficiariesPage() {
     const docRef = editingBeneficiary
         ? doc(firestore, `campaigns/${campaignId}/beneficiaries`, editingBeneficiary.id)
         : doc(collection(firestore, `campaigns/${campaignId}/beneficiaries`));
-
-    let idProofUrl = editingBeneficiary?.idProofUrl || '';
     
+    let finalData: any;
+
     try {
+        let idProofUrl = editingBeneficiary?.idProofUrl || '';
+    
         if (data.idProofDeleted && idProofUrl) {
             toast({ title: "Deleting ID Proof...", description: 'Removing the old file from storage.'});
             await deleteObject(storageRef(storage, idProofUrl));
@@ -241,7 +243,7 @@ export default function BeneficiariesPage() {
 
         const { idProofFile, idProofDeleted, ...beneficiaryData } = data;
 
-        const finalData = {
+        finalData = {
             ...beneficiaryData,
             idProofUrl,
             ...(!editingBeneficiary && {
@@ -252,24 +254,23 @@ export default function BeneficiariesPage() {
             }),
         };
         
-        setDoc(docRef, finalData, { merge: true })
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: editingBeneficiary ? 'update' : 'create',
-                    requestResourceData: finalData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            })
-            .finally(() => {
-                toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'success' });
-                setIsFormOpen(false);
-                setEditingBeneficiary(null);
-            });
+        await setDoc(docRef, finalData, { merge: true });
+        
+        toast({ title: 'Success', description: `Beneficiary ${editingBeneficiary ? 'updated' : 'added'}.`, variant: 'success' });
 
-    } catch (error) {
-        console.warn("Error during file upload:", error);
-        toast({ title: 'File Upload Error', description: 'Could not upload the ID proof file.', variant: 'destructive' });
+    } catch (error: any) {
+        console.warn("Error during form submission:", error);
+        if (error.code === 'permission-denied') {
+             const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: editingBeneficiary ? 'update' : 'create',
+                requestResourceData: finalData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            toast({ title: 'Save Failed', description: error.message || 'An unexpected error occurred.', variant: 'destructive' });
+        }
+    } finally {
         setIsFormOpen(false);
         setEditingBeneficiary(null);
     }
@@ -889,3 +890,4 @@ export default function BeneficiariesPage() {
     
 
     
+
