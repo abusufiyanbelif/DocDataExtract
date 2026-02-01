@@ -106,7 +106,7 @@ service cloud.firestore {
 
     match /campaigns/{campaignId} {
       // Allow public read for summary page, but restrict write access
-      allow get, list: if true;
+      allow read: if true;
       
       // Creating a campaign
       allow create: if hasPermission(['campaigns'], 'create');
@@ -128,7 +128,7 @@ service cloud.firestore {
       allow delete: if hasPermission(['campaigns'], 'delete');
 
       match /beneficiaries/{beneficiaryId} {
-        allow get, list: if true; // Required for public summary calculation
+        allow read: if true; // Required for public summary calculation
         allow create: if hasPermission(['campaigns', 'beneficiaries'], 'create');
         allow update: if hasPermission(['campaigns', 'beneficiaries'], 'update');
         allow delete: if hasPermission(['campaigns', 'beneficiaries'], 'delete');
@@ -160,7 +160,7 @@ service cloud.firestore {
     }
 
     match /donations/{donationId} {
-        allow get, list: if true; // Required for public summary calculation
+        allow read: if true; // Required for public summary calculation
         allow create: if hasPermission(['campaigns', 'donations'], 'create');
         allow update: if hasPermission(['campaigns', 'donations'], 'update');
         allow delete: if hasPermission(['campaigns', 'donations'], 'delete');
