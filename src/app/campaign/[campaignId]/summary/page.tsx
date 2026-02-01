@@ -74,7 +74,7 @@ export default function CampaignSummaryPage() {
     // State for edit mode and form fields
     const [editMode, setEditMode] = useState(false);
     const [editableCampaign, setEditableCampaign] = useState<Partial<Campaign>>({});
-    const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('Verified');
+    const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('All');
     const [isSharing, setIsSharing] = useState(false);
 
     // Data fetching
@@ -159,19 +159,24 @@ export default function CampaignSummaryPage() {
     const summaryData = useMemo(() => {
         if (!beneficiaries || !donations || !campaign) return null;
 
-        const donationsByStatus = donations.reduce((acc, d) => {
-            const status = d.status || 'Pending';
-            acc[status] = (acc[status] || 0) + d.amount;
-            return acc;
-        }, {} as Record<string, number>);
+        const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
+    
+        const zakatCollected = verifiedDonationsList
+            .filter(d => d.type === 'Zakat')
+            .reduce((acc, d) => acc + d.amount, 0);
 
-        const verifiedDonations = donationsByStatus['Verified'] || 0;
-        const pendingDonations = donationsByStatus['Pending'] || 0;
+        const verifiedNonZakatDonations = verifiedDonationsList
+            .filter(d => d.type !== 'Zakat')
+            .reduce((acc, d) => acc + d.amount, 0);
+
+        const pendingDonations = donations
+            .filter(d => d.status === 'Pending')
+            .reduce((acc, d) => acc + d.amount, 0);
 
         const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + (b.kitAmount || 0), 0);
         
         const fundingGoal = totalKitAmountRequired;
-        const fundingProgress = fundingGoal > 0 ? (verifiedDonations / fundingGoal) * 100 : 0;
+        const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
         const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
 
         const beneficiaryStatusData = beneficiaries.reduce((acc, b) => {
@@ -233,7 +238,8 @@ export default function CampaignSummaryPage() {
         })();
 
         return {
-            verifiedDonations,
+            verifiedNonZakatDonations,
+            zakatCollected,
             pendingDonations,
             totalKitAmountRequired,
             fundingProgress,
@@ -244,7 +250,7 @@ export default function CampaignSummaryPage() {
             donationPaymentTypeChartData,
             totalBeneficiaries: beneficiaries.length,
             targetAmount: totalKitAmountRequired,
-            remainingToCollect: Math.max(0, totalKitAmountRequired - verifiedDonations),
+            remainingToCollect: Math.max(0, totalKitAmountRequired - verifiedNonZakatDonations),
         };
     }, [beneficiaries, donations, campaign, donationChartFilter]);
     
@@ -262,8 +268,8 @@ export default function CampaignSummaryPage() {
         setIsSharing(true);
 
         const remainingToCollectText = summaryData.remainingToCollect > 0 
-            ? `*Remaining to Collect: Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*`
-            : `*Goal Achieved! Thank you for your support!*`;
+            ? `*Remaining for Kits: Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*`
+            : `*Kit funding goal achieved! Thank you!*`;
 
         const categoryBreakdownText = summaryData.beneficiaryCategoryBreakdown.length > 0 
             ? `\n*Beneficiary Breakdown:*\n${summaryData.beneficiaryCategoryBreakdown.map(item => `${item.name}: ${item.count} ${item.count === 1 ? 'beneficiary' : 'beneficiaries'} (Rupee ${item.totalAmount.toLocaleString('en-IN')})`).join('\n')}`
@@ -276,8 +282,9 @@ export default function CampaignSummaryPage() {
 ${campaign.description || ''}
 
 *Financial Summary:*
-Target Amount: Rupee ${(summaryData.targetAmount || 0).toLocaleString('en-IN')}
-Verified Donations: Rupee ${summaryData.verifiedDonations.toLocaleString('en-IN')}
+Target for Kits: Rupee ${(summaryData.targetAmount || 0).toLocaleString('en-IN')}
+Funds for Kits (Verified): Rupee ${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
+Zakat Collected (Verified): Rupee ${summaryData.zakatCollected.toLocaleString('en-IN')}
 ${remainingToCollectText}
 
 We are providing aid to *${summaryData.totalBeneficiaries} beneficiaries* in total.${categoryBreakdownText}
@@ -535,9 +542,9 @@ Please donate and share this message. Every contribution helps!
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Funding Progress</CardTitle>
+                            <CardTitle>Funding Progress (for Kits)</CardTitle>
                             <CardDescription>
-                                Rupee {summaryData?.verifiedDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from verified donations.
+                                Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -567,14 +574,23 @@ Please donate and share this message. Every contribution helps!
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Verified Donations</CardTitle>
+                                <CardTitle className="text-sm font-medium">Kit Funding (Verified)</CardTitle>
                                 <Gift className="h-4 w-4 text-green-500" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.verifiedDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Zakat Collected (Verified)</CardTitle>
+                                <Wallet className="h-4 w-4 text-blue-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.zakatCollected.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
