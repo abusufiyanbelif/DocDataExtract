@@ -36,11 +36,11 @@ export function DocuExtractHeader() {
   const isLoading = isSessionLoading || isBrandingLoading;
 
   return (
-    <header className="bg-card border-b p-4 shadow-sm">
+    <header className="bg-card border-b p-6 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
             {brandingSettings?.logoUrl ? (
-                <div className="relative h-10 w-10">
+                <div className="relative h-12 w-12">
                      <Image src={brandingSettings.logoUrl} alt="Company Logo" layout="fill" objectFit="contain" />
                 </div>
             ) : (
@@ -53,13 +53,13 @@ export function DocuExtractHeader() {
             )}
         </Link>
         
-        {isLoading && <Skeleton className="h-10 w-10 rounded-full" />}
+        {isLoading && <Skeleton className="h-12 w-12 rounded-full" />}
 
         {!isLoading && user && userProfile && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar>
+              <Button variant="ghost" className="relative h-12 w-12 rounded-full">
+                <Avatar className="h-12 w-12">
                   <AvatarImage src={user.photoURL || ''} alt={userProfile?.name || 'User'} />
                   <AvatarFallback>
                     {getInitials(userProfile?.name)}
