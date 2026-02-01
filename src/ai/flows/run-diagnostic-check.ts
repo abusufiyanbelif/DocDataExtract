@@ -4,10 +4,29 @@
  *
  * - runDiagnosticCheck - Function to check Gemini API connectivity.
  */
-
 import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
 
-export async function runDiagnosticCheck(): Promise<{ok: boolean; message: string}> {
+const RunDiagnosticOutputSchema = z.object({
+  ok: z.boolean(),
+  message: z.string(),
+});
+
+export type RunDiagnosticOutput = z.infer<typeof RunDiagnosticOutputSchema>;
+
+// This is the exported async function that the client will call.
+export async function runDiagnosticCheck(): Promise<RunDiagnosticOutput> {
+  // We don't need any input for this check
+  return runDiagnosticCheckFlow();
+}
+
+// This is the internal Genkit flow. It is not exported.
+const runDiagnosticCheckFlow = ai.defineFlow(
+  {
+    name: 'runDiagnosticCheckFlow',
+    outputSchema: RunDiagnosticOutputSchema,
+  },
+  async (): Promise<RunDiagnosticOutput> => {
     try {
         const response = await ai.generate({
             model: 'gemini-1.5-flash',
@@ -16,7 +35,7 @@ export async function runDiagnosticCheck(): Promise<{ok: boolean; message: strin
                 temperature: 0,
             }
         });
-
+        
         const text = response.text.trim();
         if (text === 'OK') {
             return { ok: true, message: 'Successfully received a valid response from the Gemini model.' };
@@ -40,11 +59,11 @@ export async function runDiagnosticCheck(): Promise<{ok: boolean; message: strin
             }
         }
         
-        // Append a general help message if the error is about API keys
         if (clientMessage.toLowerCase().includes('api key')) {
             clientMessage += " Your application is configured to check for 'GEMINI_API_KEY' in your .env file."
         }
 
         return { ok: false, message: clientMessage };
     }
-}
+  }
+);
