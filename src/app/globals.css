@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,31 +38,25 @@
     @apply border-border;
   }
   body {
-    @apply text-foreground;
+    @apply bg-background text-foreground;
   }
 }
 
-.watermark-container {
-  min-height: 100vh;
-  position: relative;
-  @apply bg-background;
-}
-
-.watermark-container::before {
-  content: "";
-  position: absolute;
+/* Global watermark overlay */
+.global-watermark {
+  position: fixed;
   inset: 0;
-  background-image: var(--watermark-url);
+  z-index: 0;
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 400px;
-  background-attachment: fixed;
-  opacity: 0.1;
+  background-size: 420px;
+  opacity: 0.08;
   pointer-events: none;
-  z-index: 0;
 }
 
-.watermark-container > * {
+/* Ensure all app content stays above watermark */
+.app-root {
   position: relative;
   z-index: 1;
+  min-height: 100vh;
 }

@@ -6,7 +6,8 @@ import { FirebaseClientProvider } from '@/firebase';
 import { SessionProvider } from '@/components/session-provider';
 import { PT_Sans, Source_Code_Pro } from 'next/font/google';
 import { cn } from '@/lib/utils';
-import { WatermarkProvider } from '@/components/watermark-provider';
+import { adminDb } from '@/lib/firebase-admin-sdk';
+import type { BrandingSettings } from '@/lib/types';
 
 const ptSans = PT_Sans({
   subsets: ['latin'],
@@ -23,7 +24,6 @@ const sourceCodePro = Source_Code_Pro({
 export const metadata: Metadata = {
   title: 'Welcome to Baitulmal Samajik Sanstha Solapur',
   description: 'Managing and tracking community support campaigns efficiently.',
-  icons: null,
 };
 
 export default async function RootLayout({
@@ -32,16 +32,33 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
 
+  let logoUrl: string | null = null;
+  try {
+    if (adminDb) {
+      const brandingSnap = await adminDb.collection('settings').doc('branding').get();
+      if (brandingSnap.exists) {
+        logoUrl = (brandingSnap.data() as BrandingSettings)?.logoUrl || null;
+      }
+    }
+  } catch (error) {
+    console.error("Failed to fetch branding settings on server:", error);
+  }
+  const watermarkStyle = logoUrl ? { backgroundImage: `url(${logoUrl})` } : {};
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("font-body antialiased", ptSans.variable, sourceCodePro.variable)}>
-        <FirebaseClientProvider>
-            <SessionProvider>
-                <WatermarkProvider>
+      <body>
+        {/* The watermark is a fixed overlay that sits on its own layer. */}
+        <div className="global-watermark" style={watermarkStyle} />
+        
+        {/* All application content is rendered inside the app-root. */}
+        <div className="app-root">
+          <FirebaseClientProvider>
+              <SessionProvider>
                   {children}
-                </WatermarkProvider>
-            </SessionProvider>
-        </FirebaseClientProvider>
+              </SessionProvider>
+          </FirebaseClientProvider>
+        </div>
         <Toaster />
       </body>
     </html>
