@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { FileText, Loader2, Download, Trash2, ScanLine } from 'lucide-react';
-import { extractAndCorrectText, type ExtractAndCorrectTextOutput } from '@/ai/flows/extract-and-correct-text';
+import type { ExtractAndCorrectTextOutput } from '@/ai/flows/extract-and-correct-text';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,34 +15,61 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 
 export function TextExtractor() {
-  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [textResult, setTextResult] = useState<ExtractAndCorrectTextOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
 
   const handleScanText = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoading(true);
     setTextResult(null);
     
-    try {
-      toast({ title: "Extracting text...", description: "Please wait." });
-      const response = await extractAndCorrectText({ photoDataUri: photoDataUris[0] });
-      setTextResult(response);
-    } catch (error: any) {
-      console.warn("Text extraction failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not extract text from the ${uploadType}.`, variant: 'destructive' });
-    } finally {
+    const file = uploadedFiles[0];
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUri = e.target?.result as string;
+      if (!dataUri) {
+        toast({ title: "Read Error", description: "Could not read the uploaded file.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        toast({ title: "Extracting text...", description: "Please wait." });
+        const apiResponse = await fetch('/api/extract-text', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photoDataUri: dataUri }),
+        });
+
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json();
+            throw new Error(errorData.error || 'The server returned an error.');
+        }
+
+        const response = await apiResponse.json();
+        setTextResult(response);
+      } catch (error: any) {
+        console.warn("Text extraction failed:", error);
+        toast({ title: 'Extraction Failed', description: error.message || `Could not extract text from the ${uploadType}.`, variant: 'destructive' });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    reader.onerror = () => {
+      toast({ title: "File Error", description: "Could not read the uploaded file.", variant: "destructive" });
       setIsLoading(false);
     }
+    reader.readAsDataURL(file);
   };
 
   const handleClear = () => {
-    setPhotoDataUris([]);
+    setUploadedFiles([]);
     setTextResult(null);
   };
   
@@ -99,17 +126,17 @@ export function TextExtractor() {
           </RadioGroup>
           
           <FileUploader 
-              onFileSelect={setPhotoDataUris} 
+              onFilesChange={setUploadedFiles} 
               acceptedFileTypes={acceptedFileTypes}
               key={uploadType} 
           />
 
-          <Button onClick={handleScanText} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
+          <Button onClick={handleScanText} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
             {isLoading ? <Loader2 className="animate-spin mr-2" /> : <ScanLine className="mr-2" />}
             Extract Text
           </Button>
 
-          {photoDataUris.length > 0 && (
+          {uploadedFiles.length > 0 && (
               <Button onClick={handleClear} variant="outline" className="w-full">
                   <Trash2 className="mr-2 h-4 w-4" /> Clear
               </Button>

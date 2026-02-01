@@ -3,8 +3,8 @@
 
 import { useState } from 'react';
 import { User, Loader2, Download, Wand2, ToyBrick, Trash2 } from 'lucide-react';
-import { extractKeyInfoFromAadhaar, type ExtractKeyInfoFromAadhaarOutput } from '@/ai/flows/extract-key-info-identity';
-import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
+import type { ExtractKeyInfoFromAadhaarOutput } from '@/ai/flows/extract-key-info-identity';
+import type { ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +25,7 @@ function ResultDisplay({ label, value }: { label: string; value: string }) {
 }
 
 export function IdentityExtractor() {
-  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [infoResult, setInfoResult] = useState<ExtractKeyInfoFromAadhaarOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoadingInfo, setIsLoadingInfo] = useState(false);
@@ -33,48 +33,68 @@ export function IdentityExtractor() {
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
 
+  const processFile = (file: File, apiPath: string, loadingSetter: (loading: boolean) => void, resultSetter: (result: any) => void, apiBodyKey: string) => {
+    loadingSetter(true);
+    resultSetter(null);
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUri = e.target?.result as string;
+      if (!dataUri) {
+        toast({ title: "Read Error", description: "Could not read the uploaded file.", variant: "destructive" });
+        loadingSetter(false);
+        return;
+      }
+      
+      try {
+        const apiResponse = await fetch(apiPath, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [apiBodyKey]: dataUri }),
+        });
+
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json();
+            throw new Error(errorData.error || 'The server returned an error.');
+        }
+
+        const response = await apiResponse.json();
+        resultSetter(response);
+
+      } catch (error: any) {
+        console.warn(`${apiPath} failed:`, error);
+        toast({ title: 'Extraction Failed', description: error.message || 'Could not process the document.', variant: 'destructive' });
+      } finally {
+        loadingSetter(false);
+      }
+    };
+    reader.onerror = () => {
+        toast({ title: "File Error", description: "An error occurred while reading the file.", variant: "destructive" });
+        loadingSetter(false);
+    };
+    reader.readAsDataURL(file);
+  }
+
   const handleScanInfo = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
-    setIsLoadingInfo(true);
-    setInfoResult(null);
-
-    try {
-      toast({ title: "Extracting info...", description: "Please wait." });
-      const response = await extractKeyInfoFromAadhaar({ photoDataUri: photoDataUris[0] });
-      setInfoResult(response);
-    } catch (error: any) {
-      console.warn("Identity scan failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not extract information from the ${uploadType}.`, variant: 'destructive' });
-    } finally {
-      setIsLoadingInfo(false);
-    }
+    toast({ title: "Extracting info...", description: "Please wait." });
+    processFile(uploadedFiles[0], '/api/scan-id', setIsLoadingInfo, setInfoResult, 'photoDataUri');
   };
   
   const handleGetFields = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
-    setIsLoadingFields(true);
-    setFieldsResult(null);
-
-    try {
-      toast({ title: "Extracting fields...", description: "Please wait." });
-      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
-      setFieldsResult(response);
-    } catch (error: any) {
-      console.warn("Get fields failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
-    } finally {
-      setIsLoadingFields(false);
-    }
+    toast({ title: "Extracting fields...", description: "Please wait." });
+    processFile(uploadedFiles[0], '/api/extract-dynamic-form', setIsLoadingFields, setFieldsResult, 'photoDataUri');
   };
   
   const handleClear = () => {
-    setPhotoDataUris([]);
+    setUploadedFiles([]);
     setInfoResult(null);
     setFieldsResult(null);
   };
@@ -140,19 +160,19 @@ export function IdentityExtractor() {
             </RadioGroup>
             
             <FileUploader 
-                onFileSelect={setPhotoDataUris} 
+                onFilesChange={setUploadedFiles}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
             />
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button onClick={handleScanInfo} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleScanInfo} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
                 {isLoadingInfo ? <Loader2 className="animate-spin" /> : `Extract Info`}
               </Button>
-              <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleGetFields} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
-            {photoDataUris.length > 0 && (
+            {uploadedFiles.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear
                 </Button>

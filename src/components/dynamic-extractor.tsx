@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { ToyBrick, Loader2, Wand2, Trash2 } from 'lucide-react';
-import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
+import type { ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,34 +14,61 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 
 export function DynamicExtractor() {
-  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [result, setResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
 
   const handleScan = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
     setIsLoading(true);
     setResult(null);
 
-    try {
-      toast({ title: "Extracting data...", description: "Please wait." });
-      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
-      setResult(response);
-    } catch (error: any) {
-      console.warn("Dynamic extraction failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not extract dynamic data from the ${uploadType}.`, variant: 'destructive' });
-    } finally {
+    const file = uploadedFiles[0];
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const dataUri = e.target?.result as string;
+        if (!dataUri) {
+            toast({ title: "Read Error", description: "Could not read the uploaded file.", variant: "destructive" });
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            toast({ title: "Extracting data...", description: "Please wait." });
+            const apiResponse = await fetch('/api/extract-dynamic-form', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ photoDataUri: dataUri }),
+            });
+
+            if (!apiResponse.ok) {
+                const errorData = await apiResponse.json();
+                throw new Error(errorData.error || 'The server returned an error.');
+            }
+            
+            const response = await apiResponse.json();
+            setResult(response);
+        } catch (error: any) {
+            console.warn("Dynamic extraction failed:", error);
+            toast({ title: 'Extraction Failed', description: error.message || `Could not extract dynamic data from the ${uploadType}.`, variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    reader.onerror = () => {
+      toast({ title: "File Error", description: "Could not read the uploaded file.", variant: "destructive" });
       setIsLoading(false);
     }
+    reader.readAsDataURL(file);
   };
 
   const handleClear = () => {
-    setPhotoDataUris([]);
+    setUploadedFiles([]);
     setResult(null);
   };
   
@@ -88,15 +115,15 @@ export function DynamicExtractor() {
             </RadioGroup>
 
             <FileUploader 
-                onFileSelect={setPhotoDataUris} 
+                onFilesChange={setUploadedFiles}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
             />
 
-            <Button onClick={handleScan} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
+            <Button onClick={handleScan} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
               {isLoading ? <Loader2 className="animate-spin" /> : `Extract Dynamic Data from ${uploadType === 'image' ? 'Image' : 'PDF'}`}
             </Button>
-            {photoDataUris.length > 0 && (
+            {uploadedFiles.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear
                 </Button>

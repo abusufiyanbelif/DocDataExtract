@@ -3,9 +3,9 @@
 
 import { useState } from 'react';
 import { HeartPulse, Loader2, Download, Wand2, ToyBrick, Trash2, FileText } from 'lucide-react';
-import { extractMedicalFindings, type ExtractMedicalFindingsOutput } from '@/ai/flows/extract-medical-findings';
-import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
-import { createLeadStory, type CreateLeadStoryOutput } from '@/ai/flows/create-lead-story';
+import type { ExtractMedicalFindingsOutput } from '@/ai/flows/extract-medical-findings';
+import type { ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
+import type { CreateLeadStoryOutput } from '@/ai/flows/create-lead-story';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +32,7 @@ interface MedicalExtractorProps {
 }
 
 export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtractorProps) {
-  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [medicalResult, setMedicalResult] = useState<ExtractMedicalFindingsOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [storyResult, setStoryResult] = useState<CreateLeadStoryOutput | null>(null);
@@ -42,55 +42,75 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
 
-  const handleFileSelection = (dataUris: string[]) => {
-    setPhotoDataUris(dataUris);
+  const handleFileSelection = (files: File[]) => {
+    setUploadedFiles(files);
     setMedicalResult(null);
     setFieldsResult(null);
     setStoryResult(null);
   };
   
+  const processFile = (file: File, apiPath: string, loadingSetter: (loading: boolean) => void, resultSetter: (result: any) => void, apiBodyKey: string) => {
+    loadingSetter(true);
+    resultSetter(null);
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUri = e.target?.result as string;
+      if (!dataUri) {
+        toast({ title: "Read Error", description: "Could not read the uploaded file.", variant: "destructive" });
+        loadingSetter(false);
+        return;
+      }
+      
+      try {
+        const apiResponse = await fetch(apiPath, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [apiBodyKey]: dataUri }),
+        });
+
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json();
+            throw new Error(errorData.error || 'The server returned an error.');
+        }
+
+        const response = await apiResponse.json();
+        resultSetter(response);
+
+      } catch (error: any) {
+        console.warn(`${apiPath} failed:`, error);
+        toast({ title: 'Extraction Failed', description: error.message || 'Could not process the document.', variant: 'destructive' });
+      } finally {
+        loadingSetter(false);
+      }
+    };
+    reader.onerror = () => {
+        toast({ title: "File Error", description: "An error occurred while reading the file.", variant: "destructive" });
+        loadingSetter(false);
+    };
+    reader.readAsDataURL(file);
+  }
+
   const handleScanMedical = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
-    setIsLoadingMedical(true);
-    setMedicalResult(null);
-
-    try {
-      toast({ title: "Analyzing report...", description: "Please wait." });
-      const response = await extractMedicalFindings({ reportDataUri: photoDataUris[0] });
-      setMedicalResult(response);
-    } catch (error: any) {
-      console.warn("Medical scan failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not analyze the medical ${uploadType}.`, variant: 'destructive' });
-    } finally {
-      setIsLoadingMedical(false);
-    }
+    toast({ title: "Analyzing report...", description: "Please wait." });
+    processFile(uploadedFiles[0], '/api/extract-medical', setIsLoadingMedical, setMedicalResult, 'reportDataUri');
   };
 
   const handleGetFields = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
-    setIsLoadingFields(true);
-    setFieldsResult(null);
-
-    try {
-      toast({ title: "Extracting fields...", description: "Please wait." });
-      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
-      setFieldsResult(response);
-    } catch (error: any) {
-      console.warn("Get fields failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
-    } finally {
-      setIsLoadingFields(false);
-    }
+    toast({ title: "Extracting fields...", description: "Please wait." });
+    processFile(uploadedFiles[0], '/api/extract-dynamic-form', setIsLoadingFields, setFieldsResult, 'photoDataUri');
   };
   
   const handleCreateStory = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload at least one ${uploadType}.`, variant: 'destructive' });
       return;
     }
@@ -99,8 +119,32 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
 
     try {
       toast({ title: "Creating story...", description: "This may take a moment."});
-      const response = await createLeadStory({ reportDataUris: photoDataUris });
+
+      const filePromises = uploadedFiles.map(file => {
+        return new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const dataUris = await Promise.all(filePromises);
+
+      const apiResponse = await fetch('/api/create-lead-story', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportDataUris: dataUris }),
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json();
+        throw new Error(errorData.error || 'The server returned an error.');
+      }
+      
+      const response = await apiResponse.json();
       setStoryResult(response);
+
       if (!response.isCorrectType) {
         toast({
           title: 'Document Mismatch',
@@ -117,7 +161,7 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
   };
 
   const handleClear = () => {
-    setPhotoDataUris([]);
+    setUploadedFiles([]);
     setMedicalResult(null);
     setFieldsResult(null);
     setStoryResult(null);
@@ -185,26 +229,26 @@ export function MedicalExtractor({ enableStoryCreator = false }: MedicalExtracto
             </RadioGroup>
 
             <FileUploader 
-                onFileSelect={handleFileSelection}
+                onFilesChange={handleFileSelection}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
                 multiple={enableStoryCreator} 
             />
 
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button onClick={handleScanMedical} disabled={photoDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
+              <Button onClick={handleScanMedical} disabled={uploadedFiles.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingMedical ? <Loader2 className="animate-spin" /> : `Analyze Report`}
               </Button>
-              <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading || enableStoryCreator} className="w-full">
+              <Button onClick={handleGetFields} disabled={uploadedFiles.length === 0 || isLoading || enableStoryCreator} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
             {enableStoryCreator && (
-              <Button onClick={handleCreateStory} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleCreateStory} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
                 {isLoadingStory ? <Loader2 className="animate-spin" /> : <><FileText className="mr-2 h-4 w-4"/> Create Lead Story</>}
               </Button>
             )}
-            {photoDataUris.length > 0 && (
+            {uploadedFiles.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear All
                 </Button>

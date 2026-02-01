@@ -3,8 +3,8 @@
 
 import { useState } from 'react';
 import { CreditCard, Loader2, Download, Wand2, ToyBrick, Trash2 } from 'lucide-react';
-import { extractBillingDataFromImage, type ExtractBillingDataOutput } from '@/ai/flows/extract-billing-data';
-import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
+import type { ExtractBillingDataOutput } from '@/ai/flows/extract-billing-data';
+import type { ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,7 +26,7 @@ function ResultDisplay({ label, value }: { label: string; value: string }) {
 }
 
 export function BillingExtractor() {
-  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [billingResult, setBillingResult] = useState<ExtractBillingDataOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
   const [isLoadingBilling, setIsLoadingBilling] = useState(false);
@@ -34,48 +34,68 @@ export function BillingExtractor() {
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
 
+  const processFile = (file: File, apiPath: string, loadingSetter: (loading: boolean) => void, resultSetter: (result: any) => void, apiBodyKey: string) => {
+    loadingSetter(true);
+    resultSetter(null);
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUri = e.target?.result as string;
+      if (!dataUri) {
+        toast({ title: "Read Error", description: "Could not read the uploaded file.", variant: "destructive" });
+        loadingSetter(false);
+        return;
+      }
+      
+      try {
+        const apiResponse = await fetch(apiPath, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [apiBodyKey]: dataUri }),
+        });
+
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json();
+            throw new Error(errorData.error || 'The server returned an error.');
+        }
+
+        const response = await apiResponse.json();
+        resultSetter(response);
+
+      } catch (error: any) {
+        console.warn(`${apiPath} failed:`, error);
+        toast({ title: 'Extraction Failed', description: error.message || 'Could not process the document.', variant: 'destructive' });
+      } finally {
+        loadingSetter(false);
+      }
+    };
+    reader.onerror = () => {
+        toast({ title: "File Error", description: "An error occurred while reading the file.", variant: "destructive" });
+        loadingSetter(false);
+    };
+    reader.readAsDataURL(file);
+  }
+
   const handleScanBilling = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
-    setIsLoadingBilling(true);
-    setBillingResult(null);
-
-    try {
-      toast({ title: "Extracting bill data...", description: "Please wait." });
-      const response = await extractBillingDataFromImage({ photoDataUri: photoDataUris[0] });
-      setBillingResult(response);
-    } catch (error: any) {
-      console.warn("Billing scan failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not extract billing data. Please try another image or enter the data manually.`, variant: 'destructive' });
-    } finally {
-      setIsLoadingBilling(false);
-    }
+    toast({ title: "Extracting bill data...", description: "Please wait." });
+    processFile(uploadedFiles[0], '/api/extract-billing', setIsLoadingBilling, setBillingResult, 'photoDataUri');
   };
   
   const handleGetFields = async () => {
-    if (photoDataUris.length === 0) {
+    if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
-    setIsLoadingFields(true);
-    setFieldsResult(null);
-
-    try {
-      toast({ title: "Extracting fields...", description: "Please wait." });
-      const response = await extractDynamicFormFromImage({ photoDataUri: photoDataUris[0] });
-      setFieldsResult(response);
-    } catch (error: any) {
-      console.warn("Get fields failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
-    } finally {
-      setIsLoadingFields(false);
-    }
+    toast({ title: "Extracting fields...", description: "Please wait." });
+    processFile(uploadedFiles[0], '/api/extract-dynamic-form', setIsLoadingFields, setFieldsResult, 'photoDataUri');
   };
 
   const handleClear = () => {
-    setPhotoDataUris([]);
+    setUploadedFiles([]);
     setBillingResult(null);
     setFieldsResult(null);
   };
@@ -149,20 +169,20 @@ export function BillingExtractor() {
             </RadioGroup>
 
             <FileUploader 
-                onFileSelect={setPhotoDataUris} 
+                onFilesChange={setUploadedFiles}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
             />
 
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Button onClick={handleScanBilling} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleScanBilling} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
                 {isLoadingBilling ? <Loader2 className="animate-spin" /> : `Extract Bill Data`}
               </Button>
-              <Button onClick={handleGetFields} disabled={photoDataUris.length === 0 || isLoading} className="w-full">
+              <Button onClick={handleGetFields} disabled={uploadedFiles.length === 0 || isLoading} className="w-full">
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
-             {photoDataUris.length > 0 && (
+             {uploadedFiles.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear
                 </Button>

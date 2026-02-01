@@ -10,68 +10,62 @@ import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface FileUploaderProps {
-  onFileSelect: (dataUris: string[]) => void;
-  onFilesChange?: (files: File[]) => void;
+  onFilesChange: (files: File[]) => void;
   acceptedFileTypes?: string;
   multiple?: boolean;
 }
 
 export function FileUploader({
-  onFileSelect,
   onFilesChange,
   acceptedFileTypes = 'image/*,application/pdf',
   multiple = false,
 }: FileUploaderProps) {
   const [previews, setPreviews] = useState<string[]>([]);
-  const [fileNames, setFileNames] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [activePreview, setActivePreview] = useState<string | null>(null);
 
   const handleFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      const fileArray = Array.from(files);
-      onFilesChange?.(fileArray);
-
+    const selectedFiles = event.target.files;
+    if (selectedFiles && selectedFiles.length > 0) {
+      const fileArray = Array.from(selectedFiles);
+      
       const filePromises = fileArray.map(file => {
-        return new Promise<{ dataUri: string, name: string }>((resolve) => {
+        return new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => {
-            resolve({ dataUri: reader.result as string, name: file.name });
+            resolve(reader.result as string);
           };
           reader.readAsDataURL(file);
         });
       });
 
-      Promise.all(filePromises).then(results => {
-        const dataUris = results.map(r => r.dataUri);
-        const newFileNames = results.map(r => r.name);
-        
+      Promise.all(filePromises).then(newPreviews => {
         if (multiple) {
-            const allDataUris = [...previews, ...dataUris];
-            const allFileNames = [...fileNames, ...newFileNames];
-            setPreviews(allDataUris);
-            setFileNames(allFileNames);
-            onFileSelect(allDataUris);
+            const allFiles = [...files, ...fileArray];
+            const allPreviews = [...previews, ...newPreviews];
+            setFiles(allFiles);
+            setPreviews(allPreviews);
+            onFilesChange(allFiles);
             if (!activePreview) {
-              setActivePreview(dataUris[0]);
+              setActivePreview(newPreviews[0]);
             }
         } else {
-            setPreviews(dataUris);
-            setFileNames(newFileNames);
-            onFileSelect(dataUris);
-            setActivePreview(dataUris[0]);
+            setFiles(fileArray);
+            setPreviews(newPreviews);
+            onFilesChange(fileArray);
+            setActivePreview(newPreviews[0]);
         }
       });
     }
   };
   
   const handleRemoveFile = (index: number) => {
+    const newFiles = files.filter((_, i) => i !== index);
     const newPreviews = previews.filter((_, i) => i !== index);
-    const newFileNames = fileNames.filter((_, i) => i !== index);
+
+    setFiles(newFiles);
     setPreviews(newPreviews);
-    setFileNames(newFileNames);
-    onFileSelect(newPreviews);
-    onFilesChange?.(newPreviews.map(() => new File([], ""))); // This is a simplification; need original files if needed
+    onFilesChange(newFiles);
 
     if (activePreview === previews[index]) {
         setActivePreview(newPreviews.length > 0 ? newPreviews[0] : null);
@@ -79,10 +73,9 @@ export function FileUploader({
   };
 
   const handleReset = () => {
+    setFiles([]);
     setPreviews([]);
-    setFileNames([]);
-    onFileSelect([]);
-    onFilesChange?.([]);
+    onFilesChange([]);
     setActivePreview(null);
   };
 
@@ -98,7 +91,7 @@ export function FileUploader({
             isPdf(activePreview) ? (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 text-center">
                 <FileIcon className="w-16 h-16" />
-                <p className="mt-2 text-sm font-medium break-all">{fileNames[previews.indexOf(activePreview)]}</p>
+                <p className="mt-2 text-sm font-medium break-all">{files[previews.indexOf(activePreview)]?.name}</p>
               </div>
             ) : (
               <Image 
@@ -129,7 +122,7 @@ export function FileUploader({
                   {isPdf(preview) ? (
                     <FileIcon className="w-8 h-8 text-muted-foreground" />
                   ) : (
-                    <Image src={preview} alt={fileNames[index]} fill style={{objectFit: 'cover'}} />
+                    <Image src={preview} alt={files[index]?.name || ''} fill style={{objectFit: 'cover'}} />
                   )}
                   <Button 
                     variant="destructive" 
@@ -148,7 +141,7 @@ export function FileUploader({
           </div>
         )}
 
-        <p className="text-sm text-muted-foreground">{multiple ? `${fileNames.length} files selected` : (fileNames[0] || 'No file selected')}</p>
+        <p className="text-sm text-muted-foreground">{multiple ? `${files.length} files selected` : (files[0]?.name || 'No file selected')}</p>
         <div className="flex gap-2">
             <label htmlFor="file-reupload" className={cn(buttonVariants({ variant: 'outline' }), "cursor-pointer")}>
                 {multiple ? 'Add more files' : 'Change file'}
