@@ -72,7 +72,7 @@ export function createAdminPermissions(): UserPermissions {
         allPermissions[mod.id].read = true;
     }
     if ('subModules' in mod && mod.subModules) {
-      for (const subMod of (mod.subModules as any[])) {
+      for (const subMod of mod.subModules) {
         allPermissions[mod.id][subMod.id] = {};
         for (const perm of subMod.permissions) {
           allPermissions[mod.id][subMod.id][perm] = true;
