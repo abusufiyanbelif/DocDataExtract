@@ -36,12 +36,12 @@ export function DocuExtractHeader() {
   const isLoading = isSessionLoading || isBrandingLoading;
 
   return (
-    <header className="bg-card border-b p-4 shadow-sm">
+    <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
             {brandingSettings?.logoUrl ? (
                 <div className="relative h-16 w-16">
-                     <Image src={brandingSettings.logoUrl} alt="Company Logo" layout="fill" objectFit="contain" />
+                     <Image src={brandingSettings.logoUrl} alt="Company Logo" fill className="object-contain p-1" />
                 </div>
             ) : (
                 <>
