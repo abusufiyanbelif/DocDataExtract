@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -35,6 +36,7 @@ service cloud.firestore {
       return isSignedIn() && (
         isAdmin() ||
         (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
           'permissions' in getUserData() &&
           (
             (
@@ -82,7 +84,7 @@ service cloud.firestore {
 
     match /settings/branding {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if hasPermission(['settings'], 'update');
     }
     
     match /user_lookups/{lookupId} {

@@ -198,6 +198,39 @@ export function PermissionsTable({ permissions, onPermissionChange, role, disabl
             </TableCell>
           </TableRow>
 
+          {/* Leads */}
+          <TableRow>
+            <TableCell className="font-medium">Leads</TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads.create', false)}
+                onCheckedChange={handleCheckedChange('leads.create')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads.read', false)}
+                onCheckedChange={handleCheckedChange('leads.read')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads.update', false)}
+                onCheckedChange={handleCheckedChange('leads.update')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads.delete', false)}
+                onCheckedChange={handleCheckedChange('leads.delete')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+          </TableRow>
+          
           {/* Other Modules */}
           <TableRow>
             <TableCell className="font-medium">Extractor</TableCell>
@@ -236,6 +269,25 @@ export function PermissionsTable({ permissions, onPermissionChange, role, disabl
               />
             </TableCell>
             <TableCell />
+            <TableCell />
+          </TableRow>
+          <TableRow>
+            <TableCell className="font-medium">Settings</TableCell>
+            <TableCell />
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'settings.read', false)}
+                onCheckedChange={handleCheckedChange('settings.read')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'settings.update', false)}
+                onCheckedChange={handleCheckedChange('settings.update')}
+                disabled={isDisabled}
+              />
+            </TableCell>
             <TableCell />
           </TableRow>
         </TableBody>
