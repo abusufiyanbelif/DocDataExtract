@@ -3,10 +3,8 @@
 
 import { useState } from 'react';
 import { CreditCard, Loader2, Download, Wand2, ToyBrick, Trash2 } from 'lucide-react';
-import { extractBillingDataFromImage, type ExtractBillingDataOutput } from '@/ai/flows/extract-billing-data';
-import { extractDynamicFormFromImage, type ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
-import { useStorage } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import type { ExtractBillingDataOutput } from '@/ai/flows/extract-billing-data';
+import type { ExtractDynamicFormOutput } from '@/ai/flows/extract-dynamic-form';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +26,6 @@ function ResultDisplay({ label, value }: { label: string; value: string }) {
 }
 
 export function BillingExtractor() {
-  const [photoDataUris, setPhotoDataUris] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [billingResult, setBillingResult] = useState<ExtractBillingDataOutput | null>(null);
   const [fieldsResult, setFieldsResult] = useState<ExtractDynamicFormOutput | null>(null);
@@ -36,37 +33,56 @@ export function BillingExtractor() {
   const [isLoadingFields, setIsLoadingFields] = useState(false);
   const [uploadType, setUploadType] = useState<'image' | 'pdf'>('image');
   const { toast } = useToast();
-  const storage = useStorage();
+
+  const processFile = (file: File, apiPath: string, loadingSetter: (loading: boolean) => void, resultSetter: (result: any) => void, apiBodyKey: string) => {
+    loadingSetter(true);
+    resultSetter(null);
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUri = e.target?.result as string;
+      if (!dataUri) {
+        toast({ title: "Read Error", description: "Could not read the uploaded file.", variant: "destructive" });
+        loadingSetter(false);
+        return;
+      }
+      
+      try {
+        const apiResponse = await fetch(apiPath, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [apiBodyKey]: dataUri }),
+        });
+
+        if (!apiResponse.ok) {
+            const errorData = await apiResponse.json();
+            throw new Error(errorData.error || 'The server returned an error.');
+        }
+
+        const response = await apiResponse.json();
+        resultSetter(response);
+
+      } catch (error: any) {
+        console.warn(`${apiPath} failed:`, error);
+        toast({ title: 'Extraction Failed', description: error.message || 'Could not process the document.', variant: 'destructive' });
+      } finally {
+        loadingSetter(false);
+      }
+    };
+    reader.onerror = () => {
+        toast({ title: "File Error", description: "An error occurred while reading the file.", variant: "destructive" });
+        loadingSetter(false);
+    };
+    reader.readAsDataURL(file);
+  }
 
   const handleScanBilling = async () => {
     if (uploadedFiles.length === 0) {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
-    setIsLoadingBilling(true);
-    setBillingResult(null);
-
-    const file = uploadedFiles[0];
-    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-    const fileRef = storageRef(storage!, tempPath);
-
-    try {
-      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-
-      toast({ title: "Extracting bill data...", description: "Please wait." });
-      const response = await extractBillingDataFromImage({ photoDataUri: downloadURL });
-      setBillingResult(response);
-    } catch (error: any) {
-      console.warn("Billing scan failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not extract billing data. Please try another image or enter the data manually.`, variant: 'destructive' });
-    } finally {
-      if (fileRef) {
-        await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
-      }
-      setIsLoadingBilling(false);
-    }
+    toast({ title: "Extracting bill data...", description: "Please wait." });
+    processFile(uploadedFiles[0], '/api/extract-billing', setIsLoadingBilling, setBillingResult, 'photoDataUri');
   };
   
   const handleGetFields = async () => {
@@ -74,34 +90,11 @@ export function BillingExtractor() {
       toast({ title: 'Error', description: `Please upload an ${uploadType} first.`, variant: 'destructive' });
       return;
     }
-    setIsLoadingFields(true);
-    setFieldsResult(null);
-
-    const file = uploadedFiles[0];
-    const tempPath = `temp-scans/${Date.now()}-${file.name}`;
-    const fileRef = storageRef(storage!, tempPath);
-
-    try {
-      toast({ title: "Preparing file...", description: "Uploading for secure analysis." });
-      await uploadBytes(fileRef, file);
-      const downloadURL = await getDownloadURL(fileRef);
-      
-      toast({ title: "Extracting fields...", description: "Please wait." });
-      const response = await extractDynamicFormFromImage({ photoDataUri: downloadURL });
-      setFieldsResult(response);
-    } catch (error: any) {
-      console.warn("Get fields failed:", error);
-      toast({ title: 'Extraction Failed', description: error.message || `Could not extract fields from the ${uploadType}.`, variant: 'destructive' });
-    } finally {
-       if (fileRef) {
-        await deleteObject(fileRef).catch(err => console.error("Failed to delete temp file", err));
-      }
-      setIsLoadingFields(false);
-    }
+    toast({ title: "Extracting fields...", description: "Please wait." });
+    processFile(uploadedFiles[0], '/api/extract-dynamic-form', setIsLoadingFields, setFieldsResult, 'photoDataUri');
   };
 
   const handleClear = () => {
-    setPhotoDataUris([]);
     setUploadedFiles([]);
     setBillingResult(null);
     setFieldsResult(null);
@@ -176,7 +169,6 @@ export function BillingExtractor() {
             </RadioGroup>
 
             <FileUploader 
-                onFileSelect={setPhotoDataUris} 
                 onFilesChange={setUploadedFiles}
                 acceptedFileTypes={acceptedFileTypes}
                 key={uploadType}
@@ -190,7 +182,7 @@ export function BillingExtractor() {
                 {isLoadingFields ? <Loader2 className="animate-spin" /> : 'Get Fields'}
               </Button>
             </div>
-             {photoDataUris.length > 0 && (
+             {uploadedFiles.length > 0 && (
                 <Button onClick={handleClear} variant="outline" className="w-full">
                     <Trash2 className="mr-2 h-4 w-4" /> Clear
                 </Button>
