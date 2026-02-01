@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { onSnapshot, Query, DocumentData } from 'firebase/firestore';
-import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export function useCollection<T extends DocumentData>(
   ref: Query | null
