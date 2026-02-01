@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -12,7 +11,7 @@ export function Watermark() {
     }
 
     return (
-        <div className="fixed inset-0 z-[-10] flex items-center justify-center p-8 opacity-[0.07] mix-blend-darken pointer-events-none">
+        <div className="fixed inset-0 z-[-10] flex items-center justify-center p-8 opacity-[0.15] mix-blend-multiply pointer-events-none">
             <Image
                 src={brandingSettings.logoUrl}
                 alt="Watermark"
