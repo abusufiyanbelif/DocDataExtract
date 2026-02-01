@@ -101,8 +101,12 @@ export default function LoginPage() {
     }
 
     setIsSendingReset(true);
+    const actionCodeSettings = {
+        url: `${window.location.origin}/login`,
+        handleCodeInApp: false,
+    };
     try {
-        await sendPasswordResetEmail(auth, resetEmail);
+        await sendPasswordResetEmail(auth, resetEmail, actionCodeSettings);
         // Always show success to prevent user enumeration
         toast({
             title: "Password Reset Email Sent",
