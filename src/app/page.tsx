@@ -28,7 +28,7 @@ export default function LandingPage() {
 
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <div className="flex flex-col min-h-screen text-foreground">
       <DocuExtractHeader />
       <main className="flex flex-grow flex-col items-center justify-center">
         <div className="container mx-auto flex flex-col items-center justify-center text-center p-8">

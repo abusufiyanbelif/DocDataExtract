@@ -136,7 +136,7 @@ export default function LoginPage() {
 
   if (!isFirebaseConfigured) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
             <Card className="w-full max-w-md">
                 <CardHeader className="text-center">
                     <div className="flex justify-center items-center gap-3 mb-4">
@@ -161,7 +161,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
        <div className="w-full max-w-sm">
             <div className="mb-4">
                 <Button variant="outline" asChild>

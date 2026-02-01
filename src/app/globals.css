@@ -37,13 +37,14 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
   }
 }
 
 .watermark-container {
   min-height: 100vh;
   position: relative;
+  @apply bg-background;
 }
 
 .watermark-container::before {
