@@ -64,7 +64,7 @@ export default function CampaignPage() {
   const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
 
   const handleRowClick = (campaignId: string) => {
-    router.push(`/campaign/${campaignId}/summary`);
+    router.push(`/campaign-members/${campaignId}/summary`);
   };
   
   const handleDeleteClick = (campaign: Campaign) => {
@@ -209,7 +209,6 @@ export default function CampaignPage() {
     );
   };
   
-  // Deny access only if a user is logged in but lacks permissions. Public users can view.
   if (!isLoading && userProfile && !canViewCampaigns) {
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -286,7 +285,7 @@ export default function CampaignPage() {
             {isLoading && <Skeleton className="h-10 w-44" />}
             {!isLoading && canCreate && (
               <Button asChild>
-                <Link href="/campaign/create">
+                <Link href="/campaign-members/create">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Campaign
                 </Link>
@@ -346,7 +345,7 @@ export default function CampaignPage() {
                 {!isLoading && filteredAndSortedCampaigns.length === 0 && (
                     <TableRow>
                         <TableCell colSpan={canDelete ? 7 : 6} className="text-center text-muted-foreground h-24">
-                           No campaigns found matching your criteria. {canCreate && campaigns?.length === 0 && <Link href="/campaign/create" className="text-primary underline">Create one now</Link>}
+                           No campaigns found matching your criteria. {canCreate && campaigns?.length === 0 && <Link href="/campaign-members/create" className="text-primary underline">Create one now</Link>}
                         </TableCell>
                     </TableRow>
                 )}

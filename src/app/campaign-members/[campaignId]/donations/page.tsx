@@ -351,7 +351,7 @@ export default function DonationsPage() {
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
             <Button variant="outline" asChild>
-                <Link href="/campaign">
+                <Link href="/campaign-members">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Campaigns
                 </Link>
@@ -366,22 +366,22 @@ export default function DonationsPage() {
                 <div className="flex w-max space-x-4">
                      {canReadSummary && (
                       <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                          <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
+                          <Link href={`/campaign-members/${campaignId}/summary`}>Summary</Link>
                       </Button>
                     )}
                     {canReadRation && (
                       <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                          <Link href={`/campaign/${campaignId}`}>{campaign?.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
+                          <Link href={`/campaign-members/${campaignId}`}>{campaign?.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
                       </Button>
                     )}
                     {canReadBeneficiaries && (
                       <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                          <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
+                          <Link href={`/campaign-members/${campaignId}/beneficiaries`}>Beneficiary List</Link>
                       </Button>
                     )}
                     {canReadDonations && (
                       <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
-                          <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
+                          <Link href={`/campaign-members/${campaignId}/donations`}>Donations</Link>
                       </Button>
                     )}
                 </div>
@@ -518,11 +518,13 @@ export default function DonationsPage() {
                                 <TableCell>{donation.transactionId || 'N/A'}</TableCell>
                                 <TableCell>{donation.donationDate}</TableCell>
                                 <TableCell>
-                                    {donation.screenshotUrl && (
+                                    {donation.screenshotUrl && donation.screenshotIsPublic && (
                                     <Button variant="outline" size="sm" onClick={() => donation.screenshotUrl && handleViewImage(donation.screenshotUrl)}>
                                         <Eye className="mr-2 h-4 w-4" /> View
                                     </Button>
                                     )}
+                                     {donation.screenshotUrl && !donation.screenshotIsPublic && "Private"}
+                                     {!donation.screenshotUrl && "N/A"}
                                 </TableCell>
                                 <TableCell>{donation.uploadedBy}</TableCell>
                             </TableRow>

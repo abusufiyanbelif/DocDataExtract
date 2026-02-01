@@ -41,14 +41,16 @@ export function DocuExtractHeader() {
             </h1>
         </Link>
         
-        {user ? (
+        {isLoading && <Skeleton className="h-10 w-10 rounded-full" />}
+
+        {!isLoading && user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar>
                   <AvatarImage src={user.photoURL || ''} alt={userProfile?.name || 'User'} />
                   <AvatarFallback>
-                    {isLoading ? <Skeleton className="h-full w-full" /> : getInitials(userProfile?.name)}
+                    {getInitials(userProfile?.name)}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -56,19 +58,10 @@ export function DocuExtractHeader() {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  {isLoading ? (
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-3 w-32" />
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-sm font-medium leading-none">{userProfile?.name || 'User'}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
-                    </>
-                  )}
+                  <p className="text-sm font-medium leading-none">{userProfile?.name || 'User'}</p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user.email}
+                  </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -85,15 +78,6 @@ export function DocuExtractHeader() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          !isLoading && (
-            <Button asChild>
-                <Link href="/login">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Login
-                </Link>
-            </Button>
-          )
         )}
       </div>
     </header>

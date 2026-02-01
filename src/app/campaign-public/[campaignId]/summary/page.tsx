@@ -1,11 +1,10 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
-import { doc, collection, updateDoc, query, where, DocumentReference } from 'firebase/firestore';
+import React, { useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useFirestore, useDoc, useCollection } from '@/firebase';
+import { doc, collection, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import {
   BarChart,
@@ -23,10 +22,8 @@ import type { Campaign, Beneficiary, Donation } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, Wallet, Share2, Hourglass, LogIn } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -43,11 +40,7 @@ import {
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
 import { useToast } from '@/hooks/use-toast';
-import { Label } from '@/components/ui/label';
-import { get } from '@/lib/utils';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-
 
 const donationTypeChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
@@ -64,16 +57,13 @@ const donationPaymentTypeChartConfig = {
     Other: { label: "Other", color: "hsl(var(--chart-4))" },
 } satisfies ChartConfig;
 
-export default function CampaignSummaryPage() {
+export default function PublicCampaignSummaryPage() {
     const params = useParams();
+    const router = useRouter();
     const campaignId = params.campaignId as string;
     const firestore = useFirestore();
     const { toast } = useToast();
-    const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
-    // State for edit mode and form fields
-    const [editMode, setEditMode] = useState(false);
-    const [editableCampaign, setEditableCampaign] = useState<Partial<Campaign>>({});
     const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('All');
     const [isSharing, setIsSharing] = useState(false);
 
@@ -89,72 +79,6 @@ export default function CampaignSummaryPage() {
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
     const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
     
-    // Set editable campaign data when not in edit mode
-    useEffect(() => {
-        if (campaign && !editMode) {
-             setEditableCampaign({
-                name: campaign.name || '',
-                description: campaign.description || '',
-                startDate: campaign.startDate || '',
-                endDate: campaign.endDate || '',
-                category: campaign.category || 'General',
-                status: campaign.status || 'Upcoming',
-            });
-        }
-    }, [campaign, editMode]);
-    
-    const canReadSummary = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.summary?.read;
-    const canReadRation = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.ration?.read;
-    const canReadBeneficiaries = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.read;
-    const canReadDonations = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.donations?.read;
-    const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.update', false) || get(userProfile, 'permissions.campaigns.summary.update', false);
-
-    const handleSave = () => {
-        if (!campaignDocRef || !userProfile || !canUpdate) return;
-        
-        const saveData = {
-            name: editableCampaign.name || '',
-            description: editableCampaign.description || '',
-            startDate: editableCampaign.startDate || '',
-            endDate: editableCampaign.endDate || '',
-            category: editableCampaign.category || 'General',
-            status: editableCampaign.status || 'Upcoming',
-        };
-
-        updateDoc(campaignDocRef, saveData)
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: campaignDocRef.path,
-                    operation: 'update',
-                    requestResourceData: saveData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            })
-            .finally(() => {
-                toast({ title: 'Success', description: 'Campaign summary updated.', variant: 'success' });
-                setEditMode(false);
-            });
-    };
-    
-    const handleEditClick = () => {
-        if (campaign) {
-            setEditableCampaign({
-                name: campaign.name || '',
-                description: campaign.description || '',
-                startDate: campaign.startDate || '',
-                endDate: campaign.endDate || '',
-                category: campaign.category || 'General',
-                status: campaign.status || 'Upcoming',
-            });
-        }
-        setEditMode(true);
-    };
-
-    const handleCancel = () => {
-        setEditMode(false);
-        // The useEffect will reset the editableCampaign state to match the campaign data
-    };
-
     // Memoized calculations
     const summaryData = useMemo(() => {
         if (!beneficiaries || !donations || !campaign) return null;
@@ -254,7 +178,7 @@ export default function CampaignSummaryPage() {
         };
     }, [beneficiaries, donations, campaign, donationChartFilter]);
     
-    const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading;
+    const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading;
     
     const handleShare = async () => {
         if (!campaign || !summaryData) {
@@ -302,7 +226,6 @@ Please donate and share this message. Every contribution helps!
             try {
                 await navigator.share(shareData);
             } catch (err) {
-                // Don't show toast if user cancels share dialog.
                 if ((err as Error).name !== 'AbortError') {
                     console.warn('Share failed, falling back to clipboard.', err);
                     try {
@@ -359,7 +282,7 @@ Please donate and share this message. Every contribution helps!
                 <main className="container mx-auto p-4 md:p-8 text-center">
                     <p className="text-lg text-muted-foreground">Campaign not found.</p>
                     <Button asChild className="mt-4">
-                        <Link href="/campaign">
+                        <Link href="/campaign-public">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Campaigns
                         </Link>
@@ -375,7 +298,7 @@ Please donate and share this message. Every contribution helps!
             <main className="container mx-auto p-4 md:p-8">
                 <div className="mb-4">
                     <Button variant="outline" asChild>
-                        <Link href="/campaign">
+                        <Link href="/campaign-public">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Campaigns
                         </Link>
@@ -383,97 +306,21 @@ Please donate and share this message. Every contribution helps!
                 </div>
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                      <div className="space-y-1">
-                        {editMode ? (
-                           <Input
-                                id="name"
-                                value={editableCampaign.name || ''}
-                                onChange={(e) => setEditableCampaign(p => ({...p, name: e.target.value}))}
-                                className="text-3xl font-bold h-auto p-0 border-0 shadow-none focus-visible:ring-0"
-                            />
-                        ) : (
-                            <h1 className="text-3xl font-bold">{campaign.name}</h1>
-                        )}
-                        {editMode ? (
-                             <Select
-                                value={editableCampaign.status}
-                                onValueChange={(value) => setEditableCampaign(p => ({...p, status: value as any}))}
-                            >
-                                <SelectTrigger className="w-fit border-0 shadow-none focus:ring-0 p-0 h-auto text-muted-foreground [&>svg]:ml-1">
-                                    <SelectValue placeholder="Select a status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Upcoming">Upcoming</SelectItem>
-                                    <SelectItem value="Active">Active</SelectItem>
-                                    <SelectItem value="Completed">Completed</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        ): (
-                            <p className="text-muted-foreground">{campaign.status}</p>
-                        )}
+                        <h1 className="text-3xl font-bold">{campaign.name}</h1>
+                        <p className="text-muted-foreground">{campaign.status}</p>
                     </div>
                     <div className="flex gap-2">
-                        {!editMode && (
-                            <Button onClick={handleShare} variant="outline" disabled={isSharing}>
-                                {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
-                                Share
-                            </Button>
-                        )}
-                        {canUpdate && userProfile && (
-                            !editMode ? (
-                                <Button onClick={handleEditClick}>
-                                    <Edit className="mr-2 h-4 w-4" /> Edit Summary
-                                </Button>
-                            ) : (
-                                <div className="flex gap-2">
-                                    <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-                                    <Button onClick={handleSave}>
-                                        <Save className="mr-2 h-4 w-4" /> Save
-                                    </Button>
-                                </div>
-                            )
-                        )}
-                        {!isProfileLoading && !userProfile && (
-                            <Button asChild>
-                                <Link href="/login">
-                                    <LogIn className="mr-2 h-4 w-4" />
-                                    Organization members login
-                                </Link>
-                            </Button>
-                        )}
+                        <Button onClick={handleShare} variant="outline" disabled={isSharing}>
+                            {isSharing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
+                            Share
+                        </Button>
+                        <Button asChild>
+                            <Link href="/login">
+                                <LogIn className="mr-2 h-4 w-4" />
+                                Organization members login
+                            </Link>
+                        </Button>
                     </div>
-                </div>
-
-                <div className="border-b mb-4">
-                    <ScrollArea className="w-full whitespace-nowrap">
-                        <div className="flex w-max space-x-4">
-                            {userProfile && canReadSummary && (
-                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
-                                  <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
-                              </Button>
-                            )}
-                            {!userProfile && (
-                                <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
-                                    <span className="cursor-default">Summary</span>
-                                </Button>
-                            )}
-                            {userProfile && canReadRation && (
-                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                                  <Link href={`/campaign/${campaignId}`}>{campaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
-                              </Button>
-                            )}
-                            {userProfile && canReadBeneficiaries && (
-                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                                  <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
-                              </Button>
-                            )}
-                            {userProfile && canReadDonations && (
-                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                                  <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
-                              </Button>
-                            )}
-                        </div>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
                 </div>
 
                 <div className="space-y-6">
@@ -482,72 +329,23 @@ Please donate and share this message. Every contribution helps!
                             <CardTitle>Campaign Details</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div>
-                                <Label htmlFor="description" className="text-sm font-medium text-muted-foreground">Description</Label>
-                                {editMode && canUpdate ? (
-                                    <Textarea
-                                        id="description"
-                                        value={editableCampaign.description}
-                                        onChange={(e) => setEditableCampaign(p => ({...p, description: e.target.value}))}
-                                        className="mt-1"
-                                        rows={4}
-                                    />
-                                ) : (
-                                    <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
-                                )}
-                            </div>
+                            <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-1">
-                                    <Label className="text-sm font-medium text-muted-foreground">Target Amount (Calculated)</Label>
+                                    <p className="text-sm font-medium text-muted-foreground">Target Amount (Calculated)</p>
                                     <p className="mt-1 text-lg font-semibold">Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="category" className="text-sm font-medium text-muted-foreground">Category</Label>
-                                    {editMode && canUpdate ? (
-                                        <Select
-                                            value={editableCampaign.category}
-                                            onValueChange={(value) => setEditableCampaign(p => ({...p, category: value as any}))}
-                                        >
-                                            <SelectTrigger id="category" className="mt-1">
-                                                <SelectValue placeholder="Select a category" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Ration">Ration</SelectItem>
-                                                <SelectItem value="Relief">Relief</SelectItem>
-                                                <SelectItem value="General">General</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{campaign.category}</p>
-                                    )}
+                                    <p className="text-sm font-medium text-muted-foreground">Category</p>
+                                    <p className="mt-1 text-lg font-semibold">{campaign.category}</p>
                                 </div>
                                  <div className="space-y-1">
-                                    <Label htmlFor="startDate" className="text-sm font-medium text-muted-foreground">Start Date</Label>
-                                    {editMode && canUpdate ? (
-                                        <Input
-                                            id="startDate"
-                                            type="date"
-                                            value={editableCampaign.startDate}
-                                            onChange={(e) => setEditableCampaign(p => ({...p, startDate: e.target.value}))}
-                                            className="mt-1"
-                                        />
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{campaign.startDate}</p>
-                                    )}
+                                    <p className="text-sm font-medium text-muted-foreground">Start Date</p>
+                                    <p className="mt-1 text-lg font-semibold">{campaign.startDate}</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <Label htmlFor="endDate" className="text-sm font-medium text-muted-foreground">End Date</Label>
-                                    {editMode && canUpdate ? (
-                                        <Input
-                                            id="endDate"
-                                            type="date"
-                                            value={editableCampaign.endDate}
-                                            onChange={(e) => setEditableCampaign(p => ({...p, endDate: e.target.value}))}
-                                            className="mt-1"
-                                        />
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{campaign.endDate}</p>
-                                    )}
+                                    <p className="text-sm font-medium text-muted-foreground">End Date</p>
+                                    <p className="mt-1 text-lg font-semibold">{campaign.endDate}</p>
                                 </div>
                             </div>
                         </CardContent>

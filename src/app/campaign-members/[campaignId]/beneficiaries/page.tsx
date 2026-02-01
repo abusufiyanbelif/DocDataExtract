@@ -561,7 +561,7 @@ export default function BeneficiariesPage() {
             <main className="container mx-auto p-4 md:p-8 text-center">
                 <p className="text-lg text-muted-foreground">Campaign not found.</p>
                 <Button asChild className="mt-4">
-                    <Link href="/campaign">
+                    <Link href="/campaign-members">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to Campaigns
                     </Link>
@@ -577,7 +577,7 @@ export default function BeneficiariesPage() {
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
             <Button variant="outline" asChild>
-                <Link href="/campaign">
+                <Link href="/campaign-members">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Campaigns
                 </Link>
@@ -592,22 +592,22 @@ export default function BeneficiariesPage() {
                 <div className="flex w-max space-x-4">
                     {canReadSummary && (
                       <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                          <Link href={`/campaign/${campaignId}/summary`}>Summary</Link>
+                          <Link href={`/campaign-members/${campaignId}/summary`}>Summary</Link>
                       </Button>
                     )}
                     {canReadRation && (
                       <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                          <Link href={`/campaign/${campaignId}`}>{campaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
+                          <Link href={`/campaign-members/${campaignId}`}>{campaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
                       </Button>
                     )}
                     {canReadBeneficiaries && (
                       <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
-                          <Link href={`/campaign/${campaignId}/beneficiaries`}>Beneficiary List</Link>
+                          <Link href={`/campaign-members/${campaignId}/beneficiaries`}>Beneficiary List</Link>
                       </Button>
                     )}
                      {canReadDonations && (
                       <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                          <Link href={`/campaign/${campaignId}/donations`}>Donations</Link>
+                          <Link href={`/campaign-members/${campaignId}/donations`}>Donations</Link>
                       </Button>
                     )}
                 </div>
@@ -763,11 +763,13 @@ export default function BeneficiariesPage() {
                                 <TableCell>{beneficiary.idProofType}</TableCell>
                                 <TableCell>{beneficiary.idNumber}</TableCell>
                                 <TableCell>
-                                    {beneficiary.idProofUrl ? (
+                                    {beneficiary.idProofUrl && beneficiary.idProofIsPublic && (
                                     <Button variant="outline" size="sm" onClick={() => handleViewImage(beneficiary.idProofUrl!)}>
                                         <Eye className="mr-2 h-4 w-4" /> View
                                     </Button>
-                                    ) : "N/A"}
+                                    )}
+                                    {beneficiary.idProofUrl && !beneficiary.idProofIsPublic && "Private"}
+                                    {!beneficiary.idProofUrl && "N/A"}
                                 </TableCell>
                                 <TableCell>{beneficiary.referralBy}</TableCell>
                                 <TableCell className="text-right font-medium">Rupee {(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>

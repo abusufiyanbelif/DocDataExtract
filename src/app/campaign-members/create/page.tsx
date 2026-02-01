@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,7 +10,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
@@ -97,7 +98,7 @@ export default function CreateCampaignPage() {
     addDoc(collection(firestore, 'campaigns'), newCampaignData)
       .then((docRef) => {
         toast({ title: 'Success', description: 'Campaign created successfully.', variant: 'success' });
-        router.push(`/campaign`);
+        router.push(`/campaign-members`);
       })
       .catch((serverError) => {
         const permissionError = new FirestorePermissionError({
@@ -138,7 +139,7 @@ export default function CreateCampaignPage() {
             <main className="container mx-auto p-4 md:p-8">
                 <div className="mb-4">
                     <Button variant="outline" asChild>
-                        <Link href="/campaign">
+                        <Link href="/campaign-members">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Campaigns
                         </Link>
@@ -162,7 +163,7 @@ export default function CreateCampaignPage() {
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
           <Button variant="outline" asChild>
-            <Link href="/campaign">
+            <Link href="/campaign-members">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Campaigns
             </Link>

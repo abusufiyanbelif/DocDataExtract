@@ -29,10 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return; // Don't do anything while auth is loading
     }
     
-    const isPublicPath = publicPaths.includes(pathname) ||
-                         pathname === '/campaign' ||
-                         /^\/campaign\/[^/]+\/summary$/.test(pathname);
-
+    const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
 
     if (!user && !isPublicPath) {
       router.push('/login');
@@ -46,9 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <FullScreenLoader message="Initializing..." />;
   }
   
-  const isPublicPath = publicPaths.includes(pathname) ||
-                       pathname === '/campaign' ||
-                       /^\/campaign\/[^/]+\/summary$/.test(pathname);
+  const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
 
 
   // If a redirect is needed, show a loader while the useEffect triggers the navigation
