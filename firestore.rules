@@ -13,8 +13,8 @@ service cloud.firestore {
     }
     
     function isOwnerOfUserKey(userKey) {
-        let userData = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-        return userData.userKey == userKey;
+        return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userKey == userKey;
     }
 
     // Get the requesting user's profile data from the 'users' collection
@@ -24,31 +24,35 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserData().role == 'Admin';
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             getUserData().role == 'Admin';
     }
 
     // Check for a specific permission in the user's profile
+    // This function supports a maximum path depth of 2 segments.
     function hasPermission(pathSegments, permission) {
-      // A user must be signed in to have any permissions.
-      if (!isSignedIn()) {
-        return false;
-      }
-      // Admins have all permissions implicitly
-      if (isAdmin()) {
-        return true;
-      }
-      
-      let perms = getUserData().permissions;
-      // Traverse the permission path
-      for (let i = 0; i < pathSegments.length; i = i + 1) {
-        if (pathSegments[i] in perms) {
-          perms = perms[pathSegments[i]];
-        } else {
-          return false; // Path doesn't exist
-        }
-      }
-      // Check the final permission
-      return (permission in perms) && perms[permission] == true;
+      return isSignedIn() && (
+        isAdmin() ||
+        (
+          'permissions' in getUserData() &&
+          (
+            (
+              pathSegments.size() == 1 &&
+              pathSegments[0] in getUserData().permissions &&
+              permission in getUserData().permissions[pathSegments[0]] &&
+              getUserData().permissions[pathSegments[0]][permission] == true
+            ) ||
+            (
+              pathSegments.size() == 2 &&
+              pathSegments[0] in getUserData().permissions &&
+              pathSegments[1] in getUserData().permissions[pathSegments[0]] &&
+              permission in getUserData().permissions[pathSegments[0]][pathSegments[1]] &&
+              getUserData().permissions[pathSegments[0]][pathSegments[1]][permission] == true
+            )
+          )
+        )
+      );
     }
     
     function canReadCampaign() {
@@ -60,7 +64,7 @@ service cloud.firestore {
     }
 
     function campaignSummaryKeys() { 
-      return ['name', 'category', 'description', 'targetAmount', 'startDate', 'endDate', 'status']; 
+      return ['name', 'category', 'description', 'targetAmount', 'startDate', 'endDate', 'status', 'documents']; 
     }
     function campaignRationKeys() { 
       return ['priceDate', 'shopName', 'shopContact', 'shopAddress', 'rationLists']; 
@@ -106,7 +110,7 @@ service cloud.firestore {
 
     match /campaigns/{campaignId} {
       // Allow public read for all campaign data
-      allow read: if true;
+      allow get, list: if true;
       
       // Creating a campaign
       allow create: if hasPermission(['campaigns'], 'create');
@@ -114,7 +118,6 @@ service cloud.firestore {
       // Updating a campaign document itself requires specific permissions
       allow update: if 
         hasPermission(['campaigns'], 'update') ||
-        isAdmin() ||
         (
           hasPermission(['campaigns', 'summary'], 'update') &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(campaignSummaryKeys())
@@ -129,7 +132,7 @@ service cloud.firestore {
 
       match /beneficiaries/{beneficiaryId} {
         // Allow public read for all beneficiary data
-        allow read: if true;
+        allow get, list: if true;
         
         allow create: if hasPermission(['campaigns', 'beneficiaries'], 'create');
         allow update: if hasPermission(['campaigns', 'beneficiaries'], 'update');
@@ -142,7 +145,6 @@ service cloud.firestore {
       allow create: if hasPermission(['leads'], 'create');
       allow update: if 
         hasPermission(['leads'], 'update') ||
-        isAdmin() ||
         (
           hasPermission(['leads', 'summary'], 'update') &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(campaignSummaryKeys())
@@ -163,7 +165,7 @@ service cloud.firestore {
 
     match /donations/{donationId} {
         // Allow public read for all donation data
-        allow read: if true;
+        allow get, list: if true;
         
         allow create: if hasPermission(['campaigns', 'donations'], 'create');
         allow update: if hasPermission(['campaigns', 'donations'], 'update');
