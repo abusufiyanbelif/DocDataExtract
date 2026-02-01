@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -29,7 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return; // Don't do anything while auth is loading
     }
     
-    const isPublicPath = publicPaths.includes(pathname);
+    // The root page, campaign pages, login, and seed pages are public.
+    const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign');
 
     if (!user && !isPublicPath) {
       router.push('/login');
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <FullScreenLoader message="Initializing..." />;
   }
   
-  const isPublicPath = publicPaths.includes(pathname);
+  const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign');
 
   // If a redirect is needed, show a loader while the useEffect triggers the navigation
   if (!user && !isPublicPath) {
@@ -56,5 +56,3 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-
-    
