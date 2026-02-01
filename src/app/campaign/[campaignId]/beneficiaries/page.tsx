@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useUser } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, setDoc, DocumentReference } from 'firebase/firestore';
 import type { Beneficiary, Campaign, RationItem } from '@/lib/types';
@@ -61,18 +61,19 @@ export default function BeneficiariesPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
+  const { user } = useUser();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || !userProfile?.id) return null;
+    if (!firestore || !campaignId || !user) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
-  }, [firestore, campaignId, userProfile?.id]);
+  }, [firestore, campaignId, user]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const beneficiariesCollectionRef = useMemo(() => {
-    if (!firestore || !campaignId || !userProfile?.id) return null;
+    if (!firestore || !campaignId || !user) return null;
     return collection(firestore, `campaigns/${campaignId}/beneficiaries`);
-  }, [firestore, campaignId, userProfile?.id]);
+  }, [firestore, campaignId, user]);
   const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -131,7 +132,7 @@ export default function BeneficiariesPage() {
     setIsImageViewerOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!beneficiaryToDelete || !firestore || !storage || !campaignId || !canDelete) return;
 
     const beneficiaryData = beneficiaries.find(b => b.id === beneficiaryToDelete);
@@ -156,13 +157,10 @@ export default function BeneficiariesPage() {
     };
 
     if (idProofUrl) {
-        deleteObject(storageRef(storage, idProofUrl))
-            .finally(() => {
-                deleteDocument();
-            });
-    } else {
-        deleteDocument();
+        await deleteObject(storageRef(storage, idProofUrl))
+            .catch(err => console.warn("Failed to delete ID proof from storage:", err));
     }
+    deleteDocument();
   };
   
   const handleFormSubmit = async (data: BeneficiaryFormData) => {
@@ -185,6 +183,10 @@ export default function BeneficiariesPage() {
         }
     }
 
+    setIsFormOpen(false);
+    setEditingBeneficiary(null);
+    toast({ title: "Saving...", description: `Please wait while the beneficiary is being ${editingBeneficiary ? 'updated' : 'added'}.`});
+
     const docRef = editingBeneficiary
         ? doc(firestore, `campaigns/${campaignId}/beneficiaries`, editingBeneficiary.id)
         : doc(collection(firestore, `campaigns/${campaignId}/beneficiaries`));
@@ -195,7 +197,6 @@ export default function BeneficiariesPage() {
         let idProofUrl = editingBeneficiary?.idProofUrl || '';
     
         if (data.idProofDeleted && idProofUrl) {
-            toast({ title: "Deleting ID Proof...", description: 'Removing the old file from storage.'});
             await deleteObject(storageRef(storage, idProofUrl));
             idProofUrl = '';
         }
@@ -211,10 +212,6 @@ export default function BeneficiariesPage() {
             }
 
             const file = fileList[0];
-            toast({
-                title: "Uploading ID Proof...",
-                description: `Please wait while '${file.name}' is uploaded.`,
-            });
             
             const { default: Resizer } = await import('react-image-file-resizer');
             const resizedBlob = await new Promise<Blob>((resolve) => {
@@ -270,9 +267,6 @@ export default function BeneficiariesPage() {
         } else {
             toast({ title: 'Save Failed', description: error.message || 'An unexpected error occurred.', variant: 'destructive' });
         }
-    } finally {
-        setIsFormOpen(false);
-        setEditingBeneficiary(null);
     }
   };
 
@@ -368,7 +362,7 @@ export default function BeneficiariesPage() {
                 batch.set(docRef, beneficiary);
             });
             
-            batch.commit()
+            await batch.commit()
                 .catch((serverError: any) => {
                     const permissionError = new FirestorePermissionError({
                         path: `campaigns/${campaignId}/beneficiaries`,
@@ -377,27 +371,24 @@ export default function BeneficiariesPage() {
                     });
                     errorEmitter.emit('permission-error', permissionError);
                 })
-                .finally(() => {
-                    if (invalidRows.length > 0) {
-                         toast({ 
-                            title: 'Partial Import Success',
-                            description: `${validBeneficiaries.length} beneficiaries imported. ${invalidRows.length} rows were invalid and skipped (Rows: ${invalidRows.join(', ')}).`,
-                            variant: 'success',
-                            duration: 8000,
-                         });
-                    } else {
-                        toast({ title: 'Success', description: `${validBeneficiaries.length} beneficiaries imported successfully.`, variant: 'success' });
-                    }
-                    setIsImporting(false);
-                    setIsImportOpen(false);
-                    setSelectedFile(null);
-                });
+
+            if (invalidRows.length > 0) {
+                    toast({ 
+                    title: 'Partial Import Success',
+                    description: `${validBeneficiaries.length} beneficiaries imported. ${invalidRows.length} rows were invalid and skipped (Rows: ${invalidRows.join(', ')}).`,
+                    variant: 'success',
+                    duration: 8000,
+                    });
+            } else {
+                toast({ title: 'Success', description: `${validBeneficiaries.length} beneficiaries imported successfully.`, variant: 'success' });
+            }
 
         } catch (error: any) {
              toast({ title: 'Import Failed', description: error.message || "An error occurred during import.", variant: 'destructive' });
-             setIsImporting(false);
-             setIsImportOpen(false);
-             setSelectedFile(null);
+        } finally {
+            setIsImporting(false);
+            setIsImportOpen(false);
+            setSelectedFile(null);
         }
     };
     reader.onerror = (error) => {
@@ -891,3 +882,6 @@ export default function BeneficiariesPage() {
 
     
 
+
+
+    

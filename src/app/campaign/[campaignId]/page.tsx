@@ -3,7 +3,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, updateDoc, DocumentReference } from 'firebase/firestore';
 import type { Campaign, RationItem } from '@/lib/types';
@@ -52,12 +52,13 @@ export default function CampaignDetailsPage() {
   const campaignId = params.campaignId as string;
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { user } = useUser();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || !userProfile) return null;
+    if (!firestore || !campaignId || !user) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
-  }, [firestore, campaignId, userProfile?.id]);
+  }, [firestore, campaignId, user]);
 
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
 
@@ -955,3 +956,5 @@ export default function CampaignDetailsPage() {
     </div>
   );
 }
+
+    

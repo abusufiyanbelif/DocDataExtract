@@ -3,7 +3,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useUser } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { doc, collection, updateDoc, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
@@ -69,6 +69,7 @@ export default function CampaignSummaryPage() {
     const campaignId = params.campaignId as string;
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { user } = useUser();
     const { userProfile, isLoading: isProfileLoading } = useUserProfile();
 
     // State for edit mode and form fields
@@ -78,12 +79,12 @@ export default function CampaignSummaryPage() {
     const [isSharing, setIsSharing] = useState(false);
 
     // Data fetching
-    const campaignDocRef = useMemo(() => (firestore) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
-    const beneficiariesCollectionRef = useMemo(() => (firestore) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId]);
+    const campaignDocRef = useMemo(() => (firestore && user) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId, user]);
+    const beneficiariesCollectionRef = useMemo(() => (firestore && user) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId, user]);
     const donationsCollectionRef = useMemo(() => {
-        if (!firestore || !campaignId) return null;
+        if (!firestore || !campaignId || !user) return null;
         return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-    }, [firestore, campaignId]);
+    }, [firestore, campaignId, user]);
 
     const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
@@ -753,3 +754,5 @@ Please donate and share this message. Every contribution helps!
         </div>
     );
 }
+
+    

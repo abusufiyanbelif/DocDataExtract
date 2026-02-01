@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useUser } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, setDoc, DocumentReference } from 'firebase/firestore';
 import type { Donation, Campaign } from '@/lib/types';
@@ -61,18 +61,19 @@ export default function DonationsPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
+  const { user } = useUser();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || !userProfile?.id) return null;
+    if (!firestore || !campaignId || !user) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
-  }, [firestore, campaignId, userProfile?.id]);
+  }, [firestore, campaignId, user]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const donationsCollectionRef = useMemo(() => {
-    if (!firestore || !campaignId || !userProfile?.id) return null;
+    if (!firestore || !campaignId || !user) return null;
     return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-  }, [firestore, campaignId, userProfile?.id]);
+  }, [firestore, campaignId, user]);
   const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -125,7 +126,7 @@ export default function DonationsPage() {
     setIsImageViewerOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!donationToDelete || !firestore || !storage || !canDelete) return;
 
     const donationData = donations.find(d => d.id === donationToDelete);
@@ -150,13 +151,11 @@ export default function DonationsPage() {
     };
 
     if (screenshotUrl) {
-        deleteObject(storageRef(storage, screenshotUrl))
-            .finally(() => {
-                deleteDocument();
-            });
-    } else {
-        deleteDocument();
+        await deleteObject(storageRef(storage, screenshotUrl))
+            .catch(err => console.warn("Failed to delete screenshot from storage:", err));
     }
+    
+    deleteDocument();
   };
   
   const handleFormSubmit = async (data: DonationFormData) => {
@@ -177,6 +176,10 @@ export default function DonationsPage() {
         }
     }
 
+    setIsFormOpen(false);
+    setEditingDonation(null);
+    toast({ title: "Saving...", description: `Please wait while the donation is being ${editingDonation ? 'updated' : 'added'}.`});
+
     const docRef = editingDonation
         ? doc(firestore, 'donations', editingDonation.id)
         : doc(collection(firestore, 'donations'));
@@ -187,7 +190,6 @@ export default function DonationsPage() {
         let screenshotUrl = editingDonation?.screenshotUrl || '';
     
         if (data.screenshotDeleted && screenshotUrl) {
-            toast({ title: "Deleting Screenshot...", description: 'Removing the old file from storage.'});
             await deleteObject(storageRef(storage, screenshotUrl));
             screenshotUrl = '';
         }
@@ -202,10 +204,6 @@ export default function DonationsPage() {
                 });
             }
             const file = fileList[0];
-            toast({
-                title: "Uploading Screenshot...",
-                description: `Please wait while '${file.name}' is uploaded.`,
-            });
             
             const { default: Resizer } = await import('react-image-file-resizer');
             const resizedBlob = await new Promise<Blob>((resolve) => {
@@ -260,9 +258,6 @@ export default function DonationsPage() {
         } else {
             toast({ title: 'Save Failed', description: error.message || 'An unexpected error occurred.', variant: 'destructive' });
         }
-    } finally {
-        setIsFormOpen(false);
-        setEditingDonation(null);
     }
   };
   
@@ -603,3 +598,6 @@ export default function DonationsPage() {
 
     
 
+
+
+    
