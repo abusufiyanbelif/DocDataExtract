@@ -1,4 +1,3 @@
-
 'use client';
 
 import { LogOut, User, LogIn, ShoppingBasket, Settings } from 'lucide-react';
@@ -40,7 +39,7 @@ export function DocuExtractHeader() {
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
             {brandingSettings?.logoUrl ? (
-                <div className="relative h-14 w-14 flex-shrink-0">
+                <div className="relative h-24 w-24 flex-shrink-0">
                      <Image src={brandingSettings.logoUrl} alt="Company Logo" fill style={{objectFit: 'contain'}} className="p-1" />
                 </div>
             ) : (
