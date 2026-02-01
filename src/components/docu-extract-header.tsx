@@ -40,11 +40,11 @@ export function DocuExtractHeader() {
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
             {brandingSettings?.logoUrl ? (
-                <div className="relative h-12 w-12 flex-shrink-0">
+                <div className="relative h-14 w-14 flex-shrink-0">
                      <Image src={brandingSettings.logoUrl} alt="Company Logo" fill style={{objectFit: 'contain'}} className="p-1" />
                 </div>
             ) : (
-                <ShoppingBasket className="h-8 w-8 text-primary flex-shrink-0" />
+                <ShoppingBasket className="h-10 w-10 text-primary flex-shrink-0" />
             )}
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block">
                 Baitulmal Samajik Sanstha Solapur

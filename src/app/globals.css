@@ -37,12 +37,12 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
 }
 
-/* Global watermark overlay applied to the body */
+body {
+  @apply bg-background text-foreground;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -51,11 +51,18 @@ body::before {
   background-image: var(--watermark-url);
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 420px;
+  background-size: 320px; /* Mobile-first size */
   opacity: 0.12;
   pointer-events: none;
   mix-blend-mode: multiply;
 }
+
+@media (min-width: 768px) {
+  body::before {
+    background-size: 500px; /* Desktop size */
+  }
+}
+
 
 /* App content container */
 .app-root {
