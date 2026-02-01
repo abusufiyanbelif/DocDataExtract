@@ -110,7 +110,7 @@ service cloud.firestore {
 
     match /campaigns/{campaignId} {
       // Allow public read for all campaign data
-      allow get, list: if true;
+      allow read: if true;
       
       // Creating a campaign
       allow create: if hasPermission(['campaigns'], 'create');
@@ -132,7 +132,7 @@ service cloud.firestore {
 
       match /beneficiaries/{beneficiaryId} {
         // Allow public read for all beneficiary data
-        allow get, list: if true;
+        allow read: if true;
         
         allow create: if hasPermission(['campaigns', 'beneficiaries'], 'create');
         allow update: if hasPermission(['campaigns', 'beneficiaries'], 'update');
@@ -141,7 +141,7 @@ service cloud.firestore {
     }
 
     match /leads/{leadId} {
-      allow get, list: if true;
+      allow read: if true;
       allow create: if hasPermission(['leads'], 'create');
       allow update: if 
         hasPermission(['leads'], 'update') ||
@@ -165,7 +165,7 @@ service cloud.firestore {
 
     match /donations/{donationId} {
         // Allow public read for all donation data
-        allow get, list: if true;
+        allow read: if true;
         
         allow create: if hasPermission(['campaigns', 'donations'], 'create');
         allow update: if hasPermission(['campaigns', 'donations'], 'update');
