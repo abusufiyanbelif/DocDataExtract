@@ -1,8 +1,7 @@
 
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -35,6 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 
 type SortKey = keyof Campaign | 'srNo';
@@ -48,7 +48,7 @@ export default function CampaignPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'startDate', direction: 'descending' });
   const [isDeleting, setIsDeleting] = useState(false);
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -63,10 +63,6 @@ export default function CampaignPage() {
 
   const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
 
-  const handleRowClick = (campaignId: string) => {
-    router.push(`/campaign-members/${campaignId}/summary`);
-  };
-  
   const handleDeleteClick = (campaign: Campaign) => {
     if (!canDelete) return;
     setCampaignToDelete(campaign);
@@ -164,18 +160,22 @@ export default function CampaignPage() {
     // Sorting
     if (sortConfig !== null) {
         sortableItems.sort((a, b) => {
-            if (sortConfig.key === 'srNo') return 0;
+            if (sortConfig.key === 'srNo') return 0; // srNo is just index, no real sorting
             const aValue = a[sortConfig.key] ?? '';
             const bValue = b[sortConfig.key] ?? '';
             
+            if (sortConfig.key === 'startDate' || sortConfig.key === 'endDate') {
+                return sortConfig.direction === 'ascending' ? new Date(aValue).getTime() - new Date(bValue).getTime() : new Date(bValue).getTime() - new Date(aValue).getTime();
+            }
+
             if (typeof aValue === 'number' && typeof bValue === 'number') {
                 return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
             }
             if (typeof aValue === 'string' && typeof bValue === 'string') {
-                 if (aValue < bValue) {
+                 if (aValue.toLowerCase() < bValue.toLowerCase()) {
                     return sortConfig.direction === 'ascending' ? -1 : 1;
                 }
-                if (aValue > bValue) {
+                if (aValue.toLowerCase() > bValue.toLowerCase()) {
                     return sortConfig.direction === 'ascending' ? 1 : -1;
                 }
             }
@@ -197,17 +197,6 @@ export default function CampaignPage() {
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
   const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.delete;
   
-  const SortableHeader = ({ sortKey, children, className }: { sortKey: SortKey, children: React.ReactNode, className?: string }) => {
-    const isSorted = sortConfig?.key === sortKey;
-    return (
-        <TableHead className={cn("cursor-pointer hover:bg-muted/50", className)} onClick={() => handleSort(sortKey)}>
-            <div className="flex items-center gap-2">
-                {children}
-                {isSorted && (sortConfig?.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />)}
-            </div>
-        </TableHead>
-    );
-  };
   
   if (!isLoading && userProfile && !canViewCampaigns) {
     return (
@@ -293,64 +282,67 @@ export default function CampaignPage() {
             )}
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {canDelete && <TableHead className="w-[50px] text-center">Actions</TableHead>}
-                  <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
-                  <SortableHeader sortKey="name">Campaign Name</SortableHeader>
-                  <SortableHeader sortKey="category">Category</SortableHeader>
-                  <SortableHeader sortKey="startDate">Start Date</SortableHeader>
-                  <SortableHeader sortKey="endDate">End Date</SortableHeader>
-                  <SortableHeader sortKey="status">Status</SortableHeader>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {isLoading && (
-                  [...Array(3)].map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell colSpan={canDelete ? 7 : 6}><Skeleton className="h-6 w-full" /></TableCell>
-                    </TableRow>
-                  ))
+                    [...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
                 )}
-                {!isLoading && filteredAndSortedCampaigns.map((campaign, index) => (
-                  <TableRow key={campaign.id} className="cursor-pointer" onClick={() => handleRowClick(campaign.id)}>
-                    {canDelete && (
-                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                  {canDelete && (
-                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(campaign); }} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          Delete
-                                      </DropdownMenuItem>
-                                  )}
-                              </DropdownMenuContent>
-                          </DropdownMenu>
-                      </TableCell>
-                    )}
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-medium">{campaign.name}</TableCell>
-                    <TableCell>{campaign.category}</TableCell>
-                    <TableCell>{campaign.startDate}</TableCell>
-                    <TableCell>{campaign.endDate}</TableCell>
-                    <TableCell>{campaign.status}</TableCell>
-                  </TableRow>
+                {!isLoading && filteredAndSortedCampaigns.map((campaign) => (
+                    <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                            <div className="flex justify-between items-start gap-2">
+                                <CardTitle className="truncate flex-1">{campaign.name}</CardTitle>
+                                {canDelete && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteClick(campaign); }}
+                                                className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer"
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+                            </div>
+                            <CardDescription>{campaign.startDate} to {campaign.endDate}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                             <div className="flex justify-between text-sm text-muted-foreground">
+                                <Badge variant="outline">{campaign.category}</Badge>
+                                <Badge variant={
+                                    campaign.status === 'Active' ? 'success' :
+                                    campaign.status === 'Completed' ? 'secondary' : 'outline'
+                                }>{campaign.status}</Badge>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild className="w-full">
+                                <Link href={`/campaign-members/${campaign.id}/summary`}>
+                                    View Details
+                                </Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
                 ))}
-                {!isLoading && filteredAndSortedCampaigns.length === 0 && (
-                    <TableRow>
-                        <TableCell colSpan={canDelete ? 7 : 6} className="text-center text-muted-foreground h-24">
-                           No campaigns found matching your criteria. {canCreate && campaigns?.length === 0 && <Link href="/campaign-members/create" className="text-primary underline">Create one now</Link>}
-                        </TableCell>
-                    </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            </div>
+             {!isLoading && filteredAndSortedCampaigns.length === 0 && (
+                 <div className="text-center py-16">
+                    <p className="text-muted-foreground">No campaigns found matching your criteria.</p>
+                    {canCreate && campaigns?.length === 0 && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                            <Link href="/campaign-members/create" className="text-primary underline">
+                                Create one now
+                            </Link>
+                        </p>
+                    )}
+                </div>
+            )}
           </CardContent>
         </Card>
       </main>
