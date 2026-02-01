@@ -78,8 +78,8 @@ export default function CampaignSummaryPage() {
     const [isSharing, setIsSharing] = useState(false);
 
     // Data fetching
-    const campaignDocRef = useMemo(() => (firestore) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
-    const beneficiariesCollectionRef = useMemo(() => (firestore) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId]);
+    const campaignDocRef = useMemo(() => (firestore && campaignId) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
+    const beneficiariesCollectionRef = useMemo(() => (firestore && campaignId) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId]);
     const donationsCollectionRef = useMemo(() => {
         if (!firestore || !campaignId) return null;
         return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
@@ -375,7 +375,7 @@ Please donate and share this message. Every contribution helps!
             <main className="container mx-auto p-4 md:p-8">
                 <div className="mb-4">
                     <Button variant="outline" asChild>
-                        <Link href="/public">
+                        <Link href="/campaign">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Campaigns
                         </Link>
@@ -436,7 +436,7 @@ Please donate and share this message. Every contribution helps!
                             <Button asChild>
                                 <Link href="/login">
                                     <LogIn className="mr-2 h-4 w-4" />
-                                    Login to Manage
+                                    Organization members login
                                 </Link>
                             </Button>
                         )}

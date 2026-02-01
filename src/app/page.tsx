@@ -38,7 +38,7 @@ export default function LandingPage() {
             Managing and tracking community support campaigns efficiently.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/public">
+              <Link href="/campaign">
                   <Button size="lg" className="text-lg">
                   View Campaigns
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -90,7 +90,7 @@ export default function LandingPage() {
                   <Link href="/login">
                       <Button size="lg" variant="outline" className="text-lg">
                           <LogIn className="mr-2 h-5 w-5" />
-                          Login to Manage
+                          Organization members login
                       </Button>
                   </Link>
               )}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -5,7 +6,7 @@ import { useUser } from '@/firebase';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
-const publicPaths = ['/login', '/seed', '/', '/public'];
+const publicPaths = ['/login', '/seed', '/'];
 
 function FullScreenLoader({ message }: { message: string }) {
     return (
@@ -28,8 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return; // Don't do anything while auth is loading
     }
     
-    const isPublicPath = publicPaths.includes(pathname) || 
-                         pathname.startsWith('/public') || 
+    const isPublicPath = publicPaths.includes(pathname) ||
+                         pathname === '/campaign' ||
                          /^\/campaign\/[^/]+\/summary$/.test(pathname);
 
 
@@ -45,8 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <FullScreenLoader message="Initializing..." />;
   }
   
-  const isPublicPath = publicPaths.includes(pathname) || 
-                       pathname.startsWith('/public') || 
+  const isPublicPath = publicPaths.includes(pathname) ||
+                       pathname === '/campaign' ||
                        /^\/campaign\/[^/]+\/summary$/.test(pathname);
 
 
