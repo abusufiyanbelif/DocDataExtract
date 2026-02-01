@@ -40,7 +40,7 @@ export function DocuExtractHeader() {
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
             {brandingSettings?.logoUrl ? (
-                <div className="relative h-16 w-16 flex-shrink-0">
+                <div className="relative h-12 w-12 flex-shrink-0">
                      <Image src={brandingSettings.logoUrl} alt="Company Logo" fill style={{objectFit: 'contain'}} className="p-1" />
                 </div>
             ) : (
@@ -51,15 +51,15 @@ export function DocuExtractHeader() {
             </h1>
         </Link>
         
-        {isLoading && <Skeleton className="h-16 w-16 rounded-full" />}
+        {isLoading && <Skeleton className="h-10 w-10 rounded-full" />}
 
         {!isLoading && user && userProfile && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-16 w-16 rounded-full">
-                <Avatar className="h-16 w-16">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Avatar className="h-10 w-10">
                   <AvatarImage src={user.photoURL || ''} alt={userProfile?.name || 'User'} />
-                  <AvatarFallback className="text-2xl">
+                  <AvatarFallback>
                     {getInitials(userProfile?.name)}
                   </AvatarFallback>
                 </Avatar>
