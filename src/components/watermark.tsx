@@ -12,7 +12,7 @@ export function Watermark() {
     }
 
     return (
-        <div className="fixed inset-0 z-[-10] opacity-5 pointer-events-none flex items-center justify-center p-8">
+        <div className="fixed inset-0 z-[-10] flex items-center justify-center p-8 opacity-[0.07] mix-blend-darken pointer-events-none">
             <Image
                 src={brandingSettings.logoUrl}
                 alt="Watermark"
