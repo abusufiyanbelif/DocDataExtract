@@ -1,5 +1,17 @@
 {
   "entities": {
+    "Branding": {
+      "title": "Branding Settings",
+      "description": "Global branding settings for the application.",
+      "type": "object",
+      "properties": {
+        "logoUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The public URL of the uploaded company logo."
+        }
+      }
+    },
     "UserProfile": {
       "title": "User Profile",
       "description": "Represents a user's profile in the system.",
@@ -705,6 +717,12 @@
     ]
   },
   "firestore": {
+    "/settings/branding": {
+      "schema": {
+        "$ref": "#/backend/entities/Branding"
+      },
+      "description": "Stores global branding settings like the logo URL."
+    },
     "/user_lookups/{lookupId}": {
       "schema": {
         "$ref": "#/backend/entities/UserLookup"

@@ -1,10 +1,12 @@
 
 'use client';
 
-import { LogOut, User, LogIn, ShoppingBasket } from 'lucide-react';
+import { LogOut, User, LogIn, ShoppingBasket, Settings } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
+import { useBranding } from '@/hooks/use-branding';
 import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -14,7 +16,8 @@ import { Skeleton } from './ui/skeleton';
 
 
 export function DocuExtractHeader() {
-  const { user, userProfile, isLoading } = useSession();
+  const { user, userProfile, isLoading: isSessionLoading } = useSession();
+  const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
   const auth = useAuth();
   const router = useRouter();
 
@@ -30,14 +33,24 @@ export function DocuExtractHeader() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  const isLoading = isSessionLoading || isBrandingLoading;
+
   return (
     <header className="bg-card border-b p-4 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
-            <ShoppingBasket className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold font-headline text-foreground">
-            Baitulmal Samajik Sanstha Solapur
-            </h1>
+            {brandingSettings?.logoUrl ? (
+                <div className="relative h-10 w-40">
+                     <Image src={brandingSettings.logoUrl} alt="Company Logo" layout="fill" objectFit="contain" />
+                </div>
+            ) : (
+                <>
+                    <ShoppingBasket className="h-8 w-8 text-primary" />
+                    <h1 className="text-3xl font-bold font-headline text-foreground">
+                    Baitulmal Samajik Sanstha Solapur
+                    </h1>
+                </>
+            )}
         </Link>
         
         {isLoading && <Skeleton className="h-10 w-10 rounded-full" />}
@@ -70,6 +83,14 @@ export function DocuExtractHeader() {
                   <span>My Profile</span>
                 </Link>
               </DropdownMenuItem>
+              {userProfile.role === 'Admin' && (
+                <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href="/settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Settings</span>
+                    </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />

@@ -1,6 +1,10 @@
 import type { DocumentData } from 'firebase/firestore';
 import type { UserPermissions } from './modules';
 
+export interface BrandingSettings extends DocumentData {
+  logoUrl?: string;
+}
+
 export interface CampaignDocument {
   name: string;
   url: string;
