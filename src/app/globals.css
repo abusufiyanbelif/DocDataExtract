@@ -56,8 +56,7 @@
   background-position: center;
   background-size: 400px;
   background-attachment: fixed;
-  opacity: 0.1; /* Increased for visibility */
-  mix-blend-mode: multiply;
+  opacity: 0.1;
   pointer-events: none;
   z-index: 0;
 }

@@ -124,7 +124,7 @@ export default function SettingsPage() {
 
     if (!canReadSettings) {
         return (
-            <div className="min-h-screen bg-background text-foreground">
+            <div className="min-h-screen text-foreground">
                 <DocuExtractHeader />
                 <main className="container mx-auto p-4 md:p-8">
                      <Alert variant="destructive">
@@ -140,7 +140,7 @@ export default function SettingsPage() {
     }
     
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="min-h-screen text-foreground">
             <DocuExtractHeader />
             <main className="container mx-auto p-4 md:p-8">
                 <div className="mb-4">
@@ -167,7 +167,7 @@ export default function SettingsPage() {
                         <div className="flex flex-col items-center gap-4">
                             <div className="relative w-48 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
                                 {previewUrl ? (
-                                    <Image src={previewUrl} alt="Logo preview" layout="fill" objectFit="contain" className="p-2" />
+                                    <Image src={previewUrl} alt="Logo preview" fill style={{objectFit: 'contain'}} className="p-2" />
                                 ) : (
                                     <div className="text-muted-foreground text-center p-2">
                                         <ImageIcon className="mx-auto h-8 w-8" />

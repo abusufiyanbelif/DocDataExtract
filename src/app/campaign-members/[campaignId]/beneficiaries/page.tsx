@@ -556,7 +556,7 @@ export default function BeneficiariesPage() {
   
   if (!campaign) {
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="min-h-screen text-foreground">
             <DocuExtractHeader />
             <main className="container mx-auto p-4 md:p-8 text-center">
                 <p className="text-lg text-muted-foreground">Campaign not found.</p>
@@ -572,7 +572,7 @@ export default function BeneficiariesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
       <DocuExtractHeader />
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">

@@ -147,7 +147,7 @@ export default function UsersPage() {
   
   if (isLoading) {
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="min-h-screen text-foreground">
             <DocuExtractHeader />
             <main className="container mx-auto p-4 md:p-8">
                 <Card>
@@ -163,7 +163,7 @@ export default function UsersPage() {
   
   if (userProfile?.role !== 'Admin' && !userProfile?.permissions?.users?.read) {
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="min-h-screen text-foreground">
             <DocuExtractHeader />
             <main className="container mx-auto p-4 md:p-8">
                 <div className="mb-4">
@@ -187,7 +187,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
       <DocuExtractHeader />
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
