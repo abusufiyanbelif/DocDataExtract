@@ -28,7 +28,6 @@ import type { Beneficiary, RationList, RationItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Loader2, ScanLine, Trash2, Replace, FileIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { extractKeyInfoFromAadhaar } from '@/ai/flows/extract-key-info-identity';
 import { Separator } from './ui/separator';
 
 const formSchema = z.object({
@@ -167,7 +166,19 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
         }
 
         try {
-            const response = await extractKeyInfoFromAadhaar({ photoDataUri: dataUri });
+             const apiResponse = await fetch('/api/scan-id', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ photoDataUri: dataUri }),
+            });
+
+            if (!apiResponse.ok) {
+                const errorData = await apiResponse.json();
+                throw new Error(errorData.error || 'The server returned an error.');
+            }
+
+            const response = await apiResponse.json();
+
             if (response) {
                 if (response.name) setValue('name', response.name, { shouldValidate: true });
                 if (response.address) setValue('address', response.address, { shouldValidate: true });
