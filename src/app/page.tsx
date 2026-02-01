@@ -38,7 +38,7 @@ export default function LandingPage() {
             Managing and tracking community support campaigns efficiently.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/campaign">
+              <Link href="/public">
                   <Button size="lg" className="text-lg">
                   View Campaigns
                   <ArrowRight className="ml-2 h-5 w-5" />

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useUser } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, setDoc, DocumentReference } from 'firebase/firestore';
 import type { Beneficiary, Campaign, RationItem } from '@/lib/types';
@@ -61,19 +61,18 @@ export default function BeneficiariesPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
-  const { user } = useUser();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || !user) return null;
+    if (!firestore || !campaignId) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
-  }, [firestore, campaignId, user]);
+  }, [firestore, campaignId]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const beneficiariesCollectionRef = useMemo(() => {
-    if (!firestore || !campaignId || !user) return null;
+    if (!firestore || !campaignId) return null;
     return collection(firestore, `campaigns/${campaignId}/beneficiaries`);
-  }, [firestore, campaignId, user]);
+  }, [firestore, campaignId]);
   const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -877,11 +876,3 @@ export default function BeneficiariesPage() {
     </div>
   );
 }
-
-    
-
-    
-
-
-
-    

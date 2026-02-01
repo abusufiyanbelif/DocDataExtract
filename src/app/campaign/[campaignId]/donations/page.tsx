@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext, useUser } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, setDoc, DocumentReference } from 'firebase/firestore';
 import type { Donation, Campaign } from '@/lib/types';
@@ -61,19 +61,18 @@ export default function DonationsPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
-  const { user } = useUser();
   const { userProfile, isLoading: isProfileLoading } = useUserProfile();
   
   const campaignDocRef = useMemo(() => {
-    if (!firestore || !campaignId || !user) return null;
+    if (!firestore || !campaignId) return null;
     return doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign>;
-  }, [firestore, campaignId, user]);
+  }, [firestore, campaignId]);
   const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
   
   const donationsCollectionRef = useMemo(() => {
-    if (!firestore || !campaignId || !user) return null;
+    if (!firestore || !campaignId) return null;
     return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-  }, [firestore, campaignId, user]);
+  }, [firestore, campaignId]);
   const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -595,9 +594,3 @@ export default function DonationsPage() {
     </div>
   );
 }
-
-    
-
-
-
-    

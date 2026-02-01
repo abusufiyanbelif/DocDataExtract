@@ -97,8 +97,8 @@ service cloud.firestore {
     }
 
     match /campaigns/{campaignId} {
-      // Allow read if user has general campaign read OR read access to any submodule.
-      allow read: if canReadCampaign();
+      // Allow public read for summary page, but restrict write access
+      allow read: if true;
       
       // Creating a campaign
       allow create: if hasPermission(['campaigns'], 'create');
@@ -120,7 +120,7 @@ service cloud.firestore {
       allow delete: if hasPermission(['campaigns'], 'delete');
 
       match /beneficiaries/{beneficiaryId} {
-        allow read: if hasPermission(['campaigns', 'beneficiaries'], 'read');
+        allow read: if true; // Required for public summary calculation
         allow create: if hasPermission(['campaigns', 'beneficiaries'], 'create');
         allow update: if hasPermission(['campaigns', 'beneficiaries'], 'update');
         allow delete: if hasPermission(['campaigns', 'beneficiaries'], 'delete');
@@ -128,7 +128,7 @@ service cloud.firestore {
     }
 
     match /donations/{donationId} {
-        allow read: if hasPermission(['campaigns', 'donations'], 'read');
+        allow read: if true; // Required for public summary calculation
         allow create: if hasPermission(['campaigns', 'donations'], 'create');
         allow update: if hasPermission(['campaigns', 'donations'], 'update');
         allow delete: if hasPermission(['campaigns', 'donations'], 'delete');

@@ -5,7 +5,7 @@ import { useUser } from '@/firebase';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
-const publicPaths = ['/login', '/seed', '/'];
+const publicPaths = ['/login', '/seed', '/', '/public'];
 
 function FullScreenLoader({ message }: { message: string }) {
     return (
@@ -28,8 +28,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return; // Don't do anything while auth is loading
     }
     
-    // The root page, campaign pages, login, and seed pages are public.
-    const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign');
+    const isPublicPath = publicPaths.includes(pathname) || 
+                         pathname.startsWith('/public') || 
+                         /^\/campaign\/[^/]+\/summary$/.test(pathname);
+
 
     if (!user && !isPublicPath) {
       router.push('/login');
@@ -43,7 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return <FullScreenLoader message="Initializing..." />;
   }
   
-  const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign');
+  const isPublicPath = publicPaths.includes(pathname) || 
+                       pathname.startsWith('/public') || 
+                       /^\/campaign\/[^/]+\/summary$/.test(pathname);
+
 
   // If a redirect is needed, show a loader while the useEffect triggers the navigation
   if (!user && !isPublicPath) {
