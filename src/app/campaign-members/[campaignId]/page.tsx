@@ -4,7 +4,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import { doc, updateDoc, DocumentReference } from 'firebase/firestore';
 import type { Campaign, RationItem } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -52,7 +52,7 @@ export default function CampaignDetailsPage() {
   const campaignId = params.campaignId as string;
   const firestore = useFirestore();
   const { toast } = useToast();
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
+  const { userProfile, isLoading: isProfileLoading } = useSession();
   
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId) return null;

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, errorEmitter, FirestorePermissionError, useCollection } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -50,7 +50,7 @@ export default function CreateLeadPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
+  const { userProfile, isLoading: isProfileLoading } = useSession();
   
   const [isDuplicateAlertOpen, setIsDuplicateAlertOpen] = useState(false);
   const [leadDataToCreate, setLeadDataToCreate] = useState<LeadFormValues | null>(null);

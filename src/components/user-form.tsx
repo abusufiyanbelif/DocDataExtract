@@ -34,7 +34,7 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { Loader2, Send, Replace, Trash2, FileIcon, ScanLine } from 'lucide-react';
 import { PermissionsTable } from './permissions-table';
 import { get, set } from '@/lib/utils';
-import { useUserProfile as useCurrentUserProfile } from '@/hooks/use-user-profile';
+import { useSession as useCurrentUserSession } from '@/hooks/use-session';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -77,7 +77,7 @@ interface UserFormProps {
 
 export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: UserFormProps) {
   const isEditing = !!user;
-  const { userProfile: currentUser } = useCurrentUserProfile();
+  const { userProfile: currentUser } = useCurrentUserSession();
   const isCurrentUserAdmin = currentUser?.role === 'Admin';
   
   const { toast } = useToast();

@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import { doc, updateDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -42,7 +42,7 @@ export default function UsersPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
+  const { userProfile, isLoading: isProfileLoading } = useSession();
 
   const usersCollectionRef = useMemo(() => {
     if (!firestore || !userProfile) return null;

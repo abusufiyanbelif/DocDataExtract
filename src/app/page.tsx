@@ -4,12 +4,12 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ShoppingBasket, ArrowRight, FileText, Users, ShieldCheck, LogIn, GanttChart } from 'lucide-react';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 
 export default function LandingPage() {
-  const { userProfile, isLoading } = useUserProfile();
+  const { userProfile, isLoading } = useSession();
 
   const campaignPerms = userProfile?.permissions?.campaigns;
   const canReadAnyCampaignSubmodule = 

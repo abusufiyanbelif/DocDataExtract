@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import { updateDoc, doc, writeBatch, DocumentReference } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { createAdminPermissions } from '@/lib/modules';
@@ -28,7 +28,7 @@ export default function EditUserPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { userProfile: currentUserProfile, isLoading: isProfileLoading } = useUserProfile();
+  const { userProfile: currentUserProfile, isLoading: isProfileLoading } = useSession();
   
   const userDocRef = useMemo(() => {
     if (!firestore || !userId) return null;

@@ -3,7 +3,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase';
-import { AuthProvider } from '@/components/auth-provider';
+import { SessionProvider } from '@/components/session-provider';
 import { PT_Sans, Source_Code_Pro } from 'next/font/google';
 import { cn } from '@/lib/utils';
 
@@ -34,9 +34,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={cn("font-body antialiased", ptSans.variable, sourceCodePro.variable)}>
         <FirebaseClientProvider>
-            <AuthProvider>
+            <SessionProvider>
                 {children}
-            </AuthProvider>
+            </SessionProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>

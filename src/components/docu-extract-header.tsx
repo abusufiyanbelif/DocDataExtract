@@ -3,8 +3,8 @@
 
 import { LogOut, User, LogIn, ShoppingBasket } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth, useUser } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useAuth } from '@/firebase';
+import { useSession } from '@/hooks/use-session';
 import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -14,10 +14,9 @@ import { Skeleton } from './ui/skeleton';
 
 
 export function DocuExtractHeader() {
-  const { user } = useUser();
+  const { user, userProfile, isLoading } = useSession();
   const auth = useAuth();
   const router = useRouter();
-  const { userProfile, isLoading } = useUserProfile();
 
   const handleLogout = async () => {
     if (auth) {
@@ -43,7 +42,7 @@ export function DocuExtractHeader() {
         
         {isLoading && <Skeleton className="h-10 w-10 rounded-full" />}
 
-        {!isLoading && user && (
+        {!isLoading && user && userProfile && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">

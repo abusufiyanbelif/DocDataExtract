@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import Image from 'next/image';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,7 @@ function ProfileDetail({ icon, label, value, children, isEditing }: { icon: Reac
 }
 
 export default function ProfilePage() {
-    const { userProfile, isLoading, refetch } = useUserProfile();
+    const { userProfile, isLoading } = useSession();
     const firestore = useFirestore();
     const { toast } = useToast();
 
@@ -112,7 +112,6 @@ export default function ProfilePage() {
             await batch.commit();
             toast({ title: 'Success', description: 'Profile updated successfully.', variant: 'success' });
             setIsEditMode(false);
-            refetch();
         } catch(serverError: any) {
             if (serverError.code === 'permission-denied') {
                  errorEmitter.emit('permission-error', new FirestorePermissionError({

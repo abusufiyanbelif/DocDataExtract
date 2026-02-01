@@ -1,7 +1,8 @@
 
 'use client';
 import { useState, useCallback } from 'react';
-import { useFirestore, useUser, useAuth, useStorage } from '@/firebase';
+import { useAuth, useStorage, useFirestore } from '@/firebase';
+import { useSession } from '@/hooks/use-session';
 import { firebaseConfig } from '@/firebase/config';
 import { collection, query, limit, getDocs } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
@@ -33,7 +34,7 @@ export default function DiagnosticsPage() {
     const firestore = useFirestore();
     const auth = useAuth();
     const storage = useStorage();
-    const { user } = useUser();
+    const { user } = useSession();
     
     const [checkResults, setCheckResults] = useState<Record<string, CheckResult>>({});
     const [isAllRunning, setIsAllRunning] = useState(false);

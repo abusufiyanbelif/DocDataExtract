@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Plus, ArrowUp, ArrowDown, ShieldAlert, MoreHorizontal, Trash2, Edit, Copy } from 'lucide-react';
 import { useCollection, useFirestore, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import type { Campaign, Beneficiary, Donation } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
@@ -60,7 +60,7 @@ export default function CampaignPage() {
   const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
   const [campaignToCopy, setCampaignToCopy] = useState<Campaign | null>(null);
   
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
+  const { userProfile, isLoading: isProfileLoading } = useSession();
 
   const campaignsCollectionRef = useMemo(() => {
     if (!firestore) return null;
