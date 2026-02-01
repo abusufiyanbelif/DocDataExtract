@@ -1,3 +1,4 @@
+
 export const crudPermissions = ['create', 'read', 'update', 'delete'] as const;
 export const readUpdatePermissions = ['read', 'update'] as const;
 export const simpleReadPermission = ['read'] as const;
@@ -25,7 +26,7 @@ export const modules = [
   {
     id: 'campaigns',
     name: 'Campaigns',
-    permissions: crudPermissions,
+    permissions: ['create', 'update', 'delete'] as const,
     subModules: campaignSubModules,
   },
   {
@@ -65,6 +66,10 @@ export function createAdminPermissions(): UserPermissions {
     allPermissions[mod.id] = {};
     for (const perm of mod.permissions) {
       allPermissions[mod.id][perm] = true;
+    }
+    // Manually add the read permission for campaigns for Admins, as it's not in the main list
+    if (mod.id === 'campaigns') {
+        allPermissions[mod.id].read = true;
     }
     if ('subModules' in mod && mod.subModules) {
       for (const subMod of (mod.subModules as any[])) {

@@ -18,7 +18,7 @@ export default function LandingPage() {
     !!campaignPerms?.beneficiaries?.read ||
     !!campaignPerms?.donations?.read;
 
-  const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.read || canReadAnyCampaignSubmodule;
+  const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.create || !!campaignPerms?.update || !!campaignPerms?.delete || canReadAnyCampaignSubmodule;
   const canViewLeads = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.read;
   const canViewUsers = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.read;
   const canViewExtractor = userProfile?.role === 'Admin' || !!userProfile?.permissions?.extractor?.read;
@@ -39,12 +39,22 @@ export default function LandingPage() {
             Managing and tracking community support campaigns efficiently.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <Link href="/campaign-public">
-                  <Button size="lg" className="text-lg">
-                  View Campaigns
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-              </Link>
+              {!isLoading && !userProfile && (
+                <>
+                  <Link href="/campaign-public">
+                      <Button size="lg" className="text-lg">
+                      View Campaigns
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
+                  </Link>
+                  <Link href="/login">
+                      <Button size="lg" variant="outline" className="text-lg">
+                          <LogIn className="mr-2 h-5 w-5" />
+                          Organization members login
+                      </Button>
+                  </Link>
+                </>
+              )}
               {isLoading && (
                   <>
                   <Skeleton className="h-11 w-48" />
@@ -56,8 +66,9 @@ export default function LandingPage() {
                 <>
                   {canViewCampaigns && (
                       <Link href="/campaign-members">
-                          <Button size="lg" variant="outline" className="text-lg">
-                          Manage Campaigns
+                          <Button size="lg" variant="default" className="text-lg">
+                          <GanttChart className="mr-2 h-5 w-5" />
+                          Campaigns
                           </Button>
                       </Link>
                   )}
@@ -101,14 +112,6 @@ export default function LandingPage() {
                       </Link>
                   )}
                 </>
-              )}
-               {!isLoading && !userProfile && (
-                  <Link href="/login">
-                      <Button size="lg" variant="outline" className="text-lg">
-                          <LogIn className="mr-2 h-5 w-5" />
-                          Organization members login
-                      </Button>
-                  </Link>
               )}
             </div>
         </div>

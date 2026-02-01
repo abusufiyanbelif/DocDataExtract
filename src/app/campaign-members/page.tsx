@@ -193,7 +193,7 @@ export default function CampaignPage() {
     !!campaignPerms?.ration?.read ||
     !!campaignPerms?.beneficiaries?.read ||
     !!campaignPerms?.donations?.read;
-  const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.read || canReadAnySubmodule;
+  const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.create || !!campaignPerms?.update || !!campaignPerms?.delete || canReadAnySubmodule;
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
   const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.delete;
   
