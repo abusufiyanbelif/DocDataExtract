@@ -1,23 +1,30 @@
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai';
+import { genkit } from "genkit";
+import { googleAI } from "@genkit-ai/google-genai";
 
-// IMPORTANT: Do NOT import any flows into this file.
-// This file is for initializing the 'ai' object only.
-// All flow imports should be in 'src/ai/dev.ts'.
+/**
+ * IMPORTANT RULES FOR THIS FILE:
+ * 1. Do NOT import any flows here.
+ * 2. This file ONLY initializes the `ai` object.
+ * 3. All flows must import `ai` FROM this file.
+ * 4. Do NOT use configureGenkit().
+ */
 
 const geminiApiKey = process.env.GEMINI_API_KEY;
 
+// Warn early if key is missing (do not crash app)
 if (!geminiApiKey) {
-    console.warn(
-    'GEMINI_API_KEY environment variable not set. AI features will not work. For local development, add it to your .env file. For deployment, add it as a secret in your Firebase App Hosting configuration.'
-    );
+  console.warn(
+    "⚠️ GEMINI_API_KEY is not set. AI features will not work. " +
+    "Add it to .env.local for local dev or as a secret in Firebase App Hosting."
+  );
 }
 
-// Always include the googleAI plugin. It can handle a missing key and will
-// throw an error at runtime if an AI call is made without credentials.
-const plugins = [googleAI({apiKey: geminiApiKey})];
-
-
+// Always include the googleAI plugin.
+// If apiKey is missing, it will throw ONLY when a flow is executed.
 export const ai = genkit({
-  plugins,
+  plugins: [
+    googleAI({
+      apiKey: geminiApiKey,
+    }),
+  ],
 });
