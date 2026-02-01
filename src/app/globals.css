@@ -42,22 +42,22 @@
   }
 }
 
-/* Global watermark overlay */
-.global-watermark {
+/* Global watermark overlay applied to the body */
+body::before {
+  content: "";
   position: fixed;
   inset: 0;
-  /* z-index: 0 sits above the body but below the z-index: 1 app-root */
-  z-index: 0;
+  z-index: 9999;
+  background-image: var(--watermark-url);
   background-repeat: no-repeat;
   background-position: center;
   background-size: 420px;
-  opacity: 0.12; /* Increased for better visibility */
+  opacity: 0.12;
   pointer-events: none;
+  mix-blend-mode: multiply;
 }
 
-/* Ensure all app content stays above watermark */
+/* App content container */
 .app-root {
-  position: relative;
-  z-index: 1;
   min-height: 100vh;
 }
