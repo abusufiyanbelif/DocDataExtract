@@ -82,7 +82,7 @@ service cloud.firestore {
 
     // --- Collection Rules ---
 
-    match /settings/branding {
+    match /settings/{settingId} {
       allow read: if true;
       allow write: if hasPermission(['settings'], 'update');
     }

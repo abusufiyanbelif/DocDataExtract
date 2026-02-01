@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Branding": {
@@ -9,6 +10,26 @@
           "type": "string",
           "format": "uri",
           "description": "The public URL of the uploaded company logo."
+        }
+      }
+    },
+    "PaymentSettings": {
+      "title": "Payment Settings",
+      "description": "Global payment settings for receiving donations.",
+      "type": "object",
+      "properties": {
+        "qrCodeUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The public URL of the uploaded QR code image."
+        },
+        "upiId": {
+          "type": "string",
+          "description": "The UPI ID for receiving payments."
+        },
+        "paymentMobileNumber": {
+          "type": "string",
+          "description": "The mobile number associated with the payment account."
         }
       }
     },
@@ -722,6 +743,12 @@
         "$ref": "#/backend/entities/Branding"
       },
       "description": "Stores global branding settings like the logo URL."
+    },
+    "/settings/payment": {
+      "schema": {
+        "$ref": "#/backend/entities/PaymentSettings"
+      },
+      "description": "Stores global payment settings like QR code and UPI ID."
     },
     "/user_lookups/{lookupId}": {
       "schema": {

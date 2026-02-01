@@ -1,8 +1,15 @@
+
 import type { DocumentData } from 'firebase/firestore';
 import type { UserPermissions } from './modules';
 
 export interface BrandingSettings extends DocumentData {
   logoUrl?: string;
+}
+
+export interface PaymentSettings extends DocumentData {
+  qrCodeUrl?: string;
+  upiId?: string;
+  paymentMobileNumber?: string;
 }
 
 export interface CampaignDocument {

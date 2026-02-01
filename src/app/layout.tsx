@@ -7,6 +7,7 @@ import { SessionProvider } from '@/components/session-provider';
 import { adminDb } from '@/lib/firebase-admin-sdk';
 import type { BrandingSettings } from '@/lib/types';
 import * as React from 'react';
+import { AppFooter } from '@/components/app-footer';
 
 export const metadata: Metadata = {
   title: {
@@ -44,6 +45,7 @@ export default async function RootLayout({
                   {children}
               </SessionProvider>
           </FirebaseClientProvider>
+          <AppFooter />
         </div>
         <Toaster />
       </body>

@@ -67,4 +67,6 @@ body::before {
 /* App content container */
 .app-root {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
