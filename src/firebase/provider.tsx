@@ -1,4 +1,3 @@
-
 'use client';
 import { createContext, useContext, ReactNode } from 'react';
 import { FirebaseApp } from 'firebase/app';
