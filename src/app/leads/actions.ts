@@ -51,7 +51,7 @@ export async function copyLeadAction(options: CopyLeadOptions): Promise<{ succes
     }
     
     // Remove ID from data object
-    delete newLeadData.id;
+    delete (newLeadData as any).id;
 
     const newLeadRef = await adminDb.collection('leads').add(newLeadData);
     const newLeadId = newLeadRef.id;
@@ -111,8 +111,8 @@ export async function copyLeadAction(options: CopyLeadOptions): Promise<{ succes
                     ...donationData,
                     leadId: newLeadId,
                     leadName: newName,
-                    campaignId: undefined, // Unlink from old campaign if it was somehow linked
-                    campaignName: undefined,
+                    campaignId: undefined, // IMPORTANT: Unlink from old campaign
+                    campaignName: undefined, // IMPORTANT: Unlink from old campaign
                     screenshotUrl: '',
                     screenshotIsPublic: false,
                     status: 'Pending',
@@ -121,7 +121,7 @@ export async function copyLeadAction(options: CopyLeadOptions): Promise<{ succes
                     uploadedById: 'system',
                 };
                 
-                batch.set(newDonationRef, newDonationData);
+                batch.set(newDonationRef, newDonationData as any);
                 count++;
                 
                 if (count === BATCH_SIZE) {

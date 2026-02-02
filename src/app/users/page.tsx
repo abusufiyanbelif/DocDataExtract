@@ -92,6 +92,8 @@ export default function UsersPage() {
     const docRef = doc(firestore, 'users', userToUpdate.id);
     const updatedData = { status: newStatus };
 
+    toast({ title: 'Updating Status...', description: `Setting ${userToUpdate.name}'s account to ${newStatus}.`});
+
     updateDoc(docRef, updatedData)
         .then(() => {
             toast({ title: 'Success', description: `${userToUpdate.name}'s account is now ${newStatus}.`, variant: 'success' });
@@ -137,7 +139,6 @@ export default function UsersPage() {
 
     if (result.success) {
         toast({ title: 'User Deleted', description: result.message, variant: 'success' });
-        router.refresh();
     } else {
         toast({ title: 'Deletion Failed', description: result.message, variant: 'destructive' });
     }
