@@ -1,796 +1,297 @@
-
 {
   "entities": {
-    "Branding": {
-      "title": "Branding Settings",
-      "description": "Global branding settings for the application.",
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
       "type": "object",
-      "properties": {
-        "logoUrl": {
-          "type": "string",
-          "format": "uri",
-          "description": "The public URL of the uploaded company logo."
-        }
-      }
-    },
-    "PaymentSettings": {
-      "title": "Payment Settings",
-      "description": "Global payment settings for receiving donations.",
-      "type": "object",
-      "properties": {
-        "qrCodeUrl": {
-          "type": "string",
-          "format": "uri",
-          "description": "The public URL of the uploaded QR code image."
-        },
-        "upiId": {
-          "type": "string",
-          "description": "The UPI ID for receiving payments."
-        },
-        "paymentMobileNumber": {
-          "type": "string",
-          "description": "The mobile number associated with the payment account."
-        }
-      }
-    },
-    "UserProfile": {
-      "title": "User Profile",
-      "description": "Represents a user's profile in the system.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The user's full name."
-        },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's primary email address, used for authentication."
-        },
-        "phone": {
-          "type": "string",
-          "description": "The user's phone number."
-        },
-        "loginId": {
-          "type": "string",
-          "description": "The user's unique login ID."
-        },
-        "userKey": {
-          "type": "string",
-          "description": "A unique system-generated key for the user, used to link to the auth account. Cannot be edited."
-        },
-        "password": {
-          "type": "string",
-          "description": "The user's hashed password for custom authentication. This field should not be managed from the client-side due to security risks."
-        },
-        "role": {
-          "type": "string",
-          "enum": [
-            "Admin",
-            "User"
-          ],
-          "description": "The user's role. 'Admin' has all permissions by default."
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "Active",
-            "Inactive"
-          ],
-          "description": "The current status of the user account."
-        },
-        "idProofType": {
-          "type": "string",
-          "description": "The type of ID proof provided (e.g., Aadhaar, PAN)."
-        },
-        "idNumber": {
-          "type": "string",
-          "description": "The ID number from the provided proof."
-        },
-        "idProofUrl": {
-          "type": "string",
-          "description": "URL of the uploaded ID proof document."
-        },
-        "permissions": {
-          "type": "object",
-          "description": "Granular permissions for the user.",
-          "properties": {
-            "users": {
-              "$ref": "#/backend/entities/CrudPermissions"
-            },
-            "campaigns": {
-              "type": "object",
-              "description": "Permissions for the Campaigns module.",
-              "properties": {
-                "read": {
-                  "type": "boolean"
-                },
-                "create": {
-                  "type": "boolean"
-                },
-                "update": {
-                  "type": "boolean"
-                },
-                "delete": {
-                  "type": "boolean"
-                },
-                "summary": {
-                  "type": "object",
-                  "properties": {
-                    "read": {
-                      "type": "boolean"
-                    },
-                    "update": {
-                      "type": "boolean"
-                    }
-                  }
-                },
-                "ration": {
-                  "type": "object",
-                  "properties": {
-                    "read": {
-                      "type": "boolean"
-                    },
-                    "update": {
-                      "type": "boolean"
-                    }
-                  }
-                },
-                "beneficiaries": {
-                  "$ref": "#/backend/entities/CrudPermissions"
-                },
-                "donations": {
-                  "$ref": "#/backend/entities/CrudPermissions"
-                }
-              }
-            },
-            "leads": {
-              "type": "object",
-              "description": "Permissions for the Leads module.",
-              "properties": {
-                "read": {
-                  "type": "boolean"
-                },
-                "create": {
-                  "type": "boolean"
-                },
-                "update": {
-                  "type": "boolean"
-                },
-                "delete": {
-                  "type": "boolean"
-                },
-                "summary": {
-                  "type": "object",
-                  "properties": {
-                    "read": {
-                      "type": "boolean"
-                    },
-                    "update": {
-                      "type": "boolean"
-                    }
-                  }
-                },
-                "ration": {
-                  "type": "object",
-                  "properties": {
-                    "read": {
-                      "type": "boolean"
-                    },
-                    "update": {
-                      "type": "boolean"
-                    }
-                  }
-                },
-                "beneficiaries": {
-                  "$ref": "#/backend/entities/CrudPermissions"
-                },
-                "donations": {
-                  "$ref": "#/backend/entities/CrudPermissions"
-                }
-              }
-            },
-            "extractor": {
-              "type": "object",
-              "properties": {
-                "read": {
-                  "type": "boolean"
-                }
-              }
-            },
-            "storyCreator": {
-              "type": "object",
-              "properties": {
-                "read": {
-                  "type": "boolean"
-                }
-              }
-            },
-            "diagnostics": {
-              "type": "object",
-              "properties": {
-                "read": {
-                  "type": "boolean"
-                }
-              }
-            }
-          }
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The timestamp when the user was created."
-        },
-        "createdById": {
-          "type": "string",
-          "description": "The ID of the user who created this user."
-        },
-        "createdByName": {
-          "type": "string",
-          "description": "The name of the user who created this user."
-        }
-      },
-      "required": [
-        "name",
-        "email",
-        "phone",
-        "loginId",
-        "userKey",
-        "role",
-        "status"
-      ]
-    },
-    "UserLookup": {
-      "title": "User Lookup",
-      "description": "A public record for mapping a login ID or phone number to a user's email.",
-      "type": "object",
-      "properties": {
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's primary email address."
-        },
-        "userKey": {
-          "type": "string",
-          "description": "The unique system-generated key for the user, used for ownership verification."
-        }
-      },
-      "required": [
-        "email",
-        "userKey"
-      ]
-    },
-    "RationItem": {
-      "title": "Ration Item",
-      "description": "A single item in a ration kit, part of a campaign's ration list.",
-      "type": "object",
+      "description": "Represents a user of the DocuExtract application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "A unique identifier for the ration item within its list."
+          "description": "Unique identifier for the User entity."
         },
-        "name": {
+        "email": {
           "type": "string",
-          "description": "The name of the ration item."
-        },
-        "quantity": {
-          "type": "number",
-          "description": "The quantity/amount of the item (e.g., 10)."
-        },
-        "quantityType": {
-          "type": "string",
-          "description": "The unit of measurement for the quantity.",
-          "enum": [
-            "kg",
-            "litre",
-            "gram",
-            "ml",
-            "piece",
-            "packet",
-            "dozen"
-          ]
-        },
-        "price": {
-          "type": "number",
-          "description": "The price of the item in Rupees. For the 'General Item List', this is price per unit."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Additional notes for the item (e.g., brand, price per unit)."
+          "description": "Email address of the user.",
+          "format": "email"
         }
       },
       "required": [
         "id",
-        "name",
-        "price"
+        "email"
       ]
     },
-    "Beneficiary": {
-      "title": "Beneficiary",
-      "description": "An individual or family receiving benefits from a campaign.",
+    "Document": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Document",
       "type": "object",
+      "description": "Represents a document uploaded and processed by the DocuExtract application.",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Document entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who uploaded the document. (Relationship: User 1:N Document)"
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "Date and time when the document was uploaded.",
+          "format": "date-time"
+        },
+        "originalFilename": {
+          "type": "string",
+          "description": "The original filename of the uploaded document."
+        },
+        "extractedText": {
+          "type": "string",
+          "description": "The text extracted from the document."
+        },
+        "documentType": {
+          "type": "string",
+          "description": "Type of document (e.g., identity proof, billing, medical report).",
+          "format": "string"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "uploadDate",
+        "originalFilename",
+        "extractedText",
+        "documentType"
+      ]
+    },
+    "IdentityProofDetails": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "IdentityProofDetails",
+      "type": "object",
+      "description": "Represents the extracted details from an identity proof document.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the IdentityProofDetails entity."
+        },
+        "documentId": {
+          "type": "string",
+          "description": "Reference to the Document this identity proof data belongs to. (Relationship: Document 1:1 IdentityProofDetails)"
+        },
         "name": {
           "type": "string",
-          "description": "The full name of the beneficiary."
+          "description": "Name extracted from the identity document."
         },
         "address": {
           "type": "string",
-          "description": "The beneficiary's full residential address."
-        },
-        "phone": {
-          "type": "string",
-          "description": "The beneficiary's 10-digit phone number."
-        },
-        "members": {
-          "type": "integer",
-          "description": "The number of members in the beneficiary's family."
-        },
-        "earningMembers": {
-          "type": "integer",
-          "description": "The number of earning members in the family."
-        },
-        "male": {
-          "type": "integer",
-          "description": "The number of male members in the family."
-        },
-        "female": {
-          "type": "integer",
-          "description": "The number of female members in the family."
-        },
-        "addedDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The date the beneficiary was added to the campaign."
-        },
-        "idProofType": {
-          "type": "string",
-          "description": "The type of ID proof provided (e.g., Aadhaar, PAN)."
+          "description": "Address extracted from the identity document."
         },
         "idNumber": {
           "type": "string",
-          "description": "The ID number from the provided proof."
-        },
-        "referralBy": {
-          "type": "string",
-          "description": "The person or organization that referred the beneficiary."
-        },
-        "kitAmount": {
-          "type": "number",
-          "description": "The total amount of the ration kit provided, in Rupees."
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "Given",
-            "Pending",
-            "Hold",
-            "Need More Details",
-            "Verified"
-          ],
-          "description": "The current status of the beneficiary's ration kit."
-        },
-        "idProofUrl": {
-          "type": "string",
-          "description": "URL of the uploaded ID proof document."
-        },
-        "idProofIsPublic": {
-          "type": "boolean",
-          "description": "Whether the ID proof document is publicly visible."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of when the beneficiary was created."
-        },
-        "createdById": {
-          "type": "string",
-          "description": "ID of the user who added the beneficiary."
-        },
-        "createdByName": {
-          "type": "string",
-          "description": "Name of the user who added the beneficiary."
+          "description": "ID number extracted from the identity document."
         }
       },
       "required": [
+        "id",
+        "documentId",
         "name",
-        "referralBy"
+        "address",
+        "idNumber"
       ]
     },
-    "Campaign": {
-      "title": "Campaign",
-      "description": "A campaign to distribute resources, such as ration kits.",
+    "BillingDetails": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BillingDetails",
       "type": "object",
+      "description": "Represents the extracted details from a billing document.",
       "properties": {
-        "name": {
+        "id": {
           "type": "string",
-          "description": "The name of the campaign."
+          "description": "Unique identifier for the BillingDetails entity."
         },
-        "category": {
+        "documentId": {
           "type": "string",
-          "description": "The category of the campaign (e.g., Ration, Relief).",
-          "enum": [
-            "Ration",
-            "Relief",
-            "General"
-          ]
+          "description": "Reference to the Document this billing data belongs to. (Relationship: Document 1:1 BillingDetails)"
         },
-        "description": {
+        "date": {
           "type": "string",
-          "description": "A detailed description of the campaign's goals and purpose."
-        },
-        "targetAmount": {
-          "type": "number",
-          "description": "The fundraising goal for the campaign in Rupees."
-        },
-        "startDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The start date of the campaign."
-        },
-        "endDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The end date of the campaign."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the campaign (e.g., 'Upcoming', 'Active', 'Completed')."
-        },
-        "priceDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The date for which the ration prices are valid."
-        },
-        "shopName": {
-          "type": "string",
-          "description": "The name of the shop where items are purchased."
-        },
-        "shopContact": {
-          "type": "string",
-          "description": "The contact number for the shop."
-        },
-        "shopAddress": {
-          "type": "string",
-          "description": "The address of the shop."
-        },
-        "documents": {
-          "type": "array",
-          "description": "A list of related documents for the campaign.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string" },
-              "url": { "type": "string" },
-              "isPublic": { "type": "boolean" }
-            },
-            "required": ["name", "url", "isPublic"]
-          }
-        },
-        "rationLists": {
-          "type": "object",
-          "description": "A map where keys are member counts (e.g., '5', 'General Item List') and values are the corresponding lists of ration items.",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "$ref": "#/backend/entities/RationItem"
-            }
-          }
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of when the campaign was created."
-        },
-        "createdById": {
-          "type": "string",
-          "description": "ID of the user who created the campaign."
-        },
-        "createdByName": {
-          "type": "string",
-          "description": "Name of the user who created the campaign."
-        }
-      },
-      "required": [
-        "name",
-        "category",
-        "status",
-        "startDate",
-        "endDate"
-      ]
-    },
-    "Lead": {
-      "title": "Lead",
-      "description": "A lead for a potential campaign or initiative.",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The name of the lead."
-        },
-        "category": {
-          "type": "string",
-          "description": "The category of the lead (e.g., Ration, Relief).",
-          "enum": [
-            "Ration",
-            "Relief",
-            "General"
-          ]
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the lead's goals and purpose."
-        },
-        "targetAmount": {
-          "type": "number",
-          "description": "The fundraising goal for the lead in Rupees."
-        },
-        "startDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The start date of the lead."
-        },
-        "endDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The end date of the lead."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the lead (e.g., 'Upcoming', 'Active', 'Completed')."
-        },
-        "priceDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The date for which the ration prices are valid."
-        },
-        "shopName": {
-          "type": "string",
-          "description": "The name of the shop where items are purchased."
-        },
-        "shopContact": {
-          "type": "string",
-          "description": "The contact number for the shop."
-        },
-        "shopAddress": {
-          "type": "string",
-          "description": "The address of the shop."
-        },
-        "documents": {
-          "type": "array",
-          "description": "A list of related documents for the lead.",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": { "type": "string" },
-              "url": { "type": "string" },
-              "isPublic": { "type": "boolean" }
-            },
-            "required": ["name", "url", "isPublic"]
-          }
-        },
-        "rationLists": {
-          "type": "object",
-          "description": "A map where keys are member counts (e.g., '5', 'General Item List') and values are the corresponding lists of ration items.",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "$ref": "#/backend/entities/RationItem"
-            }
-          }
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of when the lead was created."
-        },
-        "createdById": {
-          "type": "string",
-          "description": "ID of the user who created the lead."
-        },
-        "createdByName": {
-          "type": "string",
-          "description": "Name of the user who created the lead."
-        }
-      },
-      "required": [
-        "name",
-        "category",
-        "status",
-        "startDate",
-        "endDate"
-      ]
-    },
-    "Donation": {
-      "title": "Donation",
-      "description": "A donation made towards a campaign.",
-      "type": "object",
-      "properties": {
-        "donorName": {
-          "type": "string",
-          "description": "The name of the donor."
-        },
-        "donorPhone": {
-          "type": "string",
-          "description": "The donor's 10-digit phone number."
-        },
-        "receiverName": {
-          "type": "string",
-          "description": "The name of the person who received the donation."
+          "description": "Date on the bill.",
+          "format": "date-time"
         },
         "amount": {
           "type": "number",
-          "description": "The donation amount in Rupees."
+          "description": "Total amount on the bill."
         },
-        "type": {
+        "vendorInformation": {
           "type": "string",
-          "enum": [
-            "Zakat",
-            "Sadqa",
-            "Interest",
-            "Lillah",
-            "General"
-          ],
-          "description": "The type of donation."
+          "description": "Information about the vendor."
         },
-        "donationType": {
+        "purchasedItems": {
           "type": "string",
-          "enum": [
-            "Cash",
-            "Online Payment",
-            "Check",
-            "Other"
-          ],
-          "description": "The method of payment for the donation."
-        },
-        "transactionId": {
-          "type": "string",
-          "description": "A unique transaction identifier (e.g., UPI Transaction ID) for online payments. Helps prevent duplicate entries."
-        },
-        "referral": {
-          "type": "string",
-          "description": "The person or entity that referred the donor."
-        },
-        "donationDate": {
-          "type": "string",
-          "format": "date",
-          "description": "The date the donation was made."
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "Verified",
-            "Pending",
-            "Canceled"
-          ],
-          "description": "The verification status of the donation."
-        },
-        "screenshotUrl": {
-          "type": "string",
-          "description": "URL of the uploaded donation screenshot."
-        },
-        "screenshotIsPublic": {
-          "type": "boolean",
-          "description": "Whether the donation screenshot is publicly visible."
-        },
-        "uploadedBy": {
-          "type": "string",
-          "description": "Name of the user who recorded the donation."
-        },
-        "uploadedById": {
-          "type": "string",
-          "description": "ID of the user who recorded the donation."
-        },
-        "campaignId": {
-          "type": "string",
-          "description": "The ID of the campaign this donation belongs to."
-        },
-        "campaignName": {
-          "type": "string",
-          "description": "The name of the campaign this donation belongs to."
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of when the donation was recorded."
+          "description": "List of purchased items."
         }
       },
       "required": [
-        "donorName",
-        "receiverName",
+        "id",
+        "documentId",
+        "date",
         "amount",
-        "type",
-        "donationType",
-        "referral",
-        "donationDate",
-        "status",
-        "uploadedBy",
-        "uploadedById",
-        "campaignId",
-        "campaignName"
+        "vendorInformation",
+        "purchasedItems"
       ]
     },
-    "CrudPermissions": {
-      "title": "CRUD Permissions",
-      "description": "Defines full Create, Read, Update, Delete permissions.",
+    "MedicalReportDetails": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MedicalReportDetails",
       "type": "object",
+      "description": "Represents the extracted details from a medical report document.",
       "properties": {
-        "create": {
-          "type": "boolean"
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MedicalReportDetails entity."
         },
-        "read": {
-          "type": "boolean"
+        "documentId": {
+          "type": "string",
+          "description": "Reference to the Document this medical report data belongs to. (Relationship: Document 1:1 MedicalReportDetails)"
         },
-        "update": {
-          "type": "boolean"
+        "diagnosticDetails": {
+          "type": "string",
+          "description": "Details of the diagnosis."
         },
-        "delete": {
-          "type": "boolean"
+        "diseaseInformation": {
+          "type": "string",
+          "description": "Information about the disease."
+        },
+        "keyFindings": {
+          "type": "string",
+          "description": "Key findings from the medical report."
         }
       },
-      "additionalProperties": false
+      "required": [
+        "id",
+        "documentId",
+        "diagnosticDetails",
+        "diseaseInformation",
+        "keyFindings"
+      ]
     }
   },
   "auth": {
     "providers": [
-      "Email/Password",
-      "Phone"
+      "password",
+      "anonymous"
     ]
   },
   "firestore": {
-    "/settings/branding": {
-      "schema": {
-        "$ref": "#/backend/entities/Branding"
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles.  Access is restricted to the user themselves.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
       },
-      "description": "Stores global branding settings like the logo URL."
-    },
-    "/settings/payment": {
-      "schema": {
-        "$ref": "#/backend/entities/PaymentSettings"
+      {
+        "path": "/users/{userId}/documents/{documentId}",
+        "definition": {
+          "entityName": "Document",
+          "schema": {
+            "$ref": "#/backend/entities/Document"
+          },
+          "description": "Stores documents uploaded by users. Each document includes the denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "documentId",
+              "description": "The unique identifier for the document."
+            }
+          ]
+        }
       },
-      "description": "Stores global payment settings like QR code and UPI ID."
-    },
-    "/user_lookups/{lookupId}": {
-      "schema": {
-        "$ref": "#/backend/entities/UserLookup"
+      {
+        "path": "/users/{userId}/documents/{documentId}/identityProofDetails/{identityProofDetailsId}",
+        "definition": {
+          "entityName": "IdentityProofDetails",
+          "schema": {
+            "$ref": "#/backend/entities/IdentityProofDetails"
+          },
+          "description": "Stores extracted identity proof details.  Parent document contains userId for access control.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "documentId",
+              "description": "The unique identifier for the document."
+            },
+            {
+              "name": "identityProofDetailsId",
+              "description": "The unique identifier for the identity proof details."
+            }
+          ]
+        }
       },
-      "description": "Publicly readable mapping of login IDs and phone numbers to user keys."
-    },
-    "/users/{userId}": {
-      "schema": {
-        "$ref": "#/backend/entities/UserProfile"
+      {
+        "path": "/users/{userId}/documents/{documentId}/billingDetails/{billingDetailsId}",
+        "definition": {
+          "entityName": "BillingDetails",
+          "schema": {
+            "$ref": "#/backend/entities/BillingDetails"
+          },
+          "description": "Stores extracted billing details.  Parent document contains userId for access control.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "documentId",
+              "description": "The unique identifier for the document."
+            },
+            {
+              "name": "billingDetailsId",
+              "description": "The unique identifier for the billing details."
+            }
+          ]
+        }
       },
-      "description": "Stores public profile information for each user."
-    },
-    "/campaigns/{campaignId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Campaign"
-      },
-      "description": "Stores details for each campaign."
-    },
-    "/campaigns/{campaignId}/beneficiaries/{beneficiaryId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Beneficiary"
-      },
-      "description": "Stores the list of beneficiaries for a specific campaign."
-    },
-    "/leads/{leadId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Lead"
-      },
-      "description": "Stores details for each lead."
-    },
-    "/leads/{leadId}/beneficiaries/{beneficiaryId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Beneficiary"
-      },
-      "description": "Stores the list of beneficiaries for a specific lead."
-    },
-    "/donations/{donationId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Donation"
-      },
-      "description": "Stores all donation records across all campaigns."
-    }
+      {
+        "path": "/users/{userId}/documents/{documentId}/medicalReportDetails/{medicalReportDetailsId}",
+        "definition": {
+          "entityName": "MedicalReportDetails",
+          "schema": {
+            "$ref": "#/backend/entities/MedicalReportDetails"
+          },
+          "description": "Stores extracted medical report details. Parent document contains userId for access control.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "documentId",
+              "description": "The unique identifier for the document."
+            },
+            {
+              "name": "medicalReportDetailsId",
+              "description": "The unique identifier for the medical report details."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure secure and scalable data management for the DocuExtract application. It emphasizes authorization independence and simplifies security rules by denormalizing authorization data and segregating data based on access control needs.\n\n*   **Users Collection (`/users/{userId}`):** Stores user profiles. Access is restricted to the user themselves.\n*   **Documents Collection (`/users/{userId}/documents/{documentId}`):** Stores documents uploaded by users. Each document is a subcollection of a specific user, enforcing ownership. The `userId` is explicitly included within each document to ensure Authorization Independence. This allows for direct and secure rules based on user ownership without needing to traverse to the parent.\n*   **IdentityProofDetails, BillingDetails, MedicalReportDetails Subcollections (`/users/{userId}/documents/{documentId}/identityProofDetails/{identityProofDetailsId}`, `/users/{userId}/documents/{documentId}/billingDetails/{billingDetailsId}`, `/users/{userId}/documents/{documentId}/medicalReportDetails/{medicalReportDetailsId}`):** These collections store the extracted details for each document type. They are subcollections of documents owned by the user. Each document details entity contains `documentId` for reverse lookup to document, with document residing in `/users/{userId}/documents/{documentId}`. This approach enables implementing security rules to ensure only the owner can access these details.\n\n**Authorization Independence:**\n\nAuthorization Independence is achieved by denormalizing the `userId` into the `documents` collection. This eliminates the need for `get()` calls in the security rules to verify ownership, enabling atomic operations and improving performance. Security rules can directly check `request.auth.uid == resource.data.userId`.\n\n**QAPs (Rules are not Filters):**\n\nThe structure supports secure `list` operations by leveraging the hierarchical structure and ownership model. Listing documents is always performed within the context of a specific user (`/users/{userId}/documents`). Security rules can easily filter based on `request.auth.uid == userId`, ensuring users can only list their own documents. Similar filtering is enforced for the subcollections (`IdentityProofDetails`, `BillingDetails`, and `MedicalReportDetails`), which are accessed via parent document ID."
   }
 }

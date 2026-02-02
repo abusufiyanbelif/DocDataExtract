@@ -1,89 +1,183 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model where all data is private.
+ * Access is granted exclusively to the authenticated user who owns the data. There are no public
+ * collections or shared data access patterns.
+ *
+ * Data Structure: All application data is organized hierarchically under the `/users/{userId}`
+ * path. This top-level segregation ensures that all queries and document access are naturally
+ * scoped to a specific user, making security rules simple, performant, and secure by default.
+ *
+ * Key Security Decisions:
+ * - Strict Ownership: A user can only read or write data within their own document tree
+ *   (e.g., `/users/{their-own-uid}/...`).
+ * - No User Enumeration: Listing documents in the top-level `/users` collection is explicitly
+ *   disallowed to protect user privacy.
+ * - Profile Deletion Disabled: Direct client-side deletion of a user's root profile document
+ *   is disabled to prevent accidental data loss. Such operations should be handled by a
+ *   trusted server environment (e.g., Cloud Functions).
+ *
+ * Denormalization for Authorization: The `Document` entity contains a denormalized `userId` field.
+ * This is a deliberate design choice that makes the security rules for documents faster and more
+ * secure. Instead of needing a `get()` call to check the parent path, the rule can directly
+*  validate ownership against a field in the document itself, which is more efficient.
+ *
+ * Structural Segregation: The entire data model is segregated by user ID at the root level.
+ * This is the most secure and performant way to handle private user data, as it prevents any
+ * possibility of data leakage between users at the query level.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions to check user roles and ownership.
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-    
-    function isAdmin() {
-      // Check if the user has the 'Admin' role in their user profile document.
-      return isSignedIn() && getUserData().role == 'Admin';
-    }
-    
-    function hasPermission(module, permission) {
-        return isAdmin() || (isSignedIn() && getUserData().permissions[module][permission] == true);
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the primary function for verifying data ownership.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    function hasSubmodulePermission(module, submodule, permission) {
-        return isAdmin() || (isSignedIn() && getUserData().permissions[module][submodule][permission] == true);
+    /**
+     * For update and delete operations, confirms the document exists AND the user is the owner.
+     * This prevents users from attempting to modify documents that don't exist.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
     }
 
-    // Default deny all access unless explicitly allowed.
-    match /{document=**} {
-      allow read, write: if false;
+    /**
+     * On create, validates that the user is creating their own profile document
+     * and that the document's internal 'id' field matches the path UID for integrity.
+     */
+    function isCreatingOwnValidProfile(userId) {
+      return isOwner(userId) && request.resource.data.id == userId;
     }
 
-    // Settings are public to read for branding, but only admins can change them.
-    match /settings/{settingId} {
-      allow read: if true;
-      allow write: if hasPermission('settings', 'update');
+    /**
+     * On update, ensures the document's internal 'id' field cannot be changed.
+     */
+    function isProfileIdImmutable() {
+      return request.resource.data.id == resource.data.id;
     }
     
-    // User lookups are public for login, but only admins can create/update them
-    // to ensure integrity. This prevents users from hijacking accounts.
-    match /user_lookups/{lookupId} {
-        allow read: if true;
-        allow write: if hasPermission('users', 'create') || hasPermission('users', 'update');
+    /**
+     * On create, validates the user is creating a document under their own path and
+     * that the denormalized `userId` field is correctly set to their own UID.
+     */
+    function isCreatingOwnValidDocument(userId) {
+      return isOwner(userId) && request.resource.data.userId == userId;
     }
-    
-    // Users can read other users' basic profiles.
-    // A user can update their own profile. Admins can update any profile.
-    // Only Admins can delete users.
+
+    /**
+     * On update, ensures the denormalized `userId` ownership field is immutable.
+     */
+    function isDocumentOwnerImmutable() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    /**
+     * On create, validates that a detail record's internal `documentId` correctly
+     * references the parent document ID from the path.
+     */
+    function isCreatingValidDetail(documentId) {
+      return request.resource.data.documentId == documentId;
+    }
+
+    /**
+     * On update, ensures the parent document link (`documentId`) is immutable.
+     */
+    function isDetailParentLinkImmutable() {
+      return request.resource.data.documentId == resource.data.documentId;
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile documents.
+     * @path /users/{userId}
+     * @allow (create) A new user creating their own profile document.
+     * @deny (list) Any user attempting to list all user profiles.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow create: if hasPermission('users', 'create');
-      allow update: if (request.auth.uid == userId) || hasPermission('users', 'update');
-      allow delete: if hasPermission('users', 'delete');
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isCreatingOwnValidProfile(userId);
+      allow update: if isExistingOwner(userId) && isProfileIdImmutable();
+      allow delete: if false; // Deleting users should be a privileged server-side operation.
     }
 
-    // Campaigns and Leads are public to read for transparency.
-    // Write operations are restricted based on permissions.
-    match /campaigns/{campaignId} {
-      allow read: if true;
-      allow create: if hasPermission('campaigns', 'create');
-      allow update: if hasPermission('campaigns', 'update');
-      allow delete: if hasPermission('campaigns', 'delete');
-      
-      match /beneficiaries/{beneficiaryId} {
-        allow read: if true;
-        allow create: if hasSubmodulePermission('campaigns', 'beneficiaries', 'create');
-        allow update: if hasSubmodulePermission('campaigns', 'beneficiaries', 'update');
-        allow delete: if hasSubmodulePermission('campaigns', 'beneficiaries', 'delete');
-      }
+    /**
+     * @description Manages user-uploaded documents, which are stored in a subcollection.
+     * @path /users/{userId}/documents/{documentId}
+     * @allow (create) An authenticated user creating a document for themselves.
+     * @deny (get) A user trying to read a document belonging to another user.
+     * @principle Enforces document ownership for all operations using the path's {userId}.
+     */
+    match /users/{userId}/documents/{documentId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isCreatingOwnValidDocument(userId);
+      allow update: if isExistingOwner(userId) && isDocumentOwnerImmutable();
+      allow delete: if isExistingOwner(userId);
     }
-    
-    match /leads/{leadId} {
-      allow read, create, update, delete: if hasPermission('leads', 'read');
 
-      match /beneficiaries/{beneficiaryId} {
-        allow read, create, update, delete: if hasPermission('leads', 'read');
-      }
+    /**
+     * @description Secures extracted details from an identity proof document.
+     * @path /users/{userId}/documents/{documentId}/identityProofDetails/{identityProofDetailsId}
+     * @allow (update) The document owner updating details of their own identity proof.
+     * @deny (list) A user trying to list identity details from another user's document.
+     * @principle Inherits ownership from the path, ensuring only the owner can access sensitive details.
+     */
+    match /users/{userId}/documents/{documentId}/identityProofDetails/{identityProofDetailsId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isCreatingValidDetail(documentId);
+      allow update: if isExistingOwner(userId) && isDetailParentLinkImmutable();
+      allow delete: if isExistingOwner(userId);
     }
-    
-    // Donations can be read by anyone.
-    // Creating, updating, or deleting donations requires specific permissions.
-    match /donations/{donationId} {
-        allow read: if true;
-        allow create: if hasSubmodulePermission('campaigns', 'donations', 'create');
-        allow update: if hasSubmodulePermission('campaigns', 'donations', 'update');
-        allow delete: if hasSubmodulePermission('campaigns', 'donations', 'delete');
+
+    /**
+     * @description Secures extracted details from a billing document.
+     * @path /users/{userId}/documents/{documentId}/billingDetails/{billingDetailsId}
+     * @allow (get) The document owner reading their own billing information.
+     * @deny (create) A user trying to create billing details under another user's document.
+     * @principle Inherits ownership from the path, ensuring only the owner can access sensitive details.
+     */
+    match /users/{userId}/documents/{documentId}/billingDetails/{billingDetailsId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isCreatingValidDetail(documentId);
+      allow update: if isExistingOwner(userId) && isDetailParentLinkImmutable();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures extracted details from a medical report.
+     * @path /users/{userId}/documents/{documentId}/medicalReportDetails/{medicalReportDetailsId}
+     * @allow (delete) The document owner deleting their own medical report data.
+     * @deny (get) A user trying to access another user's private medical information.
+     * @principle Inherits ownership from the path, ensuring only the owner can access sensitive details.
+     */
+    match /users/{userId}/documents/{documentId}/medicalReportDetails/{medicalReportDetailsId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isCreatingValidDetail(documentId);
+      allow update: if isExistingOwner(userId) && isDetailParentLinkImmutable();
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
