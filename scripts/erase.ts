@@ -1,5 +1,6 @@
+
 import * as admin from 'firebase-admin';
-import 'dotenv/config';
+import { adminAuth, adminDb, adminStorage } from '../src/lib/firebase-admin-sdk';
 
 const log = {
   info: (msg: string) => console.log(`\x1b[34mℹ️ ${msg}\x1b[0m`),
@@ -13,28 +14,15 @@ const log = {
 async function main() {
   log.step(0, 'Starting Erase Script...');
 
-  // 1. Initialize Admin SDK
-  try {
-    const serviceAccount = require('../serviceAccountKey.json');
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    });
-  } catch (error: any) {
-    if (error.code === 'MODULE_NOT_FOUND') {
-        log.error('`serviceAccountKey.json` not found in the project root.');
-        log.info('Please download it from your Firebase project settings and place it in the root directory.');
-    } else {
-        log.error(`Firebase Admin SDK initialization error: ${error.message}`);
-    }
+  if (!adminDb || !adminAuth || !adminStorage) {
+    log.error('Firebase Admin SDK not initialized. Is `serviceAccountKey.json` present? Aborting.');
     process.exit(1);
   }
 
-  const db = admin.firestore();
-  log.info('This script targets the (default) Firestore database for all delete operations.');
-  const storage = admin.storage().bucket();
-  const auth = admin.auth();
+  const db = adminDb;
+  log.info('This script targets the "bmss-solapur-v6" Firestore database for all delete operations.');
+  const storage = adminStorage.bucket();
+  const auth = adminAuth;
 
   const BATCH_SIZE = 100;
   const ADMIN_EMAIL = 'baitulmalss.solapur@gmail.com';
