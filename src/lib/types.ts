@@ -127,7 +127,9 @@ export interface Donation extends DocumentData {
   screenshotIsPublic?: boolean;
   uploadedBy: string;
   uploadedById: string;
-  campaignId: string;
-  campaignName: string;
+  campaignId?: string;
+  campaignName?: string;
+  leadId?: string;
+  leadName?: string;
   createdAt?: any;
 }

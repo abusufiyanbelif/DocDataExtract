@@ -1,19 +1,17 @@
 
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Plus, ArrowUp, ArrowDown, ShieldAlert, MoreHorizontal, Trash2 } from 'lucide-react';
-import { useCollection, useFirestore, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { ArrowLeft, Plus, ShieldAlert, MoreHorizontal, Trash2, Edit, Copy } from 'lucide-react';
+import { useCollection, useFirestore } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
-import type { Lead, Beneficiary, Donation } from '@/lib/types';
+import type { Lead } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
-import { collection, query, where, getDocs, writeBatch, doc } from 'firebase/firestore';
-import { ref as storageRef, deleteObject } from 'firebase/storage';
+import { collection } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -21,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -34,47 +33,71 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { CopyLeadDialog } from '@/components/copy-lead-dialog';
+import { copyLeadAction, deleteLeadAction } from './actions';
 
 
 type SortKey = keyof Lead | 'srNo';
 
 export default function LeadPage() {
   const router = useRouter();
-  const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'startDate', direction: 'descending' });
   const [isDeleting, setIsDeleting] = useState(false);
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+
+  const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
+  const [leadToCopy, setLeadToCopy] = useState<Lead | null>(null);
   
   const { userProfile, isLoading: isProfileLoading } = useSession();
 
   const leadsCollectionRef = useMemo(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'leads');
-  }, [firestore]);
+    return collection(useFirestore()!, 'leads');
+  }, [useFirestore()]);
 
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsCollectionRef);
 
-  const handleRowClick = (leadId: string) => {
-    // router.push(`/leads/${leadId}/summary`);
-  };
-  
   const handleDeleteClick = (lead: Lead) => {
     if (!canDelete) return;
     setLeadToDelete(lead);
     setIsDeleteDialogOpen(true);
   };
 
+  const handleCopyClick = (lead: Lead) => {
+    if (!canCreate) return;
+    setLeadToCopy(lead);
+    setIsCopyDialogOpen(true);
+  };
+
+  const handleCopyConfirm = async (options: { newName: string; copyBeneficiaries: boolean; copyDonations: boolean; copyRationLists: boolean; }) => {
+    if (!leadToCopy || !canCreate) return;
+
+    setIsCopyDialogOpen(false);
+    toast({ title: 'Copying lead...', description: `Please wait while '${leadToCopy.name}' is being copied.`});
+    
+    const result = await copyLeadAction({
+        sourceLeadId: leadToCopy.id,
+        ...options
+    });
+
+    if (result.success) {
+        toast({ title: 'Lead Copied', description: result.message, variant: 'success' });
+    } else {
+        toast({ title: 'Copy Failed', description: result.message, variant: 'destructive' });
+    }
+
+    setLeadToCopy(null);
+  };
+
   const handleDeleteConfirm = async () => {
-    if (!leadToDelete || !firestore || !storage || !canDelete) {
+    if (!leadToDelete || !canDelete) {
         toast({ title: 'Error', description: 'Could not delete lead.', variant: 'destructive'});
         return;
     };
@@ -83,52 +106,16 @@ export default function LeadPage() {
     setIsDeleting(true);
     toast({ title: 'Deleting...', description: `Please wait while '${leadToDelete.name}' and all its data are being deleted.`});
 
-    try {
-        const leadId = leadToDelete.id;
+    const result = await deleteLeadAction(leadToDelete.id);
 
-        const beneficiariesRef = collection(firestore, `leads/${leadId}/beneficiaries`);
-        const beneficiariesSnap = await getDocs(beneficiariesRef);
-
-        const storageUrls: string[] = [];
-        beneficiariesSnap.forEach(doc => {
-            const data = doc.data() as Beneficiary;
-            if (data.idProofUrl) storageUrls.push(data.idProofUrl);
-        });
-
-        const deleteFilePromises = storageUrls.map(url => {
-            const fileRef = storageRef(storage, url);
-            return deleteObject(fileRef).catch(error => {
-                if (error.code !== 'storage/object-not-found') {
-                    console.warn(`Failed to delete file ${url}`, error);
-                }
-            });
-        });
-
-        await Promise.all(deleteFilePromises);
-        
-        const batch = writeBatch(firestore);
-        beneficiariesSnap.forEach(doc => batch.delete(doc.ref));
-        batch.delete(doc(firestore, 'leads', leadId));
-
-        await batch.commit();
-        
-        toast({ title: 'Success', description: `Lead '${leadToDelete.name}' was successfully deleted.`, variant: 'success' });
-
-    } catch (error: any) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `leads/${leadToDelete.id} and all sub-collections`, operation: 'delete' }));
-    } finally {
-        setIsDeleting(false);
-        setLeadToDelete(null);
+    if (result.success) {
+        toast({ title: 'Success', description: result.message, variant: 'success' });
+    } else {
+        toast({ title: 'Deletion Failed', description: result.message, variant: 'destructive' });
     }
-  };
-
-
-  const handleSort = (key: SortKey) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-        direction = 'descending';
-    }
-    setSortConfig({ key, direction });
+    
+    setIsDeleting(false);
+    setLeadToDelete(null);
   };
   
   const filteredAndSortedLeads = useMemo(() => {
@@ -150,18 +137,21 @@ export default function LeadPage() {
 
     if (sortConfig !== null) {
         sortableItems.sort((a, b) => {
-            if (sortConfig.key === 'srNo') return 0;
-            const aValue = a[sortConfig.key] ?? '';
-            const bValue = b[sortConfig.key] ?? '';
+            const aValue = a[sortConfig.key as keyof Lead] ?? '';
+            const bValue = b[sortConfig.key as keyof Lead] ?? '';
             
+            if (sortConfig.key === 'startDate' || sortConfig.key === 'endDate') {
+                return sortConfig.direction === 'ascending' ? new Date(aValue as string).getTime() - new Date(bValue as string).getTime() : new Date(bValue as string).getTime() - new Date(aValue as string).getTime();
+            }
+
             if (typeof aValue === 'number' && typeof bValue === 'number') {
                 return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
             }
             if (typeof aValue === 'string' && typeof bValue === 'string') {
-                 if (aValue < bValue) {
+                 if (aValue.toLowerCase() < bValue.toLowerCase()) {
                     return sortConfig.direction === 'ascending' ? -1 : 1;
                 }
-                if (aValue > bValue) {
+                if (aValue.toLowerCase() > bValue.toLowerCase()) {
                     return sortConfig.direction === 'ascending' ? 1 : -1;
                 }
             }
@@ -181,19 +171,8 @@ export default function LeadPage() {
     !!leadPerms?.donations?.read;
   const canViewLeads = userProfile?.role === 'Admin' || !!leadPerms?.read || canReadAnySubmodule;
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.create;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.update;
   const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.delete;
-  
-  const SortableHeader = ({ sortKey, children, className }: { sortKey: SortKey, children: React.ReactNode, className?: string }) => {
-    const isSorted = sortConfig?.key === sortKey;
-    return (
-        <TableHead className={cn("cursor-pointer hover:bg-muted/50", className)} onClick={() => handleSort(sortKey)}>
-            <div className="flex items-center gap-2">
-                {children}
-                {isSorted && (sortConfig?.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />)}
-            </div>
-        </TableHead>
-    );
-  };
   
   if (!isLoading && userProfile && !canViewLeads) {
     return (
@@ -281,64 +260,86 @@ export default function LeadPage() {
             )}
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {canDelete && <TableHead className="w-[50px] text-center">Actions</TableHead>}
-                  <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
-                  <SortableHeader sortKey="name">Lead Name</SortableHeader>
-                  <SortableHeader sortKey="category">Category</SortableHeader>
-                  <SortableHeader sortKey="startDate">Start Date</SortableHeader>
-                  <SortableHeader sortKey="endDate">End Date</SortableHeader>
-                  <SortableHeader sortKey="status">Status</SortableHeader>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {isLoading && (
-                  [...Array(3)].map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell colSpan={canDelete ? 7 : 6}><Skeleton className="h-6 w-full" /></TableCell>
-                    </TableRow>
-                  ))
+                    [...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
                 )}
-                {!isLoading && filteredAndSortedLeads.map((lead, index) => (
-                  <TableRow key={lead.id} className="cursor-pointer" onClick={() => handleRowClick(lead.id)}>
-                    {canDelete && (
-                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                  {canDelete && (
-                                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(lead); }} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          Delete
-                                      </DropdownMenuItem>
-                                  )}
-                              </DropdownMenuContent>
-                          </DropdownMenu>
-                      </TableCell>
-                    )}
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-medium">{lead.name}</TableCell>
-                    <TableCell>{lead.category}</TableCell>
-                    <TableCell>{lead.startDate}</TableCell>
-                    <TableCell>{lead.endDate}</TableCell>
-                    <TableCell>{lead.status}</TableCell>
-                  </TableRow>
+                {!isLoading && filteredAndSortedLeads.map((lead) => (
+                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                            <div className="flex justify-between items-start gap-2">
+                                <CardTitle className="truncate flex-1">{lead.name}</CardTitle>
+                                 <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        {canUpdate && (
+                                            <DropdownMenuItem
+                                                onClick={() => router.push(`/leads/${lead.id}/summary`)}
+                                                className="cursor-pointer"
+                                            >
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </DropdownMenuItem>
+                                        )}
+                                        {canCreate && (
+                                            <DropdownMenuItem
+                                                onClick={() => handleCopyClick(lead)}
+                                                className="cursor-pointer"
+                                            >
+                                                <Copy className="mr-2 h-4 w-4" />
+                                                Copy
+                                            </DropdownMenuItem>
+                                        )}
+                                        {(canUpdate || canCreate) && canDelete && <DropdownMenuSeparator />}
+                                        {canDelete && (
+                                            <DropdownMenuItem
+                                                onClick={(e) => { e.stopPropagation(); handleDeleteClick(lead); }}
+                                                className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer"
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                            <CardDescription>{lead.startDate} to {lead.endDate}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                             <div className="flex justify-between text-sm text-muted-foreground">
+                                <Badge variant="outline">{lead.category}</Badge>
+                                <Badge variant={
+                                    lead.status === 'Active' ? 'success' :
+                                    lead.status === 'Completed' ? 'secondary' : 'outline'
+                                }>{lead.status}</Badge>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button asChild className="w-full">
+                                <Link href={`/leads/${lead.id}/summary`}>
+                                    View Details
+                                </Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
                 ))}
-                {!isLoading && filteredAndSortedLeads.length === 0 && (
-                    <TableRow>
-                        <TableCell colSpan={canDelete ? 7 : 6} className="text-center text-muted-foreground h-24">
-                           No leads found matching your criteria. {canCreate && leads?.length === 0 && <Link href="/leads/create" className="text-primary underline">Create one now</Link>}
-                        </TableCell>
-                    </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            </div>
+             {!isLoading && filteredAndSortedLeads.length === 0 && (
+                 <div className="text-center py-16">
+                    <p className="text-muted-foreground">No leads found matching your criteria.</p>
+                    {canCreate && leads?.length === 0 && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                            <Link href="/leads/create" className="text-primary underline">
+                                Create one now
+                            </Link>
+                        </p>
+                    )}
+                </div>
+            )}
           </CardContent>
         </Card>
       </main>
@@ -348,7 +349,7 @@ export default function LeadPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the lead '{leadToDelete?.name}' and all of its associated data.
+                    This action cannot be undone. This will permanently delete the lead '{leadToDelete?.name}' and all of its associated data, including beneficiaries and uploaded files.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -361,6 +362,13 @@ export default function LeadPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+        <CopyLeadDialog
+            open={isCopyDialogOpen}
+            onOpenChange={setIsCopyDialogOpen}
+            lead={leadToCopy}
+            onCopyConfirm={handleCopyConfirm}
+        />
 
     </div>
   );
