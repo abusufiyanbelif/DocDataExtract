@@ -4,8 +4,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
 import { SessionProvider } from '@/components/session-provider';
 import { AuthProvider } from '@/components/auth-provider';
-import { adminDb } from '@/lib/firebase-admin-sdk';
-import type { BrandingSettings } from '@/lib/types';
 import * as React from 'react';
 import { AppFooter } from '@/components/app-footer';
 
@@ -17,39 +15,15 @@ export const metadata: Metadata = {
   description: 'Managing and tracking community support campaigns efficiently.',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  let logoUrl: string | null = null;
-
-  try {
-    if (adminDb) {
-      const brandingSnap = await adminDb
-        .collection('settings')
-        .doc('branding')
-        .get();
-
-      if (brandingSnap.exists) {
-        logoUrl =
-          (brandingSnap.data() as BrandingSettings)?.logoUrl || null;
-      }
-    }
-  } catch (error) {
-    console.error(
-      'Failed to fetch branding settings on server:',
-      error
-    );
-  }
-
-  const watermarkStyle = logoUrl
-    ? ({ '--watermark-url': `url(${logoUrl})` } as React.CSSProperties)
-    : {};
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body style={watermarkStyle}>
+      <body>
         <FirebaseClientProvider>
           <div className="app-root">
             <SessionProvider>
