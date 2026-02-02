@@ -1,36 +1,22 @@
-
 'use client';
 
 import { createContext, useMemo, ReactNode } from 'react';
-import { useUser } from '@/firebase/auth/use-user';
-import { useFirestore } from '@/firebase/provider';
+import { useFirestore } from '@/firebase';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { Loader2 } from 'lucide-react';
 import { doc, DocumentReference } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import type { User } from 'firebase/auth';
 
-function FullScreenLoader({ message }: { message: string }) {
-    return (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
-            <div className="w-full max-w-xs text-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-                <p className="text-muted-foreground">{message}</p>
-            </div>
-        </div>
-    );
-}
-
 interface SessionContextType {
-    user: User | null;
+    user: User; // User is guaranteed to exist here
     userProfile: UserProfile | null;
     isLoading: boolean;
 }
 
 export const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
-export function SessionProvider({ children }: { children: ReactNode }) {
-  const { user: authUser, isLoading: isAuthLoading } = useUser();
+// It now receives the auth user as a prop
+export function SessionProvider({ authUser, children }: { authUser: User; children: ReactNode }) {
   const firestore = useFirestore();
 
   const userDocRef = useMemo(() => {
@@ -40,7 +26,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
   
-  const isLoading = isAuthLoading || (!!authUser && isProfileLoading);
+  // Auth is no longer loading here, only profile
+  const isLoading = isProfileLoading;
   
   const contextValue = {
       user: authUser,
@@ -50,7 +37,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SessionContext.Provider value={contextValue}>
-        {isLoading && authUser && <FullScreenLoader message="Loading session..." />}
         {children}
     </SessionContext.Provider>
   );

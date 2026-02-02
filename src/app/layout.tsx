@@ -1,11 +1,9 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
-import { SessionProvider } from '@/components/session-provider';
 import { AuthProvider } from '@/components/auth-provider';
 import * as React from 'react';
-import { AppFooter } from '@/components/app-footer';
+import { FirebaseProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: {
@@ -24,15 +22,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <SessionProvider>
-           <AuthProvider>
-              <div className="app-root">
-                {children}
-                <AppFooter />
-              </div>
-              <Toaster />
-            </AuthProvider>
-        </SessionProvider>
+        <FirebaseProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </FirebaseProvider>
       </body>
     </html>
   );

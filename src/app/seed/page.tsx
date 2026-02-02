@@ -35,7 +35,7 @@ export default function SeedPage() {
                 <AlertDescription>
                   <p>To run these scripts, you first need to provide admin credentials.</p>
                   <ol className="list-decimal list-inside space-y-2 mt-2 text-sm text-muted-foreground">
-                      <li>Go to your Firebase Project Settings {' > '} Service accounts.</li>
+                      <li>Go to your Firebase Project Settings &gt; Service accounts.</li>
                       <li>Click **Generate new private key** to download your service account JSON file.</li>
                       <li>Rename the downloaded file to `serviceAccountKey.json` and place it in the root directory of your project.</li>
                   </ol>
