@@ -1,19 +1,22 @@
 'use client';
+
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
-/**
- * This page is a redirect handler.
- * The original content of this page was causing a server error because it
- * was trying to use client-side libraries in a Server Component.
- * The correct public page for campaigns is now at /campaign-public.
- */
 export default function PublicRedirectPage() {
   const router = useRouter();
+
   useEffect(() => {
     router.replace('/campaign-public');
   }, [router]);
 
-  // Return null as the redirect will happen client-side
-  return null;
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Redirecting to public campaigns...</p>
+        </div>
+    </div>
+  )
 }
