@@ -16,7 +16,7 @@ async function main() {
 
   // 1. Initialize Admin SDK
   try {
-    const serviceAccount = require('../../serviceAccountKey.json');
+    const serviceAccount = require('../serviceAccountKey.json');
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
