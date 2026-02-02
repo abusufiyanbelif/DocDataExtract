@@ -5,7 +5,7 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 
-export function initializeFirebase(): { app: FirebaseApp; auth: Auth; firestore: Firestore; storage: FirebaseStorage; } {
+export function initializeFirebase(): { app: FirebaseApp; auth: Auth; firestore: Firestore | null; storage: FirebaseStorage; } {
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
       throw new Error('Firebase config is incomplete. Please ensure all NEXT_PUBLIC_FIREBASE_... environment variables are set.');
   }
@@ -13,7 +13,16 @@ export function initializeFirebase(): { app: FirebaseApp; auth: Auth; firestore:
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   
   const auth = getAuth(app);
-  const firestore = getFirestore(app);
+  
+  let firestore: Firestore | null = null;
+  try {
+    firestore = getFirestore(app);
+  } catch (e) {
+    // This can happen if the Firestore service is not enabled in the project yet.
+    // We will handle this gracefully in the AuthProvider.
+    console.warn('Firestore initialization failed. This may be expected if the service is not enabled.');
+  }
+
   const storage = getStorage(app);
 
   return { app, auth, firestore, storage };
