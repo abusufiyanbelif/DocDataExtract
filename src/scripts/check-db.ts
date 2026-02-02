@@ -1,6 +1,6 @@
 
 import 'dotenv/config';
-import * as admin from 'firebase-admin';
+import { adminAuth, adminDb } from '../lib/firebase-admin-sdk';
 
 // A simple logger with colors
 const log = {
@@ -13,46 +13,18 @@ const log = {
   detail: (key: string, value: string) => console.log(`   - ${key}: \x1b[1m${value}\x1b[0m`),
 };
 
-async function initializeFirebaseAdmin() {
-    log.step('Initializing Firebase Admin SDK');
-    try {
-        const serviceAccount = require('../serviceAccountKey.json');
-        const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-        log.dim(`Attempting to initialize for project: ${projectId || 'Not Set'}`);
-        if (!projectId) {
-            throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set in your .env file.');
-        }
-
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            projectId: projectId,
-        });
-        log.success('Firebase Admin SDK initialized successfully.');
-        return true;
-    } catch (e: any) {
-        if (e.code === 'app/duplicate-app') {
-            log.success('Firebase Admin SDK already initialized.');
-            return true;
-        }
-        if (e.code === 'MODULE_NOT_FOUND') {
-            log.error('Firebase Admin SDK initialization failed: `serviceAccountKey.json` not found.');
-            log.info("Please download your service account key from the Firebase Console and place it as 'serviceAccountKey.json' in your project's root directory.");
-        } else {
-            log.error(`Firebase Admin SDK initialization failed: ${e.message}`);
-        }
-        return false;
-    }
-}
 
 async function checkDatabaseDetails() {
     log.step('Checking Firestore Database Details');
+    if (!adminDb) {
+        throw new Error('Admin DB not initialized. Check serviceAccountKey.json.');
+    }
     try {
-        const db = admin.firestore('bmss-solapur-v6');
         log.info('This script targets the "bmss-solapur-v6" Firestore database.');
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'N/A';
         log.detail('Project ID', projectId);
 
-        const collections = await db.listCollections();
+        const collections = await adminDb.listCollections();
         log.detail('Total Root Collections', String(collections.length));
         
         if (collections.length > 0) {
@@ -61,7 +33,7 @@ async function checkDatabaseDetails() {
             log.warn('   No collections found in the database. It might be empty.');
         }
         
-        const usersSnap = await db.collection('users').count().get();
+        const usersSnap = await adminDb.collection('users').count().get();
         log.detail('Documents in "users" collection', String(usersSnap.data().count));
         
         log.success('Database connectivity confirmed.');
@@ -84,22 +56,23 @@ async function checkDatabaseDetails() {
 
 async function checkAdminUserDetails() {
     log.step('Verifying System Admin User Details');
+    if (!adminAuth || !adminDb) {
+        throw new Error('Admin Auth/DB not initialized. Check serviceAccountKey.json.');
+    }
+
     const adminEmail = 'baitulmalss.solapur@gmail.com';
     const adminLoginId = 'admin';
     const adminUserKey = 'admin';
     const adminPhone = '9270946423';
 
     try {
-        const auth = admin.auth();
-        const db = admin.firestore('bmss-solapur-v6');
-        
         log.info(`Checking for admin user in Firebase Auth with email: ${adminEmail}`);
-        const userRecord = await auth.getUserByEmail(adminEmail);
+        const userRecord = await adminAuth.getUserByEmail(adminEmail);
         log.success('Admin user found in Firebase Authentication.');
         log.detail('Auth UID', userRecord.uid);
         
         log.info(`Checking for user document in Firestore at 'users/${userRecord.uid}'`);
-        const userDoc = await db.collection('users').doc(userRecord.uid).get();
+        const userDoc = await adminDb.collection('users').doc(userRecord.uid).get();
         if (userDoc.exists) {
             log.success('Admin user document found in "users" collection.');
             const userData = userDoc.data();
@@ -114,7 +87,7 @@ async function checkAdminUserDetails() {
         const lookupsToCheck = [adminLoginId, adminUserKey, adminPhone];
         let allLookupsOk = true;
         for (const lookupId of lookupsToCheck) {
-            const lookupDoc = await db.collection('user_lookups').doc(lookupId).get();
+            const lookupDoc = await adminDb.collection('user_lookups').doc(lookupId).get();
             if (lookupDoc.exists) {
                 log.success(`   - Lookup for '${lookupId}' found.`);
             } else {
@@ -142,9 +115,7 @@ async function checkAdminUserDetails() {
 async function main() {
     console.log('\n\x1b[1m\x1b[35m🔬 Running Detailed Database Diagnostic Check...\x1b[0m');
     
-    const isFirebaseAdminReady = await initializeFirebaseAdmin();
-    
-    if (isFirebaseAdminReady) {
+    if (adminDb && adminAuth) {
         try {
             await checkDatabaseDetails();
             await checkAdminUserDetails();
@@ -154,7 +125,7 @@ async function main() {
              process.exit(1);
         }
     } else {
-        log.error('\nScript aborted: Could not initialize Firebase Admin SDK.');
+        log.error('\nScript aborted: Could not initialize Firebase Admin SDK. Is `serviceAccountKey.json` present?');
         process.exit(1);
     }
 }

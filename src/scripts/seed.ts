@@ -1,7 +1,6 @@
 
 import * as admin from 'firebase-admin';
-import 'dotenv/config';
-
+import { adminAuth, adminDb } from '../lib/firebase-admin-sdk';
 import { createAdminPermissions } from '../lib/modules';
 
 const log = {
@@ -14,25 +13,13 @@ const log = {
 async function main() {
   console.log('\n\x1b[1m\x1b[35m🚀 Starting Database Seed Script...\x1b[0m');
 
-  // Initialize Firebase Admin SDK
-  try {
-    const serviceAccount = require('../serviceAccountKey.json');
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    });
-  } catch (error: any) {
-    if (error.code === 'MODULE_NOT_FOUND') {
-        log.error('`serviceAccountKey.json` not found in the project root.');
-        log.info('Please download it from your Firebase project settings and place it in the root directory.');
-    } else {
-        log.error(`Firebase Admin SDK initialization error: ${error.message}`);
-    }
+  if (!adminDb || !adminAuth) {
+    log.error('Firebase Admin SDK not initialized. Is `serviceAccountKey.json` present? Aborting.');
     process.exit(1);
   }
 
-  const auth = admin.auth();
-  const db = admin.firestore('bmss-solapur-v6');
+  const auth = adminAuth;
+  const db = adminDb;
   
   log.info('This script targets the "bmss-solapur-v6" Firestore database.');
 

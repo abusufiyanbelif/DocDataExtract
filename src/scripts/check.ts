@@ -1,6 +1,6 @@
 
 import 'dotenv/config';
-import * as admin from 'firebase-admin';
+import { adminAuth, adminDb, adminStorage } from '../lib/firebase-admin-sdk';
 import { runDiagnosticCheck } from '../ai/flows/run-diagnostic-check';
 
 // A simple logger with colors
@@ -14,59 +14,26 @@ const log = {
 };
 
 
-async function checkFirebaseAdmin() {
-    log.step(1, 'Checking Firebase Admin SDK Initialization');
-    try {
-        const serviceAccount = require('../serviceAccountKey.json');
-        const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-        log.dim(`Attempting to initialize with serviceAccountKey.json for project: ${projectId || 'Not Set'}`);
-        if (!projectId) {
-            throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set in your .env file.');
-        }
-
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            projectId: projectId,
-            storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        });
-        log.success(`Firebase Admin SDK initialized successfully for project: ${projectId}`);
-        return true;
-    } catch (e: any) {
-        if (e.code === 'app/duplicate-app') {
-            log.success('Firebase Admin SDK already initialized.');
-            return true;
-        }
-        if (e.code === 'MODULE_NOT_FOUND') {
-            log.error('Firebase Admin SDK initialization failed: `serviceAccountKey.json` not found.');
-            log.info("Please download your service account key from the Firebase Console and place it as 'serviceAccountKey.json' in your project's root directory.");
-        } else {
-            log.error(`Firebase Admin SDK initialization failed: ${e.message}`);
-        }
-        return false;
-    }
-}
-
 async function checkFirestore() {
     log.step(2, 'Checking Firestore Connectivity & Data');
     try {
-        const db = admin.firestore('bmss-solapur-v6');
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
         log.info(`Attempting to access "bmss-solapur-v6" database for project "${projectId}"...`);
-        const collections = await db.listCollections();
+        const collections = await adminDb.listCollections();
         log.success(`Successfully connected to Firestore. Project has a database named "bmss-solapur-v6" with ${collections.length} root collections.`);
         
         if (collections.length > 0) {
             log.dim(`   Collections found: ${collections.map(c => c.id).join(', ')}`);
         }
 
-        const usersSnap = await db.collection('users').count().get();
+        const usersSnap = await adminDb.collection('users').count().get();
         log.info(`Found ${usersSnap.data().count} documents in the 'users' collection.`);
         
         log.info('Verifying essential data (admin user)...');
-        const adminLookupSnap = await db.collection('user_lookups').doc('admin').get();
+        const adminLookupSnap = await adminDb.collection('user_lookups').doc('admin').get();
         if (adminLookupSnap.exists) {
             log.success('Admin user lookup document found.');
-            const adminUserSnap = await db.collection('users').where('userKey', '==', 'admin').limit(1).get();
+            const adminUserSnap = await adminDb.collection('users').where('userKey', '==', 'admin').limit(1).get();
              if (!adminUserSnap.empty) {
                  log.success('Admin user profile document found.');
              } else {
@@ -100,10 +67,9 @@ async function checkFirestore() {
 async function checkAuth() {
     log.step(3, 'Checking Firebase Authentication');
     try {
-        const auth = admin.auth();
         log.info('Attempting to list 1 user from Firebase Auth...');
-        const users = await auth.listUsers(1);
-        const userCount = (await auth.listUsers()).users.length;
+        const users = await adminAuth.listUsers(1);
+        const userCount = (await adminAuth.listUsers()).users.length;
         log.success(`Successfully connected to Firebase Auth. Your project has ${userCount} user(s).`);
     } catch (e: any) {
         log.error(`Firebase Auth check failed: ${e.message}`);
@@ -121,9 +87,9 @@ async function checkStorage() {
             throw new Error('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not set in your .env file.');
         }
 
-        const storage = admin.storage().bucket(bucketName);
+        const bucket = adminStorage.bucket(bucketName);
         log.info('Attempting to check bucket existence...');
-        const [exists] = await storage.exists();
+        const [exists] = await bucket.exists();
         if (exists) {
             log.success(`Successfully connected to Firebase Storage. Bucket "${bucketName}" exists.`);
         } else {
@@ -163,13 +129,15 @@ async function checkGenkit() {
 async function main() {
     console.log('\n\x1b[1m\x1b[35m🚀 Running System Diagnostic Checks from Terminal...\x1b[0m');
     
-    const isFirebaseAdminReady = await checkFirebaseAdmin();
-    if (isFirebaseAdminReady) {
+    if (adminDb && adminAuth && adminStorage) {
+        log.step(1, 'Firebase Admin SDK Initialization');
+        log.success('Firebase Admin SDK initialized successfully via central module.');
         await checkFirestore();
         await checkAuth();
         await checkStorage();
     } else {
-        log.warn('Skipping Firestore, Auth, and Storage checks due to Admin SDK initialization failure.');
+        log.step(1, 'Firebase Admin SDK Initialization');
+        log.error('Firebase Admin SDK failed to initialize. Skipping server-side checks. Is `serviceAccountKey.json` present?');
     }
 
     await checkGenkit();
