@@ -11,7 +11,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "db:seed": "tsx scripts/seed.ts",
-    "db:erase": "tsx scripts/erase.ts"
+    "db:erase": "tsx scripts/erase.ts",
+    "check": "tsx scripts/check.ts"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.0.0",
