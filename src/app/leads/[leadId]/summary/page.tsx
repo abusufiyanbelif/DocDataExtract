@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -17,6 +17,7 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts';
+import html2canvas from 'html2canvas';
 
 import type { Lead, Beneficiary, Donation } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -24,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Loader2, Users, Gift, Edit, Save, Wallet, Hourglass } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, Gift, Edit, Save, Wallet, Hourglass, Share2, ImageDown } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -45,6 +46,7 @@ import { Label } from '@/components/ui/label';
 import { get } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { ShareDialog } from '@/components/share-dialog';
 
 const donationTypeChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
@@ -71,6 +73,10 @@ export default function LeadSummaryPage() {
     const [editMode, setEditMode] = useState(false);
     const [editableLead, setEditableLead] = useState<Partial<Lead>>({});
     const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('All');
+    
+    const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+    const [shareDialogData, setShareDialogData] = useState({ title: '', text: '', url: '' });
+    const summaryRef = useRef<HTMLDivElement>(null);
     
     const leadDocRef = useMemo(() => (firestore && leadId) ? doc(firestore, 'leads', leadId) as DocumentReference<Lead> : null, [firestore, leadId]);
     const beneficiariesCollectionRef = useMemo(() => (firestore && leadId) ? collection(firestore, `leads/${leadId}/beneficiaries`) : null, [firestore, leadId]);
@@ -248,6 +254,83 @@ export default function LeadSummaryPage() {
         };
     }, [beneficiaries, donations, lead, donationChartFilter]);
     
+    const handleShare = async () => {
+        if (!lead || !summaryData) {
+            toast({
+                title: 'Error',
+                description: 'Cannot share, summary data is not available.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        const remainingToCollectText = summaryData.remainingToCollect > 0 
+            ? `*Remaining: Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*`
+            : `*Funding goal achieved! Thank you!*`;
+
+        const categoryBreakdownText = summaryData.beneficiaryCategoryBreakdown.length > 0 
+            ? `\n*Beneficiary Breakdown:*\n${summaryData.beneficiaryCategoryBreakdown.map(item => `${item.name}: ${item.count} ${item.count === 1 ? 'beneficiary' : 'beneficiaries'} (Required Rupee ${item.totalAmount.toLocaleString('en-IN')})`).join('\n')}`
+            : '';
+
+        const shareText = `
+*Help Us with this Lead!*
+
+*Lead: ${lead.name}*
+${lead.description || ''}
+
+*Financial Summary:*
+Target Goal: Rupee ${(summaryData.targetAmount || 0).toLocaleString('en-IN')}
+Funds Collected (Verified): Rupee ${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
+${remainingToCollectText}
+
+We have identified *${summaryData.totalBeneficiaries} potential beneficiaries*.${categoryBreakdownText}
+
+Please consider donating and share this message.
+        `.trim().replace(/^\s+/gm, '');
+
+        const dataToShare = {
+            title: `Lead Summary: ${lead.name}`,
+            text: shareText,
+            url: `${window.location.origin}/leads-public/${leadId}/summary`,
+        };
+        
+        setShareDialogData(dataToShare);
+        setIsShareDialogOpen(true);
+    };
+
+    const handleDownloadScreenshot = () => {
+        if (!summaryRef.current) return;
+
+        toast({
+            title: 'Generating Screenshot...',
+            description: 'Please wait while the summary image is being created.',
+        });
+
+        html2canvas(summaryRef.current, {
+            allowTaint: true,
+            useCORS: true,
+            scale: 2,
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `lead-summary-${leadId}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            link.remove();
+            toast({
+                title: 'Download Started',
+                description: 'Your screenshot is being downloaded.',
+                variant: 'success'
+            });
+        }).catch(err => {
+            console.error("Screenshot generation failed:", err);
+            toast({
+                title: 'Screenshot Failed',
+                description: 'Could not generate the screenshot.',
+                variant: 'destructive',
+            });
+        });
+    };
+
     const isLoading = isLeadLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading;
     
     if (isLoading) {
@@ -318,6 +401,18 @@ export default function LeadSummaryPage() {
                         )}
                     </div>
                     <div className="flex gap-2">
+                        {!editMode && (
+                            <>
+                                <Button onClick={handleDownloadScreenshot} variant="outline">
+                                    <ImageDown className="mr-2 h-4 w-4" />
+                                    Download
+                                </Button>
+                                <Button onClick={handleShare} variant="outline">
+                                    <Share2 className="mr-2 h-4 w-4" />
+                                    Share
+                                </Button>
+                            </>
+                        )}
                         {canUpdate && userProfile && (
                             !editMode ? (
                                 <Button onClick={handleEditClick}>
@@ -363,7 +458,7 @@ export default function LeadSummaryPage() {
                     </ScrollArea>
                 </div>
 
-                <div className="space-y-6">
+                <div ref={summaryRef} className="space-y-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Lead Details</CardTitle>
@@ -652,6 +747,12 @@ export default function LeadSummaryPage() {
                         </Card>
                     </div>
                 </div>
+
+                <ShareDialog 
+                    open={isShareDialogOpen} 
+                    onOpenChange={setIsShareDialogOpen} 
+                    shareData={shareDialogData} 
+                />
             </main>
         </div>
     );

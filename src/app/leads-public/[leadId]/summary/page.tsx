@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useCollection } from '@/firebase';
 import { doc, collection, query, where, DocumentReference } from 'firebase/firestore';
@@ -17,13 +17,14 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts';
+import html2canvas from 'html2canvas';
 
 import type { Lead, Beneficiary, Donation } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass, ImageDown } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -69,6 +70,7 @@ export default function PublicLeadSummaryPage() {
     
     const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
     const [shareDialogData, setShareDialogData] = useState({ title: '', text: '', url: '' });
+    const summaryRef = useRef<HTMLDivElement>(null);
 
     const leadDocRef = useMemo(() => (firestore && leadId) ? doc(firestore, 'leads', leadId) as DocumentReference<Lead> : null, [firestore, leadId]);
     const beneficiariesCollectionRef = useMemo(() => (firestore && leadId) ? collection(firestore, `leads/${leadId}/beneficiaries`) : null, [firestore, leadId]);
@@ -227,6 +229,39 @@ Please donate and share this message. Every contribution helps!
         setIsShareDialogOpen(true);
     };
 
+    const handleDownloadScreenshot = () => {
+        if (!summaryRef.current) return;
+
+        toast({
+            title: 'Generating Screenshot...',
+            description: 'Please wait while the summary image is being created.',
+        });
+
+        html2canvas(summaryRef.current, {
+            allowTaint: true,
+            useCORS: true,
+            scale: 2,
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `lead-summary-${leadId}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            link.remove();
+            toast({
+                title: 'Download Started',
+                description: 'Your screenshot is being downloaded.',
+                variant: 'success'
+            });
+        }).catch(err => {
+            console.error("Screenshot generation failed:", err);
+            toast({
+                title: 'Screenshot Failed',
+                description: 'Could not generate the screenshot.',
+                variant: 'destructive',
+            });
+        });
+    };
+
 
     if (isLoading) {
         return (
@@ -271,6 +306,10 @@ Please donate and share this message. Every contribution helps!
                         <p className="text-muted-foreground">{lead.status}</p>
                     </div>
                     <div className="flex gap-2">
+                        <Button onClick={handleDownloadScreenshot} variant="outline">
+                            <ImageDown className="mr-2 h-4 w-4" />
+                            Download
+                        </Button>
                         <Button onClick={handleShare} variant="outline">
                             <Share2 className="mr-2 h-4 w-4" />
                             Share
@@ -284,7 +323,7 @@ Please donate and share this message. Every contribution helps!
                     </div>
                 </div>
 
-                <div className="space-y-6">
+                <div ref={summaryRef} className="space-y-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Lead Details</CardTitle>

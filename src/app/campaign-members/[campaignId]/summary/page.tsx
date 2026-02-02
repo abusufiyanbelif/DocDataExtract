@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -18,6 +18,7 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts';
+import html2canvas from 'html2canvas';
 
 import type { Campaign, Beneficiary, Donation } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -26,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, Wallet, Share2, Hourglass, LogIn } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, Wallet, Share2, Hourglass, LogIn, ImageDown } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -79,6 +80,8 @@ export default function CampaignSummaryPage() {
     
     const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
     const [shareDialogData, setShareDialogData] = useState({ title: '', text: '', url: '' });
+
+    const summaryRef = useRef<HTMLDivElement>(null);
 
     // Data fetching
     const campaignDocRef = useMemo(() => (firestore && campaignId) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
@@ -308,6 +311,39 @@ Please donate and share this message. Every contribution helps!
         setIsShareDialogOpen(true);
     };
 
+    const handleDownloadScreenshot = () => {
+        if (!summaryRef.current) return;
+
+        toast({
+            title: 'Generating Screenshot...',
+            description: 'Please wait while the summary image is being created.',
+        });
+
+        html2canvas(summaryRef.current, {
+            allowTaint: true,
+            useCORS: true,
+            scale: 2, // Increase scale for better resolution
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `campaign-summary-${campaignId}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            link.remove();
+            toast({
+                title: 'Download Started',
+                description: 'Your screenshot is being downloaded.',
+                variant: 'success'
+            });
+        }).catch(err => {
+            console.error("Screenshot generation failed:", err);
+            toast({
+                title: 'Screenshot Failed',
+                description: 'Could not generate the screenshot.',
+                variant: 'destructive',
+            });
+        });
+    };
+
 
     if (isLoading) {
         return (
@@ -378,10 +414,16 @@ Please donate and share this message. Every contribution helps!
                     </div>
                     <div className="flex gap-2">
                         {!editMode && (
-                            <Button onClick={handleShare} variant="outline">
-                                <Share2 className="mr-2 h-4 w-4" />
-                                Share
-                            </Button>
+                            <>
+                                <Button onClick={handleDownloadScreenshot} variant="outline">
+                                    <ImageDown className="mr-2 h-4 w-4" />
+                                    Download
+                                </Button>
+                                <Button onClick={handleShare} variant="outline">
+                                    <Share2 className="mr-2 h-4 w-4" />
+                                    Share
+                                </Button>
+                            </>
                         )}
                         {canUpdate && userProfile && (
                             !editMode ? (
@@ -436,7 +478,7 @@ Please donate and share this message. Every contribution helps!
                     </ScrollArea>
                 </div>
 
-                <div className="space-y-6">
+                <div ref={summaryRef} className="space-y-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Campaign Details</CardTitle>

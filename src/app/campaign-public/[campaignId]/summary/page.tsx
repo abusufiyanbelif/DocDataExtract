@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useCollection } from '@/firebase';
 import { doc, collection, query, where, DocumentReference } from 'firebase/firestore';
@@ -17,13 +17,14 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from 'recharts';
+import html2canvas from 'html2canvas';
 
 import type { Campaign, Beneficiary, Donation } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass, ImageDown } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -70,6 +71,8 @@ export default function PublicCampaignSummaryPage() {
     const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
     const [shareDialogData, setShareDialogData] = useState({ title: '', text: '', url: '' });
 
+    const summaryRef = useRef<HTMLDivElement>(null);
+
     // Data fetching
     const campaignDocRef = useMemo(() => (firestore && campaignId) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
     const beneficiariesCollectionRef = useMemo(() => (firestore && campaignId) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId]);
@@ -102,7 +105,7 @@ export default function PublicCampaignSummaryPage() {
 
         const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + (b.kitAmount || 0), 0);
         
-        const fundingGoal = totalKitAmountRequired;
+        const fundingGoal = campaign.targetAmount || totalKitAmountRequired;
         const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
         const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
 
@@ -176,8 +179,8 @@ export default function PublicCampaignSummaryPage() {
             donationChartData,
             donationPaymentTypeChartData,
             totalBeneficiaries: beneficiaries.length,
-            targetAmount: totalKitAmountRequired,
-            remainingToCollect: Math.max(0, totalKitAmountRequired - verifiedNonZakatDonations),
+            targetAmount: fundingGoal,
+            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
         };
     }, [beneficiaries, donations, campaign, donationChartFilter]);
     
@@ -229,6 +232,39 @@ Please donate and share this message. Every contribution helps!
         setIsShareDialogOpen(true);
     };
 
+    const handleDownloadScreenshot = () => {
+        if (!summaryRef.current) return;
+
+        toast({
+            title: 'Generating Screenshot...',
+            description: 'Please wait while the summary image is being created.',
+        });
+
+        html2canvas(summaryRef.current, {
+            allowTaint: true,
+            useCORS: true,
+            scale: 2,
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `campaign-summary-${campaignId}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            link.remove();
+            toast({
+                title: 'Download Started',
+                description: 'Your screenshot is being downloaded.',
+                variant: 'success'
+            });
+        }).catch(err => {
+            console.error("Screenshot generation failed:", err);
+            toast({
+                title: 'Screenshot Failed',
+                description: 'Could not generate the screenshot.',
+                variant: 'destructive',
+            });
+        });
+    };
+
 
     if (isLoading) {
         return (
@@ -273,6 +309,10 @@ Please donate and share this message. Every contribution helps!
                         <p className="text-muted-foreground">{campaign.status}</p>
                     </div>
                     <div className="flex gap-2">
+                        <Button onClick={handleDownloadScreenshot} variant="outline">
+                            <ImageDown className="mr-2 h-4 w-4" />
+                            Download
+                        </Button>
                         <Button onClick={handleShare} variant="outline">
                             <Share2 className="mr-2 h-4 w-4" />
                             Share
@@ -286,7 +326,7 @@ Please donate and share this message. Every contribution helps!
                     </div>
                 </div>
 
-                <div className="space-y-6">
+                <div ref={summaryRef} className="space-y-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Campaign Details</CardTitle>
@@ -295,7 +335,7 @@ Please donate and share this message. Every contribution helps!
                             <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Target Amount (Calculated)</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Fundraising Goal</p>
                                     <p className="mt-1 text-lg font-semibold">Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="space-y-1">
