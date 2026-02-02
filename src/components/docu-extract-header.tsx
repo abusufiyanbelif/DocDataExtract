@@ -10,10 +10,16 @@ import { useBranding } from '@/hooks/use-branding';
 import { signOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
-
 
 export function DocuExtractHeader() {
   const session = useSession();
@@ -23,7 +29,10 @@ export function DocuExtractHeader() {
 
   useEffect(() => {
     if (brandingSettings?.logoUrl) {
-      document.body.style.setProperty('--watermark-url', `url(${brandingSettings.logoUrl})`);
+      document.body.style.setProperty(
+        '--watermark-url',
+        `url(${brandingSettings.logoUrl})`
+      );
     } else {
       document.body.style.removeProperty('--watermark-url');
     }
@@ -35,10 +44,15 @@ export function DocuExtractHeader() {
       router.push('/login');
     }
   };
-  
+
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
   };
 
   const isLoading = session.isLoading || isBrandingLoading;
@@ -49,16 +63,21 @@ export function DocuExtractHeader() {
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
-            <div className="relative h-12 w-12 flex-shrink-0">
-              {brandingSettings?.logoUrl && (
-                <Image src={brandingSettings.logoUrl} alt="Company Logo" fill className="object-contain p-1" />
-              )}
-            </div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block">
-                Baitulmal Samajik Sanstha Solapur
-            </h1>
+          <div className="relative h-12 w-12 flex-shrink-0">
+            {brandingSettings?.logoUrl && (
+              <Image
+                src={brandingSettings.logoUrl}
+                alt="Company Logo"
+                fill
+                className="object-contain p-1"
+              />
+            )}
+          </div>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block">
+            Baitulmal Samajik Sanstha Solapur
+          </h1>
         </Link>
-        
+
         {isLoading && <Skeleton className="h-10 w-10 rounded-full" />}
 
         {!isLoading && user && userProfile && (
@@ -66,7 +85,10 @@ export function DocuExtractHeader() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={user.photoURL || ''} alt={userProfile?.name || 'User'} />
+                  <AvatarImage
+                    src={user.photoURL || ''}
+                    alt={userProfile?.name || 'User'}
+                  />
                   <AvatarFallback>
                     {getInitials(userProfile?.name)}
                   </AvatarFallback>
@@ -76,7 +98,9 @@ export function DocuExtractHeader() {
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userProfile?.name || 'User'}</p>
+                  <p className="text-sm font-medium leading-none">
+                    {userProfile?.name || 'User'}
+                  </p>
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
                   </p>
@@ -91,14 +115,17 @@ export function DocuExtractHeader() {
               </DropdownMenuItem>
               {userProfile.role === 'Admin' && (
                 <DropdownMenuItem asChild className="cursor-pointer">
-                    <Link href="/settings">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
-                    </Link>
+                  <Link href="/settings">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
+              <DropdownMenuItem
+                onClick={handleLogout}
+                className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
