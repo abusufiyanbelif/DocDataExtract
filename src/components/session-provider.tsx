@@ -1,7 +1,8 @@
 'use client';
 
 import { createContext, useMemo, ReactNode } from 'react';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase/auth/use-user';
+import { useFirestore } from '@/firebase/provider';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { Loader2 } from 'lucide-react';
 import { doc, DocumentReference } from 'firebase/firestore';
