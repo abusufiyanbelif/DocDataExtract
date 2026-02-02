@@ -163,7 +163,7 @@ service cloud.firestore {
       allow delete: if hasPermission(['leads'], 'delete');
 
       match /beneficiaries/{beneficiaryId} {
-        allow get, list: if canReadLead();
+        allow read: if true;
         allow create: if hasPermission(['leads', 'beneficiaries'], 'create');
         allow update: if hasPermission(['leads', 'beneficiaries'], 'update');
         allow delete: if hasPermission(['leads', 'beneficiaries'], 'delete');
