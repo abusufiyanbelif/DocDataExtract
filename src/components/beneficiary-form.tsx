@@ -340,7 +340,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                             <p className="text-sm text-center">PDF Document Uploaded</p>
                         </div>
                     ) : (
-                        <Image src={preview} alt="ID Proof Preview" fill style={{ objectFit: 'contain' }} />
+                        <Image src={preview} alt="ID Proof Preview" fill className="object-contain" />
                     )}
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('id-proof-file-input')?.click()}>

@@ -77,7 +77,7 @@ export function AppFooter() {
         <div className="flex justify-center md:justify-end">
           {paymentSettings.qrCodeUrl && (
             <div className="relative h-32 w-32 border-4 border-primary rounded-lg overflow-hidden p-1 bg-white">
-              <Image src={paymentSettings.qrCodeUrl} alt="UPI QR Code" fill style={{ objectFit: 'contain' }} />
+              <Image src={paymentSettings.qrCodeUrl} alt="UPI QR Code" fill className="object-contain" />
             </div>
           )}
         </div>

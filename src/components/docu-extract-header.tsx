@@ -41,7 +41,7 @@ export function DocuExtractHeader() {
         <Link href="/" className="flex items-center gap-3 w-fit">
             <div className="relative h-12 w-12 flex-shrink-0">
               {brandingSettings?.logoUrl && (
-                <Image src={brandingSettings.logoUrl} alt="Company Logo" fill style={{objectFit: 'contain'}} className="p-1" />
+                <Image src={brandingSettings.logoUrl} alt="Company Logo" fill className="object-contain p-1" />
               )}
             </div>
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block">

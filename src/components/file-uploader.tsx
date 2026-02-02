@@ -102,7 +102,7 @@ export function FileUploader({
                 src={activePreview} 
                 alt="File preview" 
                 fill 
-                style={{ objectFit: 'contain' }} 
+                className="object-contain"
                 data-ai-hint="document preview"
               />
             )
@@ -126,7 +126,7 @@ export function FileUploader({
                   {isPdf(preview, files[index]) ? (
                     <FileIcon className="w-8 h-8 text-muted-foreground" />
                   ) : (
-                    <Image src={preview} alt={files[index]?.name || ''} fill style={{objectFit: 'cover'}} />
+                    <Image src={preview} alt={files[index]?.name || ''} fill className="object-cover" />
                   )}
                   <Button 
                     variant="destructive" 
