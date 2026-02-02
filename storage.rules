@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Settings files (logo, qr code) are publicly readable.
+    // Assumes the upload logic is secured by a backend function or admin-only UI
+    // that checks for admin role before allowing an upload/delete.
+    match /settings/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // User-specific files (like ID proofs).
+    // Only the user themselves can read or write files into their own folder.
+    // Admins can be granted read access if needed by adding `|| isAdmin()` to the read rule.
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Campaign-related files.
+    // Public files are readable by anyone.
+    // Writing is allowed for any authenticated user, assuming the upload logic
+    // on the client validates the user's role (e.g., admin or campaign manager).
+    match /campaigns/{campaignId}/{allPaths=**} {
+       allow read: if true;
+       allow write: if isSignedIn();
+    }
+
+    // Lead-related files should be private.
+    // Assumes upload logic is secured by a backend function or admin-only UI.
+    match /leads/{leadId}/{allPaths=**} {
+        allow read, write: if isSignedIn();
+    }
+  }
+}

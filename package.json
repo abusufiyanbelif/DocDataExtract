@@ -14,13 +14,14 @@
     "db:erase": "tsx scripts/erase.ts",
     "check": "tsx scripts/check.ts",
     "check:db": "tsx scripts/check-db.ts",
+    "check:rules": "tsx scripts/check-rules.ts",
     "fix:iam": "tsx scripts/fix-iam.ts"
   },
   "dependencies": {
     "@dataconnect/admin-generated": "file:src/dataconnect-admin-generated",
     "@dataconnect/generated": "file:src/dataconnect-generated",
     "@genkit-ai/google-genai": "^1.0.0",
-    "@google-cloud/resource-manager": "^4.2.0",
+    "@google-cloud/resource-manager": "^5.0.1",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",

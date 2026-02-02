@@ -1,9 +1,89 @@
-
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper functions to check user roles and ownership.
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      // Check if the user has the 'Admin' role in their user profile document.
+      return isSignedIn() && getUserData().role == 'Admin';
+    }
+    
+    function hasPermission(module, permission) {
+        return isAdmin() || (isSignedIn() && getUserData().permissions[module][permission] == true);
+    }
+
+    function hasSubmodulePermission(module, submodule, permission) {
+        return isAdmin() || (isSignedIn() && getUserData().permissions[module][submodule][permission] == true);
+    }
+
+    // Default deny all access unless explicitly allowed.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
+    }
+
+    // Settings are public to read for branding, but only admins can change them.
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if hasPermission('settings', 'update');
+    }
+    
+    // User lookups are public for login, but only admins can create/update them
+    // to ensure integrity. This prevents users from hijacking accounts.
+    match /user_lookups/{lookupId} {
+        allow read: if true;
+        allow write: if hasPermission('users', 'create') || hasPermission('users', 'update');
+    }
+    
+    // Users can read other users' basic profiles.
+    // A user can update their own profile. Admins can update any profile.
+    // Only Admins can delete users.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if hasPermission('users', 'create');
+      allow update: if (request.auth.uid == userId) || hasPermission('users', 'update');
+      allow delete: if hasPermission('users', 'delete');
+    }
+
+    // Campaigns and Leads are public to read for transparency.
+    // Write operations are restricted based on permissions.
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow create: if hasPermission('campaigns', 'create');
+      allow update: if hasPermission('campaigns', 'update');
+      allow delete: if hasPermission('campaigns', 'delete');
+      
+      match /beneficiaries/{beneficiaryId} {
+        allow read: if true;
+        allow create: if hasSubmodulePermission('campaigns', 'beneficiaries', 'create');
+        allow update: if hasSubmodulePermission('campaigns', 'beneficiaries', 'update');
+        allow delete: if hasSubmodulePermission('campaigns', 'beneficiaries', 'delete');
+      }
+    }
+    
+    match /leads/{leadId} {
+      allow read, create, update, delete: if hasPermission('leads', 'read');
+
+      match /beneficiaries/{beneficiaryId} {
+        allow read, create, update, delete: if hasPermission('leads', 'read');
+      }
+    }
+    
+    // Donations can be read by anyone.
+    // Creating, updating, or deleting donations requires specific permissions.
+    match /donations/{donationId} {
+        allow read: if true;
+        allow create: if hasSubmodulePermission('campaigns', 'donations', 'create');
+        allow update: if hasSubmodulePermission('campaigns', 'donations', 'update');
+        allow delete: if hasSubmodulePermission('campaigns', 'donations', 'delete');
     }
   }
 }
