@@ -4,13 +4,13 @@ import { useState, useCallback } from 'react';
 import { useAuth, useStorage, useFirestore } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { firebaseConfig } from '@/firebase/config';
-import { collection, query, limit, getDocs } from 'firebase/firestore';
+import { collection, query, limit, getDocs, doc } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
 import { runDiagnosticCheck } from '@/ai/flows/run-diagnostic-check';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle2, XCircle, Loader2, PlayCircle, ExternalLink, BrainCircuit } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Loader2, PlayCircle, ExternalLink, BrainCircuit, Database } from 'lucide-react';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -107,6 +107,44 @@ export default function DiagnosticsPage() {
                     return { status: 'failure', details: `Firestore public read failed. This could be a connectivity issue or a problem with your Security Rules. Error: ${error.message}` };
                 }
             },
+        },
+        {
+            id: 'admin-seed-check',
+            name: 'Admin User Database Record',
+            description: 'Verifies that the default admin user exists in the database.',
+            icon: <Database className="h-6 w-6 text-primary" />,
+            run: async () => {
+                 if (!firestore) {
+                    return { status: 'failure', details: 'Cannot perform Firestore test because the service is not initialized.' };
+                }
+                try {
+                    const adminLookupRef = doc(firestore, 'user_lookups', 'admin');
+                    const adminLookupSnap = await getDocs(query(collection(firestore, 'user_lookups'), where('userKey', '==', 'admin')));
+
+                    if (adminLookupSnap.empty) {
+                        return { status: 'failure', details: (
+                            <span>
+                                <strong>Admin user lookup record not found.</strong> This is required for login. Please run <strong>`npm run db:seed`</strong> from your terminal to create it.
+                            </span>
+                        )};
+                    }
+                    const adminUID = adminLookupSnap.docs[0].id;
+                    const adminUserDocRef = doc(firestore, 'users', adminUID);
+                    const adminUserDocSnap = await getDocs(query(collection(firestore, 'users'), where('userKey', '==', 'admin')));
+
+                    if (adminUserDocSnap.empty) {
+                         return { status: 'failure', details: (
+                            <span>
+                                <strong>Admin user profile document not found.</strong> This is required for the application to function correctly. Please run <strong>`npm run db:seed`</strong> from your terminal.
+                            </span>
+                        )};
+                    }
+
+                    return { status: 'success', details: 'Default admin user database records are correctly set up.' };
+                } catch (error: any) {
+                    return { status: 'failure', details: `Failed to verify admin records. This may indicate a problem with your Firestore Security Rules. Error: ${error.message}` };
+                }
+            }
         },
         {
             id: 'storage-write',

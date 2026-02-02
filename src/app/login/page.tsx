@@ -85,7 +85,7 @@ export default function LoginPage() {
       toast({ title: 'Login Successful', description: "Welcome back!", variant: 'success' });
       router.push('/');
     } catch (error: any) {
-      if (error.message.includes('auth/configuration-not-found')) {
+      if (error.code === 'auth/configuration-not-found') {
             setSetupError(error.message);
         } else {
              setLoginError(error.message || 'An unexpected error occurred.');
