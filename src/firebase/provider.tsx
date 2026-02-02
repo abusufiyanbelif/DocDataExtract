@@ -45,41 +45,37 @@ export const useFirebase = (): FirebaseContextState => {
 
 /**
  * Hook to access the Firebase App instance.
- * Throws an error if the app is not available.
+ * Returns null if initialization failed.
  */
-export const useFirebaseApp = (): FirebaseApp => {
+export const useFirebaseApp = (): FirebaseApp | null => {
   const { firebaseApp } = useFirebase();
-  if (!firebaseApp) throw new Error('Firebase App not available. This is likely due to an initialization error that should be handled by FirebaseContentWrapper.');
   return firebaseApp;
 };
 
 /**
  * Hook to access the Firebase Auth instance.
- * Throws an error if Auth is not available.
+ * Returns null if initialization failed.
  */
-export const useAuth = (): Auth => {
+export const useAuth = (): Auth | null => {
   const { auth } = useFirebase();
-  if (!auth) throw new Error('Firebase Auth not available. This is likely due to an initialization error that should be handled by FirebaseContentWrapper.');
   return auth;
 };
 
 /**
  * Hook to access the Firestore instance.
- * Throws an error if Firestore is not available.
+ * Returns null if initialization failed.
  */
-export const useFirestore = (): Firestore => {
+export const useFirestore = (): Firestore | null => {
   const { firestore } = useFirebase();
-  if (!firestore) throw new Error('Firestore not available. This is likely due to an initialization error that should be handled by FirebaseContentWrapper.');
   return firestore;
 };
 
 /**
  * Hook to access the Firebase Storage instance.
- * Throws an error if Storage is not available.
+ * Returns null if initialization failed.
  */
-export const useStorage = (): FirebaseStorage => {
+export const useStorage = (): FirebaseStorage | null => {
     const { storage } = useFirebase();
-    if (!storage) throw new Error('Firebase Storage not available. This is likely due to an initialization error that should be handled by FirebaseContentWrapper.');
     return storage;
 };
 
