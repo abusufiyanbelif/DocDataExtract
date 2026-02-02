@@ -26,13 +26,11 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
     import('./index').then(({ initializeFirebase }) => {
         try {
           const services = initializeFirebase();
-          setFirebaseServices({ ...services, initializationError: null });
+          setFirebaseServices(services);
         } catch (error: any) {
           // This catch block is for fatal errors (e.g., invalid config).
-          // Firestore-specific errors are handled within initializeFirebase.
-          // Per the user's request, we will not set a global error that kills the UI.
           console.error(
-            'A fatal Firebase initialization error occurred, but allowing app to continue. Some features will be unavailable.',
+            'A fatal Firebase initialization error occurred:',
             error
           );
           setFirebaseServices({
@@ -40,7 +38,7 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
             auth: null,
             firestore: null,
             storage: null,
-            initializationError: null, // Set to null to prevent global error screen.
+            initializationError: error,
           });
         }
     });
