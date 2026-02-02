@@ -20,7 +20,7 @@ async function main() {
   }
 
   const db = adminDb;
-  log.info('This script targets the "bmss-solapur-v6" Firestore database for all delete operations.');
+  log.info('This script targets the (default) Firestore database for all delete operations.');
   const storage = adminStorage.bucket();
   const auth = adminAuth;
 

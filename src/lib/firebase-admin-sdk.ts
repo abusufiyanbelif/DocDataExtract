@@ -25,7 +25,7 @@ try {
 
 // Initialize services after app initialization
 adminAuth = admin.auth();
-adminDb = admin.firestore('bmss-solapur-v6');
+adminDb = admin.firestore();
 adminStorage = admin.storage();
 
 export { adminAuth, adminDb, adminStorage };

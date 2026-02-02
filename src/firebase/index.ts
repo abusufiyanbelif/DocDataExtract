@@ -38,7 +38,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp, 'bmss-solapur-v6'),
+    firestore: getFirestore(firebaseApp),
     storage: getStorage(firebaseApp),
   };
 }
