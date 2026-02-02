@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { useSession } from '@/hooks/use-session';
 import { Button } from '@/components/ui/button';
+import { get } from '@/lib/utils';
 
 const dashboardCards = [
   {
@@ -76,15 +77,7 @@ export default function Home() {
     if (key === 'campaigns') {
        return perms.create || perms.update || perms.delete || perms.summary?.read || perms.ration?.read || perms.beneficiaries?.read || perms.donations?.read;
     }
-    const keys = key.split('.');
-    let result = perms;
-    for (const k of keys) {
-        result = result?.[k];
-        if (result === undefined) {
-        return false;
-        }
-    }
-    return result;
+    return get(perms, key, false);
   }
 
   const visibleCards = userProfile ? dashboardCards.filter(card => {

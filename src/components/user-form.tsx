@@ -111,16 +111,16 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const [preview, setPreview] = useState<string | null>(user?.idProofUrl || null);
 
   useEffect(() => {
-    if (!isEditing && nameValue) {
+    if (!isEditing && nameValue && !getValues('loginId')) {
         const generatedId = nameValue.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9.]/g, '');
         setValue('loginId', generatedId, { shouldValidate: true });
     }
-  }, [nameValue, isEditing, setValue]);
+  }, [nameValue, isEditing, setValue, getValues]);
   
   useEffect(() => {
     if (roleValue === 'Admin') {
       setPermissions(createAdminPermissions());
-    } else if (isEditing) {
+    } else if (isEditing && user) {
         setPermissions(user.permissions || {});
     } else {
         setPermissions({});

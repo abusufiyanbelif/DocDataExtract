@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useEffect } from 'react';
 import { LogOut, User, LogIn, Settings } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -19,6 +21,14 @@ export function DocuExtractHeader() {
   const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
   const auth = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (brandingSettings?.logoUrl) {
+      document.body.style.setProperty('--watermark-url', `url(${brandingSettings.logoUrl})`);
+    } else {
+      document.body.style.removeProperty('--watermark-url');
+    }
+  }, [brandingSettings]);
 
   const handleLogout = async () => {
     if (auth) {
