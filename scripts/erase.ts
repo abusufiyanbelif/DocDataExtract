@@ -6,17 +6,22 @@ async function main() {
   console.log('🚀 Starting Erase Script...');
 
   // 1. Initialize Admin SDK
-  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    console.error('❌ ERROR: GOOGLE_APPLICATION_CREDENTIALS environment variable is not set.');
-    console.error('This is required for admin scripts. Please follow the setup instructions.');
+  try {
+    const serviceAccount = require('../serviceAccountKey.json');
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    });
+  } catch (error: any) {
+    if (error.code === 'MODULE_NOT_FOUND') {
+        console.error('❌ ERROR: `serviceAccountKey.json` not found in the project root.');
+        console.error('Please download it from your Firebase project settings and place it in the root directory.');
+    } else {
+        console.error('❌ Firebase Admin SDK initialization error:', error);
+    }
     process.exit(1);
   }
-
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  });
 
   const db = admin.firestore();
   const storage = admin.storage().bucket();

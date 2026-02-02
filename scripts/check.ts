@@ -17,20 +17,15 @@ const log = {
 async function checkFirebaseAdmin() {
     log.step(1, 'Checking Firebase Admin SDK Initialization');
     try {
-        const creds = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-        log.dim(`Using GOOGLE_APPLICATION_CREDENTIALS: ${creds || 'Not Set'}`);
-        if (!creds) {
-            throw new Error('GOOGLE_APPLICATION_CREDENTIALS environment variable is not set. This is required for admin scripts. Please create a .env file and add the path to your service account key file.');
-        }
-
+        const serviceAccount = require('../serviceAccountKey.json');
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-        log.dim(`Using NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${projectId || 'Not Set'}`);
+        log.dim(`Attempting to initialize with serviceAccountKey.json for project: ${projectId || 'Not Set'}`);
         if (!projectId) {
             throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set in your .env file.');
         }
-        
+
         admin.initializeApp({
-            credential: admin.credential.applicationDefault(),
+            credential: admin.credential.cert(serviceAccount),
             projectId: projectId,
             storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         });
@@ -41,8 +36,12 @@ async function checkFirebaseAdmin() {
             log.success('Firebase Admin SDK already initialized.');
             return true;
         }
-        log.error(`Firebase Admin SDK initialization failed: ${e.message}`);
-        log.info('This usually means the path in GOOGLE_APPLICATION_CREDENTIALS is incorrect or the file is corrupted. Make sure it points to a valid service account JSON file.');
+        if (e.code === 'MODULE_NOT_FOUND') {
+            log.error('Firebase Admin SDK initialization failed: `serviceAccountKey.json` not found.');
+            log.info("Please download your service account key from the Firebase Console and place it as 'serviceAccountKey.json' in your project's root directory.");
+        } else {
+            log.error(`Firebase Admin SDK initialization failed: ${e.message}`);
+        }
         return false;
     }
 }
@@ -172,4 +171,3 @@ async function main() {
 }
 
 main().catch(console.error);
-

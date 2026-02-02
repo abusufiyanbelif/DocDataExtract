@@ -1,49 +1,31 @@
-
 'use server';
 import * as admin from 'firebase-admin';
 
 // This file initializes the Firebase Admin SDK for use in server-side
 // environments like Next.js Server Actions or API routes.
 
-// It's crucial to prevent re-initialization on every hot-reload in development.
 if (!admin.apps.length) {
   try {
-    // This is the standard and recommended way to provide credentials for the Admin SDK.
-    // It uses the `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
-    // 
-    // For local development:
-    // 1. Download your service account key JSON file from the Firebase Console.
-    // 2. Save it as `serviceAccountKey.json` in your project's root folder.
-    // 3. Set the environment variable in a `.env` file:
-    //    GOOGLE_APPLICATION_CREDENTIALS="./serviceAccountKey.json"
-    //
-    // For deployment (e.g., Vercel, Firebase App Hosting):
-    //    Set `GOOGLE_APPLICATION_CREDENTIALS` as a secret environment variable,
-    //    pasting the entire content of the JSON file as its value.
-    const credential = process.env.GOOGLE_APPLICATION_CREDENTIALS 
-      ? admin.credential.applicationDefault()
-      : undefined;
-
-    if (!credential) {
-        console.warn(`
-          ****************************************************************************************
-          * Firebase Admin SDK: Service Account Credentials Not Found.                           *
-          *                                                                                      *
-          * Server-side admin features (like user deletion) will not work.                       *
-          * Please follow the setup instructions in 'src/lib/firebase-admin-sdk.ts' to proceed.  *
-          ****************************************************************************************
-        `);
-    } else {
-         admin.initializeApp({
-            credential,
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-            storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        });
-        console.log("Firebase Admin SDK initialized successfully.");
-    }
+    const serviceAccount = require('../../serviceAccountKey.json');
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    });
+    console.log("Firebase Admin SDK initialized successfully using serviceAccountKey.json.");
   } catch (error: any) {
-    // A duplicate-app error is fine, it means it's already initialized.
-    if (error.code !== 'app/duplicate-app') {
+    if (error.code === 'MODULE_NOT_FOUND') {
+      console.warn(`
+        ****************************************************************************************
+        * Firebase Admin SDK: serviceAccountKey.json Not Found.                                *
+        *                                                                                      *
+        * Server-side admin features (like user deletion or campaign copying) will not work.   *
+        * To enable them:                                                                      *
+        * 1. Download your service account key from the Firebase Console.                      *
+        * 2. Save it as 'serviceAccountKey.json' in your project's root directory.             *
+        ****************************************************************************************
+      `);
+    } else if (error.code !== 'app/duplicate-app') {
       console.error('Firebase Admin SDK initialization error:', error);
     }
   }

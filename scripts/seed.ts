@@ -1,3 +1,4 @@
+
 import * as admin from 'firebase-admin';
 import 'dotenv/config';
 
@@ -7,16 +8,21 @@ async function main() {
   console.log('🚀 Starting Database Seed Script...');
 
   // Initialize Firebase Admin SDK
-  if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    console.error('❌ ERROR: GOOGLE_APPLICATION_CREDENTIALS environment variable is not set.');
-    console.error('Please follow the instructions in the README to set up your service account.');
+  try {
+    const serviceAccount = require('../serviceAccountKey.json');
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    });
+  } catch (error: any) {
+    if (error.code === 'MODULE_NOT_FOUND') {
+        console.error('❌ ERROR: `serviceAccountKey.json` not found in the project root.');
+        console.error('Please download it from your Firebase project settings and place it in the root directory.');
+    } else {
+        console.error('❌ Firebase Admin SDK initialization error:', error);
+    }
     process.exit(1);
   }
-
-  admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  });
 
   const auth = admin.auth();
   const db = admin.firestore();

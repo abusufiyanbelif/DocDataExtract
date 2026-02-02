@@ -37,10 +37,9 @@ export default function SeedPage() {
                   <ol className="list-decimal list-inside space-y-2 mt-2 text-sm text-muted-foreground">
                       <li>Go to your Firebase Project Settings > Service accounts.</li>
                       <li>Click **Generate new private key** to download your service account JSON file.</li>
-                      <li>Rename the downloaded file to `serviceAccountKey.json` and place it in the root of your project.</li>
-                      <li>Create a file named `.env` in the root of your project if it doesn't exist.</li>
-                      <li>Add the line `GOOGLE_APPLICATION_CREDENTIALS="./serviceAccountKey.json"` to your `.env` file.</li>
+                      <li>Rename the downloaded file to `serviceAccountKey.json` and place it in the root directory of your project.</li>
                   </ol>
+                  <p className="mt-2">That's it! The application will automatically find and use this file.</p>
                 </AlertDescription>
             </Alert>
 
