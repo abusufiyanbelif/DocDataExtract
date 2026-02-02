@@ -147,7 +147,8 @@ export async function copyLeadAction(options: CopyLeadOptions): Promise<{ succes
 
 
 export async function deleteLeadAction(leadId: string): Promise<{ success: boolean; message: string }> {
-    if (!adminDb || !adminStorage) {
+    const storage = adminStorage;
+    if (!adminDb || !storage) {
         return { success: false, message: 'Firebase Admin SDK is not initialized.' };
     }
     
@@ -178,7 +179,7 @@ export async function deleteLeadAction(leadId: string): Promise<{ success: boole
         const deletePromises = storageUrlsToDelete.map(url => {
             try {
                 const filePath = decodeURIComponent(url.split('/o/')[1].split('?')[0]);
-                return adminStorage.bucket().file(filePath).delete().catch(err => {
+                return storage.bucket().file(filePath).delete().catch(err => {
                     if (err.code !== 404) console.error(`Failed to delete storage file ${filePath}:`, err);
                 });
             } catch (e) {

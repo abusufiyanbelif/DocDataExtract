@@ -1,2 +1,3 @@
 src/app/campaign-members/actions.ts(181,20): error TS18047: 'adminStorage' is possibly 'null'.
+src/app/campaigns/actions.ts(183,20): error TS18047: 'adminStorage' is possibly 'null'.
 src/app/leads/actions.ts(181,24): error TS18047: 'adminStorage' is possibly 'null'.
