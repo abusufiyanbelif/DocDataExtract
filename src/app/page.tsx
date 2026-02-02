@@ -47,6 +47,12 @@ export default function LandingPage() {
                       <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
                   </Link>
+                  <Link href="/leads-public">
+                      <Button size="lg" variant="outline" className="text-lg">
+                      View Leads
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
+                  </Link>
                   <Link href="/login">
                       <Button size="lg" variant="outline" className="text-lg">
                           <LogIn className="mr-2 h-5 w-5" />
