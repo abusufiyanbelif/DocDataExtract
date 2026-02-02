@@ -33,7 +33,7 @@ import type { Campaign } from '@/lib/types';
 
 const campaignSchema = z.object({
   name: z.string().min(3, 'Campaign name must be at least 3 characters.'),
-  category: z.enum(['Ration', 'Relief', 'General']),
+  category: z.enum(['Ration', 'Relief', 'General', 'Education', 'Medical']),
   status: z.enum(['Upcoming', 'Active', 'Completed']),
   startDate: z.string().min(1, 'Start date is required.'),
   endDate: z.string().min(1, 'End date is required.'),
@@ -205,6 +205,8 @@ export default function CreateCampaignPage() {
                           <SelectItem value="Ration">Ration</SelectItem>
                           <SelectItem value="Relief">Relief</SelectItem>
                           <SelectItem value="General">General</SelectItem>
+                          <SelectItem value="Education">Education</SelectItem>
+                          <SelectItem value="Medical">Medical</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

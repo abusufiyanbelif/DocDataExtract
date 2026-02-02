@@ -117,7 +117,7 @@ export function PermissionsTable({ permissions, onPermissionChange, role, disabl
             <TableCell />
           </TableRow>
           <TableRow className="bg-muted/30 hover:bg-muted/50">
-            <TableCell className="pl-12 text-muted-foreground">Ration Details</TableCell>
+            <TableCell className="pl-12 text-muted-foreground">Category</TableCell>
             <TableCell />
             <TableCell className="text-center">
               <Checkbox

@@ -412,7 +412,9 @@
           "enum": [
             "Ration",
             "Relief",
-            "General"
+            "General",
+            "Education",
+            "Medical"
           ]
         },
         "description": {
@@ -514,7 +516,9 @@
           "enum": [
             "Ration",
             "Relief",
-            "General"
+            "General",
+            "Education",
+            "Medical"
           ]
         },
         "description": {

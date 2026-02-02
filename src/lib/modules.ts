@@ -9,14 +9,14 @@ export type SimpleReadPermission = typeof simpleReadPermission;
 
 export const campaignSubModules = [
   { id: 'summary', name: 'Summary', permissions: readUpdatePermissions },
-  { id: 'ration', name: 'Ration Details', permissions: readUpdatePermissions },
+  { id: 'ration', name: 'Category', permissions: readUpdatePermissions },
   { id: 'beneficiaries', name: 'Beneficiary List', permissions: crudPermissions },
   { id: 'donations', name: 'Donations', permissions: crudPermissions },
 ] as const;
 
 export const leadSubModules = [
   { id: 'summary', name: 'Summary', permissions: readUpdatePermissions },
-  { id: 'ration', name: 'Ration Details', permissions: readUpdatePermissions },
+  { id: 'ration', name: 'Category', permissions: readUpdatePermissions },
   { id: 'beneficiaries', name: 'Beneficiary List', permissions: crudPermissions },
   { id: 'donations', name: 'Donations', permissions: crudPermissions },
 ] as const;

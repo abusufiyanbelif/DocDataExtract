@@ -264,6 +264,8 @@ export default function LeadPage() {
                             <SelectItem value="Ration">Ration</SelectItem>
                             <SelectItem value="Relief">Relief</SelectItem>
                             <SelectItem value="General">General</SelectItem>
+                            <SelectItem value="Education">Education</SelectItem>
+                            <SelectItem value="Medical">Medical</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
