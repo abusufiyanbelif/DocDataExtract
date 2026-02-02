@@ -1,29 +1,19 @@
 /**
- * Core Philosophy: This ruleset enforces a strict user-ownership model where all data is private.
- * Access is granted exclusively to the authenticated user who owns the data. There are no public
- * collections or shared data access patterns.
+ * Core Philosophy: This ruleset uses a mixed-privacy model. User-specific data is private and
+ * protected under the `/users/{userId}` path. Public-facing data, such as campaigns and settings,
+ * is globally readable to support public pages, while write access is restricted to authenticated users.
  *
- * Data Structure: All application data is organized hierarchically under the `/users/{userId}`
- * path. This top-level segregation ensures that all queries and document access are naturally
- * scoped to a specific user, making security rules simple, performant, and secure by default.
+ * Data Structure:
+ * - `/users/{userId}`: Private user data, accessible only by the owner.
+ * - `/campaigns`, `/donations`, `/settings`: Publicly readable data for the website.
+ * - `/leads`, `/user_lookups`: Internal data accessible only by authenticated users.
  *
  * Key Security Decisions:
- * - Strict Ownership: A user can only read or write data within their own document tree
- *   (e.g., `/users/{their-own-uid}/...`).
- * - No User Enumeration: Listing documents in the top-level `/users` collection is explicitly
- *   disallowed to protect user privacy.
- * - Profile Deletion Disabled: Direct client-side deletion of a user's root profile document
- *   is disabled to prevent accidental data loss. Such operations should be handled by a
- *   trusted server environment (e.g., Cloud Functions).
- *
- * Denormalization for Authorization: The `Document` entity contains a denormalized `userId` field.
- * This is a deliberate design choice that makes the security rules for documents faster and more
- * secure. Instead of needing a `get()` call to check the parent path, the rule can directly
-*  validate ownership against a field in the document itself, which is more efficient.
- *
- * Structural Segregation: The entire data model is segregated by user ID at the root level.
- * This is the most secure and performant way to handle private user data, as it prevents any
- * possibility of data leakage between users at the query level.
+ * - Public Reads: `campaigns`, `donations`, and `settings` are readable by anyone to populate public-facing pages.
+ * - Authenticated Writes: All write operations (create, update, delete) on public collections still require user authentication.
+ *   Client-side logic is responsible for role-based authorization (e.g., only admins can edit settings).
+ * - Strict Ownership for User Data: The `/users` collection remains strictly private.
+ * - No User Enumeration: Listing documents in `/users` and `/user_lookups` is disallowed.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -102,9 +92,83 @@ service cloud.firestore {
     }
 
     // ----------------------------------------------------------------------
-    // Collection Rules
+    // Publicly Readable Collections
     // ----------------------------------------------------------------------
 
+    /**
+     * @description Manages campaigns, which are publicly viewable.
+     * @path /campaigns/{campaignId}
+     * @allow (read) Anyone can read campaign data for public pages.
+     * @allow (write) Only authenticated users can modify campaigns.
+     */
+    match /campaigns/{campaignId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+    
+    /**
+     * @description Manages beneficiaries within a campaign.
+     * @path /campaigns/{campaignId}/beneficiaries/{beneficiaryId}
+     * @allow (read) Anyone can read beneficiary lists for public campaign summaries.
+     * @allow (write) Only authenticated users can modify beneficiaries.
+     */
+    match /campaigns/{campaignId}/beneficiaries/{beneficiaryId} {
+        allow read: if true;
+        allow write: if isSignedIn();
+    }
+
+    /**
+     * @description Manages donations, which are publicly readable for summary charts.
+     * @path /donations/{donationId}
+     * @allow (read) Anyone can read donation data for aggregation on public pages.
+     * @allow (write) Only authenticated users can manage donations.
+     */
+    match /donations/{donationId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    /**
+     * @description Manages public app settings like branding.
+     * @path /settings/{docId}
+     * @allow (read) Anyone can read settings.
+     * @allow (write) Only authenticated users can modify settings (UI restricts to admins).
+     */
+    match /settings/{docId} {
+        allow read: if true;
+        allow write: if isSignedIn();
+    }
+
+    // ----------------------------------------------------------------------
+    // Internal & Private Collections
+    // ----------------------------------------------------------------------
+    
+    /**
+     * @description Manages leads, which are internal to the organization.
+     * @path /leads/{leadId}
+     * @allow (read, write) Only authenticated users can access leads.
+     */
+    match /leads/{leadId}/{allSubcollections=**} {
+        allow read, write: if isSignedIn();
+    }
+    
+    /**
+     * @description Lookup table for finding a user's email by loginId or phone.
+     * @path /user_lookups/{lookupId}
+     * @allow (get) Anyone can perform a direct lookup during login.
+     * @deny (list) Listing all lookups is denied to prevent user enumeration.
+     * @allow (write, delete) Only authenticated users can write (for profile updates).
+     */
+    match /user_lookups/{lookupId} {
+        allow get: if true;
+        allow list: if false;
+        allow write, delete: if isSignedIn();
+    }
+
+    // ----------------------------------------------------------------------
+    // User-Private Collections
+    // ----------------------------------------------------------------------
+    
     /**
      * @description Manages user profile documents.
      * @path /users/{userId}
