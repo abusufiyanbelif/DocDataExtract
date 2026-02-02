@@ -1,3 +1,4 @@
+
 type Listener = (...args: any[]) => void;
 
 class SimpleEventEmitter {
