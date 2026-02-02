@@ -16,7 +16,7 @@ import { Skeleton } from './ui/skeleton';
 
 
 export function DocuExtractHeader() {
-  const { user, userProfile, isLoading: isSessionLoading } from useSession();
+  const { user, userProfile, isLoading: isSessionLoading } = useSession();
   const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
   const auth = useAuth();
   const router = useRouter();
@@ -39,7 +39,7 @@ export function DocuExtractHeader() {
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
-            <div className="relative h-16 w-16 flex-shrink-0">
+            <div className="relative h-12 w-12 flex-shrink-0">
               {brandingSettings?.logoUrl && (
                 <Image src={brandingSettings.logoUrl} alt="Company Logo" fill style={{objectFit: 'contain'}} className="p-1" />
               )}
