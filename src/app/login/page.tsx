@@ -72,11 +72,7 @@ export default function LoginPage() {
     setLoginError(null);
 
     if (!auth || !firestore) {
-      toast({
-        title: 'Error',
-        description: 'Firebase service is not available. Please check your configuration.',
-        variant: 'destructive',
-      });
+      setLoginError('Firebase service is not available. Please check your application configuration and internet connection.');
       setIsLoading(false);
       return;
     }
