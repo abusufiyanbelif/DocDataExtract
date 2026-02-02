@@ -10,7 +10,7 @@ const publicPaths = ['/login', '/seed', '/'];
 
 function FullScreenLoader({ message }: { message: string }) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
             <div className="w-full max-w-xs text-center">
                 <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
                 <p className="text-muted-foreground">{message}</p>
@@ -39,21 +39,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   }, [user, isAuthLoading, pathname, router]);
 
-  if (isAuthLoading) {
-    return <FullScreenLoader message="Initializing..." />;
-  }
-  
   const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
-
-
-  // If a redirect is needed, show a loader while the useEffect triggers the navigation
-  if (!user && !isPublicPath) {
-    return <FullScreenLoader message="Redirecting to login..." />;
-  }
+  const needsRedirect = (!user && !isPublicPath) || (user && pathname === '/login');
   
-  if (user && pathname === '/login') {
-    return <FullScreenLoader message="Redirecting..." />;
-  }
-
-  return <>{children}</>;
+  // Render children always to prevent 404, but show an overlay loader if auth state 
+  // is resolving or a redirect is pending.
+  return (
+    <>
+        {(isAuthLoading || needsRedirect) && <FullScreenLoader message={isAuthLoading ? "Initializing..." : "Redirecting..."} />}
+        {children}
+    </>
+  );
 }
