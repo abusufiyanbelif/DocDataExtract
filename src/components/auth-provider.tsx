@@ -2,11 +2,14 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
-import { useEffect } from 'react';
+import { useUser, useAuth } from '@/firebase';
+import { signOut } from '@/lib/auth';
+import { useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const publicPaths = ['/login', '/seed', '/'];
+const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
 function FullScreenLoader({ message }: { message: string }) {
     return (
@@ -21,12 +24,34 @@ function FullScreenLoader({ message }: { message: string }) {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoading: isAuthLoading } = useUser();
+  const auth = useAuth();
+  const { toast } = useToast();
   const pathname = usePathname();
   const router = useRouter();
+  const inactivityTimerRef = useRef<NodeJS.Timeout>();
 
+  const handleInactivityLogout = useCallback(async () => {
+    if (auth && user) { // Only log out if there's a user
+      await signOut(auth);
+      toast({
+        title: 'Session Expired',
+        description: 'You have been logged out due to inactivity.',
+      });
+      // The route guarding useEffect will handle the redirect to /login
+    }
+  }, [auth, user, toast]);
+
+  const resetInactivityTimer = useCallback(() => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+    }
+    inactivityTimerRef.current = setTimeout(handleInactivityLogout, INACTIVITY_TIMEOUT_MS);
+  }, [handleInactivityLogout]);
+
+  // Route guarding effect
   useEffect(() => {
     if (isAuthLoading) {
-      return; // Don't do anything while auth is loading
+      return;
     }
     
     const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
@@ -36,8 +61,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else if (user && pathname === '/login') {
       router.push('/');
     }
-
   }, [user, isAuthLoading, pathname, router]);
+
+  // Inactivity listener effect
+  useEffect(() => {
+    // Only set up inactivity listeners if a user is logged in
+    if (user) {
+      const events: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'scroll'];
+      
+      const handleActivity = () => {
+        resetInactivityTimer();
+      };
+
+      events.forEach(event => window.addEventListener(event, handleActivity));
+      resetInactivityTimer(); // Start the timer on initial setup
+
+      return () => {
+        events.forEach(event => window.removeEventListener(event, handleActivity));
+        if (inactivityTimerRef.current) {
+          clearTimeout(inactivityTimerRef.current);
+        }
+      };
+    }
+  }, [user, resetInactivityTimer]);
 
   if (isAuthLoading) {
     return <FullScreenLoader message="Initializing..." />;
@@ -45,8 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
 
-
-  // If a redirect is needed, show a loader while the useEffect triggers the navigation
   if (!user && !isPublicPath) {
     return <FullScreenLoader message="Redirecting to login..." />;
   }
