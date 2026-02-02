@@ -51,7 +51,12 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState('');
   const [isSendingReset, setIsSendingReset] = useState(false);
 
-  const isFirebaseConfigured = !!firebaseConfig.projectId;
+  const isFirebaseConfigured = !!(
+    firebaseConfig.apiKey &&
+    firebaseConfig.projectId &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.storageBucket
+  );
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

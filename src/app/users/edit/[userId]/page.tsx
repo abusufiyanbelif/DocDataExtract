@@ -17,6 +17,7 @@ import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { UserForm, type UserFormData } from '@/components/user-form';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { updateUserAuthAction } from '../../actions';
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -46,9 +47,30 @@ export default function EditUserPage() {
         return;
     };
     setIsSubmitting(true);
-    
-    const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
 
+    const isCurrentUserAdmin = currentUserProfile?.role === 'Admin';
+    
+    // Step 1: Update Firebase Auth if necessary
+    let authUpdates: { email?: string } = {};
+    if (isCurrentUserAdmin && data.email && data.email !== user.email) {
+        authUpdates.email = data.email;
+    }
+
+    if (Object.keys(authUpdates).length > 0) {
+        toast({ title: 'Updating authentication...', description: 'Updating the user\'s sign-in email.'});
+        const authResult = await updateUserAuthAction(userId, authUpdates);
+        if (!authResult.success) {
+            toast({
+                title: 'Authentication Update Failed',
+                description: authResult.message,
+                variant: 'destructive',
+            });
+            setIsSubmitting(false);
+            return; // Stop if auth update fails
+        }
+    }
+    
+    // Step 2: Handle file uploads
     let idProofUrl = user?.idProofUrl || '';
     try {
         if (data.idProofDeleted && idProofUrl) {
@@ -98,9 +120,11 @@ export default function EditUserPage() {
          return;
     }
 
+    // Step 3: Update Firestore documents in a batch
     const batch = writeBatch(firestore);
     const docRef = doc(firestore, 'users', userId);
     
+    const permissionsToSave = data.role === 'Admin' ? createAdminPermissions() : data.permissions;
     const updateData: Partial<UserProfile> = {
         name: data.name,
         phone: data.phone,
@@ -115,7 +139,7 @@ export default function EditUserPage() {
     let newEmail = user.email;
     let newLoginId = user.loginId;
 
-    if (currentUserProfile?.role === 'Admin') {
+    if (isCurrentUserAdmin) {
         if (data.email && data.email !== user.email) {
             updateData.email = data.email;
             newEmail = data.email;
@@ -126,11 +150,9 @@ export default function EditUserPage() {
         }
     }
     
-    batch.update(docRef, updateData as any); // Use any to bypass strict type checking for partial update
+    batch.update(docRef, updateData as any);
 
     // --- Handle lookup table updates ---
-
-    // 1. Handle Login ID change
     if (user.loginId !== newLoginId) {
         if (user.loginId) batch.delete(doc(firestore, 'user_lookups', user.loginId));
         if (newLoginId) batch.set(doc(firestore, 'user_lookups', newLoginId), { email: newEmail, userKey: user.userKey });
@@ -138,7 +160,6 @@ export default function EditUserPage() {
         batch.update(doc(firestore, 'user_lookups', newLoginId), { email: newEmail });
     }
     
-    // 2. Handle Phone change
     if (user.phone !== data.phone) {
         if (user.phone) batch.delete(doc(firestore, 'user_lookups', user.phone));
         if (data.phone) batch.set(doc(firestore, 'user_lookups', data.phone), { email: newEmail, userKey: user.userKey });
@@ -146,7 +167,6 @@ export default function EditUserPage() {
         batch.update(doc(firestore, 'user_lookups', data.phone), { email: newEmail });
     }
 
-    // 3. Handle User Key lookup (always exists, only email can change)
     if (user.email !== newEmail && user.userKey) {
         batch.update(doc(firestore, 'user_lookups', user.userKey), { email: newEmail });
     }

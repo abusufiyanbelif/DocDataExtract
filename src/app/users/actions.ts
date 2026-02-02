@@ -1,3 +1,4 @@
+
 'use server';
 
 import { adminAuth, adminDb, adminStorage } from '@/lib/firebase-admin-sdk';
@@ -73,4 +74,27 @@ export async function deleteUserAction(uidToDelete: string): Promise<{ success: 
     }
     return { success: false, message: message };
   }
+}
+
+export async function updateUserAuthAction(uid: string, updates: { email?: string; password?: string }): Promise<{ success: boolean, message: string }> {
+    if (!adminAuth) {
+        const errorMessage = 'Firebase Admin SDK is not initialized. User update cannot proceed.';
+        console.error(errorMessage);
+        return { success: false, message: errorMessage };
+    }
+    try {
+        await adminAuth.updateUser(uid, updates);
+        revalidatePath('/users');
+        revalidatePath(`/users/edit/${uid}`);
+        return { success: true, message: 'User authentication details updated successfully.'};
+    } catch (error: any) {
+        console.error('Error in updateUserAuthAction:', error);
+        let message = 'An unexpected error occurred during user auth update.';
+         if (error.code === 'auth/email-already-exists') {
+            message = 'The email address is already in use by another account.';
+        } else if (error.code === 'auth/user-not-found') {
+            message = 'User not found in Firebase Authentication.';
+        }
+        return { success: false, message: message };
+    }
 }
