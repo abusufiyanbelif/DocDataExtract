@@ -324,11 +324,11 @@ Please donate and share this message. Every contribution helps!
                         <CardContent>
                             <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
                                 <div 
-                                    className="h-full bg-green-500 transition-all"
+                                    className="h-full bg-primary transition-all"
                                     style={{ width: `${summaryData?.fundingProgress || 0}%` }}
                                 ></div>
                                 <div 
-                                    className="absolute top-0 h-full bg-orange-500 transition-all"
+                                    className="absolute top-0 h-full bg-secondary transition-all"
                                     style={{ 
                                         left: `${summaryData?.fundingProgress || 0}%`, 
                                         width: `${summaryData?.pendingProgress || 0}%`
@@ -337,11 +337,11 @@ Please donate and share this message. Every contribution helps!
                             </div>
                             <div className="mt-2 flex justify-between text-sm text-muted-foreground">
                                 <div className="flex items-center">
-                                    <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                                    <span className="h-2 w-2 rounded-full bg-primary mr-2"></span>
                                     Verified
                                 </div>
                                 <div className="flex items-center">
-                                    <span className="h-2 w-2 rounded-full bg-orange-500 mr-2"></span>
+                                    <span className="h-2 w-2 rounded-full bg-secondary mr-2"></span>
                                     Pending Verification
                                 </div>
                             </div>
@@ -352,7 +352,7 @@ Please donate and share this message. Every contribution helps!
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Kit Funding (Verified)</CardTitle>
-                                <Gift className="h-4 w-4 text-green-500" />
+                                <Gift className="h-4 w-4 text-primary" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? '0.00'}</div>
@@ -361,7 +361,7 @@ Please donate and share this message. Every contribution helps!
                          <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Zakat Collected (Verified)</CardTitle>
-                                <Wallet className="h-4 w-4 text-blue-500" />
+                                <Wallet className="h-4 w-4 text-primary" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">Rupee {summaryData?.zakatCollected.toLocaleString('en-IN') ?? '0.00'}</div>
@@ -370,7 +370,7 @@ Please donate and share this message. Every contribution helps!
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
-                                <Hourglass className="h-4 w-4 text-orange-500" />
+                                <Hourglass className="h-4 w-4 text-secondary-foreground" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>

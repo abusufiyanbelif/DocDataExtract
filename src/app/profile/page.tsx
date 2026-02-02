@@ -192,7 +192,7 @@ export default function ProfilePage() {
                                 </ProfileDetail>
                                 
                                 <ProfileDetail 
-                                    icon={userProfile.status === 'Active' ? <CheckCircle className="text-green-500" /> : <XCircle className="text-destructive" />} 
+                                    icon={userProfile.status === 'Active' ? <CheckCircle className="text-success" /> : <XCircle className="text-destructive" />} 
                                     label="Status" 
                                     value={<Badge variant={userProfile.status === 'Active' ? 'default' : 'outline'}>{userProfile.status}</Badge>} 
                                     isEditing={isEditMode && userProfile.role === 'Admin'}
