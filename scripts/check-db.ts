@@ -47,6 +47,7 @@ async function checkDatabaseDetails() {
     log.step('Checking Firestore Database Details');
     try {
         const db = admin.firestore();
+        log.info('This script targets the (default) Firestore database.');
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'N/A';
         log.detail('Project ID', projectId);
 

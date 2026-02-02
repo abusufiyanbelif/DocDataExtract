@@ -32,6 +32,8 @@ async function main() {
 
   const auth = admin.auth();
   const db = admin.firestore();
+  
+  log.info('This script targets the (default) Firestore database.');
 
   const adminEmail = 'baitulmalss.solapur@gmail.com';
   const adminPhone = '9270946423';

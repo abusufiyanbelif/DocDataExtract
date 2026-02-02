@@ -32,6 +32,7 @@ async function main() {
   }
 
   const db = admin.firestore();
+  log.info('This script targets the (default) Firestore database for all delete operations.');
   const storage = admin.storage().bucket();
   const auth = admin.auth();
 
