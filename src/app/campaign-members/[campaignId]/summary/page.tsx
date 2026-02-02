@@ -102,6 +102,7 @@ export default function CampaignSummaryPage() {
                 endDate: campaign.endDate || '',
                 category: campaign.category || 'General',
                 status: campaign.status || 'Upcoming',
+                targetAmount: campaign.targetAmount || 0,
             });
         }
     }, [campaign, editMode]);
@@ -122,6 +123,7 @@ export default function CampaignSummaryPage() {
             endDate: editableCampaign.endDate || '',
             category: editableCampaign.category || 'General',
             status: editableCampaign.status || 'Upcoming',
+            targetAmount: editableCampaign.targetAmount || 0,
         };
 
         updateDoc(campaignDocRef, saveData)
@@ -148,6 +150,7 @@ export default function CampaignSummaryPage() {
                 endDate: campaign.endDate || '',
                 category: campaign.category || 'General',
                 status: campaign.status || 'Upcoming',
+                targetAmount: campaign.targetAmount || 0,
             });
         }
         setEditMode(true);
@@ -178,7 +181,7 @@ export default function CampaignSummaryPage() {
 
         const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + (b.kitAmount || 0), 0);
         
-        const fundingGoal = totalKitAmountRequired;
+        const fundingGoal = campaign.targetAmount || 0;
         const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
         const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
 
@@ -252,8 +255,8 @@ export default function CampaignSummaryPage() {
             donationChartData,
             donationPaymentTypeChartData,
             totalBeneficiaries: beneficiaries.length,
-            targetAmount: totalKitAmountRequired,
-            remainingToCollect: Math.max(0, totalKitAmountRequired - verifiedNonZakatDonations),
+            targetAmount: campaign.targetAmount || 0,
+            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
         };
     }, [beneficiaries, donations, campaign, donationChartFilter]);
     
@@ -274,7 +277,7 @@ export default function CampaignSummaryPage() {
             : `*Kit funding goal achieved! Thank you!*`;
 
         const categoryBreakdownText = summaryData.beneficiaryCategoryBreakdown.length > 0 
-            ? `\n*Beneficiary Breakdown:*\n${summaryData.beneficiaryCategoryBreakdown.map(item => `${item.name}: ${item.count} ${item.count === 1 ? 'beneficiary' : 'beneficiaries'} (Rupee ${item.totalAmount.toLocaleString('en-IN')})`).join('\n')}`
+            ? `\n*Beneficiary Breakdown:*\n${summaryData.beneficiaryCategoryBreakdown.map(item => `${item.name}: ${item.count} ${item.count === 1 ? 'beneficiary' : 'beneficiaries'} (Required Rupee ${item.totalAmount.toLocaleString('en-IN')})`).join('\n')}`
             : '';
 
         const shareText = `
@@ -455,8 +458,22 @@ Please donate and share this message. Every contribution helps!
                             </div>
                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-1">
-                                    <Label className="text-sm font-medium text-muted-foreground">Target Amount (Calculated)</Label>
-                                    <p className="mt-1 text-lg font-semibold">Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')}</p>
+                                    <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Fundraising Goal (Target)</Label>
+                                    {editMode && canUpdate ? (
+                                        <Input
+                                            id="targetAmount"
+                                            type="number"
+                                            value={editableCampaign.targetAmount}
+                                            onChange={(e) => setEditableCampaign(p => ({...p, targetAmount: Number(e.target.value) || 0}))}
+                                            className="mt-1"
+                                        />
+                                    ) : (
+                                        <p className="mt-1 text-lg font-semibold">Rupee {(campaign.targetAmount || 0).toLocaleString('en-IN')}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-sm font-medium text-muted-foreground">Calculated Kit Costs</Label>
+                                    <p className="mt-1 text-lg font-semibold">Rupee {(summaryData?.totalKitAmountRequired ?? 0).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <Label htmlFor="category" className="text-sm font-medium text-muted-foreground">Category</Label>

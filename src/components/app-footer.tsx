@@ -17,7 +17,7 @@ export function AppFooter() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
-      toast({ title: 'Copied!', description: `${text} copied to clipboard.` });
+      toast({ title: 'Copied to clipboard!', description: text, duration: 3000 });
     });
   };
 
