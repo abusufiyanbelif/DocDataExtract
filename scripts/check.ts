@@ -34,7 +34,7 @@ async function checkFirebaseAdmin() {
             projectId: projectId,
             storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         });
-        log.success('Firebase Admin SDK initialized successfully.');
+        log.success(`Firebase Admin SDK initialized successfully for project: ${projectId}`);
         return true;
     } catch (e: any) {
         if (e.code === 'app/duplicate-app') {
@@ -51,12 +51,13 @@ async function checkFirestore() {
     log.step(2, 'Checking Firestore Connectivity');
     try {
         const db = admin.firestore();
-        log.info('Attempting to access default Firestore database...');
+        const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+        log.info(`Attempting to access "(default)" database for project "${projectId}"...`);
         // A lightweight operation to check connectivity. listCollections is a good choice.
         const collections = await db.listCollections();
         log.success(`Successfully connected to Firestore. Project has a default database with ${collections.length} root collections.`);
         
-        log.info('Verifying essential data...');
+        log.info('Verifying essential data (admin user)...');
         const adminLookupSnap = await db.collection('user_lookups').doc('admin').get();
         if (adminLookupSnap.exists) {
             log.success('Admin user lookup document found.');
@@ -71,7 +72,7 @@ async function checkFirestore() {
             log.info('This could mean a few things:');
             log.dim('1. Your Firestore security rules are blocking admin access (unlikely for this script).');
             log.dim('2. The database is empty. Please run `npm run db:seed` to initialize the default admin user.');
-            log.dim(`3. You are connected to the wrong database. Check your projectId is set to "${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}".`);
+            log.dim(`3. You are connected to the wrong database. Check your projectId is set to "${projectId}".`);
         }
     } catch (e: any) {
         log.error(`Firestore check failed with an error: ${e.message}`);
