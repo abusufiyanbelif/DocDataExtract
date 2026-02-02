@@ -10,18 +10,28 @@ const log = {
   error: (msg: string) => console.error(`\x1b[31m❌ ${msg}\x1b[0m`),
   warn: (msg: string) => console.warn(`\x1b[33m⚠️ ${msg}\x1b[0m`),
   step: (num: number, title: string) => console.log(`\n\x1b[36m--- ${num}. ${title} ---\x1b[0m`),
+  dim: (msg: string) => console.log(`\x1b[90m${msg}\x1b[0m`),
 };
 
 
 async function checkFirebaseAdmin() {
     log.step(1, 'Checking Firebase Admin SDK Initialization');
     try {
-        if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-            throw new Error('GOOGLE_APPLICATION_CREDENTIALS environment variable is not set. This is required for admin scripts.');
+        const creds = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        log.dim(`Using GOOGLE_APPLICATION_CREDENTIALS: ${creds || 'Not Set'}`);
+        if (!creds) {
+            throw new Error('GOOGLE_APPLICATION_CREDENTIALS environment variable is not set. This is required for admin scripts. Please create a .env file and add the path to your service account key file.');
         }
+
+        const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+        log.dim(`Using NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${projectId || 'Not Set'}`);
+        if (!projectId) {
+            throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set in your .env file.');
+        }
+        
         admin.initializeApp({
             credential: admin.credential.applicationDefault(),
-            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            projectId: projectId,
             storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
         });
         log.success('Firebase Admin SDK initialized successfully.');
@@ -32,6 +42,7 @@ async function checkFirebaseAdmin() {
             return true;
         }
         log.error(`Firebase Admin SDK initialization failed: ${e.message}`);
+        log.info('This usually means the path in GOOGLE_APPLICATION_CREDENTIALS is incorrect or the file is corrupted. Make sure it points to a valid service account JSON file.');
         return false;
     }
 }
@@ -40,16 +51,30 @@ async function checkFirestore() {
     log.step(2, 'Checking Firestore Connectivity');
     try {
         const db = admin.firestore();
-        // Try to read a known document that should exist after seeding
+        log.info('Attempting to read from Firestore...');
         const adminLookupSnap = await db.collection('user_lookups').doc('admin').get();
         if (adminLookupSnap.exists) {
-            log.success('Successfully connected to Firestore and read a document.');
+            log.success('Successfully connected to Firestore and read the admin lookup document.');
+            const adminUID = adminLookupSnap.data()?.userKey;
+            if (adminUID) {
+                 const adminUserSnap = await db.collection('users').where('userKey', '==', 'admin').limit(1).get();
+                 if (!adminUserSnap.empty) {
+                     log.success('Admin user document found in the users collection.');
+                 } else {
+                     log.warn('Admin lookup record exists, but the corresponding user document in the "users" collection was not found. Please run `npm run db:seed` to repair it.');
+                 }
+            }
         } else {
-            log.warn('Connected to Firestore, but default admin lookup document was not found. Consider running `npm run db:seed`.');
+            log.error('Firestore check failed: Admin user lookup document not found.');
+            log.info('This could mean a few things:');
+            log.dim('1. Your Firestore security rules are blocking admin access (unlikely for this script).');
+            log.dim('2. The database is empty. Please run `npm run db:seed` to initialize the default admin user.');
+            log.dim(`3. You are connected to the wrong database. Check your projectId is set to "${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}".`);
         }
     } catch (e: any) {
-        log.error(`Firestore check failed: ${e.message}`);
-        log.info('This could be a problem with your GOOGLE_APPLICATION_CREDENTIALS, or the Cloud Firestore API may not be enabled in your Google Cloud project.');
+        log.error(`Firestore check failed with an error: ${e.message}`);
+        log.info('This is often a permissions issue. Go to Google Cloud IAM and ensure your service account has the "Cloud Datastore User" or "Firebase Admin" role.');
+        log.dim(`Or, the Cloud Firestore API may not be enabled in your Google Cloud project: https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
     }
 }
 
@@ -57,26 +82,39 @@ async function checkAuth() {
     log.step(3, 'Checking Firebase Authentication');
     try {
         const auth = admin.auth();
-        // Try to list a single user
+        log.info('Attempting to list 1 user from Firebase Auth...');
         const users = await auth.listUsers(1);
-        log.success(`Successfully connected to Firebase Auth. Found ${users.users.length > 0 ? 'at least one user' : 'no users'}.`);
+        log.success(`Successfully connected to Firebase Auth. Your project has ${users.users.length > 0 ? 'at least one user' : 'no users'}.`);
     } catch (e: any) {
         log.error(`Firebase Auth check failed: ${e.message}`);
-        log.info('This could be a problem with your GOOGLE_APPLICATION_CREDENTIALS, or the Firebase Authentication API may not be enabled in your Google Cloud project.');
+        log.info('This could be a problem with your GOOGLE_APPLICATION_CREDENTIALS, or the "Identity Toolkit API" may not be enabled in your Google Cloud project.');
+        log.dim(`Link to enable: https://console.cloud.google.com/apis/library/identitytoolkit.googleapis.com?project=${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
     }
 }
 
 async function checkStorage() {
     log.step(4, 'Checking Firebase Storage');
     try {
-        const storage = admin.storage().bucket();
-        // Try to list files (or check if bucket exists)
-        await storage.getFiles({ maxResults: 1 });
-        log.success('Successfully connected to Firebase Storage.');
+        const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+        log.dim(`Using NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${bucketName || 'Not Set'}`);
+        if (!bucketName) {
+            throw new Error('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET is not set in your .env file.');
+        }
+
+        const storage = admin.storage().bucket(bucketName);
+        log.info('Attempting to check bucket existence...');
+        const [exists] = await storage.exists();
+        if (exists) {
+            log.success(`Successfully connected to Firebase Storage. Bucket "${bucketName}" exists.`);
+        } else {
+            throw new Error(`The bucket "${bucketName}" does not exist in your Firebase project.`);
+        }
     } catch (e: any) {
         log.error(`Firebase Storage check failed: ${e.message}`);
-        if (e.message.includes('not found')) {
-            log.info(`The bucket "${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}" may not exist or your service account lacks permissions.`);
+        if (e.message.includes('does not have storage.objects.list access')) {
+            log.info('This is a permissions issue. Go to Google Cloud IAM and ensure your service account has the "Storage Admin" or "Storage Object Admin" role.');
+        } else {
+            log.info(`The bucket "${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}" may not exist or your service account lacks permissions to access it.`);
         }
     }
 }
@@ -84,10 +122,13 @@ async function checkStorage() {
 async function checkGenkit() {
     log.step(5, 'Checking Genkit AI (Gemini)');
     try {
-        if (!process.env.GEMINI_API_KEY) {
+        const geminiKey = process.env.GEMINI_API_KEY;
+        log.dim(`Using GEMINI_API_KEY: ${geminiKey ? '...'+geminiKey.slice(-4) : 'Not Set'}`);
+        if (!geminiKey) {
             log.warn('GEMINI_API_KEY is not set. Skipping Genkit check.');
             return;
         }
+        log.info('Pinging the Gemini model via Genkit flow...');
         const result = await runDiagnosticCheck();
         if (result.ok) {
             log.success(`Genkit check successful: ${result.message}`);
@@ -100,7 +141,7 @@ async function checkGenkit() {
 }
 
 async function main() {
-    console.log('🚀 Running System Diagnostic Checks from Terminal...');
+    console.log('\n\x1b[1m\x1b[35m🚀 Running System Diagnostic Checks from Terminal...\x1b[0m');
     
     const isFirebaseAdminReady = await checkFirebaseAdmin();
     if (isFirebaseAdminReady) {
@@ -113,7 +154,7 @@ async function main() {
 
     await checkGenkit();
 
-    console.log('\n🎉 Diagnostics complete.');
+    console.log('\n\x1b[1m\x1b[35m🎉 Diagnostics complete.\x1b[0m');
 }
 
 main().catch(console.error);
