@@ -9,6 +9,7 @@ import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { useStorage, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { doc, setDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -28,6 +29,7 @@ export default function SettingsPage() {
     const { paymentSettings, isLoading: isPaymentLoading } = usePaymentSettings();
     const storage = useStorage();
     const firestore = useFirestore();
+    const router = useRouter();
     const { toast } = useToast();
     
     // State for branding
@@ -115,6 +117,7 @@ export default function SettingsPage() {
                 variant: 'success',
             });
             setLogoFile(null);
+            router.refresh();
 
         } catch (error: any) {
             console.error('Logo upload failed:', error);
@@ -174,6 +177,7 @@ export default function SettingsPage() {
 
             toast({ title: 'Success!', description: 'Payment settings have been updated.', variant: 'success' });
             setQrCodeFile(null);
+            router.refresh();
 
         } catch (error: any) {
              console.error('Payment settings save failed:', error);

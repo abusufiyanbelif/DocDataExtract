@@ -92,6 +92,7 @@ export default function CampaignPage() {
 
     if (result.success) {
         toast({ title: 'Campaign Copied', description: result.message, variant: 'success' });
+        router.refresh();
     } else {
         toast({ title: 'Copy Failed', description: result.message, variant: 'destructive' });
     }
@@ -113,6 +114,7 @@ export default function CampaignPage() {
 
     if (result.success) {
         toast({ title: 'Success', description: result.message, variant: 'success' });
+        router.refresh();
     } else {
         toast({ title: 'Deletion Failed', description: result.message, variant: 'destructive' });
     }

@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { doc, updateDoc, DocumentReference } from 'firebase/firestore';
@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Trash2, Download, Loader2, Edit, Save, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Download, Edit, Save, Copy } from 'lucide-react';
 import Link from 'next/link';
 import {
   Dialog,
@@ -47,8 +47,50 @@ import { get } from '@/lib/utils';
 
 const quantityTypes = ['kg', 'litre', 'gram', 'ml', 'piece', 'packet', 'dozen'];
 
+const getCategorySpecifics = (category: Lead['category']) => {
+    switch (category) {
+        case 'Education':
+            return {
+                title: 'Education Details',
+                itemNameLabel: 'Requirement',
+                notesLabel: 'Details',
+                shopNameLabel: 'Institution Name',
+                shopContactLabel: 'Contact Person/Number',
+                shopAddressLabel: 'Institution Address',
+            };
+        case 'Medical':
+            return {
+                title: 'Medical Details',
+                itemNameLabel: 'Procedure/Medicine',
+                notesLabel: 'Medical Notes',
+                shopNameLabel: 'Hospital/Clinic Name',
+                shopContactLabel: 'Hospital Contact',
+                shopAddressLabel: 'Hospital Address',
+            };
+        case 'Ration':
+            return {
+                title: 'Ration Details',
+                itemNameLabel: 'Item Name',
+                notesLabel: 'Notes',
+                shopNameLabel: 'Shop Name',
+                shopContactLabel: 'Shop Contact',
+                shopAddressLabel: 'Shop Address',
+            };
+        default:
+             return {
+                title: 'Item List',
+                itemNameLabel: 'Item Name',
+                notesLabel: 'Notes',
+                shopNameLabel: 'Provider Name',
+                shopContactLabel: 'Provider Contact',
+                shopAddressLabel: 'Provider Address',
+            };
+    }
+};
+
 export default function LeadDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const leadId = params.leadId as string;
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -135,6 +177,11 @@ export default function LeadDetailsPage() {
     };
     
     updateDoc(leadDocRef, saveData)
+        .then(() => {
+            toast({ title: 'Success', description: 'Lead details saved.', variant: 'success' });
+            setEditMode(false);
+            router.refresh();
+        })
         .catch(async (serverError) => {
             const permissionError = new FirestorePermissionError({
                 path: leadDocRef.path,
@@ -142,10 +189,6 @@ export default function LeadDetailsPage() {
                 requestResourceData: saveData,
             } satisfies SecurityRuleContext);
             errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => {
-            toast({ title: 'Success', description: 'Lead details saved.', variant: 'success' });
-            setEditMode(false);
         });
   };
 
@@ -452,8 +495,11 @@ export default function LeadDetailsPage() {
     setItemsToCopy([]);
   };
 
-  const renderRationTable = (memberCount: string) => {
-    const items = editableLead?.rationLists?.[memberCount] || [];
+  const renderCategoryDetailsTable = (memberCount: string) => {
+    if (!editableLead) return null;
+    
+    const categorySpecifics = getCategorySpecifics(editableLead.category);
+    const items = editableLead.rationLists?.[memberCount] || [];
     const total = calculateTotal(items);
     const isGeneral = getCategoryLabel(memberCount) === 'General Item List';
 
@@ -489,14 +535,14 @@ export default function LeadDetailsPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead className="w-[50px]">#</TableHead>
-                        <TableHead className="min-w-[180px]">Item Name</TableHead>
+                        <TableHead className="min-w-[180px]">{categorySpecifics.itemNameLabel}</TableHead>
                         <TableHead className="min-w-[100px]">Quantity</TableHead>
                         <TableHead className="min-w-[150px]">Quantity Type</TableHead>
                         {isGeneral ? (
                             <TableHead className="text-right min-w-[120px]">Price (Rupee)</TableHead>
                         ) : (
                             <>
-                                <TableHead className="min-w-[180px]">Notes</TableHead>
+                                <TableHead className="min-w-[180px]">{categorySpecifics.notesLabel}</TableHead>
                                 <TableHead className="text-right min-w-[150px]">Total Price (Rupee)</TableHead>
                             </>
                         )}
@@ -614,6 +660,8 @@ export default function LeadDetailsPage() {
         </div>
     );
   }
+  
+  const categorySpecifics = getCategorySpecifics(editableLead.category);
 
   return (
     <div className="min-h-screen text-foreground">
@@ -641,7 +689,7 @@ export default function LeadDetailsPage() {
                     )}
                     {canReadRation && (
                       <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
-                          <Link href={`/leads/${leadId}`}>{editableLead.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
+                          <Link href={`/leads/${leadId}`}>{categorySpecifics.title}</Link>
                       </Button>
                     )}
                     {canReadBeneficiaries && (
@@ -663,53 +711,51 @@ export default function LeadDetailsPage() {
           <CardHeader>
              <div className="flex justify-between items-start flex-wrap gap-4">
                 <div>
-                    <CardTitle>{editableLead.category === 'Ration' ? 'Ration Details' : 'Item List'}</CardTitle>
-                    {editableLead.category === 'Ration' && (
-                        <div className="text-sm text-muted-foreground mt-4">
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                <div className="space-y-1">
-                                    <Label htmlFor="priceDate">Price Date</Label>
-                                    <Input
-                                    id="priceDate"
-                                    type="date"
-                                    value={editableLead.priceDate || ''}
-                                    onChange={(e) => handleFieldChange( 'priceDate', e.target.value )}
-                                    disabled={!editMode || !canUpdate}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="shopName">Shop Name</Label>
-                                    <Input
-                                    id="shopName"
-                                    value={editableLead.shopName || ''}
-                                    onChange={(e) => handleFieldChange( 'shopName', e.target.value )}
-                                    placeholder="Shop Name"
-                                    disabled={!editMode || !canUpdate}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="shopContact">Shop Contact</Label>
-                                    <Input
-                                    id="shopContact"
-                                    value={editableLead.shopContact || ''}
-                                    onChange={(e) => handleFieldChange( 'shopContact', e.target.value )}
-                                    placeholder="Contact Number"
-                                    disabled={!editMode || !canUpdate}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="shopAddress">Shop Address</Label>
-                                    <Input
-                                    id="shopAddress"
-                                    value={editableLead.shopAddress || ''}
-                                    onChange={(e) => handleFieldChange( 'shopAddress', e.target.value )}
-                                    placeholder="Shop Address"
-                                    disabled={!editMode || !canUpdate}
-                                    />
-                                </div>
+                    <CardTitle>{categorySpecifics.title}</CardTitle>
+                    <div className="text-sm text-muted-foreground mt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div className="space-y-1">
+                                <Label htmlFor="priceDate">Price Date</Label>
+                                <Input
+                                id="priceDate"
+                                type="date"
+                                value={editableLead.priceDate || ''}
+                                onChange={(e) => handleFieldChange( 'priceDate', e.target.value )}
+                                disabled={!editMode || !canUpdate}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="shopName">{categorySpecifics.shopNameLabel}</Label>
+                                <Input
+                                id="shopName"
+                                value={editableLead.shopName || ''}
+                                onChange={(e) => handleFieldChange( 'shopName', e.target.value )}
+                                placeholder={categorySpecifics.shopNameLabel}
+                                disabled={!editMode || !canUpdate}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="shopContact">{categorySpecifics.shopContactLabel}</Label>
+                                <Input
+                                id="shopContact"
+                                value={editableLead.shopContact || ''}
+                                onChange={(e) => handleFieldChange( 'shopContact', e.target.value )}
+                                placeholder={categorySpecifics.shopContactLabel}
+                                disabled={!editMode || !canUpdate}
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="shopAddress">{categorySpecifics.shopAddressLabel}</Label>
+                                <Input
+                                id="shopAddress"
+                                value={editableLead.shopAddress || ''}
+                                onChange={(e) => handleFieldChange( 'shopAddress', e.target.value )}
+                                placeholder={categorySpecifics.shopAddressLabel}
+                                disabled={!editMode || !canUpdate}
+                                />
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
                 <div className="flex gap-2 flex-wrap justify-end">
                     {canUpdate && (
@@ -793,7 +839,7 @@ export default function LeadDetailsPage() {
                         </ScrollArea>
                         {memberCategories.map(count => (
                             <TabsContent key={count} value={count} className="mt-4">
-                                {renderRationTable(count)}
+                                {renderCategoryDetailsTable(count)}
                             </TabsContent>
                         ))}
                     </Tabs>
@@ -805,7 +851,7 @@ export default function LeadDetailsPage() {
                 )
             ) : (
                 <div className="mt-4">
-                    {renderRationTable('General Item List')}
+                    {renderCategoryDetailsTable('General Item List')}
                 </div>
             )}
           </CardContent>
