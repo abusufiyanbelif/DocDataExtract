@@ -15,7 +15,7 @@ const log = {
 async function initializeFirebaseAdmin() {
     log.step('Initializing Firebase Admin SDK');
     try {
-        const serviceAccount = require('../../serviceAccountKey.json');
+        const serviceAccount = require('../serviceAccountKey.json');
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
         log.dim(`Attempting to initialize for project: ${projectId || 'Not Set'}`);
         if (!projectId) {
