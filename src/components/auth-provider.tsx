@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const isFirestoreError = initializationError.message.includes("Firestore is not available");
     const projectId = firebaseConfig.projectId;
     const firestoreConsoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore`;
+    const firestoreApiConsoleUrl = `https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=${projectId}`;
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -41,22 +42,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 <CardHeader className="text-center">
                     <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
                     <CardTitle className="text-destructive">Firebase Initialization Failed</CardTitle>
-                    <CardDescription>The application could not connect to Firebase.</CardDescription>
+                    <CardDescription>The application could not connect to Firestore.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <Alert variant="destructive">
                         <AlertTitle>
-                            {isFirestoreError ? "Action Required: Enable Firestore" : "Configuration Error"}
+                            {isFirestoreError ? "Action Required: Check Firestore Status" : "Configuration Error"}
                         </AlertTitle>
                         <AlertDescription>
                             {isFirestoreError && projectId ? (
-                                <div className="space-y-3">
-                                  <p>The application has successfully connected to your Firebase project (<strong>{projectId}</strong>), but the Firestore Database service has not been enabled yet.</p>
-                                  <p><strong>To fix this, you must create a Firestore database in your Firebase Console.</strong> Click the button below to get started.</p>
-                                  <Button asChild className="mt-2 w-full">
-                                      <a href={firestoreConsoleUrl} target="_blank" rel="noopener noreferrer">Go to Firebase Console to Create Database <ExternalLink className="ml-2 h-4 w-4"/></a>
-                                  </Button>
-                                  <p className="text-xs pt-2">After creating the database, click "Reload Page".</p>
+                                <div className="space-y-4">
+                                  <p>The application has successfully connected to your Firebase project (<strong>{projectId}</strong>), but it cannot access the Firestore service. This usually happens for one of two reasons:</p>
+                                  
+                                  <div className="space-y-2">
+                                      <p><strong>1. Firestore Database Not Created:</strong> If you haven't created a database yet, you'll need to do so.</p>
+                                      <Button asChild className="w-full" variant="secondary">
+                                          <a href={firestoreConsoleUrl} target="_blank" rel="noopener noreferrer">Go to Firebase Console to Create Database <ExternalLink className="ml-2 h-4 w-4"/></a>
+                                      </Button>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                      <p><strong>2. Cloud Firestore API is Disabled:</strong> Your database exists, but the API to access it is turned off.</p>
+                                      <Button asChild className="w-full" variant="secondary">
+                                          <a href={firestoreApiConsoleUrl} target="_blank" rel="noopener noreferrer">Go to Google Cloud to Enable API <ExternalLink className="ml-2 h-4 w-4"/></a>
+                                      </Button>
+                                  </div>
+
+                                  <p className="text-xs pt-2">After checking both steps, click "Reload Page".</p>
                                 </div>
                               ) : (
                                 <>
