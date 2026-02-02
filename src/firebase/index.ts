@@ -1,8 +1,10 @@
-export { FirebaseProvider, useFirebase, useFirebaseApp, useAuth, useFirestore, useStorage } from './provider';
-export { FirebaseClientProvider } from './client-provider';
-export { useUser } from './auth/use-user';
-export { useCollection } from './firestore/use-collection';
-export { useDoc } from './firestore/use-doc';
-export { errorEmitter } from './error-emitter';
-export { FirestorePermissionError } from './errors';
-export type { SecurityRuleContext } from './errors';
+// This file serves as a barrel for all Firebase-related modules,
+// making imports cleaner across the application.
+// It should not contain any logic or 'use client' directive.
+
+export * from './provider';
+export * from './auth/use-user';
+export * from './firestore/use-collection';
+export * from './firestore/use-doc';
+export * from './error-emitter';
+export * from './errors';

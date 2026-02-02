@@ -1,25 +1,14 @@
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
 
 export default function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-foreground">
-      <div className="container mx-auto flex flex-col items-center justify-center text-center p-8">
-        <h1 className="text-5xl md:text-6xl font-bold font-headline text-foreground mb-4">
-          404 - Page Not Found
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-          Oops! The page you are looking for does not exist or has been moved.
-        </p>
-        <Link href="/">
-          <Button size="lg" className="text-lg">
-            <ArrowLeft className="mr-2 h-5 w-5" />
-            Go back to Home
-          </Button>
-        </Link>
-      </div>
+    <div style={{ fontFamily: 'sans-serif', textAlign: 'center', padding: '4rem', color: 'hsl(var(--foreground))', backgroundColor: 'hsl(var(--background))', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>404 - Page Not Found</h1>
+      <p style={{ margin: '1rem 0', fontSize: '1.125rem' }}>Oops! The page you are looking for does not exist or has been moved.</p>
+      <Link href="/" style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', fontSize: '1.125rem' }}>
+        Go back to Home
+      </Link>
     </div>
   );
 }
