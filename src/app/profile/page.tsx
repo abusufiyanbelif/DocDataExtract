@@ -234,7 +234,7 @@ export default function ProfilePage() {
                     </DialogHeader>
                     {imageToView && (
                         <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
-                            <Image src={imageToView} alt="ID proof" fill className="object-contain" style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, transition: 'transform 0.2s ease-out' }} />
+                            <Image src={imageToView} alt="ID proof" fill style={{ objectFit: 'contain' }} />
                         </div>
                     )}
                     <DialogFooter className="sm:justify-center pt-4">
