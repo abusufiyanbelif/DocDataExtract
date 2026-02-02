@@ -39,16 +39,6 @@ const PublicFirebaseContent = ({ children }: { children: ReactNode }) => {
     );
 }
 
-// This component is for truly public routes that DO NOT need firebase.
-const TrulyPublicContent = ({ children }: { children: ReactNode }) => {
-    return (
-      <>
-        {children}
-        <Toaster />
-      </>
-    );
-}
-
 // This component is ONLY for authenticated routes. It assumes it's inside FirebaseProvider.
 const AuthenticatedContent = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useUser();
@@ -108,13 +98,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isPublicCampaignPath = pathname.startsWith('/campaign-public');
   const isHomePage = pathname === '/';
   
-  // Routes that DON'T need firebase AT ALL
-  if (isSeedPage) {
-    return <TrulyPublicContent>{children}</TrulyPublicContent>;
-  }
-
   // Routes that are public but DO need firebase
-  if (isPublicCampaignPath || isHomePage) {
+  if (isPublicCampaignPath || isHomePage || isSeedPage) {
     return (
         <FirebaseClientProvider>
             <PublicFirebaseContent>{children}</PublicFirebaseContent>
