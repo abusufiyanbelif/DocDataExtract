@@ -1,3 +1,4 @@
+'use client';
 import { HeartPulse, BookUser, ArrowLeft } from 'lucide-react';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
