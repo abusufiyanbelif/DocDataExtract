@@ -15,7 +15,7 @@ export default function NotFound() {
       color: 'hsl(var(--foreground))'
     }}>
       <div>
-        <h1 style={{ display: 'inline-block', borderRight: '1px solid rgba(var(--foreground), 0.3)', margin: 0, marginRight: '20px', padding: '10px 23px 10px 0', fontSize: '24px', fontWeight: 500, verticalAlign: 'top' }}>
+        <h1 style={{ display: 'inline-block', borderRight: '1px solid rgba(0, 0, 0, 0.3)', margin: 0, marginRight: '20px', padding: '10px 23px 10px 0', fontSize: '24px', fontWeight: 500, verticalAlign: 'top' }}>
           404
         </h1>
         <div style={{ display: 'inline-block', textAlign: 'left', lineHeight: '49px', height: '49px', verticalAlign: 'middle' }}>

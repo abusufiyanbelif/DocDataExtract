@@ -1,6 +1,7 @@
+
 'use client';
 import { useMemo } from 'react';
-import { useFirestore, useDoc } from '@/firebase';
+import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc, DocumentReference } from 'firebase/firestore';
 import type { PaymentSettings } from '@/lib/types';
 import Image from 'next/image';

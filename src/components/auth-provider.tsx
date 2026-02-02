@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,7 +7,7 @@ import { Loader2, AlertTriangle, ExternalLink } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { firebaseConfig } from '@/firebase/config';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Button } from './ui/button';
 
 const publicPaths = ['/login', '/seed', '/'];
@@ -64,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isLoading = isSessionLoading || (initializationError === null && !user && !publicPaths.includes(pathname));
 
   if (initializationError && !isSessionLoading) {
-    const isFirestoreError = initializationError.message.includes("Firestore");
+    const isFirestoreError = initializationError.message.includes("firestore");
     const isStorageError = initializationError.message.includes("Cloud Storage");
     const projectId = firebaseConfig.projectId;
     const firestoreConsoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore`;

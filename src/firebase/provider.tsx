@@ -1,7 +1,7 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useEffect, useState } from 'react';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { initializeApp, FirebaseApp, getApps, getApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
@@ -18,8 +18,8 @@ interface FirebaseContextType {
 
 const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined);
 
-export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
-  const [value, setValue] = useState<FirebaseContextType>({
+export function FirebaseProvider({ children }: { children: ReactNode }) {
+  const [services, setServices] = useState<FirebaseContextType>({
     app: null,
     auth: null,
     firestore: null,
@@ -28,66 +28,52 @@ export const FirebaseProvider = ({ children }: { children: ReactNode }) => {
   });
 
   useEffect(() => {
+    if (services.app) return; // Already initialized
+
+    let initError: Error | null = null;
     try {
-      if (typeof window === 'undefined') {
-        throw new Error('Firebase client cannot run on server');
-      }
-
-      const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+      const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+      const auth = getAuth(app);
       
-      let firestoreInstance: Firestore | null = null;
-      let storageInstance: FirebaseStorage | null = null;
-      let initError: Error | null = null;
+      let firestore: Firestore | null = null;
+      let storage: FirebaseStorage | null = null;
 
       try {
-        firestoreInstance = getFirestore(app);
+        firestore = getFirestore(app);
       } catch (e: any) {
-        console.error("Failed to initialize Firestore", e);
-        initError = new Error(`Service firestore is not available. Please enable it in your Firebase project. Details: ${e.message}`);
+        console.warn("Firestore could not be initialized, it may not be enabled in this Firebase project.", e.message);
+        initError = new Error("Firestore is not available. Please enable it in your Firebase project console.");
       }
 
       try {
-        storageInstance = getStorage(app);
+        storage = getStorage(app);
       } catch (e: any) {
-        console.error("Failed to initialize Cloud Storage", e);
-        const storageErrorMessage = `Service storage is not available. Please enable it in your Firebase project. Details: ${e.message}`;
-        initError = initError ? new Error(`${initError.message}\n${storageErrorMessage}`) : new Error(storageErrorMessage);
+         console.warn("Firebase Storage could not be initialized, it may not be enabled in this Firebase project.", e.message);
+         if (!initError) {
+            initError = new Error("Cloud Storage is not available. Please enable it in your Firebase project console.");
+         }
       }
 
-      setValue({
+      setServices({
         app,
-        auth: getAuth(app),
-        firestore: firestoreInstance,
-        storage: storageInstance,
+        auth,
+        firestore,
+        storage,
         initializationError: initError,
       });
-
-    } catch (e: any) {
-      console.error('Firebase init failed:', e);
-      setValue({
-        app: null,
-        auth: null,
-        firestore: null,
-        storage: null,
-        initializationError: e,
-      });
+    } catch (error: any) {
+      console.error('Firebase initialization failed:', error);
+      setServices(s => ({ ...s, initializationError: error }));
     }
-  }, []);
-
-  if (!value.app && !value.initializationError) {
-      // Don't render anything until initialization has at least been attempted.
-      // This prevents hydration mismatches.
-      return null;
-  }
+  }, [services.app]);
 
   return (
-    <FirebaseContext.Provider value={value}>
-      {children}
+    <FirebaseContext.Provider value={services}>
       <FirebaseErrorListener />
+      {children}
     </FirebaseContext.Provider>
   );
-};
-
+}
 
 export const useFirebase = () => {
   const context = useContext(FirebaseContext);
