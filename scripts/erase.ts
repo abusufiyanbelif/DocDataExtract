@@ -1,13 +1,21 @@
-
 import * as admin from 'firebase-admin';
 import 'dotenv/config';
 
+const log = {
+  info: (msg: string) => console.log(`\x1b[34mℹ️ ${msg}\x1b[0m`),
+  success: (msg: string) => console.log(`\x1b[32m✅ ${msg}\x1b[0m`),
+  error: (msg: string) => console.error(`\x1b[31m❌ ${msg}\x1b[0m`),
+  warn: (msg: string) => console.warn(`\x1b[33m⚠️ ${msg}\x1b[0m`),
+  step: (num: number, title: string) => console.log(`\n\x1b[36m--- ${num}. ${title} ---\x1b[0m`),
+  dim: (msg: string) => console.log(`\x1b[90m${msg}\x1b[0m`),
+};
+
 async function main() {
-  console.log('🚀 Starting Erase Script...');
+  log.step(0, 'Starting Erase Script...');
 
   // 1. Initialize Admin SDK
   try {
-    const serviceAccount = require('../serviceAccountKey.json');
+    const serviceAccount = require('../../serviceAccountKey.json');
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -15,10 +23,10 @@ async function main() {
     });
   } catch (error: any) {
     if (error.code === 'MODULE_NOT_FOUND') {
-        console.error('❌ ERROR: `serviceAccountKey.json` not found in the project root.');
-        console.error('Please download it from your Firebase project settings and place it in the root directory.');
+        log.error('`serviceAccountKey.json` not found in the project root.');
+        log.info('Please download it from your Firebase project settings and place it in the root directory.');
     } else {
-        console.error('❌ Firebase Admin SDK initialization error:', error);
+        log.error(`Firebase Admin SDK initialization error: ${error.message}`);
     }
     process.exit(1);
   }
@@ -63,9 +71,9 @@ async function main() {
       }
     }
     if (deletedCount > 0) {
-        console.log(`   - Deleted ${deletedCount} documents from "${collectionPath}".`);
+        log.dim(`   - Deleted ${deletedCount} documents from "${collectionPath}".`);
     } else {
-        console.log(`   - No documents to delete in "${collectionPath}".`);
+        log.dim(`   - No documents to delete in "${collectionPath}".`);
     }
   };
   
@@ -73,29 +81,29 @@ async function main() {
     try {
       const [files] = await storage.getFiles({ prefix });
       if (files.length === 0) {
-        console.log(`   - Folder "gs://${storage.name}/${prefix}" is already empty or does not exist, skipping.`);
+        log.dim(`   - Folder "gs://${storage.name}/${prefix}" is already empty or does not exist, skipping.`);
         return;
       }
       await storage.deleteFiles({ prefix });
-      console.log(`   - Emptied folder "gs://${storage.name}/${prefix}".`);
+      log.dim(`   - Emptied folder "gs://${storage.name}/${prefix}".`);
     } catch (e: any) {
-      console.error(`   - ❌ Error emptying folder "gs://${storage.name}/${prefix}":`, e.message);
+      log.error(`   - Error emptying folder "gs://${storage.name}/${prefix}": ${e.message}`);
     }
   };
 
   // --- Main Erase Logic ---
 
-  console.log('\n--- 1. Preparing for Erase ---');
+  log.step(1, 'Preparing for Erase');
   let adminUid: string | null = null;
   try {
     const adminUser = await auth.getUserByEmail(ADMIN_EMAIL);
     adminUid = adminUser.uid;
-    console.log(`ℹ️  Found admin user (UID: ${adminUid}). This user's Auth entry will NOT be deleted.`);
+    log.info(`Found admin user (UID: ${adminUid}). This user's Auth entry will NOT be deleted.`);
   } catch (error) {
-    console.log('ℹ️  No admin user found in Firebase Auth. Nothing to preserve.');
+    log.info('No admin user found in Firebase Auth. Nothing to preserve.');
   }
 
-  console.log('\n--- 2. Erasing Firestore Data ---');
+  log.step(2, 'Erasing Firestore Data');
   await Promise.all([
     deleteCollection('campaigns'),
     deleteCollection('leads'),
@@ -104,7 +112,7 @@ async function main() {
     deleteCollection('users', adminUid ? [adminUid] : []),
   ]);
 
-  console.log('\n--- 3. Erasing Non-Admin Auth Users ---');
+  log.step(3, 'Erasing Non-Admin Auth Users');
   let nextPageToken;
   let deletedAuthCount = 0;
   do {
@@ -115,27 +123,27 @@ async function main() {
         deletedAuthCount += result.successCount;
         result.errors.forEach(err => {
             const failedUser = usersToDelete[err.index];
-            console.error(`   - ❌ Failed to delete auth user ${failedUser.uid}: ${err.error}`);
+            log.error(`   - Failed to delete auth user ${failedUser.uid}: ${err.error}`);
         });
     }
     nextPageToken = listUsersResult.pageToken;
   } while (nextPageToken);
-  console.log(`   - Deleted ${deletedAuthCount} user accounts from Firebase Authentication.`);
+  log.dim(`   - Deleted ${deletedAuthCount} user accounts from Firebase Authentication.`);
 
 
-  console.log('\n--- 4. Erasing Firebase Storage Data ---');
+  log.step(4, 'Erasing Firebase Storage Data');
   await Promise.all([
       deleteStorageFolder('campaigns/'),
       deleteStorageFolder('leads/'),
       deleteStorageFolder('users/')
   ]);
 
-  console.log('\n🎉 Erase script finished successfully!');
-  console.log('✨ Your database is now clean. Run `npm run db:seed` to restore the admin user\'s database records.');
+  log.success('\nErase script finished successfully!');
+  log.info('✨ Your database is now clean. Run `npm run db:seed` to restore the admin user\'s database records.');
 }
 
 main().catch((e) => {
-  console.error('\n❌ An unexpected error occurred during the erase script:');
+  log.error('\nAn unexpected error occurred during the erase script:');
   console.error(e);
   process.exit(1);
 });

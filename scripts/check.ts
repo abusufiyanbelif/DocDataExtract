@@ -1,4 +1,3 @@
-
 import 'dotenv/config';
 import * as admin from 'firebase-admin';
 import { runDiagnosticCheck } from '../src/ai/flows/run-diagnostic-check';
@@ -17,7 +16,7 @@ const log = {
 async function checkFirebaseAdmin() {
     log.step(1, 'Checking Firebase Admin SDK Initialization');
     try {
-        const serviceAccount = require('../serviceAccountKey.json');
+        const serviceAccount = require('../../serviceAccountKey.json');
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
         log.dim(`Attempting to initialize with serviceAccountKey.json for project: ${projectId || 'Not Set'}`);
         if (!projectId) {
@@ -47,14 +46,20 @@ async function checkFirebaseAdmin() {
 }
 
 async function checkFirestore() {
-    log.step(2, 'Checking Firestore Connectivity');
+    log.step(2, 'Checking Firestore Connectivity & Data');
     try {
         const db = admin.firestore();
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
         log.info(`Attempting to access "(default)" database for project "${projectId}"...`);
-        // A lightweight operation to check connectivity. listCollections is a good choice.
         const collections = await db.listCollections();
         log.success(`Successfully connected to Firestore. Project has a default database with ${collections.length} root collections.`);
+        
+        if (collections.length > 0) {
+            log.dim(`   Collections found: ${collections.map(c => c.id).join(', ')}`);
+        }
+
+        const usersSnap = await db.collection('users').count().get();
+        log.info(`Found ${usersSnap.data().count} documents in the 'users' collection.`);
         
         log.info('Verifying essential data (admin user)...');
         const adminLookupSnap = await db.collection('user_lookups').doc('admin').get();
@@ -97,7 +102,8 @@ async function checkAuth() {
         const auth = admin.auth();
         log.info('Attempting to list 1 user from Firebase Auth...');
         const users = await auth.listUsers(1);
-        log.success(`Successfully connected to Firebase Auth. Your project has ${users.users.length > 0 ? 'at least one user' : 'no users'}.`);
+        const userCount = (await auth.listUsers()).users.length;
+        log.success(`Successfully connected to Firebase Auth. Your project has ${userCount} user(s).`);
     } catch (e: any) {
         log.error(`Firebase Auth check failed: ${e.message}`);
         log.info('This could be a problem with your GOOGLE_APPLICATION_CREDENTIALS, or the "Identity Toolkit API" may not be enabled in your Google Cloud project.');
@@ -168,6 +174,7 @@ async function main() {
     await checkGenkit();
 
     console.log('\n\x1b[1m\x1b[35m🎉 Diagnostics complete.\x1b[0m');
+    console.log('\n\x1b[33m⚠️  If these checks pass but your app shows errors, ensure your public Firebase keys are in a `.env` file.\x1b[0m');
 }
 
 main().catch(console.error);
