@@ -1,6 +1,7 @@
 'use client';
 import { useMemo } from 'react';
-import { useUser, useFirestore, useDoc } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
+import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc, DocumentReference } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 

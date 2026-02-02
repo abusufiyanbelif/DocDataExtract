@@ -2,13 +2,13 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useSession } from '@/hooks/use-session';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 const publicPaths = ['/login', '/seed', '/'];
 
-function FullScreenLoader({ message }: { message: string }) {
+function RedirectLoader({ message }: { message: string }) {
     return (
         <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
             <div className="w-full max-w-xs text-center">
@@ -20,12 +20,12 @@ function FullScreenLoader({ message }: { message: string }) {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, isLoading: isAuthLoading } = useUser();
+  const { user, isLoading } = useSession();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthLoading) {
+    if (isLoading) {
       return; // Don't do anything while auth is loading
     }
     
@@ -37,16 +37,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/');
     }
 
-  }, [user, isAuthLoading, pathname, router]);
-
-  const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
-  const needsRedirect = (!user && !isPublicPath) || (user && pathname === '/login');
+  }, [user, isLoading, pathname, router]);
   
-  // Render children always to prevent 404, but show an overlay loader if auth state 
-  // is resolving or a redirect is pending.
+  const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
+  const needsRedirect = !isLoading && ((!user && !isPublicPath) || (user && pathname === '/login'));
+
   return (
     <>
-        {(isAuthLoading || needsRedirect) && <FullScreenLoader message={isAuthLoading ? "Initializing..." : "Redirecting..."} />}
+        {needsRedirect && <RedirectLoader message="Redirecting..." />}
         {children}
     </>
   );
