@@ -1,7 +1,7 @@
 
 'use server';
 
-import { adminDb } from '@/lib/firebase-admin-sdk';
+import { adminDb, adminStorage } from '@/lib/firebase-admin-sdk';
 import type { Lead, Beneficiary, Donation } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import * as admin from 'firebase-admin';
@@ -147,7 +147,7 @@ export async function copyLeadAction(options: CopyLeadOptions): Promise<{ succes
 
 
 export async function deleteLeadAction(leadId: string): Promise<{ success: boolean; message: string }> {
-    if (!adminDb) {
+    if (!adminDb || !adminStorage) {
         return { success: false, message: 'Firebase Admin SDK is not initialized.' };
     }
     
@@ -157,26 +157,42 @@ export async function deleteLeadAction(leadId: string): Promise<{ success: boole
         if (!leadSnap.exists) return { success: false, message: 'Lead not found.' };
 
         const leadName = leadSnap.data()?.name || 'Unknown Lead';
-
-        const batch = adminDb.batch();
-
-        // Delete beneficiaries subcollection
+        
+        // --- Step 1: Collect Storage URLs ---
         const beneficiariesRef = leadRef.collection('beneficiaries');
         const beneficiariesSnap = await beneficiariesRef.get();
-        if (!beneficiariesSnap.empty) {
-            beneficiariesSnap.docs.forEach(doc => batch.delete(doc.ref));
-        }
-
-        // Delete associated donations
         const donationsQuery = adminDb.collection('donations').where('leadId', '==', leadId);
         const donationsSnap = await donationsQuery.get();
-        if (!donationsSnap.empty) {
-            donationsSnap.docs.forEach(doc => batch.delete(doc.ref));
-        }
-        
-        // Delete lead document itself
-        batch.delete(leadRef);
 
+        const storageUrlsToDelete: string[] = [];
+        beneficiariesSnap.forEach(doc => {
+            const data = doc.data() as Beneficiary;
+            if (data.idProofUrl) storageUrlsToDelete.push(data.idProofUrl);
+        });
+        donationsSnap.forEach(doc => {
+            const data = doc.data() as Donation;
+            if (data.screenshotUrl) storageUrlsToDelete.push(data.screenshotUrl);
+        });
+
+        // --- Step 2: Delete Files from Storage ---
+        const deletePromises = storageUrlsToDelete.map(url => {
+            try {
+                const filePath = decodeURIComponent(url.split('/o/')[1].split('?')[0]);
+                return adminStorage.bucket().file(filePath).delete().catch(err => {
+                    if (err.code !== 404) console.error(`Failed to delete storage file ${filePath}:`, err);
+                });
+            } catch (e) {
+                console.error(`Invalid storage URL found for lead ${leadId}: ${url}`, e);
+                return Promise.resolve();
+            }
+        });
+        await Promise.all(deletePromises);
+        
+        // --- Step 3: Delete Firestore Docs ---
+        const batch = adminDb.batch();
+        beneficiariesSnap.forEach(doc => batch.delete(doc.ref));
+        donationsSnap.forEach(doc => batch.delete(doc.ref));
+        batch.delete(leadRef);
         await batch.commit();
 
         revalidatePath('/leads');

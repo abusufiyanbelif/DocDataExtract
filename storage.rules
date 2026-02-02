@@ -1,0 +1,91 @@
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // --- Helper Functions ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() &&
+             exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+             getUserData().role == 'Admin';
+    }
+    
+    function hasPermission(pathSegments, permission) {
+      return isSignedIn() && (
+        isAdmin() ||
+        (
+          exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
+          'permissions' in getUserData() &&
+          (
+            (
+              pathSegments.size() == 1 &&
+              pathSegments[0] in getUserData().permissions &&
+              permission in getUserData().permissions[pathSegments[0]] &&
+              getUserData().permissions[pathSegments[0]][permission] == true
+            ) ||
+            (
+              pathSegments.size() == 2 &&
+              pathSegments[0] in getUserData().permissions &&
+              pathSegments[1] in getUserData().permissions[pathSegments[0]] &&
+              permission in getUserData().permissions[pathSegments[0]][pathSegments[1]] &&
+              getUserData().permissions[pathSegments[0]][pathSegments[1]][permission] == true
+            )
+          )
+        )
+      );
+    }
+
+    // --- Path Rules ---
+
+    // Settings files (logo, QR code) are publicly readable.
+    // Only users with settings update permission can write.
+    match /settings/{allPaths=**} {
+      allow read: if true;
+      allow write: if hasPermission(['settings'], 'update');
+    }
+    
+    // User-specific files (e.g., ID proofs)
+    // Only the owner can read or write their own files.
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Campaign files
+    // Anyone can read. Writing requires relevant permissions.
+    match /campaigns/{campaignFolder}/{allPaths=**} {
+      allow read: if true;
+      allow write: if hasPermission(['campaigns'], 'create') ||
+                     hasPermission(['campaigns'], 'update') ||
+                     hasPermission(['campaigns', 'beneficiaries'], 'create') ||
+                     hasPermission(['campaigns', 'beneficiaries'], 'update') ||
+                     hasPermission(['campaigns', 'donations'], 'create') ||
+                     hasPermission(['campaigns', 'donations'], 'update');
+    }
+    
+    // Lead files
+    // Anyone can read. Writing requires relevant permissions.
+    match /leads/{leadFolder}/{allPaths=**} {
+      allow read: if true;
+      allow write: if hasPermission(['leads'], 'create') ||
+                     hasPermission(['leads'], 'update') ||
+                     hasPermission(['leads', 'beneficiaries'], 'create') ||
+                     hasPermission(['leads', 'beneficiaries'], 'update') ||
+                     hasPermission(['leads', 'donations'], 'create') ||
+                     hasPermission(['leads', 'donations'], 'update');
+    }
+    
+    // Diagnostics files (for testing)
+    match /diagnostics/{userId}/{allPaths=**} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+  }
+}

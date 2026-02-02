@@ -1,6 +1,7 @@
+
 'use server';
 
-import { adminDb } from '@/lib/firebase-admin-sdk';
+import { adminDb, adminStorage } from '@/lib/firebase-admin-sdk';
 import type { Campaign, Beneficiary, Donation } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import * as admin from 'firebase-admin';
@@ -140,5 +141,65 @@ export async function copyCampaignAction(options: CopyCampaignOptions): Promise<
   } catch (error: any) {
     console.error('Error in copyCampaignAction:', error);
     return { success: false, message: `An unexpected error occurred during copy: ${error.message}` };
+  }
+}
+
+
+export async function deleteCampaignAction(campaignId: string): Promise<{ success: boolean; message: string }> {
+  if (!adminDb || !adminStorage) {
+    return { success: false, message: 'Firebase Admin SDK is not initialized.' };
+  }
+
+  try {
+    const campaignRef = adminDb.collection('campaigns').doc(campaignId);
+    const campaignSnap = await campaignRef.get();
+    if (!campaignSnap.exists) {
+      return { success: false, message: 'Campaign not found.' };
+    }
+    const campaignName = campaignSnap.data()?.name || 'Unknown Campaign';
+
+    // --- Step 1: Collect Storage URLs ---
+    const beneficiariesRef = campaignRef.collection('beneficiaries');
+    const beneficiariesSnap = await beneficiariesRef.get();
+    const donationsQuery = adminDb.collection('donations').where('campaignId', '==', campaignId);
+    const donationsSnap = await donationsQuery.get();
+
+    const storageUrlsToDelete: string[] = [];
+    beneficiariesSnap.forEach(doc => {
+      const data = doc.data() as Beneficiary;
+      if (data.idProofUrl) storageUrlsToDelete.push(data.idProofUrl);
+    });
+    donationsSnap.forEach(doc => {
+      const data = doc.data() as Donation;
+      if (data.screenshotUrl) storageUrlsToDelete.push(data.screenshotUrl);
+    });
+
+    // --- Step 2: Delete Files from Storage ---
+    const deletePromises = storageUrlsToDelete.map(url => {
+        try {
+            const filePath = decodeURIComponent(url.split('/o/')[1].split('?')[0]);
+            return adminStorage.bucket().file(filePath).delete().catch(err => {
+                if (err.code !== 404) console.error(`Failed to delete storage file ${filePath}:`, err);
+            });
+        } catch (e) {
+            console.error(`Invalid storage URL found for campaign ${campaignId}: ${url}`, e);
+            return Promise.resolve();
+        }
+    });
+    await Promise.all(deletePromises);
+
+    // --- Step 3: Delete Firestore Docs ---
+    const batch = adminDb.batch();
+    beneficiariesSnap.forEach(doc => batch.delete(doc.ref));
+    donationsSnap.forEach(doc => batch.delete(doc.ref));
+    batch.delete(campaignRef);
+    await batch.commit();
+
+    revalidatePath('/campaign-members');
+    return { success: true, message: `Campaign '${campaignName}' and all associated data deleted successfully.` };
+
+  } catch (error: any) {
+    console.error('Error deleting campaign:', error);
+    return { success: false, message: `Failed to delete campaign: ${error.message}` };
   }
 }

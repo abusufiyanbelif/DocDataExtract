@@ -6,13 +6,12 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Plus, ArrowUp, ArrowDown, ShieldAlert, MoreHorizontal, Trash2, Edit, Copy } from 'lucide-react';
-import { useCollection, useFirestore, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
-import type { Campaign, Beneficiary, Donation } from '@/lib/types';
+import type { Campaign } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
-import { collection, query, where, getDocs, writeBatch, doc } from 'firebase/firestore';
-import { ref as storageRef, deleteObject } from 'firebase/storage';
+import { collection } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -37,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { CopyCampaignDialog } from '@/components/copy-campaign-dialog';
-import { copyCampaignAction } from './actions';
+import { copyCampaignAction, deleteCampaignAction } from './actions';
 
 
 type SortKey = keyof Campaign | 'srNo';
@@ -45,7 +44,6 @@ type SortKey = keyof Campaign | 'srNo';
 export default function CampaignPage() {
   const router = useRouter();
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,7 +100,7 @@ export default function CampaignPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!campaignToDelete || !firestore || !storage || !canDelete) {
+    if (!campaignToDelete || !canDelete) {
         toast({ title: 'Error', description: 'Could not delete campaign.', variant: 'destructive'});
         return;
     };
@@ -111,55 +109,16 @@ export default function CampaignPage() {
     setIsDeleting(true);
     toast({ title: 'Deleting...', description: `Please wait while '${campaignToDelete.name}' and all its data are being deleted.`});
 
-    try {
-        const campaignId = campaignToDelete.id;
+    const result = await deleteCampaignAction(campaignToDelete.id);
 
-        // --- Fetch all associated documents and file URLs ---
-        const beneficiariesRef = collection(firestore, `campaigns/${campaignId}/beneficiaries`);
-        const beneficiariesSnap = await getDocs(beneficiariesRef);
-
-        const donationsQuery = query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-        const donationsSnap = await getDocs(donationsQuery);
-        
-        const storageUrls: string[] = [];
-        beneficiariesSnap.forEach(doc => {
-            const data = doc.data() as Beneficiary;
-            if (data.idProofUrl) storageUrls.push(data.idProofUrl);
-        });
-        donationsSnap.forEach(doc => {
-            const data = doc.data() as Donation;
-            if (data.screenshotUrl) storageUrls.push(data.screenshotUrl);
-        });
-
-        // --- Step 1: Delete files from Storage ---
-        const deleteFilePromises = storageUrls.map(url => {
-            const fileRef = storageRef(storage, url);
-            return deleteObject(fileRef).catch(error => {
-                // Don't throw an error, just continue
-                if (error.code !== 'storage/object-not-found') {
-                    console.warn(`Failed to delete file ${url}`, error);
-                }
-            });
-        });
-
-        await Promise.all(deleteFilePromises);
-        
-        // --- Step 2: Delete documents from Firestore ---
-        const batch = writeBatch(firestore);
-        beneficiariesSnap.forEach(doc => batch.delete(doc.ref));
-        donationsSnap.forEach(doc => batch.delete(doc.ref));
-        batch.delete(doc(firestore, 'campaigns', campaignId));
-
-        await batch.commit();
-        
-        toast({ title: 'Success', description: `Campaign '${campaignToDelete.name}' was successfully deleted.`, variant: 'success' });
-
-    } catch (error: any) {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: `campaigns/${campaignToDelete.id} and all sub-collections`, operation: 'delete' }));
-    } finally {
-        setIsDeleting(false);
-        setCampaignToDelete(null);
+    if (result.success) {
+        toast({ title: 'Success', description: result.message, variant: 'success' });
+    } else {
+        toast({ title: 'Deletion Failed', description: result.message, variant: 'destructive' });
     }
+    
+    setIsDeleting(false);
+    setCampaignToDelete(null);
   };
 
 
@@ -197,7 +156,7 @@ export default function CampaignPage() {
             const bValue = b[sortConfig.key] ?? '';
             
             if (sortConfig.key === 'startDate' || sortConfig.key === 'endDate') {
-                return sortConfig.direction === 'ascending' ? new Date(aValue).getTime() - new Date(bValue).getTime() : new Date(bValue).getTime() - new Date(aValue).getTime();
+                return sortConfig.direction === 'ascending' ? new Date(aValue as string).getTime() - new Date(bValue as string).getTime() : new Date(bValue as string).getTime() - new Date(aValue as string).getTime();
             }
 
             if (typeof aValue === 'number' && typeof bValue === 'number') {
