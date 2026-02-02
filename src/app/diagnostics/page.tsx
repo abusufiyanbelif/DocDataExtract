@@ -92,7 +92,7 @@ export default function DiagnosticsPage() {
         {
             id: 'firestore-read',
             name: 'Firestore Connectivity',
-            description: 'Attempts a public read from the "user_lookups" collection.',
+            description: 'Attempts public reads from the "user_lookups" and "settings" collections.',
             icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" />,
             run: async () => {
                 if (!firestore) {
@@ -100,9 +100,12 @@ export default function DiagnosticsPage() {
                 }
                 try {
                     const lookupsRef = collection(firestore, 'user_lookups');
-                    const q = query(lookupsRef, limit(1));
-                    await getDocs(q);
-                    return { status: 'success', details: 'Successfully connected and performed a public read. This confirms basic connectivity and security rules for "user_lookups".' };
+                    const settingsRef = collection(firestore, 'settings');
+                    const q1 = query(lookupsRef, limit(1));
+                    const q2 = query(settingsRef, limit(1));
+                    await getDocs(q1);
+                    await getDocs(q2);
+                    return { status: 'success', details: 'Successfully connected and performed public reads from "user_lookups" and "settings". This confirms basic connectivity and security rules.' };
                 } catch (error: any) {
                     return { status: 'failure', details: `Firestore public read failed. This could be a connectivity issue or a problem with your Security Rules. Error: ${error.message}` };
                 }
