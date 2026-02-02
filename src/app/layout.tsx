@@ -39,15 +39,15 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body style={watermarkStyle}>
-        <div className="app-root">
-          <FirebaseClientProvider>
-              <SessionProvider>
-                  {children}
-              </SessionProvider>
-          </FirebaseClientProvider>
-          <AppFooter />
-        </div>
-        <Toaster />
+        <FirebaseClientProvider>
+          <div className="app-root">
+            <SessionProvider>
+                {children}
+            </SessionProvider>
+            <AppFooter />
+          </div>
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );
