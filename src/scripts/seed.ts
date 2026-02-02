@@ -1,4 +1,3 @@
-
 import * as admin from 'firebase-admin';
 import 'dotenv/config';
 
@@ -32,7 +31,9 @@ async function main() {
   }
 
   const auth = admin.auth();
-  const db = admin.firestore();
+  const db = admin.firestore('bmss-solapur-v6');
+  
+  log.info('This script targets the "bmss-solapur-v6" Firestore database.');
 
   const adminEmail = 'baitulmalss.solapur@gmail.com';
   const adminPhone = '9270946423';

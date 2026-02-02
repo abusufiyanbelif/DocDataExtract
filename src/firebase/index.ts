@@ -34,12 +34,10 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
-  // By not specifying a database ID, it will use the '(default)' database.
-  // This is critical for compatibility with the Admin SDK scripts.
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp),
+    firestore: getFirestore(firebaseApp, 'bmss-solapur-v6'),
     storage: getStorage(firebaseApp),
   };
 }

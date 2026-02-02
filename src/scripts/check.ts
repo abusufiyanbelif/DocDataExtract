@@ -1,4 +1,3 @@
-
 import 'dotenv/config';
 import * as admin from 'firebase-admin';
 import { runDiagnosticCheck } from '../ai/flows/run-diagnostic-check';
@@ -49,14 +48,14 @@ async function checkFirebaseAdmin() {
 async function checkFirestore() {
     log.step(2, 'Checking Firestore Connectivity & Data');
     try {
-        const db = admin.firestore();
+        const db = admin.firestore('bmss-solapur-v6');
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-        log.info(`Attempting to access "(default)" database for project "${projectId}"...`);
+        log.info(`Attempting to access "bmss-solapur-v6" database for project "${projectId}"...`);
         const collections = await db.listCollections();
-        log.success(`Successfully connected to Firestore. Project has a default database with ${collections.length} root collections.`);
+        log.success(`Successfully connected to Firestore. Project has a database named "bmss-solapur-v6" with ${collections.length} root collections.`);
         
         if (collections.length > 0) {
-            log.dim(`Collections found: ${collections.map(c => c.id).join(', ')}`);
+            log.dim(`   Collections found: ${collections.map(c => c.id).join(', ')}`);
         }
 
         const usersSnap = await db.collection('users').count().get();
