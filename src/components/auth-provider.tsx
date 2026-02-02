@@ -2,13 +2,13 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from '@/hooks/use-session';
-import { useEffect } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Loader2, AlertTriangle, ExternalLink } from 'lucide-react';
-import { useFirebase } from '@/firebase';
 import { firebaseConfig } from '@/firebase/config';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Button } from './ui/button';
+import { FirebaseProvider, useFirebase } from '@/firebase';
 
 const publicPaths = ['/login', '/seed', '/'];
 
@@ -23,17 +23,73 @@ function RedirectLoader({ message }: { message: string }) {
     );
 }
 
+function FirebaseContentWrapper({ children }: { children: ReactNode }) {
+  const { initializationError } = useFirebase();
+
+  if (initializationError) {
+    const isFirestoreError = initializationError.message.includes("firestore");
+    const isSsrError = initializationError.message.includes("blocked on server");
+    const projectId = firebaseConfig.projectId;
+    const firestoreConsoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore`;
+    const firestoreApiConsoleUrl = `https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=${projectId}`;
+
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+            <Card className="w-full max-w-lg">
+                <CardHeader className="text-center">
+                    <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                    <CardTitle className="text-destructive">Firebase Initialization Failed</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <Alert variant="destructive">
+                        <AlertTitle>Error Details</AlertTitle>
+                        <AlertDescription>
+                            <div className="space-y-4">
+                                {isSsrError && <p><strong>Runtime Error:</strong> Firebase Web SDK was incorrectly called on the server. This indicates a developer error that needs to be fixed in the code. Ensure all components using Firebase have `'use client'`;</p>}
+                                {isFirestoreError && (
+                                    <div className="space-y-2 p-3 bg-destructive/10 rounded-md">
+                                        <p className="font-semibold">Firestore Not Available</p>
+                                        <p className="text-xs">Your project is missing a Firestore database. Go to the Firebase console to create one, or enable the Firestore API if a database already exists.</p>
+                                        <div className="flex gap-2 pt-1">
+                                            <Button asChild className="flex-1" size="sm" variant="secondary">
+                                                <a href={firestoreConsoleUrl} target="_blank" rel="noopener noreferrer">Create Database <ExternalLink className="ml-2 h-3 w-3"/></a>
+                                            </Button>
+                                            <Button asChild className="flex-1" size="sm" variant="secondary">
+                                                <a href={firestoreApiConsoleUrl} target="_blank" rel="noopener noreferrer">Enable API <ExternalLink className="ml-2 h-3 w-3"/></a>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                                {!isSsrError && !isFirestoreError && (
+                                    <p className="font-mono text-xs bg-destructive/20 p-2 rounded">
+                                        {initializationError.message}
+                                    </p>
+                                )}
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+                    <Button onClick={() => window.location.reload()} className="w-full">
+                        Reload Page
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
+  return <>{children}</>;
+}
+
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoading: isSessionLoading } = useSession();
-  const { initializationError } = useFirebase();
   const pathname = usePathname();
   const router = useRouter();
 
   const isFirebaseConfigured = !!(
     firebaseConfig.apiKey &&
     firebaseConfig.projectId &&
-    firebaseConfig.authDomain &&
-    firebaseConfig.storageBucket
+    firebaseConfig.authDomain
+    // storageBucket is now optional
   );
 
   if (!isFirebaseConfigured) {
@@ -60,70 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const isLoading = isSessionLoading || (initializationError === null && !user && !publicPaths.includes(pathname));
-
-  if (initializationError && !isSessionLoading) {
-    const isFirestoreError = initializationError.message.includes("firestore");
-    const isStorageError = initializationError.message.includes("Cloud Storage");
-    const projectId = firebaseConfig.projectId;
-    const firestoreConsoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore`;
-    const firestoreApiConsoleUrl = `https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=${projectId}`;
-    const storageConsoleUrl = `https://console.firebase.google.com/project/${projectId}/storage`;
-
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-            <Card className="w-full max-w-lg">
-                <CardHeader className="text-center">
-                    <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                    <CardTitle className="text-destructive">Firebase Initialization Failed</CardTitle>
-                    <CardDescription>The application could not connect to all required Firebase services.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                     <Alert variant="destructive">
-                        <AlertTitle>Action Required</AlertTitle>
-                        <AlertDescription>
-                            <div className="space-y-4">
-                                <p>Please resolve the following issues in your Firebase project:</p>
-                                {isFirestoreError && (
-                                    <div className="space-y-2 p-3 bg-destructive/10 rounded-md">
-                                        <p className="font-semibold">Firestore Not Available</p>
-                                        <p className="text-xs">Your project is missing a Firestore database. Go to the Firebase console to create one, or enable the Firestore API if a database already exists.</p>
-                                        <div className="flex gap-2 pt-1">
-                                            <Button asChild className="flex-1" size="sm" variant="secondary">
-                                                <a href={firestoreConsoleUrl} target="_blank" rel="noopener noreferrer">Create Database <ExternalLink className="ml-2 h-3 w-3"/></a>
-                                            </Button>
-                                            <Button asChild className="flex-1" size="sm" variant="secondary">
-                                                <a href={firestoreApiConsoleUrl} target="_blank" rel="noopener noreferrer">Enable API <ExternalLink className="ml-2 h-3 w-3"/></a>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-                                {isStorageError && (
-                                    <div className="space-y-2 p-3 bg-destructive/10 rounded-md">
-                                        <p className="font-semibold">Cloud Storage Not Available</p>
-                                        <p className="text-xs">Go to the Storage console to enable Cloud Storage for your project.</p>
-                                        <Button asChild className="w-full" size="sm" variant="secondary">
-                                            <a href={storageConsoleUrl} target="_blank" rel="noopener noreferrer">Enable Storage <ExternalLink className="ml-2 h-4 w-4"/></a>
-                                        </Button>
-                                    </div>
-                                )}
-                                {!isFirestoreError && !isStorageError && (
-                                    <p className="font-mono text-xs bg-destructive/20 p-2 rounded">
-                                        {initializationError.message}
-                                    </p>
-                                )}
-                            </div>
-                        </AlertDescription>
-                    </Alert>
-                    <Button onClick={() => window.location.reload()} className="w-full">
-                        Reload Page
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
-
   useEffect(() => {
     if (isSessionLoading) {
       return;
@@ -142,6 +134,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
   const needsRedirect = !isSessionLoading && ((!user && !isPublicPath) || (user && pathname === '/login'));
 
+  // If this is a private (authenticated) route and we have a user, wrap with FirebaseProvider.
+  if (user && !isPublicPath) {
+    return (
+      <FirebaseProvider>
+        {needsRedirect && <RedirectLoader message="Redirecting..." />}
+        <FirebaseContentWrapper>{children}</FirebaseContentWrapper>
+      </FirebaseProvider>
+    );
+  }
+
+  // Otherwise (public page, no user, loading), render without Firebase context.
   return (
     <>
         {needsRedirect && <RedirectLoader message="Redirecting..." />}

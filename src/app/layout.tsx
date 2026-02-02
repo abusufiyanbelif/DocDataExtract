@@ -2,7 +2,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { FirebaseProvider } from '@/firebase';
 import { SessionProvider } from '@/components/session-provider';
 import { AuthProvider } from '@/components/auth-provider';
 import * as React from 'react';
@@ -25,15 +24,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <FirebaseProvider>
-          <div className="app-root">
-            <SessionProvider>
-              <AuthProvider>{children}</AuthProvider>
-            </SessionProvider>
-            <AppFooter />
-          </div>
-          <Toaster />
-        </FirebaseProvider>
+        <SessionProvider>
+           <AuthProvider>
+              <div className="app-root">
+                {children}
+                <AppFooter />
+              </div>
+              <Toaster />
+            </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );

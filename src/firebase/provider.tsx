@@ -30,28 +30,36 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (services.app) return; // Already initialized
 
-    let initError: Error | null = null;
+    if (typeof window === 'undefined') {
+      // This is a safety net. This function should not be reached if providers are used correctly.
+      setServices({
+        app: null, auth: null, firestore: null, storage: null,
+        initializationError: new Error("Firebase Web SDK blocked on server (SSR protection). This indicates a provider setup error.")
+      });
+      return;
+    }
+
     try {
       const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
       const auth = getAuth(app);
       
       let firestore: Firestore | null = null;
       let storage: FirebaseStorage | null = null;
+      let initError: Error | null = null;
 
       try {
         firestore = getFirestore(app);
       } catch (e: any) {
-        console.warn("Firestore could not be initialized, it may not be enabled in this Firebase project.", e.message);
-        initError = new Error("Firestore is not available. Please enable it in your Firebase project console.");
+        console.error("Firestore initialization failed:", e);
+        // This is a fatal error for the authenticated app.
+        initError = new Error("Service firestore is not available. It may not be enabled in your Firebase project.");
       }
 
       try {
         storage = getStorage(app);
       } catch (e: any) {
-         console.warn("Firebase Storage could not be initialized, it may not be enabled in this Firebase project.", e.message);
-         if (!initError) {
-            initError = new Error("Cloud Storage is not available. Please enable it in your Firebase project console.");
-         }
+         // This is a non-fatal warning as per instructions.
+         console.warn("Firebase Storage unavailable - continuing without it. Error:", e.message);
       }
 
       setServices({
@@ -59,7 +67,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
         auth,
         firestore,
         storage,
-        initializationError: initError,
+        initializationError: initError, // Only Firestore error is considered fatal for app boot
       });
     } catch (error: any) {
       console.error('Firebase initialization failed:', error);

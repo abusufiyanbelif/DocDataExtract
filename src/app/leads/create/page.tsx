@@ -115,7 +115,7 @@ export default function CreateLeadPage() {
   }
 
   const onSubmit = (data: LeadFormValues) => {
-    if (leads.some(c => c.name.trim().toLowerCase() === data.name.trim().toLowerCase())) {
+    if (leads && leads.some(c => c.name.trim().toLowerCase() === data.name.trim().toLowerCase())) {
         setLeadDataToCreate(data);
         setIsDuplicateAlertOpen(true);
     } else {

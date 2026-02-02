@@ -115,7 +115,7 @@ export default function CreateCampaignPage() {
   }
 
   const onSubmit = (data: CampaignFormValues) => {
-    if (campaigns.some(c => c.name.trim().toLowerCase() === data.name.trim().toLowerCase())) {
+    if (campaigns && campaigns.some(c => c.name.trim().toLowerCase() === data.name.trim().toLowerCase())) {
         setCampaignDataToCreate(data);
         setIsDuplicateAlertOpen(true);
     } else {
