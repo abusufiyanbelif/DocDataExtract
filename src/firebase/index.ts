@@ -10,15 +10,8 @@ export function initializeFirebase(): { app: FirebaseApp; auth: Auth; firestore:
       throw new Error('Firebase config is incomplete. Please ensure all NEXT_PUBLIC_FIREBASE_... environment variables are set.');
   }
 
-  if (getApps().length) {
-    const app = getApp();
-    const auth = getAuth(app);
-    const firestore = getFirestore(app);
-    const storage = getStorage(app);
-    return { app, auth, firestore, storage };
-  }
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
   
-  const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const firestore = getFirestore(app);
   const storage = getStorage(app);
