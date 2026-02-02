@@ -281,7 +281,7 @@ export default function LeadPage() {
           <CardContent>
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-muted/50">
                   {canDelete && <TableHead className="w-[50px] text-center">Actions</TableHead>}
                   <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
                   <SortableHeader sortKey="name">Lead Name</SortableHeader>

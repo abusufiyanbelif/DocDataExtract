@@ -454,7 +454,7 @@ export default function DonationsPage() {
             <div className="w-full overflow-x-auto">
                 <Table>
                     <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-muted/50">
                             {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
                             <SortableHeader sortKey="srNo">#</SortableHeader>
                             <SortableHeader sortKey="status">Status</SortableHeader>

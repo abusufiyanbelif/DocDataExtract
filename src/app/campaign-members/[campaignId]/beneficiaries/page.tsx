@@ -699,7 +699,7 @@ export default function BeneficiariesPage() {
             <div className="w-full overflow-x-auto">
                 <Table>
                     <TableHeader>
-                        <TableRow>
+                        <TableRow className="bg-muted/50">
                             {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 bg-card text-center w-[100px]">Actions</TableHead>}
                             <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
                             <SortableHeader sortKey="name">Name</SortableHeader>

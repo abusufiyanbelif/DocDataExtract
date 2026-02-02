@@ -512,7 +512,7 @@ export default function CampaignDetailsPage() {
           <div className="w-full overflow-x-auto">
             <Table>
                 <TableHeader>
-                    <TableRow>
+                    <TableRow className="bg-muted/50">
                         <TableHead className="w-[50px]">#</TableHead>
                         <TableHead className="min-w-[180px]">Item Name</TableHead>
                         <TableHead className="min-w-[100px]">Quantity</TableHead>
