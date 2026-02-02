@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
@@ -49,9 +48,8 @@ export const useFirebase = (): FirebaseContextState => {
  * Throws an error if the app is not available.
  */
 export const useFirebaseApp = (): FirebaseApp => {
-  const { firebaseApp, initializationError } = useFirebase();
-  if (initializationError) throw initializationError;
-  if (!firebaseApp) throw new Error('Firebase App not available. Check your FirebaseProvider setup.');
+  const { firebaseApp } = useFirebase();
+  if (!firebaseApp) throw new Error('Firebase App not available. This is likely due to an initialization error that should be handled by FirebaseContentWrapper.');
   return firebaseApp;
 };
 
@@ -60,9 +58,8 @@ export const useFirebaseApp = (): FirebaseApp => {
  * Throws an error if Auth is not available.
  */
 export const useAuth = (): Auth => {
-  const { auth, initializationError } = useFirebase();
-  if (initializationError) throw initializationError;
-  if (!auth) throw new Error('Firebase Auth not available. Check your FirebaseProvider setup.');
+  const { auth } = useFirebase();
+  if (!auth) throw new Error('Firebase Auth not available. This is likely due to an initialization error that should be handled by FirebaseContentWrapper.');
   return auth;
 };
 
@@ -71,9 +68,8 @@ export const useAuth = (): Auth => {
  * Throws an error if Firestore is not available.
  */
 export const useFirestore = (): Firestore => {
-  const { firestore, initializationError } = useFirebase();
-  if (initializationError) throw initializationError;
-  if (!firestore) throw new Error('Firestore not available. Check your FirebaseProvider setup.');
+  const { firestore } = useFirebase();
+  if (!firestore) throw new Error('Firestore not available. This is likely due to an initialization error that should be handled by FirebaseContentWrapper.');
   return firestore;
 };
 
@@ -82,9 +78,8 @@ export const useFirestore = (): Firestore => {
  * Throws an error if Storage is not available.
  */
 export const useStorage = (): FirebaseStorage => {
-    const { storage, initializationError } = useFirebase();
-    if (initializationError) throw initializationError;
-    if (!storage) throw new Error('Firebase Storage not available. Check your FirebaseProvider setup.');
+    const { storage } = useFirebase();
+    if (!storage) throw new Error('Firebase Storage not available. This is likely due to an initialization error that should be handled by FirebaseContentWrapper.');
     return storage;
 };
 
