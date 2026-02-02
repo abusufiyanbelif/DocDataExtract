@@ -1,6 +1,7 @@
+
 'use client';
 
-import { LogOut, User, LogIn, ShoppingBasket, Settings } from 'lucide-react';
+import { LogOut, User, LogIn, Settings } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/firebase';
@@ -38,13 +39,11 @@ export function DocuExtractHeader() {
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
-            {brandingSettings?.logoUrl ? (
-                <div className="relative h-24 w-24 flex-shrink-0">
-                     <Image src={brandingSettings.logoUrl} alt="Company Logo" fill style={{objectFit: 'contain'}} className="p-1" />
-                </div>
-            ) : (
-                <ShoppingBasket className="h-10 w-10 text-primary flex-shrink-0" />
-            )}
+            <div className="relative h-24 w-24 flex-shrink-0">
+              {brandingSettings?.logoUrl && (
+                <Image src={brandingSettings.logoUrl} alt="Company Logo" fill style={{objectFit: 'contain'}} className="p-1" />
+              )}
+            </div>
             <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block">
                 Baitulmal Samajik Sanstha Solapur
             </h1>

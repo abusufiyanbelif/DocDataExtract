@@ -611,7 +611,7 @@ Please donate and share this message. Every contribution helps!
                                                         {item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'}
                                                     </p>
                                                 </div>
-                                                <p className="font-mono text-right text-foreground">Rupee {item.totalAmount.toLocaleString('en-IN')}</p>
+                                                <p className="font-mono text-right text-foreground">Required Rupee {item.totalAmount.toLocaleString('en-IN')}</p>
                                             </div>
                                             {index < summaryData.beneficiaryCategoryBreakdown.length - 1 && <Separator />}
                                         </React.Fragment>

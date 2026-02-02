@@ -1,13 +1,12 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ShoppingBasket, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-foreground">
       <div className="container mx-auto flex flex-col items-center justify-center text-center p-8">
-        <ShoppingBasket className="h-24 w-24 text-primary mb-6" />
         <h1 className="text-5xl md:text-6xl font-bold font-headline text-foreground mb-4">
           404 - Page Not Found
         </h1>
