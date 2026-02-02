@@ -5,10 +5,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { SessionProvider } from '@/components/session-provider';
-import { useUser, FirebaseProvider } from '@/firebase';
+import { useUser } from '@/firebase';
 import { AppFooter } from '@/components/app-footer';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseContentWrapper } from './FirebaseContentWrapper';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 function RedirectLoader({ message }: { message: string }) {
     return (
@@ -115,25 +116,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Routes that are public but DO need firebase
   if (isPublicCampaignPath || isHomePage) {
     return (
-        <FirebaseProvider>
+        <FirebaseClientProvider>
             <PublicFirebaseContent>{children}</PublicFirebaseContent>
-        </FirebaseProvider>
+        </FirebaseClientProvider>
     );
   }
   
   // Login page needs firebase for auth checks
   if (isLoginPage) {
     return (
-        <FirebaseProvider>
+        <FirebaseClientProvider>
             <LoginPageContent>{children}</LoginPageContent>
-        </FirebaseProvider>
+        </FirebaseClientProvider>
     );
   }
 
   // All other pages are private by default and need Firebase
   return (
-    <FirebaseProvider>
+    <FirebaseClientProvider>
         <AuthenticatedContent>{children}</AuthenticatedContent>
-    </FirebaseProvider>
+    </FirebaseClientProvider>
   );
 }
