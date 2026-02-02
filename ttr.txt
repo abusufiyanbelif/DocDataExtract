@@ -1,4 +1,1 @@
-src/components/docu-extract-header.tsx(19,60): error TS1005: ',' expected.
-src/components/docu-extract-header.tsx(19,65): error TS1005: ',' expected.
-src/components/docu-extract-header.tsx(19,75): error TS1005: ',' expected.
-src/components/docu-extract-header.tsx(19,76): error TS1109: Expression expected.
+src/app/seed/page.tsx(38,64): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
