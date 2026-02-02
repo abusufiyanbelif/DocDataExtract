@@ -1,10 +1,11 @@
+
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { SessionProvider } from '@/components/session-provider';
-import { FirebaseProvider, useUser } from '@/firebase';
+import { useUser, FirebaseProvider } from '@/firebase';
 import { AppFooter } from '@/components/app-footer';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseContentWrapper } from './FirebaseContentWrapper';
@@ -17,6 +18,33 @@ function RedirectLoader({ message }: { message: string }) {
                 <p className="text-muted-foreground">{message}</p>
             </div>
         </div>
+    );
+}
+
+// This component is for routes that need Firebase, but are public.
+// e.g. the home page and public campaign pages.
+const PublicFirebaseContent = ({ children }: { children: ReactNode }) => {
+    // We don't need to check for a user here, just provide the session.
+    return (
+      <SessionProvider>
+        <FirebaseContentWrapper>
+          <div className="app-root">
+            {children}
+            <AppFooter />
+          </div>
+          <Toaster />
+        </FirebaseContentWrapper>
+      </SessionProvider>
+    );
+}
+
+// This component is for truly public routes that DO NOT need firebase.
+const TrulyPublicContent = ({ children }: { children: ReactNode }) => {
+    return (
+      <>
+        {children}
+        <Toaster />
+      </>
     );
 }
 
@@ -71,19 +99,6 @@ const LoginPageContent = ({ children }: { children: ReactNode }) => {
     );
 };
 
-// Public content does not need any auth checks, just the session provider for hooks.
-const PublicContent = ({children}: {children: ReactNode}) => {
-    return (
-        <SessionProvider>
-            <div className="app-root">
-              {children}
-              <AppFooter />
-            </div>
-            <Toaster />
-        </SessionProvider>
-    );
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
@@ -91,27 +106,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isSeedPage = pathname === '/seed';
   const isPublicCampaignPath = pathname.startsWith('/campaign-public');
   const isHomePage = pathname === '/';
-
-  // The seed page is truly public and doesn't need Firebase.
+  
+  // Routes that DON'T need firebase AT ALL
   if (isSeedPage) {
+    return <TrulyPublicContent>{children}</TrulyPublicContent>;
+  }
+
+  // Routes that are public but DO need firebase
+  if (isPublicCampaignPath || isHomePage) {
     return (
-        <>
-            {children}
-            <Toaster />
-        </>
+        <FirebaseProvider>
+            <PublicFirebaseContent>{children}</PublicFirebaseContent>
+        </FirebaseProvider>
+    );
+  }
+  
+  // Login page needs firebase for auth checks
+  if (isLoginPage) {
+    return (
+        <FirebaseProvider>
+            <LoginPageContent>{children}</LoginPageContent>
+        </FirebaseProvider>
     );
   }
 
-  // All other pages (public, login, private) require Firebase context.
+  // All other pages are private by default and need Firebase
   return (
-      <FirebaseProvider>
-          {isLoginPage ? (
-              <LoginPageContent>{children}</LoginPageContent>
-          ) : isPublicCampaignPath || isHomePage ? (
-              <PublicContent>{children}</PublicContent>
-          ) : (
-              <AuthenticatedContent>{children}</AuthenticatedContent>
-          )}
-      </FirebaseProvider>
+    <FirebaseProvider>
+        <AuthenticatedContent>{children}</AuthenticatedContent>
+    </FirebaseProvider>
   );
 }

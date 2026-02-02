@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import { doc, collection, updateDoc, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import {
@@ -69,7 +69,7 @@ export default function CampaignSummaryPage() {
     const campaignId = params.campaignId as string;
     const firestore = useFirestore();
     const { toast } = useToast();
-    const { userProfile, isLoading: isProfileLoading } = useUserProfile();
+    const { userProfile, isLoading: isProfileLoading } = useSession();
 
     // State for edit mode and form fields
     const [editMode, setEditMode] = useState(false);

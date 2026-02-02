@@ -1,12 +1,5 @@
 'use client';
 
-if (typeof window === 'undefined') {
-  throw new Error(
-    '❌ Firebase Web SDK loaded on the server. ' +
-    'Only import Firebase hooks inside client components.'
-  );
-}
-
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { initializeApp, FirebaseApp, getApps, getApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';

@@ -15,7 +15,7 @@ interface SessionContextType {
 
 export const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
-export function SessionProvider({ authUser, children }: { authUser?: User; children: ReactNode }) {
+export function SessionProvider({ authUser, children }: { authUser?: User | null; children: ReactNode }) {
   const firestore = useFirestore();
 
   const userDocRef = useMemo(() => {
