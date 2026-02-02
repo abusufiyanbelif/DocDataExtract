@@ -51,21 +51,23 @@ async function checkFirestore() {
     log.step(2, 'Checking Firestore Connectivity');
     try {
         const db = admin.firestore();
-        log.info('Attempting to read from Firestore...');
+        log.info('Attempting to access default Firestore database...');
+        // A lightweight operation to check connectivity. listCollections is a good choice.
+        const collections = await db.listCollections();
+        log.success(`Successfully connected to Firestore. Project has a default database with ${collections.length} root collections.`);
+        
+        log.info('Verifying essential data...');
         const adminLookupSnap = await db.collection('user_lookups').doc('admin').get();
         if (adminLookupSnap.exists) {
-            log.success('Successfully connected to Firestore and read the admin lookup document.');
-            const adminUID = adminLookupSnap.data()?.userKey;
-            if (adminUID) {
-                 const adminUserSnap = await db.collection('users').where('userKey', '==', 'admin').limit(1).get();
-                 if (!adminUserSnap.empty) {
-                     log.success('Admin user document found in the users collection.');
-                 } else {
-                     log.warn('Admin lookup record exists, but the corresponding user document in the "users" collection was not found. Please run `npm run db:seed` to repair it.');
-                 }
-            }
+            log.success('Admin user lookup document found.');
+            const adminUserSnap = await db.collection('users').where('userKey', '==', 'admin').limit(1).get();
+             if (!adminUserSnap.empty) {
+                 log.success('Admin user profile document found.');
+             } else {
+                 log.warn('Admin lookup record exists, but the corresponding user document in the "users" collection was not found. Please run `npm run db:seed` to repair it.');
+             }
         } else {
-            log.error('Firestore check failed: Admin user lookup document not found.');
+            log.error('Essential data check failed: Admin user lookup document not found.');
             log.info('This could mean a few things:');
             log.dim('1. Your Firestore security rules are blocking admin access (unlikely for this script).');
             log.dim('2. The database is empty. Please run `npm run db:seed` to initialize the default admin user.');
@@ -73,8 +75,19 @@ async function checkFirestore() {
         }
     } catch (e: any) {
         log.error(`Firestore check failed with an error: ${e.message}`);
-        log.info('This is often a permissions issue. Go to Google Cloud IAM and ensure your service account has the "Cloud Datastore User" or "Firebase Admin" role.');
-        log.dim(`Or, the Cloud Firestore API may not be enabled in your Google Cloud project: https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
+        
+        if (e.message?.includes('does not have a default database')) {
+            log.info('This means you have not created a Firestore database in your project yet.');
+            log.dim(`Please visit the Firebase Console to create one: https://console.firebase.google.com/project/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/firestore`);
+        } else if (e.message?.includes('permission denied') || e.message?.includes('missing permissions')) {
+            log.info('This is a permissions issue with your service account.');
+            log.dim('Go to Google Cloud IAM and ensure your service account has the "Cloud Datastore User" or "Firebase Admin" role.');
+        } else if (e.message?.includes('Cloud Firestore API has not been used')) {
+            log.info('The Cloud Firestore API is not enabled for your project.');
+            log.dim(`Please visit this link to enable it: https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
+        } else {
+            log.info('This might be a general connectivity issue or a problem with your service account credentials.');
+        }
     }
 }
 
@@ -158,3 +171,4 @@ async function main() {
 }
 
 main().catch(console.error);
+
