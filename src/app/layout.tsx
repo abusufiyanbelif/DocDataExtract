@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase';
 import { SessionProvider } from '@/components/session-provider';
+import { AuthProvider } from '@/components/auth-provider';
 import { adminDb } from '@/lib/firebase-admin-sdk';
 import type { BrandingSettings } from '@/lib/types';
 import * as React from 'react';
@@ -42,7 +43,9 @@ export default async function RootLayout({
         <FirebaseClientProvider>
           <div className="app-root">
             <SessionProvider>
+              <AuthProvider>
                 {children}
+              </AuthProvider>
             </SessionProvider>
             <AppFooter />
           </div>
