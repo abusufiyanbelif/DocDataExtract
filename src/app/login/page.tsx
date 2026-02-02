@@ -51,13 +51,6 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState('');
   const [isSendingReset, setIsSendingReset] = useState(false);
 
-  const isFirebaseConfigured = !!(
-    firebaseConfig.apiKey &&
-    firebaseConfig.projectId &&
-    firebaseConfig.authDomain &&
-    firebaseConfig.storageBucket
-  );
-  
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -134,31 +127,6 @@ export default function LoginPage() {
 
   const firebaseProjectId = firebaseConfig.projectId;
   const authUrl = `https://console.firebase.google.com/project/${firebaseProjectId}/authentication/sign-in-method`;
-
-  if (!isFirebaseConfigured) {
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <div className="flex justify-center items-center gap-3 mb-4">
-                         <h1 className="text-3xl font-bold font-headline text-foreground">Baitulmal Samajik Sanstha Solapur</h1>
-                    </div>
-                    <CardTitle className="text-destructive">Application Not Configured</CardTitle>
-                </CardHeader>
-                <CardContent>
-                     <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Missing Firebase Configuration</AlertTitle>
-                        <AlertDescription>
-                            <p>This application requires Firebase to function, but it has not been configured yet.</p>
-                            <p className="mt-2">Please create a <strong>.env</strong> file in the root of your project and add your Firebase project's configuration keys.</p>
-                        </AlertDescription>
-                    </Alert>
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">

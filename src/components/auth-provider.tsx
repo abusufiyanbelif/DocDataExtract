@@ -30,6 +30,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const isFirebaseConfigured = !!(
+    firebaseConfig.apiKey &&
+    firebaseConfig.projectId &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.storageBucket
+  );
+
+  if (!isFirebaseConfigured) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+            <Card className="w-full max-w-lg">
+                <CardHeader className="text-center">
+                    <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                    <CardTitle className="text-destructive">Application Not Configured</CardTitle>
+                    <CardDescription>Your application's client-side configuration is missing.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <Alert variant="destructive">
+                        <AlertTitle>Action Required: Add Environment Variables</AlertTitle>
+                        <AlertDescription className="space-y-3">
+                            <p>This application requires a client-side Firebase configuration to function, but the required environment variables are not set.</p>
+                            <p>Please create a <strong>.env</strong> file in the root of your project and add your Firebase project's public configuration keys (e.g., `NEXT_PUBLIC_FIREBASE_API_KEY=...`).</p>
+                            <p className="text-sm italic">The server-side `npm run check` script works because it uses `serviceAccountKey.json`, but the browser application needs these separate public keys to connect.</p>
+                        </AlertDescription>
+                    </Alert>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
+
   const isLoading = isSessionLoading || (initializationError === null && !user && !publicPaths.includes(pathname));
 
   if (initializationError && !isSessionLoading) {
