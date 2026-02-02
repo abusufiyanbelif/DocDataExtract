@@ -30,7 +30,6 @@ export default function RootLayout({
             <SessionProvider>
               <AuthProvider>{children}</AuthProvider>
             </SessionProvider>
-            <AppFooter />
           </div>
           <Toaster />
         </FirebaseClientProvider>
