@@ -13,7 +13,8 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:erase": "tsx scripts/erase.ts",
     "check": "tsx scripts/check.ts",
-    "check:db": "tsx scripts/check-db.ts"
+    "check:db": "tsx scripts/check-db.ts",
+    "fix:iam": "tsx scripts/fix-iam.ts"
   },
   "dependencies": {
     "@dataconnect/admin-generated": "file:src/dataconnect-admin-generated",
