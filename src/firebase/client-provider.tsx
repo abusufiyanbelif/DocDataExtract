@@ -7,10 +7,11 @@ import { initializeFirebase } from './index';
 export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   const firebaseServices = useMemo(() => {
     try {
-      return initializeFirebase();
-    } catch (error) {
+      const services = initializeFirebase();
+      return { ...services, initializationError: null };
+    } catch (error: any) {
       console.error("Failed to initialize Firebase. Please check your configuration.", error);
-      return { app: null, auth: null, firestore: null, storage: null };
+      return { app: null, auth: null, firestore: null, storage: null, initializationError: error };
     }
   }, []);
 

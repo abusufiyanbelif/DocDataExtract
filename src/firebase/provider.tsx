@@ -12,6 +12,7 @@ interface FirebaseContextType {
   auth: Auth | null;
   firestore: Firestore | null;
   storage: FirebaseStorage | null;
+  initializationError: Error | null;
 }
 
 const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined);
