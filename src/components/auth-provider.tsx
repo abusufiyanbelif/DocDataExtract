@@ -25,14 +25,16 @@ function RedirectLoader({ message }: { message: string }) {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useSession();
+  const { user, isLoading: isSessionLoading } = useSession();
   const { initializationError } = useFirebase();
   const pathname = usePathname();
   const router = useRouter();
 
-  if (initializationError && !isLoading) {
+  const isLoading = isSessionLoading || (initializationError === null && !user && !publicPaths.includes(pathname));
+
+  if (initializationError && !isSessionLoading) {
     const isFirestoreError = initializationError.message.includes("Firestore");
-    const isStorageError = initializationError.message.includes("Storage");
+    const isStorageError = initializationError.message.includes("Cloud Storage");
     const projectId = firebaseConfig.projectId;
     const firestoreConsoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore`;
     const firestoreApiConsoleUrl = `https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=${projectId}`;
@@ -48,14 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <Alert variant="destructive">
-                        <AlertTitle>Configuration Error</AlertTitle>
+                        <AlertTitle>Action Required</AlertTitle>
                         <AlertDescription>
                             <div className="space-y-4">
                                 <p>Please resolve the following issues in your Firebase project:</p>
                                 {isFirestoreError && (
                                     <div className="space-y-2 p-3 bg-destructive/10 rounded-md">
                                         <p className="font-semibold">Firestore Not Available</p>
-                                        <p className="text-xs">Go to the Firestore console to create a database or enable the Firestore API.</p>
+                                        <p className="text-xs">Your project is missing a Firestore database. Go to the Firebase console to create one, or enable the Firestore API if a database already exists.</p>
                                         <div className="flex gap-2 pt-1">
                                             <Button asChild className="flex-1" size="sm" variant="secondary">
                                                 <a href={firestoreConsoleUrl} target="_blank" rel="noopener noreferrer">Create Database <ExternalLink className="ml-2 h-3 w-3"/></a>
@@ -93,8 +95,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    if (isLoading) {
-      return; // Don't do anything while auth is loading
+    if (isSessionLoading) {
+      return;
     }
     
     const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
@@ -105,10 +107,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.push('/');
     }
 
-  }, [user, isLoading, pathname, router]);
+  }, [user, isSessionLoading, pathname, router]);
   
   const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
-  const needsRedirect = !isLoading && ((!user && !isPublicPath) || (user && pathname === '/login'));
+  const needsRedirect = !isSessionLoading && ((!user && !isPublicPath) || (user && pathname === '/login'));
 
   return (
     <>
