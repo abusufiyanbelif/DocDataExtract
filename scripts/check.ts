@@ -1,6 +1,8 @@
+
 import 'dotenv/config';
 import * as admin from 'firebase-admin';
 import { runDiagnosticCheck } from '../src/ai/flows/run-diagnostic-check';
+import { adminDb } from '../src/lib/firebase-admin-sdk';
 
 // A simple logger with colors
 const log = {
@@ -23,11 +25,15 @@ async function checkFirebaseAdmin() {
             throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID is not set in your .env file.');
         }
 
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            projectId: projectId,
-            storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        });
+        // Use the initialized admin instance from the central module
+        if (!admin.apps.length) {
+             admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+                projectId: projectId,
+                storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+            });
+        }
+       
         log.success(`Firebase Admin SDK initialized successfully for project: ${projectId}`);
         return true;
     } catch (e: any) {
@@ -48,11 +54,11 @@ async function checkFirebaseAdmin() {
 async function checkFirestore() {
     log.step(2, 'Checking Firestore Connectivity & Data');
     try {
-        const db = admin.firestore();
+        const db = adminDb; // Use the centrally configured database instance
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-        log.info(`Attempting to access "(default)" database for project "${projectId}"...`);
+        log.info(`Attempting to access "bmss-solapur-v6" database for project "${projectId}"...`);
         const collections = await db.listCollections();
-        log.success(`Successfully connected to Firestore. Project has a default database with ${collections.length} root collections.`);
+        log.success(`Successfully connected to Firestore. Project has a database named "bmss-solapur-v6" with ${collections.length} root collections.`);
         
         if (collections.length > 0) {
             log.dim(`   Collections found: ${collections.map(c => c.id).join(', ')}`);
