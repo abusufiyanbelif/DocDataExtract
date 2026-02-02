@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 
 export default function NotFound() {
@@ -25,9 +23,9 @@ export default function NotFound() {
           </h2>
         </div>
       </div>
-      <Link href="/" style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', marginTop: '1rem' }}>
+      <a href="/" style={{ color: 'hsl(var(--primary))', textDecoration: 'underline', marginTop: '1rem' }}>
         Go back to Home
-      </Link>
+      </a>
     </div>
   );
 }

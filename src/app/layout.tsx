@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/components/auth-provider';
 import * as React from 'react';
-import { FirebaseProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: {
@@ -18,15 +17,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <FirebaseProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </FirebaseProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

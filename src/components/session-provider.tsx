@@ -8,15 +8,14 @@ import type { UserProfile } from '@/lib/types';
 import type { User } from 'firebase/auth';
 
 interface SessionContextType {
-    user: User; // User is guaranteed to exist here
+    user: User | null;
     userProfile: UserProfile | null;
     isLoading: boolean;
 }
 
 export const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
-// It now receives the auth user as a prop
-export function SessionProvider({ authUser, children }: { authUser: User; children: ReactNode }) {
+export function SessionProvider({ authUser, children }: { authUser?: User; children: ReactNode }) {
   const firestore = useFirestore();
 
   const userDocRef = useMemo(() => {
@@ -26,12 +25,11 @@ export function SessionProvider({ authUser, children }: { authUser: User; childr
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userDocRef);
   
-  // Auth is no longer loading here, only profile
-  const isLoading = isProfileLoading;
+  const isLoading = authUser ? isProfileLoading : false;
   
   const contextValue = {
-      user: authUser,
-      userProfile,
+      user: authUser || null,
+      userProfile: userProfile || null,
       isLoading,
   };
 

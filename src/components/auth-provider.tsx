@@ -4,12 +4,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { SessionProvider } from '@/components/session-provider';
-import { useUser } from '@/firebase/auth/use-user';
+import { FirebaseProvider, useUser } from '@/firebase';
 import { AppFooter } from '@/components/app-footer';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseContentWrapper } from './FirebaseContentWrapper';
-
-const publicPaths = ['/login', '/seed'];
 
 function RedirectLoader({ message }: { message: string }) {
     return (
@@ -22,60 +20,98 @@ function RedirectLoader({ message }: { message: string }) {
     );
 }
 
-function AuthenticatedApp({ children }: { children: React.ReactNode }) {
+// This component is ONLY for authenticated routes. It assumes it's inside FirebaseProvider.
+const AuthenticatedContent = ({ children }: { children: ReactNode }) => {
+  const { user, isLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [isLoading, user, router]);
+
+  if (isLoading || !user) {
+    return <RedirectLoader message="Authenticating..." />;
+  }
+
+  return (
+    <SessionProvider authUser={user}>
+      <FirebaseContentWrapper>
+        <div className="app-root">
+          {children}
+          <AppFooter />
+        </div>
+        <Toaster />
+      </FirebaseContentWrapper>
+    </SessionProvider>
+  );
+};
+
+const LoginPageContent = ({ children }: { children: ReactNode }) => {
     const { user, isLoading } = useUser();
     const router = useRouter();
 
     useEffect(() => {
-        if (!isLoading && !user) {
-            router.push('/login');
+        if (!isLoading && user) {
+            router.push('/');
         }
     }, [isLoading, user, router]);
 
-    if (isLoading || !user) {
-        return <RedirectLoader message="Authenticating..." />;
+    if (isLoading || user) {
+        return <RedirectLoader message="Redirecting..." />;
     }
 
     return (
-        <SessionProvider authUser={user}>
-            <FirebaseContentWrapper>
-                <div className="app-root">
-                    {children}
-                    <AppFooter />
-                </div>
-                <Toaster />
-            </FirebaseContentWrapper>
+        <div className="app-root">
+            {children}
+            <AppFooter />
+            <Toaster />
+        </div>
+    );
+};
+
+// Public content does not need any auth checks, just the session provider for hooks.
+const PublicContent = ({children}: {children: ReactNode}) => {
+    return (
+        <SessionProvider>
+            <div className="app-root">
+              {children}
+              <AppFooter />
+            </div>
+            <Toaster />
         </SessionProvider>
     );
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isPublicPath = publicPaths.includes(pathname) || pathname.startsWith('/campaign-public');
+
   const isLoginPage = pathname === '/login';
+  const isSeedPage = pathname === '/seed';
+  const isPublicCampaignPath = pathname.startsWith('/campaign-public');
+  const isHomePage = pathname === '/';
 
-  const { user: authUser, isLoading: isAuthLoading } = useUser();
-
-  if (isPublicPath) {
-      if (isLoginPage && !isAuthLoading && authUser) {
-          return <RedirectToHome>{children}</RedirectToHome>
-      }
-      return (
-          <div className="app-root">
-              {children}
-              <AppFooter />
-              <Toaster />
-          </div>
-      );
+  // The seed page is truly public and doesn't need Firebase.
+  if (isSeedPage) {
+    return (
+        <>
+            {children}
+            <Toaster />
+        </>
+    );
   }
 
-  return <AuthenticatedApp>{children}</AuthenticatedApp>;
-}
-
-function RedirectToHome({ children }: { children: React.ReactNode }) {
-    const router = useRouter();
-    useEffect(() => {
-        router.push('/');
-    }, [router]);
-    return <RedirectLoader message="Redirecting..." />;
+  // All other pages (public, login, private) require Firebase context.
+  return (
+      <FirebaseProvider>
+          {isLoginPage ? (
+              <LoginPageContent>{children}</LoginPageContent>
+          ) : isPublicCampaignPath || isHomePage ? (
+              <PublicContent>{children}</PublicContent>
+          ) : (
+              <AuthenticatedContent>{children}</AuthenticatedContent>
+          )}
+      </FirebaseProvider>
+  );
 }
