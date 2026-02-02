@@ -90,12 +90,11 @@ service cloud.firestore {
     match /user_lookups/{lookupId} {
       allow read: if true;
       
-      // Allow write if user is admin OR if user is creating/updating their own lookup OR for seeding the first admin.
+      // Allow write if user has permission OR if user is creating/updating their own lookup.
       allow create, update: if (hasPermission(['users'], 'create') || hasPermission(['users'], 'update')) ||
-                              (isSignedIn() && isOwnerOfUserKey(request.resource.data.userKey)) ||
-                              (lookupId == 'admin' || lookupId == '9270946423');
+                              (isSignedIn() && isOwnerOfUserKey(request.resource.data.userKey));
                               
-      // Allow delete if user is admin OR if user is deleting their own lookup.
+      // Allow delete if user has permission OR if user is deleting their own lookup.
       allow delete: if (hasPermission(['users'], 'delete')) ||
                       (isSignedIn() && isOwnerOfUserKey(resource.data.userKey));
     }
