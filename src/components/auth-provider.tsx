@@ -30,13 +30,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Only show the initialization error if the auth state has been determined.
-  // This prevents the error screen from showing "too early".
   if (initializationError && !isLoading) {
-    const isFirestoreError = initializationError.message.includes("Firestore is not available");
+    const isFirestoreError = initializationError.message.includes("Firestore");
+    const isStorageError = initializationError.message.includes("Storage");
     const projectId = firebaseConfig.projectId;
     const firestoreConsoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore`;
     const firestoreApiConsoleUrl = `https://console.cloud.google.com/apis/library/firestore.googleapis.com?project=${projectId}`;
+    const storageConsoleUrl = `https://console.firebase.google.com/project/${projectId}/storage`;
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -44,47 +44,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 <CardHeader className="text-center">
                     <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
                     <CardTitle className="text-destructive">Firebase Initialization Failed</CardTitle>
-                    <CardDescription>The application could not connect to Firestore.</CardDescription>
+                    <CardDescription>The application could not connect to all required Firebase services.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                      <Alert variant="destructive">
-                        <AlertTitle>
-                            {isFirestoreError ? "Action Required: Check Firestore Status" : "Configuration Error"}
-                        </AlertTitle>
+                        <AlertTitle>Configuration Error</AlertTitle>
                         <AlertDescription>
-                            {isFirestoreError && projectId ? (
-                                <div className="space-y-4">
-                                  <p>The application has successfully connected to your Firebase project (<strong>{projectId}</strong>), but it cannot access the Firestore service. This usually happens for one of two reasons:</p>
-                                  
-                                  <div className="space-y-2">
-                                      <p><strong>1. Firestore Database Not Created:</strong> If you haven't created a database yet, you'll need to do so.</p>
-                                      <Button asChild className="w-full" variant="secondary">
-                                          <a href={firestoreConsoleUrl} target="_blank" rel="noopener noreferrer">Go to Firebase Console to Create Database <ExternalLink className="ml-2 h-4 w-4"/></a>
-                                      </Button>
-                                  </div>
-
-                                  <div className="space-y-2">
-                                      <p><strong>2. Cloud Firestore API is Disabled:</strong> Your database exists, but the API to access it is turned off.</p>
-                                      <Button asChild className="w-full" variant="secondary">
-                                          <a href={firestoreApiConsoleUrl} target="_blank" rel="noopener noreferrer">Go to Google Cloud to Enable API <ExternalLink className="ml-2 h-4 w-4"/></a>
-                                      </Button>
-                                  </div>
-
-                                  <p className="text-xs pt-2">After checking both steps, click "Reload Page".</p>
-                                </div>
-                              ) : (
-                                <>
-                                  <p>Please check the following:</p>
-                                  <ul className="list-disc list-inside mt-2 space-y-1">
-                                      <li>Ensure your <strong>.env</strong> file has the correct Firebase project configuration.</li>
-                                      <li>Verify that the API key is valid and has no restrictions.</li>
-                                      <li>Check your browser's developer console for more specific error messages.</li>
-                                  </ul>
-                                  <p className="mt-4 font-mono text-xs bg-destructive/20 p-2 rounded">
-                                      {initializationError.message}
-                                  </p>
-                                </>
-                              )}
+                            <div className="space-y-4">
+                                <p>Please resolve the following issues in your Firebase project:</p>
+                                {isFirestoreError && (
+                                    <div className="space-y-2 p-3 bg-destructive/10 rounded-md">
+                                        <p className="font-semibold">Firestore Not Available</p>
+                                        <p className="text-xs">Go to the Firestore console to create a database or enable the Firestore API.</p>
+                                        <div className="flex gap-2 pt-1">
+                                            <Button asChild className="flex-1" size="sm" variant="secondary">
+                                                <a href={firestoreConsoleUrl} target="_blank" rel="noopener noreferrer">Create Database <ExternalLink className="ml-2 h-3 w-3"/></a>
+                                            </Button>
+                                            <Button asChild className="flex-1" size="sm" variant="secondary">
+                                                <a href={firestoreApiConsoleUrl} target="_blank" rel="noopener noreferrer">Enable API <ExternalLink className="ml-2 h-3 w-3"/></a>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                                {isStorageError && (
+                                    <div className="space-y-2 p-3 bg-destructive/10 rounded-md">
+                                        <p className="font-semibold">Cloud Storage Not Available</p>
+                                        <p className="text-xs">Go to the Storage console to enable Cloud Storage for your project.</p>
+                                        <Button asChild className="w-full" size="sm" variant="secondary">
+                                            <a href={storageConsoleUrl} target="_blank" rel="noopener noreferrer">Enable Storage <ExternalLink className="ml-2 h-4 w-4"/></a>
+                                        </Button>
+                                    </div>
+                                )}
+                                {!isFirestoreError && !isStorageError && (
+                                    <p className="font-mono text-xs bg-destructive/20 p-2 rounded">
+                                        {initializationError.message}
+                                    </p>
+                                )}
+                            </div>
                         </AlertDescription>
                     </Alert>
                     <Button onClick={() => window.location.reload()} className="w-full">
