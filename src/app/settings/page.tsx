@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -250,7 +251,7 @@ export default function SettingsPage() {
                             <div className="flex flex-col items-center gap-4">
                                 <div className="relative w-48 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
                                     {logoPreviewUrl ? (
-                                        <Image src={logoPreviewUrl} alt="Logo preview" fill style={{objectFit: 'contain'}} className="p-2" />
+                                        <Image src={logoPreviewUrl} alt="Logo preview" fill className="object-contain p-2" />
                                     ) : (
                                         <div className="text-muted-foreground text-center p-2">
                                             <ImageIcon className="mx-auto h-8 w-8" />
@@ -279,7 +280,7 @@ export default function SettingsPage() {
                                      <div className="flex flex-col items-center gap-4">
                                         <div className="relative w-48 h-48 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
                                             {qrPreviewUrl ? (
-                                                <Image src={qrPreviewUrl} alt="QR Code preview" fill style={{objectFit: 'contain'}} className="p-2" />
+                                                <Image src={qrPreviewUrl} alt="QR Code preview" fill className="object-contain p-2" />
                                             ) : (
                                                 <div className="text-muted-foreground text-center p-2">
                                                     <QrCode className="mx-auto h-8 w-8" />

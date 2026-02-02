@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { LogOut, User, LogIn, Settings } from 'lucide-react';
@@ -16,7 +17,7 @@ import { Skeleton } from './ui/skeleton';
 
 
 export function DocuExtractHeader() {
-  const { user, userProfile, isLoading: isSessionLoading } = useSession();
+  const session = useSession();
   const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
   const auth = useAuth();
   const router = useRouter();
@@ -33,7 +34,9 @@ export function DocuExtractHeader() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const isLoading = isSessionLoading || isBrandingLoading;
+  const isLoading = session.isLoading || isBrandingLoading;
+  const user = session.user;
+  const userProfile = session.userProfile;
 
   return (
     <header className="bg-card border-b p-2 shadow-sm">

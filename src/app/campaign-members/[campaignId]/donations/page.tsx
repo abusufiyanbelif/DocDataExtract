@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
@@ -582,7 +583,12 @@ export default function DonationsPage() {
             </DialogHeader>
             {imageToView && (
                 <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
-                    <Image src={imageToView} alt="Donation screenshot" fill className="object-contain" style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, transition: 'transform 0.2s ease-out' }} />
+                    <div
+                        className="absolute inset-0 transition-transform duration-200 ease-out"
+                        style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
+                    >
+                        <Image src={imageToView} alt="Donation screenshot" fill className="object-contain" />
+                    </div>
                 </div>
             )}
              <DialogFooter className="sm:justify-center pt-4">
