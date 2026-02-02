@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useAuth, useStorage, useFirestore } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { firebaseConfig } from '@/firebase/config';
-import { collection, query, limit, getDocs, doc } from 'firebase/firestore';
+import { collection, query, limit, getDocs, doc, where } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
 import { runDiagnosticCheck } from '@/ai/flows/run-diagnostic-check';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -118,7 +118,6 @@ export default function DiagnosticsPage() {
                     return { status: 'failure', details: 'Cannot perform Firestore test because the service is not initialized.' };
                 }
                 try {
-                    const adminLookupRef = doc(firestore, 'user_lookups', 'admin');
                     const adminLookupSnap = await getDocs(query(collection(firestore, 'user_lookups'), where('userKey', '==', 'admin')));
 
                     if (adminLookupSnap.empty) {
@@ -128,8 +127,7 @@ export default function DiagnosticsPage() {
                             </span>
                         )};
                     }
-                    const adminUID = adminLookupSnap.docs[0].id;
-                    const adminUserDocRef = doc(firestore, 'users', adminUID);
+                    
                     const adminUserDocSnap = await getDocs(query(collection(firestore, 'users'), where('userKey', '==', 'admin')));
 
                     if (adminUserDocSnap.empty) {
@@ -256,7 +254,7 @@ export default function DiagnosticsPage() {
             ...prev,
             [check.id]: { status: result.status, details: result.details }
         }));
-    }, []);
+    }, [user]);
 
     const runAllChecks = async () => {
         setIsAllRunning(true);
