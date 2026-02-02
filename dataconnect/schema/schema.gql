@@ -1,0 +1,45 @@
+type User @table {
+  username: String!
+  email: String!
+  createdAt: Timestamp!
+  passwordHash: String
+  role: String
+}
+
+type Beneficiary @table {
+  name: String!
+  createdAt: Timestamp!
+  description: String
+  contactInfo: String
+  bankDetails: String
+  status: String
+}
+
+type Donation @table {
+  amount: Float!
+  currency: String!
+  donationDate: Date!
+  createdAt: Timestamp!
+  donorName: String
+  donorEmail: String
+  paymentMethod: String
+  notes: String
+  recordedBy: User
+}
+
+type FundAllocation @table(key: ["donation", "beneficiary"]) {
+  allocatedAmount: Float!
+  allocationDate: Date!
+  createdAt: Timestamp!
+  notes: String
+  donation: Donation!
+  beneficiary: Beneficiary!
+}
+
+type Organization @table {
+  name: String!
+  createdAt: Timestamp!
+  description: String
+  contactEmail: String
+  website: String
+}

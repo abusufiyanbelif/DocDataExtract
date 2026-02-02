@@ -1,0 +1,29 @@
+mutation CreateBeneficiary($name: String!, $createdAt: Timestamp!, $bankDetails: String, $contactInfo: String, $description: String, $status: String) @auth(level: USER, insecureReason: "This mutation is safe to expose to all logged in users.") {
+  beneficiary_insert(data: {name: $name, createdAt: $createdAt, bankDetails: $bankDetails, contactInfo: $contactInfo, description: $description, status: $status})
+}
+
+query ListDonations @auth(level: PUBLIC, insecureReason: "This query is safe to expose to the public") {
+  donations {
+    id
+    amount
+    currency
+    donationDate
+    donorEmail
+    donorName
+    notes
+    paymentMethod
+  }
+}
+
+mutation AllocateFunds($donationId: UUID!, $beneficiaryId: UUID!, $allocatedAmount: Float!, $allocationDate: Date!, $notes: String) @auth(level: USER, insecureReason: "This mutation is safe to expose to all logged in users.") {
+  fundAllocation_insert(data: {donationId: $donationId, beneficiaryId: $beneficiaryId, allocatedAmount: $allocatedAmount, allocationDate: $allocationDate, notes: $notes})
+}
+
+query GetUser($id: UUID!) @auth(level: USER, insecureReason: "This query is safe to expose to all logged in users.") {
+  user(id: $id) {
+    id
+    username
+    email
+    role
+  }
+}

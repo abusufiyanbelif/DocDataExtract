@@ -1,0 +1,102 @@
+mutation CreateSeedData @transaction @auth(level: PUBLIC, insecureReason: "This operation is used to populate the database with sample data.") {
+  organization_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      name: "Sample Organization 1",
+      description: "This is the first sample organization.",
+      contactEmail: "contact1@example.com",
+      website: "www.example1.com",
+      createdAt: "2024-01-01T00:00:00Z"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      name: "Sample Organization 2",
+      description: "This is the second sample organization.",
+      contactEmail: "contact2@example.com",
+      website: "www.example2.com",
+      createdAt: "2024-01-02T00:00:00Z"
+    }
+  ])
+  user_insertMany(data: [
+    {
+      id: "650e8400-e29b-41d4-a716-446655440002",
+      username: "sampleuser1",
+      email: "user1@example.com",
+      passwordHash: "hashed_password_1",
+      role: "admin",
+      createdAt: "2024-01-03T00:00:00Z"
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440003",
+      username: "sampleuser2",
+      email: "user2@example.com",
+      passwordHash: "hashed_password_2",
+      role: "member",
+      createdAt: "2024-01-04T00:00:00Z"
+    }
+  ])
+  beneficiary_insertMany(data: [
+    {
+      id: "750e8400-e29b-41d4-a716-446655440004",
+      name: "Sample Beneficiary 1",
+      description: "This is the first sample beneficiary.",
+      contactInfo: "Contact info 1",
+      bankDetails: "Bank details 1",
+      status: "active",
+      createdAt: "2024-01-05T00:00:00Z"
+    },
+    {
+      id: "750e8400-e29b-41d4-a716-446655440005",
+      name: "Sample Beneficiary 2",
+      description: "This is the second sample beneficiary.",
+      contactInfo: "Contact info 2",
+      bankDetails: "Bank details 2",
+      status: "inactive",
+      createdAt: "2024-01-06T00:00:00Z"
+    }
+  ])
+  donation_insertMany(data: [
+    {
+      id: "850e8400-e29b-41d4-a716-446655440006",
+      recordedById: "650e8400-e29b-41d4-a716-446655440002",
+      amount: 100.00,
+      currency: "USD",
+      donationDate: "2024-01-07",
+      donorEmail: "donor1@example.com",
+      donorName: "Donor 1",
+      notes: "Sample donation 1",
+      paymentMethod: "Credit Card",
+      createdAt: "2024-01-07T00:00:00Z"
+    },
+    {
+      id: "850e8400-e29b-41d4-a716-446655440007",
+      recordedById: "650e8400-e29b-41d4-a716-446655440003",
+      amount: 50.00,
+      currency: "EUR",
+      donationDate: "2024-01-08",
+      donorEmail: "donor2@example.com",
+      donorName: "Donor 2",
+      notes: "Sample donation 2",
+      paymentMethod: "PayPal",
+      createdAt: "2024-01-08T00:00:00Z"
+    }
+  ])
+  fundAllocation_insertMany(data: [
+    {
+      donationId: "850e8400-e29b-41d4-a716-446655440006",
+      beneficiaryId: "750e8400-e29b-41d4-a716-446655440004",
+      allocatedAmount: 60.00,
+      allocationDate: "2024-01-09",
+      notes: "Sample allocation 1",
+      createdAt: "2024-01-09T00:00:00Z"
+    },
+    {
+      donationId: "850e8400-e29b-41d4-a716-446655440007",
+      beneficiaryId: "750e8400-e29b-41d4-a716-446655440005",
+      allocatedAmount: 25.00,
+      allocationDate: "2024-01-10",
+      notes: "Sample allocation 2",
+      createdAt: "2024-01-10T00:00:00Z"
+    }
+  ])
+}
