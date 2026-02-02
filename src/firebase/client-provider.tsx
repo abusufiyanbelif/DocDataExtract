@@ -28,34 +28,19 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
           const services = initializeFirebase();
           setFirebaseServices({ ...services, initializationError: null });
         } catch (error: any) {
+          // This catch block is for fatal errors (e.g., invalid config).
+          // Firestore-specific errors are handled within initializeFirebase.
+          // Per the user's request, we will not set a global error that kills the UI.
           console.error(
-            'Failed to initialize Firebase. Please check your configuration.',
+            'A fatal Firebase initialization error occurred, but allowing app to continue. Some features will be unavailable.',
             error
           );
-
-          let finalError = error;
-
-          if (
-            error?.code === 'unavailable' ||
-            error?.message?.toLowerCase().includes('is not available')
-          ) {
-            let serviceName = 'a Firebase service';
-            if (error.message.includes('firestore')) serviceName = 'Firestore';
-            if (error.message.includes('auth')) serviceName = 'Authentication';
-            if (error.message.includes('storage')) serviceName = 'Storage';
-
-            finalError = new Error(
-              `The ${serviceName} is not available. This usually means it has not been enabled in the Firebase Console or is being initialized during server-side rendering.`
-            );
-            finalError.stack = error.stack;
-          }
-
           setFirebaseServices({
             app: null,
             auth: null,
             firestore: null,
             storage: null,
-            initializationError: finalError,
+            initializationError: null, // Set to null to prevent global error screen.
           });
         }
     });
