@@ -21,7 +21,7 @@ async function main() {
   const auth = adminAuth;
   const db = adminDb;
   
-  log.info('This script targets the (default) Firestore database.');
+  log.info('This script targets the "bmss-solapur-v6" Firestore database.');
 
   const adminEmail = 'baitulmalss.solapur@gmail.com';
   const adminPhone = '9270946423';
