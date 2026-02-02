@@ -30,7 +30,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  if (initializationError) {
+  // Only show the initialization error if the auth state has been determined.
+  // This prevents the error screen from showing "too early".
+  if (initializationError && !isLoading) {
     const isFirestoreError = initializationError.message.includes("Firestore is not available");
     const projectId = firebaseConfig.projectId;
     const firestoreConsoleUrl = `https://console.firebase.google.com/project/${projectId}/firestore`;
