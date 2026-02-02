@@ -1,9 +1,16 @@
-
 'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, FileText, Users, ShieldCheck, LogIn, GanttChart, Settings } from 'lucide-react';
+import {
+  ArrowRight,
+  FileText,
+  Users,
+  ShieldCheck,
+  LogIn,
+  GanttChart,
+  Settings,
+} from 'lucide-react';
 import { useSession } from '@/hooks/use-session';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -12,116 +19,83 @@ export default function LandingPage() {
   const { userProfile, isLoading } = useSession();
 
   const campaignPerms = userProfile?.permissions?.campaigns;
-  const canReadAnyCampaignSubmodule = 
+  const canReadAnyCampaignSubmodule =
     !!campaignPerms?.summary?.read ||
     !!campaignPerms?.ration?.read ||
     !!campaignPerms?.beneficiaries?.read ||
     !!campaignPerms?.donations?.read;
 
-  const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.create || !!campaignPerms?.update || !!campaignPerms?.delete || canReadAnyCampaignSubmodule;
-  const canViewLeads = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.read;
-  const canViewUsers = userProfile?.role === 'Admin' || !!userProfile?.permissions?.users?.read;
-  const canViewExtractor = userProfile?.role === 'Admin' || !!userProfile?.permissions?.extractor?.read;
-  const canViewStoryCreator = userProfile?.role === 'Admin' || !!userProfile?.permissions?.storyCreator?.read;
-  const canViewDiagnostics = userProfile?.role === 'Admin' || !!userProfile?.permissions?.diagnostics?.read;
-  const canViewSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.read;
+  const canViewCampaigns =
+    userProfile?.role === 'Admin' ||
+    !!campaignPerms?.create ||
+    !!campaignPerms?.update ||
+    !!campaignPerms?.delete ||
+    canReadAnyCampaignSubmodule;
 
+  const canViewLeads =
+    userProfile?.role === 'Admin' ||
+    !!userProfile?.permissions?.leads?.read;
+
+  const canViewUsers =
+    userProfile?.role === 'Admin' ||
+    !!userProfile?.permissions?.users?.read;
+
+  const canViewExtractor =
+    userProfile?.role === 'Admin' ||
+    !!userProfile?.permissions?.extractor?.read;
+
+  const canViewStoryCreator =
+    userProfile?.role === 'Admin' ||
+    !!userProfile?.permissions?.storyCreator?.read;
+
+  const canViewDiagnostics =
+    userProfile?.role === 'Admin' ||
+    !!userProfile?.permissions?.diagnostics?.read;
+
+  const canViewSettings =
+    userProfile?.role === 'Admin' ||
+    !!userProfile?.permissions?.settings?.read;
 
   return (
     <div className="flex flex-col min-h-screen text-foreground">
       <DocuExtractHeader />
       <main className="flex flex-grow flex-col items-center justify-center">
         <div className="container mx-auto flex flex-col items-center justify-center text-center p-8">
-            <h1 className="text-5xl md:text-6xl font-bold font-headline text-foreground mb-4">
+          <h1 className="text-5xl md:text-6xl font-bold mb-4">
             Welcome to Baitulmal Samajik Sanstha Solapur Activities
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+          </h1>
+
+          <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8">
             Managing and tracking community support campaigns efficiently.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              {!isLoading && !userProfile && (
-                <>
-                  <Link href="/campaign-public">
-                      <Button size="lg" className="text-lg">
-                      View Campaigns
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                      </Button>
-                  </Link>
-                  <Link href="/login">
-                      <Button size="lg" variant="outline" className="text-lg">
-                          <LogIn className="mr-2 h-5 w-5" />
-                          Organization members login
-                      </Button>
-                  </Link>
-                </>
-              )}
-              {isLoading && (
-                  <>
-                  <Skeleton className="h-11 w-48" />
-                  <Skeleton className="h-11 w-36" />
-                  <Skeleton className="h-11 w-40" />
-                  </>
-              )}
-              {!isLoading && userProfile && (
-                <>
-                  {canViewCampaigns && (
-                      <Link href="/campaign-members">
-                          <Button size="lg" variant="default" className="text-lg">
-                          <GanttChart className="mr-2 h-5 w-5" />
-                          Campaigns
-                          </Button>
-                      </Link>
-                  )}
-                  {canViewLeads && (
-                      <Link href="/leads">
-                          <Button size="lg" variant="outline" className="text-lg">
-                          <GanttChart className="mr-2 h-5 w-5" />
-                          Leads
-                          </Button>
-                      </Link>
-                  )}
-                  {canViewExtractor && (
-                      <Link href="/extractor">
-                          <Button size="lg" variant="outline" className="text-lg">
-                            Start Extracting
-                          </Button>
-                      </Link>
-                  )}
-                  {canViewStoryCreator && (
-                      <Link href="/story-creator">
-                          <Button size="lg" variant="outline" className="text-lg">
-                          <FileText className="mr-2 h-5 w-5" />
-                          Create a Story
-                          </Button>
-                      </Link>
-                  )}
-                  {canViewUsers && (
-                    <Link href="/users">
-                        <Button size="lg" variant="outline" className="text-lg">
-                        <Users className="mr-2 h-5 w-5" />
-                        Users
-                        </Button>
-                    </Link>
-                  )}
-                  {canViewDiagnostics && (
-                      <Link href="/diagnostics">
-                          <Button size="lg" variant="outline" className="text-lg">
-                          <ShieldCheck className="mr-2 h-5 w-5" />
-                          Diagnostics
-                          </Button>
-                      </Link>
-                  )}
-                  {canViewSettings && (
-                      <Link href="/settings">
-                          <Button size="lg" variant="outline" className="text-lg">
-                          <Settings className="mr-2 h-5 w-5" />
-                          Settings
-                          </Button>
-                      </Link>
-                  )}
-                </>
-              )}
-            </div>
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-4">
+            {!isLoading && !userProfile && (
+              <>
+                <Link href="/campaign-public">
+                  <Button size="lg">
+                    View Campaigns
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+
+                <Link href="/login">
+                  <Button size="lg" variant="outline">
+                    <LogIn className="mr-2 h-5 w-5" />
+                    Organization members login
+                  </Button>
+                </Link>
+              </>
+            )}
+
+            {isLoading && (
+              <>
+                <Skeleton className="h-11 w-48" />
+                <Skeleton className="h-11 w-36" />
+                <Skeleton className="h-11 w-40" />
+              </>
+            )}
+          </div>
         </div>
       </main>
     </div>

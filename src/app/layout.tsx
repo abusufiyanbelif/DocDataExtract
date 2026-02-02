@@ -1,7 +1,6 @@
-
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
 import { SessionProvider } from '@/components/session-provider';
 import { AuthProvider } from '@/components/auth-provider';
@@ -20,22 +19,33 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-
+}) {
   let logoUrl: string | null = null;
+
   try {
     if (adminDb) {
-      const brandingSnap = await adminDb.collection('settings').doc('branding').get();
+      const brandingSnap = await adminDb
+        .collection('settings')
+        .doc('branding')
+        .get();
+
       if (brandingSnap.exists) {
-        logoUrl = (brandingSnap.data() as BrandingSettings)?.logoUrl || null;
+        logoUrl =
+          (brandingSnap.data() as BrandingSettings)?.logoUrl || null;
       }
     }
   } catch (error) {
-    console.error("Failed to fetch branding settings on server:", error);
+    console.error(
+      'Failed to fetch branding settings on server:',
+      error
+    );
   }
-  const watermarkStyle = logoUrl ? { '--watermark-url': `url(${logoUrl})` } as React.CSSProperties : {};
+
+  const watermarkStyle = logoUrl
+    ? ({ '--watermark-url': `url(${logoUrl})` } as React.CSSProperties)
+    : {};
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -43,9 +53,7 @@ export default async function RootLayout({
         <FirebaseClientProvider>
           <div className="app-root">
             <SessionProvider>
-              <AuthProvider>
-                {children}
-              </AuthProvider>
+              <AuthProvider>{children}</AuthProvider>
             </SessionProvider>
             <AppFooter />
           </div>

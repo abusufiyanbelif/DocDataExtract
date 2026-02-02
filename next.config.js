@@ -1,18 +1,22 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    experimental: {
-        // This is required to allow the Next.js dev server to be accessed from
-        // the Firebase Studio environment.
-        allowedDevOrigins: ["https://*.cloudworkstations.dev"],
-    },
     images: {
-        remotePatterns: [
-            {
-                protocol: 'https',
-                hostname: 'firebasestorage.googleapis.com',
-            },
-        ],
+      remotePatterns: [
+        {
+          protocol: 'https',
+          hostname: 'firebasestorage.googleapis.com',
+        },
+        {
+            protocol: 'https',
+            hostname: 'picsum.photos',
+        }
+      ],
     },
-};
-
-module.exports = nextConfig;
+    allowedDevOrigins: [
+        "http://localhost:3000",
+        "http://localhost:9002"
+    ],
+  };
+  
+  module.exports = nextConfig;
+  
