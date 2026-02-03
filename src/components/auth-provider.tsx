@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isPublicCampaignPath = pathname.startsWith('/campaign-public');
   const isHomePage = pathname === '/';
   
-  const isPublicRoute = isPublicCampaignPath || isHomePage || isSeedPage;
+  const isPublicRoute = isLoginPage || isPublicCampaignPath || isHomePage || isSeedPage;
 
   // Redirect authenticated users from login page
   useEffect(() => {

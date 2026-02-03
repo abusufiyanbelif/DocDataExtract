@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useCollection } from '@/firebase';
 import { doc, collection, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import {
   BarChart,
   Bar,
@@ -22,7 +24,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass, Download } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -228,6 +230,59 @@ Please donate and share this message. Every contribution helps!
         setIsShareDialogOpen(true);
     };
 
+    const handleDownloadSummaryPdf = () => {
+        if (!campaign || !summaryData) {
+            toast({ title: 'Error', description: 'Cannot download, summary data is not available.', variant: 'destructive'});
+            return;
+        }
+
+        const doc = new jsPDF();
+        
+        doc.setFontSize(18);
+        doc.text(campaign.name, 14, 22);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Campaign Summary as of ${new Date().toLocaleDateString()}`, 14, 28);
+
+        let y = 40;
+        
+        // Funding section
+        (doc as any).autoTable({
+            startY: y,
+            head: [['Funding Summary', 'Amount (Rupee)']],
+            body: [
+                ['Target for Kits', (summaryData.targetAmount || 0).toLocaleString('en-IN')],
+                ['Funds for Kits (Verified)', summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')],
+                ['Zakat Collected (Verified)', summaryData.zakatCollected.toLocaleString('en-IN')],
+                ['Remaining To Collect', summaryData.remainingToCollect.toLocaleString('en-IN')],
+                ['Pending Verification', summaryData.pendingDonations.toLocaleString('en-IN')],
+            ],
+            theme: 'striped',
+            headStyles: { fillColor: [34, 139, 34] },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+
+        // Beneficiary section
+        (doc as any).autoTable({
+            startY: y,
+            head: [['Beneficiary Status', 'Count']],
+            body: Object.entries(summaryData.beneficiaryStatusData).map(([name, value]) => [name, value]),
+            theme: 'grid',
+            headStyles: { fillColor: [34, 139, 34] },
+        });
+        y = (doc as any).lastAutoTable.finalY + 10;
+        
+        // Beneficiary breakdown
+        (doc as any).autoTable({
+            startY: y,
+            head: [['Beneficiary Category', 'Count', 'Required Amount (Rupee)']],
+            body: summaryData.beneficiaryCategoryBreakdown.map(item => [item.name, item.count, item.totalAmount.toLocaleString('en-IN')]),
+            theme: 'striped',
+            headStyles: { fillColor: [34, 139, 34] },
+        });
+        
+        doc.save(`summary_${campaign.name.replace(/ /g, '_')}.pdf`);
+    };
 
     if (isLoading) {
         return (
@@ -272,6 +327,10 @@ Please donate and share this message. Every contribution helps!
                         <p className="text-muted-foreground">{campaign.status}</p>
                     </div>
                     <div className="flex gap-2">
+                        <Button onClick={handleDownloadSummaryPdf} variant="outline">
+                            <Download className="mr-2 h-4 w-4" />
+                            Download PDF
+                        </Button>
                         <Button onClick={handleShare} variant="outline">
                             <Share2 className="mr-2 h-4 w-4" />
                             Share
