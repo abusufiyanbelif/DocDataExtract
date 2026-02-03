@@ -66,6 +66,8 @@ export interface Lead extends DocumentData {
   startDate: string;
   endDate: string;
   status: 'Upcoming' | 'Active' | 'Completed';
+  authenticityStatus?: 'Pending Verification' | 'Verified' | 'Rejected' | 'On Hold' | 'Need More Details';
+  publicVisibility?: 'Hold' | 'Ready to Publish' | 'Published';
   priceDate: string;
   shopName: string;
   shopContact: string;

@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,6 +35,8 @@ const leadSchema = z.object({
   name: z.string().min(3, 'Lead name must be at least 3 characters.'),
   category: z.enum(['Ration', 'Relief', 'General']),
   status: z.enum(['Upcoming', 'Active', 'Completed']),
+  authenticityStatus: z.enum(['Pending Verification', 'Verified', 'Rejected', 'On Hold', 'Need More Details']),
+  publicVisibility: z.enum(['Hold', 'Ready to Publish', 'Published']),
   startDate: z.string().min(1, 'Start date is required.'),
   endDate: z.string().min(1, 'End date is required.'),
   targetAmount: z.coerce.number().min(0, 'Target amount must be a positive number.').optional(),
@@ -60,7 +63,7 @@ export default function CreateLeadPage() {
   }, [firestore]);
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsCollectionRef);
 
-  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.create;
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.create;
 
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
@@ -68,6 +71,8 @@ export default function CreateLeadPage() {
       name: '',
       category: 'Ration',
       status: 'Upcoming',
+      authenticityStatus: 'Pending Verification',
+      publicVisibility: 'Hold',
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
       targetAmount: 0,
@@ -97,7 +102,7 @@ export default function CreateLeadPage() {
     addDoc(collection(firestore, 'leads'), newLeadData)
       .then((docRef) => {
         toast({ title: 'Success', description: 'Lead created successfully.', variant: 'success' });
-        router.push(`/leads`);
+        router.push(`/leads-members`);
       })
       .catch((serverError) => {
         const permissionError = new FirestorePermissionError({
@@ -138,7 +143,7 @@ export default function CreateLeadPage() {
             <main className="container mx-auto p-4 md:p-8">
                 <div className="mb-4">
                     <Button variant="outline" asChild>
-                        <Link href="/leads">
+                        <Link href="/leads-members">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Leads
                         </Link>
@@ -162,7 +167,7 @@ export default function CreateLeadPage() {
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
           <Button variant="outline" asChild>
-            <Link href="/leads">
+            <Link href="/leads-members">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Leads
             </Link>
@@ -252,22 +257,70 @@ export default function CreateLeadPage() {
                     )}
                     />
                 </div>
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a status" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            <SelectItem value="Upcoming">Upcoming</SelectItem>
+                            <SelectItem value="Active">Active</SelectItem>
+                            <SelectItem value="Completed">Completed</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="authenticityStatus"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Authenticity</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select authenticity" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="Pending Verification">Pending Verification</SelectItem>
+                                <SelectItem value="Verified">Verified</SelectItem>
+                                <SelectItem value="On Hold">On Hold</SelectItem>
+                                <SelectItem value="Rejected">Rejected</SelectItem>
+                                <SelectItem value="Need More Details">Need More Details</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
                 <FormField
                   control={form.control}
-                  name="status"
+                  name="publicVisibility"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
+                      <FormLabel>Public Visibility</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a status" />
+                            <SelectValue placeholder="Select visibility" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="Upcoming">Upcoming</SelectItem>
-                          <SelectItem value="Active">Active</SelectItem>
-                          <SelectItem value="Completed">Completed</SelectItem>
+                          <SelectItem value="Hold">Hold (Private)</SelectItem>
+                          <SelectItem value="Ready to Publish">Ready to Publish</SelectItem>
+                          <SelectItem value="Published">Published</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

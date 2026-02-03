@@ -30,7 +30,7 @@ export const modules = [
     subModules: campaignSubModules,
   },
   {
-    id: 'leads',
+    id: 'leads-members',
     name: 'Leads',
     permissions: crudPermissions,
     subModules: leadSubModules,
@@ -54,10 +54,10 @@ type CampaignPermissions = Partial<Record<Permission, boolean>> & SubModulePermi
 type LeadPermissions = Partial<Record<Permission, boolean>> & SubModulePermissions<typeof leadSubModules>;
 
 export type UserPermissions = Partial<
-  Record<Exclude<ModuleId, 'campaigns' | 'leads'>, Partial<Record<Permission, boolean>>>
+  Record<Exclude<ModuleId, 'campaigns' | 'leads-members'>, Partial<Record<Permission, boolean>>>
 > & {
   campaigns?: CampaignPermissions;
-  leads?: LeadPermissions;
+  'leads-members'?: LeadPermissions;
 };
 
 

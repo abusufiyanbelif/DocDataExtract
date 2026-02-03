@@ -36,8 +36,8 @@ const dashboardCards = [
     title: 'Leads',
     description: 'Manage and track potential new leads or initiatives.',
     icon: <Lightbulb className="h-8 w-8 text-primary" />,
-    href: '/leads',
-    permissionKey: 'leads.read',
+    href: '/leads-members',
+    permissionKey: 'leads-members.read',
   },
   {
     title: 'Extractor',

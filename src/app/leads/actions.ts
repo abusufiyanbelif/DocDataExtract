@@ -39,6 +39,8 @@ export async function copyLeadAction(options: CopyLeadOptions): Promise<{ succes
       ...sourceLeadData,
       name: newName,
       status: 'Upcoming', // Copied leads should start as Upcoming
+      authenticityStatus: 'Pending Verification',
+      publicVisibility: 'Hold',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       createdByName: 'System Copy',
       createdById: 'system',
@@ -90,7 +92,7 @@ export async function copyLeadAction(options: CopyLeadOptions): Promise<{ succes
       }
     }
 
-    revalidatePath('/leads');
+    revalidatePath('/leads-members');
     return { success: true, message: `Successfully copied lead to '${newName}'.` };
 
   } catch (error: any) {

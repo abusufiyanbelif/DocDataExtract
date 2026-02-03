@@ -1,3 +1,4 @@
+
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -184,10 +185,10 @@ export default function LeadPage() {
 
   const isLoading = areLeadsLoading || isProfileLoading || isDeleting;
   
-  const canViewLeads = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.read;
-  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.create;
-  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.update;
-  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.delete;
+  const canViewLeads = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.read;
+  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.create;
+  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.update;
+  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.delete;
   
   
   if (!isLoading && userProfile && !canViewLeads) {
@@ -266,7 +267,7 @@ export default function LeadPage() {
             {isLoading && <Skeleton className="h-10 w-44" />}
             {!isLoading && canCreate && (
               <Button asChild>
-                <Link href="/leads/create">
+                <Link href="/leads-members/create">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Lead
                 </Link>
@@ -282,7 +283,7 @@ export default function LeadPage() {
                     <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
-                                <CardTitle>{lead.name}</CardTitle>
+                                <CardTitle className="line-clamp-2">{lead.name}</CardTitle>
                                  <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
@@ -291,7 +292,7 @@ export default function LeadPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem asChild className="cursor-pointer">
-                                            <Link href={`/leads/${lead.id}`}>
+                                            <Link href={`/leads-members/${lead.id}`}>
                                                 <Edit className="mr-2 h-4 w-4" /> View / Edit
                                             </Link>
                                         </DropdownMenuItem>
@@ -319,7 +320,7 @@ export default function LeadPage() {
                             </div>
                             <CardDescription>{lead.startDate} to {lead.endDate}</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-grow">
+                        <CardContent className="flex-grow space-y-2">
                              <div className="flex justify-between text-sm text-muted-foreground">
                                 <Badge variant="outline">{lead.category}</Badge>
                                 <Badge variant={
@@ -327,10 +328,14 @@ export default function LeadPage() {
                                     lead.status === 'Completed' ? 'secondary' : 'outline'
                                 }>{lead.status}</Badge>
                             </div>
+                             <div className="flex justify-between text-sm text-muted-foreground pt-2">
+                                <Badge variant="outline">{lead.authenticityStatus || 'N/A'}</Badge>
+                                <Badge variant="outline">{lead.publicVisibility || 'N/A'}</Badge>
+                            </div>
                         </CardContent>
                         <CardFooter>
                             <Button asChild className="w-full">
-                                <Link href={`/leads/${lead.id}`}>
+                                <Link href={`/leads-members/${lead.id}`}>
                                     View Details
                                 </Link>
                             </Button>
@@ -343,7 +348,7 @@ export default function LeadPage() {
                     <p className="text-muted-foreground">No leads found matching your criteria.</p>
                     {canCreate && leads?.length === 0 && (
                         <p className="text-sm text-muted-foreground mt-2">
-                            <Link href="/leads/create" className="text-primary underline">
+                            <Link href="/leads-members/create" className="text-primary underline">
                                 Create one now
                             </Link>
                         </p>
