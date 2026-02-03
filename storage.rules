@@ -1,29 +1,55 @@
 rules_version = '2';
 
+/**
+ * ======================================================================
+ * Storage Security Rules
+ * ======================================================================
+ *
+ * Philosophy:
+ * This ruleset follows a "secure by default" approach while enabling
+ * necessary application functionality.
+ *
+ * 1. Public Reads for Public Content:
+ *    - Files in `/settings` (like the app logo) are publicly readable by anyone.
+ *    - Files in `/campaigns` and `/leads` are also publicly readable. This supports
+ *      public-facing summary pages that might show donation screenshots or other media.
+ *
+ * 2. Authenticated Writes:
+ *    - ALL write operations (upload, update, delete) REQUIRE the user to be signed in.
+ *    - There are no public write rules. This prevents anonymous users from
+ *      uploading malicious content or filling up your storage.
+ *
+ * 3. User-Private Content:
+ *    - The `/users/{userId}` path is locked down so that only the owner of that
+ *      data can read their own files (e.g., an uploaded ID proof).
+ *    - Admins or other users CANNOT read a user's private files directly through
+ *      the client SDK.
+ *
+ * Role-Based Access:
+ * While any signed-in user can technically WRITE to most paths, the application's
+ * UI is responsible for role-based authorization. For example, only an Admin should
+ * see the button to upload a new site logo. The rules here provide the foundational
+ * security, and the app's code provides the business logic.
+ *
+ */
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // ----------------------------------------------------------------------
-    // Helper Functions
-    // ----------------------------------------------------------------------
-
+    // Helper function to check if a user is signed in.
     function isSignedIn() {
       return request.auth != null;
     }
 
+    // Helper function to check if the request is from the owner of the user directory.
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // ----------------------------------------------------------------------
-    // Publicly Readable Paths
-    // ----------------------------------------------------------------------
+    // --- Publicly Readable Paths ---
 
     /**
-     * @description Public settings files (logo, QR code).
-     * Anyone can read these files to display them on public pages.
-     * Only authenticated users can upload/delete. The app UI must restrict
-     * this to Admin users.
+     * @description Global settings like the main logo or QR code.
+     * Anyone can read these. Only signed-in users can write (UI restricts to Admins).
      */
     match /settings/{allPaths=**} {
       allow read: if true;
@@ -31,35 +57,32 @@ service firebase.storage {
     }
 
     /**
-     * @description Files related to public campaigns (e.g., donation screenshots).
-     * These are publicly readable to support public summary pages if the app
-     * generates a public URL (controlled by the `screenshotIsPublic` flag in Firestore).
-     * Writes are restricted to any signed-in user, with the UI handling role permissions.
+     * @description Files for public campaigns (e.g., donation screenshots).
+     * Publicly readable to support public pages.
+     * Writes are restricted to signed-in users.
      */
     match /campaigns/{campaignId}/{allPaths=**} {
        allow read: if true;
        allow write: if isSignedIn();
     }
 
-    // ----------------------------------------------------------------------
-    // Authenticated-Only Paths
-    // ----------------------------------------------------------------------
-    
     /**
-     * @description Files related to internal leads.
-     * Leads are considered internal data. Both read and write access
-     * are restricted to any authenticated user.
+     * @description Files for public leads.
+     * Publicly readable to support public pages.
+     * Writes are restricted to signed-in users.
      */
     match /leads/{leadId}/{allPaths=**} {
-        allow read, write: if isSignedIn();
+       allow read: if true;
+       allow write: if isSignedIn();
     }
+
+    // --- Private User Paths ---
     
     /**
-     * @description User-specific private files, such as ID proofs.
-     * Only the owner of the data can read their own files.
-     * Any signed-in user can write (e.g., an Admin uploading on behalf
-     * of a user), but this is a permissive rule that relies on the UI
-     * to enforce correct behavior.
+     * @description User-specific private files (e.g., ID proofs).
+     * Only the data owner can read their own files.
+     * Writes are restricted to any signed-in user (e.g., an Admin uploading
+     * on behalf of a user).
      */
     match /users/{userId}/{allPaths=**} {
       allow read: if isOwner(userId);
