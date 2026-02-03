@@ -27,9 +27,19 @@ export function SessionProvider({ authUser, children }: { authUser?: User | null
   
   const isLoading = authUser ? isProfileLoading : false;
   
+  // If a profile exists but permissions are missing, provide a default empty object.
+  // This makes downstream permission checks more robust.
+  const profileWithDefaults = useMemo(() => {
+    if (!userProfile) return null;
+    return {
+        ...userProfile,
+        permissions: userProfile.permissions || {}, // Ensure permissions is always an object
+    };
+  }, [userProfile]);
+
   const contextValue = {
       user: authUser || null,
-      userProfile: userProfile || null,
+      userProfile: profileWithDefaults,
       isLoading,
   };
 

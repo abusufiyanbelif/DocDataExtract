@@ -4,16 +4,16 @@
  * is globally readable to support public pages, while write access is restricted to authenticated users.
  *
  * Data Structure:
- * - `/users/{userId}`: Private user data, accessible only by the owner.
+ * - `/users/{userId}`: Private user data, accessible only by the owner or an admin.
  * - `/campaigns`, `/donations`, `/settings`: Publicly readable data for the website.
- * - `/leads`, `/user_lookups`: Internal data accessible only by authenticated users.
+ * - `/leads`, `/user_lookups`: Internal data accessible only by authenticated users, with stricter writes.
  *
  * Key Security Decisions:
  * - Public Reads: `campaigns`, `donations`, and `settings` are readable by anyone to populate public-facing pages.
  * - Authenticated Writes: All write operations (create, update, delete) on public collections still require user authentication.
  *   Client-side logic is responsible for role-based authorization (e.g., only admins can edit settings).
- * - Strict Ownership for User Data: The `/users` collection remains strictly private.
- * - No User Enumeration: Listing documents in `/users` and `/user_lookups` is disallowed.
+ * - Admin Override: Admins have read/write access to user data for management purposes.
+ * - No User Enumeration: Listing documents in `/users` is restricted to admins.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -28,6 +28,14 @@ service cloud.firestore {
      */
     function isSignedIn() {
       return request.auth != null;
+    }
+    
+    /**
+     * Checks if the currently authenticated user has the 'Admin' role in their user document.
+     * WARNING: This incurs a document read on every check. Use judiciously.
+     */
+    function isUserAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
 
     /**
@@ -157,12 +165,12 @@ service cloud.firestore {
      * @path /user_lookups/{lookupId}
      * @allow (get) Anyone can perform a direct lookup during login.
      * @deny (list) Listing all lookups is denied to prevent user enumeration.
-     * @allow (write, delete) Only authenticated users can write (for profile updates).
+     * @allow (write, delete) Only admins can write (for profile creation/updates).
      */
     match /user_lookups/{lookupId} {
         allow get: if true;
         allow list: if false;
-        allow write, delete: if isSignedIn();
+        allow write, delete: if isUserAdmin();
     }
 
     // ----------------------------------------------------------------------
@@ -172,15 +180,17 @@ service cloud.firestore {
     /**
      * @description Manages user profile documents.
      * @path /users/{userId}
-     * @allow (create) A new user creating their own profile document.
-     * @deny (list) Any user attempting to list all user profiles.
-     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     * @allow (get) Owner or an admin can read a user profile.
+     * @allow (list) Only admins can list all users.
+     * @allow (create) An admin or a new user creating their own profile.
+     * @allow (update) An owner or an admin can update a profile.
+     * @principle Secures user data while allowing for admin oversight.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isCreatingOwnValidProfile(userId);
-      allow update: if isExistingOwner(userId) && isProfileIdImmutable();
+      allow get: if isOwner(userId) || isUserAdmin();
+      allow list: if isUserAdmin();
+      allow create: if isCreatingOwnValidProfile(userId) || isUserAdmin();
+      allow update: if (isExistingOwner(userId) && isProfileIdImmutable()) || isUserAdmin();
       allow delete: if false; // Deleting users should be a privileged server-side operation.
     }
 
