@@ -14,39 +14,27 @@ const log = {
   detail: (key: string, value: string) => console.log(`   - ${key}: \x1b[1m${value}\x1b[0m`),
 };
 
-// Recursive function to provide a detailed view of the storage bucket structure.
-const listFilesAndFolders = async (bucket: any, prefix = '', indent = '') => {
-    try {
-        const [files, , apiResponse] = await bucket.getFiles({ prefix, delimiter: '/' });
-        const subfolders = apiResponse.prefixes || [];
+// New function to summarize bucket contents
+const summarizeBucketContents = async (bucket: any) => {
+    const requiredFolders = ['campaigns/', 'leads/', 'users/', 'settings/'];
+    log.info('Summarizing required folders...');
 
-        // Display subfolders
-        for (const folderPrefix of subfolders) {
-            const folderName = folderPrefix.substring(prefix.length).replace(/\/$/, '');
-            if (folderName) {
-                log.dim(`${indent}📁 ${folderName}/`);
-                // Recurse into subfolder
-                await listFilesAndFolders(bucket, folderPrefix, indent + '  ');
+    for (const prefix of requiredFolders) {
+        try {
+            const [files, , apiResponse] = await bucket.getFiles({ prefix, delimiter: '/' });
+            const subfolders = apiResponse.prefixes || [];
+
+            // Don't count the placeholder object for the folder itself if it exists
+            const fileCount = files.filter(f => f.name !== prefix).length;
+
+            if (fileCount > 0 || subfolders.length > 0) {
+                 log.dim(`📁 ${prefix}  (${subfolders.length} sub-folders, ${fileCount} files)`);
+            } else {
+                 log.dim(`📁 ${prefix}  (empty)`);
             }
+        } catch (e: any) {
+            log.error(`Could not summarize prefix "${prefix}": ${e.message}`);
         }
-
-        // Display files in the current folder
-        for (const file of files) {
-            // Don't show the "folder" placeholder object itself
-            if (file.name.endsWith('/') && file.name === prefix) continue;
-
-            const fileName = file.name.substring(prefix.length);
-            if (fileName) {
-                 const sizeInKb = file.metadata.size ? (Number(file.metadata.size) / 1024).toFixed(2) : '0.00';
-                 const created = new Date(file.metadata.timeCreated).toISOString();
-                 const updated = new Date(file.metadata.updated).toISOString();
-                 const metadataString = `(size: ${sizeInKb} KB, type: ${file.metadata.contentType}, created: ${created}, updated: ${updated})`;
-                 log.dim(`${indent}📄 ${fileName} ${metadataString}`);
-            }
-        }
-
-    } catch (e: any) {
-        log.error(`${indent}Could not list contents for prefix "${prefix}": ${e.message}`);
     }
 };
 
@@ -75,8 +63,8 @@ async function checkStorage() {
         if (exists) {
             log.success(`Successfully connected to Firebase Storage. Bucket "${bucket.name}" exists.`);
 
-            log.step('Inspecting Bucket Contents (Full Structure)');
-            await listFilesAndFolders(bucket);
+            log.step('Inspecting Bucket Contents (Summary)');
+            await summarizeBucketContents(bucket);
 
         } else {
             throw new Error(`The bucket "${bucket.name}" does not exist in your Firebase project.`);
