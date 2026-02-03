@@ -11,7 +11,7 @@ import { useSession } from '@/hooks/use-session';
 import type { Lead, Beneficiary } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
-import { collection, query, where, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, writeBatch, doc, updateDoc } from 'firebase/firestore';
 import { ref as storageRef, deleteObject } from 'firebase/storage';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +22,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu';
 import {
     AlertDialog,
@@ -146,6 +151,29 @@ export default function LeadPage() {
         setIsDeleting(false);
         setLeadToDelete(null);
     }
+  };
+
+  const handleStatusUpdate = async (leadToUpdate: Lead, field: 'status' | 'authenticityStatus' | 'publicVisibility', value: string) => {
+    if (!firestore || !canUpdate) {
+        toast({ title: 'Permission Denied', description: 'You do not have permission to update leads.', variant: 'destructive'});
+        return;
+    };
+
+    const docRef = doc(firestore, 'leads', leadToUpdate.id);
+    const updatedData = { [field]: value };
+
+    updateDoc(docRef, updatedData)
+        .then(() => {
+            toast({ title: 'Success', description: `Lead '${leadToUpdate.name}' has been updated.`, variant: 'success' });
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'update',
+                requestResourceData: updatedData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
   };
 
   const filteredAndSortedLeads = useMemo(() => {
@@ -283,7 +311,7 @@ export default function LeadPage() {
                     <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
-                                <CardTitle>{lead.name}</CardTitle>
+                                <CardTitle className="w-full break-words">{lead.name}</CardTitle>
                                  <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
@@ -296,6 +324,44 @@ export default function LeadPage() {
                                                 <Edit className="mr-2 h-4 w-4" /> View / Edit
                                             </Link>
                                         </DropdownMenuItem>
+                                        {canUpdate && <DropdownMenuSeparator />}
+                                        {canUpdate && (
+                                            <>
+                                                <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger><span>Change Status</span></DropdownMenuSubTrigger>
+                                                    <DropdownMenuSubContent>
+                                                        <DropdownMenuRadioGroup value={lead.status} onValueChange={(value) => handleStatusUpdate(lead, 'status', value)}>
+                                                            <DropdownMenuRadioItem value="Upcoming">Upcoming</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Active">Active</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Completed">Completed</DropdownMenuRadioItem>
+                                                        </DropdownMenuRadioGroup>
+                                                    </DropdownMenuSubContent>
+                                                </DropdownMenuSub>
+                                                <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger><span>Verification</span></DropdownMenuSubTrigger>
+                                                    <DropdownMenuSubContent>
+                                                        <DropdownMenuRadioGroup value={lead.authenticityStatus} onValueChange={(value) => handleStatusUpdate(lead, 'authenticityStatus', value as string)}>
+                                                            <DropdownMenuRadioItem value="Pending Verification">Pending Verification</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Verified">Verified</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="On Hold">On Hold</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Rejected">Rejected</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Need More Details">Need More Details</DropdownMenuRadioItem>
+                                                        </DropdownMenuRadioGroup>
+                                                    </DropdownMenuSubContent>
+                                                </DropdownMenuSub>
+                                                <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger><span>Publication</span></DropdownMenuSubTrigger>
+                                                    <DropdownMenuSubContent>
+                                                        <DropdownMenuRadioGroup value={lead.publicVisibility} onValueChange={(value) => handleStatusUpdate(lead, 'publicVisibility', value as string)}>
+                                                            <DropdownMenuRadioItem value="Hold">Hold (Private)</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Ready to Publish">Ready to Publish</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Published">Published</DropdownMenuRadioItem>
+                                                        </DropdownMenuRadioGroup>
+                                                    </DropdownMenuSubContent>
+                                                </DropdownMenuSub>
+                                            </>
+                                        )}
+                                        <DropdownMenuSeparator />
                                         {canCreate && (
                                             <DropdownMenuItem
                                                 onClick={() => handleCopyClick(lead)}
@@ -305,15 +371,14 @@ export default function LeadPage() {
                                                 Copy
                                             </DropdownMenuItem>
                                         )}
-                                        {canDelete && <DropdownMenuSeparator />}
                                         {canDelete && (
-                                            <DropdownMenuItem
-                                                onClick={(e) => { e.stopPropagation(); handleDeleteClick(lead); }}
-                                                className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer"
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
+                                            <>
+                                                {canCreate && <DropdownMenuSeparator />}
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(lead); }} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </>
                                         )}
                                     </DropdownMenuContent>
                                 </DropdownMenu>

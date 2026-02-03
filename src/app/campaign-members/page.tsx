@@ -11,7 +11,7 @@ import { useSession } from '@/hooks/use-session';
 import type { Campaign, Beneficiary, Donation } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
-import { collection, query, where, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, writeBatch, doc, updateDoc } from 'firebase/firestore';
 import { ref as storageRef, deleteObject } from 'firebase/storage';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,6 +22,11 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu';
 import {
     AlertDialog,
@@ -154,6 +159,29 @@ export default function CampaignPage() {
         setIsDeleting(false);
         setCampaignToDelete(null);
     }
+  };
+  
+  const handleStatusUpdate = async (campaignToUpdate: Campaign, field: 'status' | 'authenticityStatus' | 'publicVisibility', value: string) => {
+    if (!firestore || !canUpdate) {
+        toast({ title: 'Permission Denied', description: 'You do not have permission to update campaigns.', variant: 'destructive'});
+        return;
+    };
+
+    const docRef = doc(firestore, 'campaigns', campaignToUpdate.id);
+    const updatedData = { [field]: value };
+
+    updateDoc(docRef, updatedData)
+        .then(() => {
+            toast({ title: 'Success', description: `Campaign '${campaignToUpdate.name}' has been updated.`, variant: 'success' });
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: docRef.path,
+                operation: 'update',
+                requestResourceData: updatedData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
   };
   
   const filteredAndSortedCampaigns = useMemo(() => {
@@ -299,7 +327,7 @@ export default function CampaignPage() {
                     <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
-                                <CardTitle>{campaign.name}</CardTitle>
+                                <CardTitle className="w-full break-words">{campaign.name}</CardTitle>
                                  <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
@@ -307,33 +335,62 @@ export default function CampaignPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => router.push(`/campaign-members/${campaign.id}/summary`)} className="cursor-pointer">
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            View Details
+                                        </DropdownMenuItem>
+                                        {canUpdate && <DropdownMenuSeparator />}
                                         {canUpdate && (
-                                            <DropdownMenuItem
-                                                onClick={() => router.push(`/campaign-members/${campaign.id}/summary`)}
-                                                className="cursor-pointer"
-                                            >
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </DropdownMenuItem>
+                                            <>
+                                                <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger><span>Change Status</span></DropdownMenuSubTrigger>
+                                                    <DropdownMenuSubContent>
+                                                        <DropdownMenuRadioGroup value={campaign.status} onValueChange={(value) => handleStatusUpdate(campaign, 'status', value)}>
+                                                            <DropdownMenuRadioItem value="Upcoming">Upcoming</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Active">Active</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Completed">Completed</DropdownMenuRadioItem>
+                                                        </DropdownMenuRadioGroup>
+                                                    </DropdownMenuSubContent>
+                                                </DropdownMenuSub>
+                                                <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger><span>Verification</span></DropdownMenuSubTrigger>
+                                                    <DropdownMenuSubContent>
+                                                        <DropdownMenuRadioGroup value={campaign.authenticityStatus} onValueChange={(value) => handleStatusUpdate(campaign, 'authenticityStatus', value as string)}>
+                                                            <DropdownMenuRadioItem value="Pending Verification">Pending Verification</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Verified">Verified</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="On Hold">On Hold</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Rejected">Rejected</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Need More Details">Need More Details</DropdownMenuRadioItem>
+                                                        </DropdownMenuRadioGroup>
+                                                    </DropdownMenuSubContent>
+                                                </DropdownMenuSub>
+                                                <DropdownMenuSub>
+                                                    <DropdownMenuSubTrigger><span>Publication</span></DropdownMenuSubTrigger>
+                                                    <DropdownMenuSubContent>
+                                                        <DropdownMenuRadioGroup value={campaign.publicVisibility} onValueChange={(value) => handleStatusUpdate(campaign, 'publicVisibility', value as string)}>
+                                                            <DropdownMenuRadioItem value="Hold">Hold (Private)</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Ready to Publish">Ready to Publish</DropdownMenuRadioItem>
+                                                            <DropdownMenuRadioItem value="Published">Published</DropdownMenuRadioItem>
+                                                        </DropdownMenuRadioGroup>
+                                                    </DropdownMenuSubContent>
+                                                </DropdownMenuSub>
+                                            </>
                                         )}
+                                        <DropdownMenuSeparator />
                                         {canCreate && (
-                                            <DropdownMenuItem
-                                                onClick={() => handleCopyClick(campaign)}
-                                                className="cursor-pointer"
-                                            >
+                                            <DropdownMenuItem onClick={() => handleCopyClick(campaign)} className="cursor-pointer">
                                                 <Copy className="mr-2 h-4 w-4" />
                                                 Copy
                                             </DropdownMenuItem>
                                         )}
-                                        {(canUpdate || canCreate) && canDelete && <DropdownMenuSeparator />}
                                         {canDelete && (
-                                            <DropdownMenuItem
-                                                onClick={(e) => { e.stopPropagation(); handleDeleteClick(campaign); }}
-                                                className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer"
-                                            >
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
+                                            <>
+                                                {canCreate && <DropdownMenuSeparator />}
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(campaign); }} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </>
                                         )}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
