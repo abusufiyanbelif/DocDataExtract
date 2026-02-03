@@ -4,7 +4,7 @@ import { useAuth, useStorage, useFirestore } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { firebaseConfig } from '@/firebase/config';
 import { collection, query, limit, getDocs, doc, where, getDoc } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
+import { ref as storageRef, list } from 'firebase/storage';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -149,34 +149,32 @@ export default function DiagnosticsPage() {
             }
         },
         {
-            id: 'storage-write',
-            name: 'Firebase Storage Write',
-            description: 'Attempts to write and delete a test file in Storage.',
+            id: 'storage-connectivity',
+            name: 'Firebase Storage Connectivity',
+            description: 'Attempts to list items from the public /settings folder to verify read access.',
             icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" />,
             run: async () => {
-                if (!user || !storage || !firebaseConfig.storageBucket) {
-                    let reason = !user ? 'an authenticated user' : !firebaseConfig.storageBucket ? 'a configured Storage Bucket' : 'the Storage service';
-                    return { status: 'failure', details: `Cannot perform Storage test without ${reason}.` };
+                if (!storage || !firebaseConfig.storageBucket) {
+                    return { status: 'failure', details: `Cannot perform Storage test without the Storage service or a configured Storage Bucket.` };
                 }
                 
-                const testFileRef = storageRef(storage, `diagnostics/${user.uid}/test.txt`);
+                const settingsRef = storageRef(storage, 'settings/');
                 try {
-                    const testBlob = new Blob(['This is a test file for diagnostics.'], { type: 'text/plain' });
-                    await uploadBytes(testFileRef, testBlob);
-                    await deleteObject(testFileRef); // Cleanup
-                    return { status: 'success', details: 'Successfully wrote and deleted a file in Firebase Storage.' };
+                    await list(settingsRef, { maxResults: 1 });
+                    return { status: 'success', details: 'Successfully connected and verified read access to a public path in Firebase Storage.' };
                 } catch (error: any) {
                     if (error.code === 'storage/unauthorized') {
                         const storageRulesUrl = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/storage/${firebaseConfig.storageBucket}/rules`;
                         return { status: 'failure', details: (
                             <div className="space-y-2">
                                 <p><strong>Permission Denied.</strong> This is a Firebase Storage Security Rules issue.</p>
-                                <p>Your rules do not allow the currently authenticated user to write files to their own diagnostics folder.</p>
-                                <p><strong>Solution:</strong> Go to the Storage Rules editor in your Firebase console and add a rule allowing authenticated users to write to a path like `diagnostics/{'{userId}'}/{'{allPaths=**}'}`.</p>
+                                <p>The test could not list files from the public `/settings` folder. This is unexpected with the default rules.</p>
+                                <p><strong>Solution:</strong> Go to the Storage Rules editor and ensure you have a rule allowing public reads for the `settings` path.</p>
                                 <pre className="p-2 text-xs bg-muted rounded-md font-code">
-    {`match /diagnostics/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }`}
+        {`match /settings/{allPaths=**} {
+          allow read: if true;
+          allow write: if isSignedIn();
+        }`}
                                 </pre>
                                  <Button asChild variant="link" className="p-0 h-auto">
                                     <a href={storageRulesUrl} target="_blank" rel="noopener noreferrer">
@@ -192,7 +190,7 @@ export default function DiagnosticsPage() {
                             </span>
                         )};
                     }
-                    return { status: 'failure', details: `Storage write failed. Error: ${error.message} (Code: ${error.code})` };
+                    return { status: 'failure', details: `Storage connectivity test failed. Error: ${error.message} (Code: ${error.code})` };
                 }
             },
         },
