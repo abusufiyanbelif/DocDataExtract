@@ -19,14 +19,13 @@ function Watermark() {
 
     return (
         <div className="fixed inset-0 z-[-10] flex items-center justify-center pointer-events-none">
-            {brandingSettings?.logoUrl ? (
+            {brandingSettings && brandingSettings.logoUrl ? (
                 <img
                     src={brandingSettings.logoUrl}
                     alt="Watermark"
                     width={500}
                     height={500}
                     className="object-contain opacity-10"
-                    crossOrigin="anonymous"
                 />
             ) : (
                 <TempLogo />

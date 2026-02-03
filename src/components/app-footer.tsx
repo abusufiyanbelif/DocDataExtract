@@ -92,14 +92,13 @@ export function AppFooter() {
           {isLoading ? (
             <Skeleton className="h-32 w-32 rounded-lg" />
           ) : (
-            paymentSettings?.qrCodeUrl && (
+            paymentSettings && paymentSettings.qrCodeUrl && (
                 <img 
                     src={paymentSettings.qrCodeUrl}
                     alt="UPI QR Code"
                     width={paymentSettings.qrWidth || 128}
                     height={paymentSettings.qrHeight || 128}
                     className="object-contain border-4 border-primary rounded-lg p-1 bg-white"
-                    crossOrigin="anonymous"
                 />
             )
           )}

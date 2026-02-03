@@ -57,12 +57,11 @@ export function DocuExtractHeader() {
             {isLoading ? (
                 <Skeleton className="h-full w-full" />
             ) : (
-                brandingSettings?.logoUrl && (
+                brandingSettings && brandingSettings.logoUrl && (
                 <img
                     src={brandingSettings.logoUrl}
                     alt="Company Logo"
                     className="object-contain h-full w-full"
-                    crossOrigin="anonymous"
                 />
                 )
             )}
