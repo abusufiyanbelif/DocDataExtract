@@ -331,7 +331,7 @@ Your contribution, big or small, makes a huge difference.
         <div className="min-h-screen text-foreground">
             <DocuExtractHeader />
             <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
+                 <div className="mb-4">
                     <Button variant="outline" asChild>
                         <Link href="/campaign-public">
                             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -602,7 +602,6 @@ Your contribution, big or small, makes a huge difference.
                             </CardContent>
                         </Card>
                     </div>
-                    <AppFooter />
                 </div>
 
                 <ShareDialog 

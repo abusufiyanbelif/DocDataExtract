@@ -862,7 +862,6 @@ Your contribution, big or small, makes a huge difference.
                             </CardContent>
                         </Card>
                     </div>
-                    <AppFooter />
                 </div>
 
                 <ShareDialog 
