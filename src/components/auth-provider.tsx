@@ -9,7 +9,6 @@ import { useUser } from '@/firebase';
 import { AppFooter } from '@/components/app-footer';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseContentWrapper } from './FirebaseContentWrapper';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 function RedirectLoader({ message }: { message: string }) {
     return (
@@ -101,25 +100,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Routes that are public but DO need firebase
   if (isPublicCampaignPath || isHomePage || isSeedPage) {
     return (
-        <FirebaseClientProvider>
-            <PublicFirebaseContent>{children}</PublicFirebaseContent>
-        </FirebaseClientProvider>
+      <PublicFirebaseContent>{children}</PublicFirebaseContent>
     );
   }
   
   // Login page needs firebase for auth checks
   if (isLoginPage) {
     return (
-        <FirebaseClientProvider>
-            <LoginPageContent>{children}</LoginPageContent>
-        </FirebaseClientProvider>
+      <LoginPageContent>{children}</LoginPageContent>
     );
   }
 
   // All other pages are private by default and need Firebase
   return (
-    <FirebaseClientProvider>
-        <AuthenticatedContent>{children}</AuthenticatedContent>
-    </FirebaseClientProvider>
+    <AuthenticatedContent>{children}</AuthenticatedContent>
   );
 }
