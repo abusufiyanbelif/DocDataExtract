@@ -1,4 +1,5 @@
 
+
 export const crudPermissions = ['create', 'read', 'update', 'delete'] as const;
 export const readUpdatePermissions = ['read', 'update'] as const;
 export const simpleReadPermission = ['read'] as const;
@@ -29,6 +30,7 @@ export const modules = [
     permissions: ['create', 'update', 'delete'] as const,
     subModules: campaignSubModules,
   },
+  { id: 'donations', name: 'Donations', permissions: crudPermissions },
   {
     id: 'leads-members',
     name: 'Leads',

@@ -1,4 +1,5 @@
 
+
 'use client';
 import {
   Users,
@@ -8,6 +9,7 @@ import {
   Settings,
   ShieldQuestion,
   Lightbulb,
+  Wallet,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
@@ -31,6 +33,13 @@ const dashboardCards = [
     icon: <ClipboardList className="h-8 w-8 text-primary" />,
     href: '/campaign-members',
     permissionKey: 'campaigns', // Special check
+  },
+   {
+    title: 'Donations',
+    description: 'Manage all individual donations.',
+    icon: <Wallet className="h-8 w-8 text-primary" />,
+    href: '/donations',
+    permissionKey: 'donations.read',
   },
    {
     title: 'Leads',
@@ -83,7 +92,7 @@ export default function Home() {
 
   const visibleCards = userProfile ? dashboardCards.filter(card => {
     if (userProfile.role === 'Admin') return true;
-    const permissionKey = card.permissionKey === 'campaigns' ? 'campaigns' : card.permissionKey;
+    const permissionKey = card.permissionKey;
     if (permissionKey === 'campaigns') {
         const campaignPerms = userProfile.permissions?.campaigns;
         return !!(campaignPerms?.create || campaignPerms?.update || campaignPerms?.delete || campaignPerms?.summary?.read || campaignPerms?.ration?.read || campaignPerms?.beneficiaries?.read || campaignPerms?.donations?.read)

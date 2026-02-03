@@ -1,4 +1,5 @@
 
+
 import type { DocumentData } from 'firebase/firestore';
 import type { UserPermissions } from './modules';
 
@@ -140,7 +141,7 @@ export interface Donation extends DocumentData {
   screenshotIsPublic?: boolean;
   uploadedBy: string;
   uploadedById: string;
-  campaignId: string;
-  campaignName: string;
+  campaignId?: string;
+  campaignName?: string;
   createdAt?: any;
 }
