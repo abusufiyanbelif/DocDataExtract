@@ -26,31 +26,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isPublicRoute = isLoginPage || pathname.startsWith('/campaign-public') || pathname === '/' || pathname === '/seed';
 
   useEffect(() => {
-    // Don't do anything until Firebase auth state is resolved.
     if (isLoading) {
-      return;
+      return; // Wait for the auth state to be confirmed
     }
 
-    // If user is not logged in and is trying to access a private route, redirect to login.
-    if (!user && !isPublicRoute) {
+    // If we are not on a public route and there is no user, redirect to login.
+    if (!isPublicRoute && !user) {
       router.push('/login');
     }
 
-    // If user is logged in and is on the login page, redirect to the home page.
-    if (user && isLoginPage) {
+    // If we are on the login page and a user is already logged in, redirect to home.
+    if (isLoginPage && user) {
       router.push('/');
     }
-  }, [isLoading, user, isPublicRoute, isLoginPage, pathname, router]);
+  }, [isLoading, user, isPublicRoute, isLoginPage, router, pathname]);
 
-  // The loader should only show when we are on a private page and still figuring out who the user is,
-  // or when we know they're not logged in and are about to redirect them from a private page.
-  const shouldShowLoader = (isLoading && !isPublicRoute) || (!isLoading && !user && !isPublicRoute);
+  // Show the loader only if we are still verifying the auth state on a private page.
+  const showLoader = isLoading && !isPublicRoute;
   
-  if (shouldShowLoader) {
+  if (showLoader) {
     return <AuthLoader />;
   }
   
-  // Render the actual content if we're on a public page, or if we're on a private page and the user is loaded and valid.
+  // Render the session provider and children.
   return (
     <SessionProvider authUser={user}>
         {children}
