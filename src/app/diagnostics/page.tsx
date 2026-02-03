@@ -164,9 +164,9 @@ export default function DiagnosticsPage() {
                     return { status: 'success', details: 'Successfully connected and verified read access to a public file in Firebase Storage.' };
                 } catch (error: any) {
                     if (error.code === 'storage/object-not-found') {
-                        return { status: 'failure', details: (
+                        return { status: 'success', details: (
                             <span>
-                                <strong>File Not Found.</strong> The test tried to access <strong>settings/logo</strong> but it does not exist. Please ensure you have uploaded a logo in the Settings page. This might also indicate a permissions issue masking the file's existence.
+                                <strong>Connectivity OK, file not found.</strong> The test successfully reached the storage bucket, but the test file (<strong>settings/logo</strong>) does not exist. This is expected if a logo has not been uploaded.
                             </span>
                         )};
                     } else if (error.code === 'storage/unauthorized') {
