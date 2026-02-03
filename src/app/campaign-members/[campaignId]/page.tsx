@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { SecurityRuleContext } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
+import { useBranding } from '@/hooks/use-branding';
 import { doc, updateDoc, DocumentReference } from 'firebase/firestore';
 import type { Campaign, RationItem } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -56,6 +57,7 @@ export default function CampaignDetailsPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const { userProfile, isLoading: isProfileLoading } = useSession();
+  const { brandingSettings } = useBranding();
   
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId) return null;
@@ -326,6 +328,21 @@ export default function CampaignDetailsPage() {
     } else if (format === 'pdf') {
         const doc = new jsPDF();
         let startY = 15;
+
+        if (brandingSettings?.logoUrl) {
+            try {
+                const logoImg = new Image();
+                logoImg.crossOrigin = 'anonymous';
+                logoImg.src = brandingSettings.logoUrl;
+                await new Promise<void>((resolve, reject) => {
+                    logoImg.onload = () => resolve();
+                    logoImg.onerror = () => reject();
+                });
+                doc.addImage(logoImg, 'PNG', 15, 5, 30, 10);
+            } catch (e) {
+                console.warn("Could not add logo to PDF", e);
+            }
+        }
 
         doc.setFontSize(14);
         doc.text(`${campaign.name} - Ration Details`, 14, startY);

@@ -3,11 +3,14 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useBranding } from '@/hooks/use-branding';
+import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import type { SecurityRuleContext } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { doc, collection, updateDoc, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import {
   BarChart,
   Bar,
@@ -35,6 +38,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   ChartContainer,
   ChartTooltip,
@@ -72,6 +81,8 @@ export default function CampaignSummaryPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const { userProfile, isLoading: isProfileLoading } = useSession();
+    const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
+    const { paymentSettings, isLoading: isPaymentLoading } = usePaymentSettings();
 
     // State for edit mode and form fields
     const [editMode, setEditMode] = useState(false);
@@ -263,7 +274,7 @@ export default function CampaignSummaryPage() {
         };
     }, [beneficiaries, donations, campaign, donationChartFilter]);
     
-    const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading;
+    const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading || isBrandingLoading || isPaymentLoading;
     
     const handleShare = async () => {
         if (!campaign || !summaryData) {
@@ -311,19 +322,107 @@ Please donate and share this message. Every contribution helps!
         setIsShareDialogOpen(true);
     };
 
-    const handleDownloadImage = () => {
-        if (summaryRef.current) {
-            toast({ title: 'Generating image...', description: 'Please wait a moment.' });
-            html2canvas(summaryRef.current, { scale: 2 }).then((canvas) => {
+    const handleDownload = async (format: 'png' | 'pdf') => {
+        if (!summaryRef.current) {
+            toast({ title: 'Error', description: 'Cannot generate download, content is missing.', variant: 'destructive' });
+            return;
+        }
+        toast({ title: 'Preparing download...', description: 'Please wait a moment.' });
+
+        try {
+            const canvas = await html2canvas(summaryRef.current, { 
+                scale: 2, 
+                useCORS: true,
+                backgroundColor: '#FFFFFF', // Set a background to avoid transparency issues
+            });
+            
+            if (format === 'png') {
                 const link = document.createElement('a');
                 link.download = `campaign-summary-${campaignId}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-            });
-        } else {
-            toast({ title: 'Error', description: 'Could not capture summary content.', variant: 'destructive' });
+            } else { // pdf
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 190; // A4 width in mm is 210, with 10mm margins
+                const pageHeight = 295; // A4 height
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                
+                const doc = new jsPDF('p', 'mm', 'a4');
+                let position = 20; // top margin
+
+                // Add Header (Logo and Title)
+                if (brandingSettings?.logoUrl) {
+                    try {
+                        // Use a proxy or ensure CORS is enabled on the storage bucket
+                        const logoImg = new Image();
+                        logoImg.crossOrigin = 'anonymous';
+                        logoImg.src = brandingSettings.logoUrl;
+                        await new Promise<void>((resolve, reject) => {
+                            logoImg.onload = () => resolve();
+                            logoImg.onerror = (err) => reject(new Error('Logo image failed to load.'));
+                        });
+                        doc.addImage(logoImg, 'PNG', 15, 5, 30, 10);
+                    } catch (e) {
+                        console.warn("Could not add logo to PDF:", e);
+                    }
+                }
+                doc.setFontSize(16);
+                doc.text(campaign?.name || 'Campaign Summary', 50, 12);
+                doc.setLineWidth(0.5);
+                doc.line(15, 18, 195, 18);
+
+
+                // Add main content image, handling multiple pages if necessary
+                let heightLeft = imgHeight;
+                doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= (pageHeight - position - 15); // subtract top and bottom margin
+                
+                while (heightLeft > 0) {
+                  position = -heightLeft;
+                  doc.addPage();
+                  doc.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                  heightLeft -= pageHeight;
+                }
+                
+                // Add Footer on the last page
+                const finalPage = doc.getNumberOfPages();
+                doc.setPage(finalPage);
+                
+                let footerY = 260;
+                doc.setLineWidth(0.5);
+                doc.line(15, footerY - 5, 195, footerY-5);
+                
+                if (paymentSettings?.qrCodeUrl) {
+                    try {
+                        const qrImg = new Image();
+                        qrImg.crossOrigin = 'anonymous';
+                        qrImg.src = paymentSettings.qrCodeUrl;
+                        await new Promise<void>((resolve, reject) => {
+                            qrImg.onload = () => resolve();
+                            qrImg.onerror = () => reject();
+                        });
+                        doc.addImage(qrImg, 'PNG', 155, footerY, 30, 30);
+                    } catch(e) { console.warn("Could not add QR code to PDF.", e); }
+                }
+                doc.setFontSize(9);
+                if (paymentSettings?.upiId) {
+                    doc.text(`Donate via UPI: ${paymentSettings.upiId}`, 15, footerY + 5);
+                }
+                if (paymentSettings?.paymentMobileNumber) {
+                    doc.text(`Donate via Phone: ${paymentSettings.paymentMobileNumber}`, 15, footerY + 10);
+                }
+                if (paymentSettings?.contactEmail) {
+                    doc.text(`Contact Us: ${paymentSettings.contactEmail}`, 15, footerY + 20);
+                }
+
+                doc.save(`campaign-summary-${campaignId}.pdf`);
+            }
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast({ title: 'Download Failed', description: 'Could not generate the file. Please try again.', variant: 'destructive'});
         }
     };
+
 
     if (isLoading) {
         return (
@@ -395,10 +494,18 @@ Please donate and share this message. Every contribution helps!
                     <div className="flex gap-2">
                         {!editMode && (
                             <>
-                                <Button onClick={handleDownloadImage} variant="outline">
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download Image
-                                </Button>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline">
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem onClick={() => handleDownload('png')}>Download as Image (PNG)</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                                 <Button onClick={handleShare} variant="outline">
                                     <Share2 className="mr-2 h-4 w-4" />
                                     Share
@@ -458,7 +565,7 @@ Please donate and share this message. Every contribution helps!
                     </ScrollArea>
                 </div>
 
-                <div className="space-y-6" ref={summaryRef}>
+                <div className="space-y-6 bg-background" ref={summaryRef}>
                     <Card>
                         <CardHeader>
                             <CardTitle>Campaign Details</CardTitle>

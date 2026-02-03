@@ -1,10 +1,7 @@
 'use client';
 import { useMemo } from 'react';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import { doc, DocumentReference } from 'firebase/firestore';
-import type { PaymentSettings } from '@/lib/types';
 import Image from 'next/image';
-import { Copy, Smartphone, QrCode } from 'lucide-react';
+import { Copy, Smartphone, QrCode, Mail, Phone } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
@@ -14,9 +11,9 @@ export function AppFooter() {
   const { paymentSettings, isLoading } = usePaymentSettings();
   const { toast } = useToast();
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text).then(() => {
-      toast({ title: 'Copied to clipboard!', description: text, duration: 3000 });
+      toast({ title: `${type} Copied!`, description: text, duration: 3000 });
     });
   };
 
@@ -24,14 +21,8 @@ export function AppFooter() {
     return (
       <footer className="bg-card border-t mt-auto p-6">
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-center md:text-left">
-          <div className="flex flex-col items-center md:items-start gap-2">
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-5 w-40" />
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <Skeleton className="h-6 w-36" />
-            <Skeleton className="h-5 w-48" />
-          </div>
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-16 w-full" />
           <div className="flex justify-center md:justify-end">
             <Skeleton className="h-32 w-32" />
           </div>
@@ -40,41 +31,59 @@ export function AppFooter() {
     );
   }
 
-  if (!paymentSettings || (!paymentSettings.upiId && !paymentSettings.paymentMobileNumber && !paymentSettings.qrCodeUrl)) {
+  const hasPaymentInfo = paymentSettings?.upiId || paymentSettings?.paymentMobileNumber || paymentSettings?.qrCodeUrl;
+  const hasContactInfo = paymentSettings?.contactEmail || paymentSettings?.contactPhone;
+
+  if (!hasPaymentInfo && !hasContactInfo) {
     return null; // Don't render footer if no settings are found
   }
 
   return (
     <footer className="bg-card border-t mt-auto p-6 text-card-foreground">
-      <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-center md:text-left">
-        <div className="flex flex-col items-center md:items-start gap-2">
-          {paymentSettings.upiId && (
-            <div className="flex flex-col items-center md:items-start">
-              <h3 className="font-semibold flex items-center gap-2"><QrCode /> UPI ID</h3>
-              <div className="flex items-center gap-2">
-                <p className="font-mono">{paymentSettings.upiId}</p>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(paymentSettings.upiId!)}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
+      <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+        {/* Contact Info */}
+        <div className="flex flex-col items-center md:items-start gap-3">
+          <h3 className="font-semibold text-lg">Contact Us</h3>
+          {paymentSettings?.contactEmail && (
+            <div className="flex items-center gap-2 text-sm">
+              <Mail className="h-4 w-4" />
+              <span>{paymentSettings.contactEmail}</span>
+            </div>
+          )}
+          {paymentSettings?.contactPhone && (
+            <div className="flex items-center gap-2 text-sm">
+              <Phone className="h-4 w-4" />
+              <span>{paymentSettings.contactPhone}</span>
             </div>
           )}
         </div>
-        <div className="flex flex-col items-center gap-2">
-          {paymentSettings.paymentMobileNumber && (
-            <div className="flex flex-col items-center">
-              <h3 className="font-semibold flex items-center gap-2"><Smartphone /> Mobile Number</h3>
-              <div className="flex items-center gap-2">
-                <p className="font-mono">{paymentSettings.paymentMobileNumber}</p>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(paymentSettings.paymentMobileNumber!)}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
+
+        {/* Payment Info */}
+        <div className="flex flex-col items-center gap-3">
+          <h3 className="font-semibold text-lg">For Donations</h3>
+          {paymentSettings?.upiId && (
+            <div className="flex items-center gap-2">
+              <QrCode className="h-4 w-4" />
+              <p className="font-mono text-sm">{paymentSettings.upiId}</p>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(paymentSettings!.upiId!, 'UPI ID')}>
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          {paymentSettings?.paymentMobileNumber && (
+            <div className="flex items-center gap-2">
+              <Smartphone className="h-4 w-4" />
+              <p className="font-mono text-sm">{paymentSettings.paymentMobileNumber}</p>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(paymentSettings!.paymentMobileNumber!, 'Phone Number')}>
+                <Copy className="h-4 w-4" />
+              </Button>
             </div>
           )}
         </div>
+
+        {/* QR Code */}
         <div className="flex justify-center md:justify-end">
-          {paymentSettings.qrCodeUrl && (
+          {paymentSettings?.qrCodeUrl && (
             <div className="relative h-32 w-32 border-4 border-primary rounded-lg overflow-hidden p-1 bg-white">
               <Image src={paymentSettings.qrCodeUrl} alt="UPI QR Code" fill className="object-contain" />
             </div>

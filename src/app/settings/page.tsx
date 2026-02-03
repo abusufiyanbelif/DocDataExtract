@@ -39,6 +39,8 @@ export default function SettingsPage() {
     const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
     const [upiId, setUpiId] = useState('');
     const [paymentMobileNumber, setPaymentMobileNumber] = useState('');
+    const [contactEmail, setContactEmail] = useState('');
+    const [contactPhone, setContactPhone] = useState('');
     const [isPaymentSubmitting, setIsPaymentSubmitting] = useState(false);
 
     // Effect for branding logo preview
@@ -59,6 +61,8 @@ export default function SettingsPage() {
         if (paymentSettings) {
             setUpiId(paymentSettings.upiId || '');
             setPaymentMobileNumber(paymentSettings.paymentMobileNumber || '');
+            setContactEmail(paymentSettings.contactEmail || '');
+            setContactPhone(paymentSettings.contactPhone || '');
         }
         if (qrCodeFile) {
             const reader = new FileReader();
@@ -167,7 +171,9 @@ export default function SettingsPage() {
             const dataToSave = {
                 qrCodeUrl,
                 upiId,
-                paymentMobileNumber
+                paymentMobileNumber,
+                contactEmail,
+                contactPhone
             };
             await setDoc(settingsDocRef, dataToSave, { merge: true });
 
@@ -268,8 +274,8 @@ export default function SettingsPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Payment Settings</CardTitle>
-                            <CardDescription>Configure QR code, UPI, and mobile number for donations.</CardDescription>
+                            <CardTitle>Payment & Contact Settings</CardTitle>
+                            <CardDescription>Configure QR code, UPI, and contact details for the footer.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <div className="space-y-4">
@@ -298,10 +304,19 @@ export default function SettingsPage() {
                                     <Label htmlFor="paymentMobile">Payment Mobile Number</Label>
                                     <Input id="paymentMobile" value={paymentMobileNumber} onChange={(e) => setPaymentMobileNumber(e.target.value)} placeholder="e.g. 9876543210" disabled={!canUpdateSettings || isPaymentSubmitting} />
                                 </div>
+                                <Separator />
+                                 <div className="space-y-2">
+                                    <Label htmlFor="contactEmail">Contact Email</Label>
+                                    <Input id="contactEmail" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="e.g. contact@example.com" disabled={!canUpdateSettings || isPaymentSubmitting} />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="contactPhone">Contact Phone</Label>
+                                    <Input id="contactPhone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="e.g. 9876543210" disabled={!canUpdateSettings || isPaymentSubmitting} />
+                                </div>
                             </div>
                             <Button onClick={handlePaymentSave} disabled={isPaymentSubmitting || !canUpdateSettings} className="w-full">
                                 {isPaymentSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Save Payment Settings
+                                Save Settings
                             </Button>
                         </CardContent>
                     </Card>
