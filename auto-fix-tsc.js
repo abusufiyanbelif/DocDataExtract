@@ -13,10 +13,10 @@ import fs from "fs";
 import fetch from "node-fetch";
 
 // ================= CONFIG =================
-const MAX_RUNS = 20;
-const ERROR_FILE = "tsc-errors.txt";
+const MAX_RUNS = 50;
+const ERROR_FILE = "tsc-errors_03-Feb.txt";
 const STOP_FILE = ".STOP";
-const MAX_TIME_MINUTES = 10; // ⏰ change as needed
+const MAX_TIME_MINUTES = 120; // ⏰ change as needed
 // ==========================================
 
 const START_TIME = Date.now();
