@@ -1,0 +1,6 @@
+error TS6053: File '/home/user/studio/.next/types/app/layout.ts' not found.
+  The file is in the program because:
+    Matched by include pattern '.next/types/**/*.ts' in '/home/user/studio/tsconfig.json'
+error TS6053: File '/home/user/studio/.next/types/app/page.ts' not found.
+  The file is in the program because:
+    Matched by include pattern '.next/types/**/*.ts' in '/home/user/studio/tsconfig.json'

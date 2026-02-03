@@ -2,11 +2,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import * as React from 'react';
-import { AuthProvider } from '@/components/auth-provider';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
-import { AppFooter } from '@/components/app-footer';
-import { Toaster } from '@/components/ui/toaster';
-import { FirebaseContentWrapper } from '@/components/FirebaseContentWrapper';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: {
@@ -24,17 +20,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <FirebaseClientProvider>
-          <AuthProvider>
-            <FirebaseContentWrapper>
-              <div className="app-root">
-                {children}
-                <AppFooter />
-              </div>
-              <Toaster />
-            </FirebaseContentWrapper>
-          </AuthProvider>
-        </FirebaseClientProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
