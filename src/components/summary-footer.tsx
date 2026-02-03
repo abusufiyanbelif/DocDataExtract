@@ -1,3 +1,4 @@
+
 'use client';
 import { useMemo } from 'react';
 import Image from 'next/image';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
 
-export function DownloadFooter() {
+export function SummaryFooter() {
   const { paymentSettings, isLoading } = usePaymentSettings();
   const { toast } = useToast();
 
@@ -85,7 +86,8 @@ export function DownloadFooter() {
         <div className="flex justify-center md:justify-end">
           {paymentSettings?.qrCodeUrl && (
             <div className="relative h-32 w-32 border-4 border-primary rounded-lg overflow-hidden p-1 bg-white">
-              <Image src={paymentSettings.qrCodeUrl} alt="UPI QR Code" fill className="object-contain" />
+              {/* Using a standard img tag for better compatibility with html2canvas */}
+              <img src={paymentSettings.qrCodeUrl} alt="UPI QR Code" className="object-contain w-full h-full" crossOrigin="anonymous" />
             </div>
           )}
         </div>

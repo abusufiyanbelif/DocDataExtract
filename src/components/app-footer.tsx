@@ -1,6 +1,8 @@
+
 'use client';
 import { useMemo } from 'react';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Copy, Smartphone, QrCode, Mail, Phone } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -10,12 +12,19 @@ import { usePaymentSettings } from '@/hooks/use-payment-settings';
 export function AppFooter() {
   const { paymentSettings, isLoading } = usePaymentSettings();
   const { toast } = useToast();
+  const pathname = usePathname();
+
+  const isSummaryPage = pathname.includes('/summary');
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text).then(() => {
       toast({ title: `${type} Copied!`, description: text, duration: 3000 });
     });
   };
+
+  if (isSummaryPage) {
+    return null;
+  }
 
   if (isLoading) {
     return (
@@ -85,7 +94,7 @@ export function AppFooter() {
         <div className="flex justify-center md:justify-end">
           {paymentSettings?.qrCodeUrl && (
             <div className="relative h-32 w-32 border-4 border-primary rounded-lg overflow-hidden p-1 bg-white">
-              <Image src={paymentSettings.qrCodeUrl} alt="UPI QR Code" fill className="object-contain" />
+              <img src={paymentSettings.qrCodeUrl} alt="UPI QR Code" className="object-contain w-full h-full" crossOrigin="anonymous" />
             </div>
           )}
         </div>

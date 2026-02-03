@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -58,7 +59,7 @@ import { get } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ShareDialog } from '@/components/share-dialog';
-import { DownloadFooter } from '@/components/download-footer';
+import { SummaryFooter } from '@/components/summary-footer';
 
 
 const donationTypeChartConfig = {
@@ -287,29 +288,28 @@ export default function CampaignSummaryPage() {
             return;
         }
 
-        const remainingToCollectText = summaryData.remainingToCollect > 0 
+        const remainingToCollectText = summaryData.remainingToCollect > 0
             ? `*Remaining for Kits: Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*`
             : `*Kit funding goal achieved! Thank you!*`;
-
-        const categoryBreakdownText = summaryData.beneficiaryCategoryBreakdown.length > 0 
-            ? `\n*Beneficiary Breakdown:*\n${summaryData.beneficiaryCategoryBreakdown.map(item => `${item.name}: ${item.count} ${item.count === 1 ? 'beneficiary' : 'beneficiaries'} (Required Rupee ${item.totalAmount.toLocaleString('en-IN')})`).join('\n')}`
-            : '';
-
+        
         const shareText = `
-*Help Us Support the Community!*
+*Assalamualaikum Warahmatullahi Wabarakatuh*
 
-*Campaign: ${campaign.name}*
-${campaign.description || ''}
+🙏 *We Need Your Support!* 🙏
 
-*Financial Summary:*
-Target for Kits: Rupee ${(summaryData.targetAmount || 0).toLocaleString('en-IN')}
-Funds for Kits (Verified): Rupee ${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
-Zakat Collected (Verified): Rupee ${summaryData.zakatCollected.toLocaleString('en-IN')}
-${remainingToCollectText}
+Join us for the *${campaign.name}* campaign as we work to provide essential aid to our community.
 
-We are providing aid to *${summaryData.totalBeneficiaries} beneficiaries* in total.${categoryBreakdownText}
+*Our Goal:*
+${campaign.description || 'To support those in need.'} We aim to support *${summaryData.totalBeneficiaries} beneficiaries*.
 
-Please donate and share this message. Every contribution helps!
+*Financial Update:*
+🎯 Target for Kits: Rupee ${summaryData.targetAmount.toLocaleString('en-IN')}
+✅ Collected (Verified): Rupee ${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
+⏳ Remaining: *Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*
+
+Your contribution, big or small, makes a huge difference.
+
+*Please donate and share this message.*
         `.trim().replace(/^\s+/gm, '');
 
 
@@ -815,7 +815,7 @@ Please donate and share this message. Every contribution helps!
                             </CardContent>
                         </Card>
                     </div>
-                    <DownloadFooter />
+                    <SummaryFooter />
                 </div>
 
                 <ShareDialog 
