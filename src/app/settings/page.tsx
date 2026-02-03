@@ -6,8 +6,8 @@ import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { useStorage, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { doc, setDoc } from 'firebase/firestore';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, setDoc, writeBatch } from 'firebase/firestore';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -165,57 +165,50 @@ export default function SettingsPage() {
 
         try {
             const { default: Resizer } = await import('react-image-file-resizer');
+            const batch = writeBatch(firestore);
 
             // Branding Save Logic
             let logoUrl = brandingSettings?.logoUrl || '';
-            if (logoDeleted && logoUrl && storage) {
-                deleteObject(storageRef(storage, logoUrl)).catch(e => {
-                    if (e.code !== 'storage/object-not-found') {
-                        console.warn("Failed to delete old logo", e);
-                    }
-                });
-                logoUrl = '';
-            } else if (logoFile && storage) {
+            if (logoFile && storage) {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
-                    Resizer.imageFileResizer(logoFile, 1024, 1024, 'JPEG', 80, 0, blob => resolve(blob as Blob), 'blob');
+                    Resizer.imageFileResizer(logoFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
                 const timestamp = Date.now();
                 const filePath = `settings/logo_${timestamp}.jpeg`;
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 logoUrl = await getDownloadURL(uploadResult.ref);
+            } else if (logoDeleted) {
+                 logoUrl = '';
             }
             const brandingData = { 
                 logoUrl,
                 logoWidth: Number(logoWidth) || null,
                 logoHeight: Number(logoHeight) || null
             };
-            await setDoc(doc(firestore, 'settings', 'branding'), brandingData, { merge: true });
+            batch.set(doc(firestore, 'settings', 'branding'), brandingData, { merge: true });
 
             // Payment Save Logic
             let qrCodeUrl = paymentSettings?.qrCodeUrl || '';
-            if (qrCodeDeleted && qrCodeUrl && storage) {
-                deleteObject(storageRef(storage, qrCodeUrl)).catch(e => {
-                    if (e.code !== 'storage/object-not-found') {
-                        console.warn("Failed to delete old QR code", e);
-                    }
-                });
-                qrCodeUrl = '';
-            } else if (qrCodeFile && storage) {
+            if (qrCodeFile && storage) {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
-                    Resizer.imageFileResizer(qrCodeFile, 1024, 1024, 'JPEG', 80, 0, blob => resolve(blob as Blob), 'blob');
+                    Resizer.imageFileResizer(qrCodeFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
                 const timestamp = Date.now();
                 const filePath = `settings/payment_qr_${timestamp}.jpeg`;
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 qrCodeUrl = await getDownloadURL(uploadResult.ref);
+            } else if (qrCodeDeleted) {
+                qrCodeUrl = '';
             }
             const paymentData = {
                 qrCodeUrl, qrWidth: Number(qrWidth) || null, qrHeight: Number(qrHeight) || null,
                 upiId, paymentMobileNumber, contactEmail, contactPhone, regNo, pan, address
             };
-            await setDoc(doc(firestore, 'settings', 'payment'), paymentData, { merge: true });
+            batch.set(doc(firestore, 'settings', 'payment'), paymentData, { merge: true });
+
+            await batch.commit();
 
             toast({ title: 'Success!', description: 'Settings have been updated. The page will now reload.', variant: 'success', duration: 5000 });
             
@@ -453,3 +446,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    
