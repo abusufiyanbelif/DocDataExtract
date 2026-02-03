@@ -16,6 +16,9 @@ export interface PaymentSettings extends DocumentData {
   paymentMobileNumber?: string;
   contactEmail?: string;
   contactPhone?: string;
+  regNo?: string;
+  pan?: string;
+  address?: string;
 }
 
 export interface CampaignDocument {

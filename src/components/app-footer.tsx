@@ -8,13 +8,16 @@ import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
+import { useBranding } from '@/hooks/use-branding';
 
 export function AppFooter() {
-  const { paymentSettings, isLoading } = usePaymentSettings();
+  const { paymentSettings, isLoading: isPaymentLoading } = usePaymentSettings();
+  const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
   const { toast } = useToast();
   const pathname = usePathname();
 
   const isSummaryPage = pathname.includes('/summary');
+  const isLoading = isPaymentLoading || isBrandingLoading;
 
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -42,17 +45,24 @@ export function AppFooter() {
 
   const hasPaymentInfo = paymentSettings?.upiId || paymentSettings?.paymentMobileNumber || paymentSettings?.qrCodeUrl;
   const hasContactInfo = paymentSettings?.contactEmail || paymentSettings?.contactPhone;
+  const hasOrgInfo = paymentSettings?.regNo || paymentSettings?.pan || paymentSettings?.address;
 
-  if (!hasPaymentInfo && !hasContactInfo) {
+  if (!hasPaymentInfo && !hasContactInfo && !hasOrgInfo) {
     return null; // Don't render footer if no settings are found
   }
 
   return (
     <footer className="bg-card border-t mt-auto p-6 text-card-foreground">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-        {/* Contact Info */}
+        {/* Org & Contact Info */}
         <div className="flex flex-col items-center md:items-start gap-3">
-          <h3 className="font-semibold text-lg">Contact Us</h3>
+          <h3 className="font-semibold text-lg">{brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur'}</h3>
+          {paymentSettings?.address && <p className="text-sm text-muted-foreground">{paymentSettings.address}</p>}
+           <div className="text-sm text-muted-foreground">
+                {paymentSettings?.regNo && <p>Reg. No.: {paymentSettings.regNo}</p>}
+                {paymentSettings?.pan && <p>PAN: {paymentSettings.pan}</p>}
+            </div>
+             <Separator className="my-2"/>
           {paymentSettings?.contactEmail && (
             <div className="flex items-center gap-2 text-sm">
               <Mail className="h-4 w-4" />

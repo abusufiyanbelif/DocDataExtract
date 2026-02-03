@@ -250,6 +250,7 @@ Your contribution, big or small, makes a huge difference.
             const canvas = await html2canvas(summaryRef.current, { 
                 scale: 2, 
                 useCORS: true,
+                allowTaint: false,
                 backgroundColor: 'hsl(var(--background))',
             });
             
@@ -297,7 +298,7 @@ Your contribution, big or small, makes a huge difference.
         } catch (error: any) {
             console.error("Download failed:", error);
             const errorMessage = error.message ? `: ${error.message}` : '. Please check console for details.';
-            toast({ title: 'Download Failed', description: `Could not generate the file${errorMessage}`, variant: 'destructive', duration: 9000 });
+            toast({ title: 'Download Failed', description: `Could not generate the file${errorMessage}. This can happen if images are blocked by browser security.`, variant: 'destructive', duration: 9000 });
         }
     };
 

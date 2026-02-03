@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function SettingsPage() {
     const { userProfile, isLoading: isSessionLoading } = useSession();
@@ -46,6 +47,9 @@ export default function SettingsPage() {
     const [paymentMobileNumber, setPaymentMobileNumber] = useState('');
     const [contactEmail, setContactEmail] = useState('');
     const [contactPhone, setContactPhone] = useState('');
+    const [regNo, setRegNo] = useState('');
+    const [pan, setPan] = useState('');
+    const [address, setAddress] = useState('');
     const [isPaymentSubmitting, setIsPaymentSubmitting] = useState(false);
 
     // Effect for branding logo preview
@@ -75,6 +79,9 @@ export default function SettingsPage() {
             setContactPhone(paymentSettings.contactPhone || '');
             setQrWidth(paymentSettings.qrWidth || '');
             setQrHeight(paymentSettings.qrHeight || '');
+            setRegNo(paymentSettings.regNo || '');
+            setPan(paymentSettings.pan || '');
+            setAddress(paymentSettings.address || '');
         }
         if (qrCodeFile) {
             const reader = new FileReader();
@@ -195,7 +202,10 @@ export default function SettingsPage() {
                 upiId,
                 paymentMobileNumber,
                 contactEmail,
-                contactPhone
+                contactPhone,
+                regNo,
+                pan,
+                address
             };
             await setDoc(settingsDocRef, dataToSave, { merge: true });
 
@@ -306,10 +316,25 @@ export default function SettingsPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Payment & Contact Settings</CardTitle>
-                            <CardDescription>Configure QR code, UPI, and contact details for the footer.</CardDescription>
+                            <CardTitle>Organization, Payment & Contact Settings</CardTitle>
+                            <CardDescription>Configure QR code, UPI, and contact details for receipts and the footer.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
+                             <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="regNo">Registration No.</Label>
+                                    <Input id="regNo" value={regNo} onChange={(e) => setRegNo(e.target.value)} placeholder="e.g. Solapur/0000373/2025" disabled={!canUpdateSettings || isPaymentSubmitting} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="pan">PAN</Label>
+                                    <Input id="pan" value={pan} onChange={(e) => setPan(e.target.value)} placeholder="e.g. AAPAB1213J" disabled={!canUpdateSettings || isPaymentSubmitting} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="address">Address</Label>
+                                    <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full address of the organization" disabled={!canUpdateSettings || isPaymentSubmitting} />
+                                </div>
+                            </div>
+                            <Separator />
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label>UPI QR Code</Label>
@@ -358,7 +383,7 @@ export default function SettingsPage() {
                             </div>
                             <Button onClick={handlePaymentSave} disabled={isPaymentSubmitting || !canUpdateSettings} className="w-full">
                                 {isPaymentSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Save Payment Settings
+                                Save Settings
                             </Button>
                         </CardContent>
                     </Card>

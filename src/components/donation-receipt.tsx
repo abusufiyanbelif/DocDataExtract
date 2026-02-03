@@ -39,13 +39,14 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
                         {brandingSettings?.logoUrl && (
-                             <img src={brandingSettings.logoUrl} crossOrigin="anonymous" alt="Logo" className="w-24 h-auto mx-auto" />
+                             <img src={brandingSettings.logoUrl} crossOrigin="anonymous" alt="Logo" className="mx-auto" style={{ width: `${brandingSettings.logoWidth || 100}px`, height: 'auto' }}/>
                         )}
                         <CardTitle className="text-2xl">Donation Receipt</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-3">
                             <ReceiptRow label="Donation ID" value={donation.id} isMono />
+                            <ReceiptRow label="Campaign ID" value={campaign.id} isMono />
                             <ReceiptRow label="Campaign" value={campaign.name} />
                             <ReceiptRow label="Date" value={donation.donationDate} />
                         </div>
@@ -64,30 +65,20 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                             <ReceiptRow label="Payment Type" value={<Badge variant="outline">{donation.donationType}</Badge>} />
                             {donation.transactionId && <ReceiptRow label="Transaction ID" value={donation.transactionId} isMono />}
                         </div>
-                        <Separator />
-                         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
-                            <div className="space-y-3">
-                                <h3 className="font-semibold">Thank You!</h3>
-                                <p className="text-sm text-muted-foreground">Your generous donation is greatly appreciated.</p>
-                                {paymentSettings?.contactEmail && <p className="text-xs text-muted-foreground">Questions? Contact us at {paymentSettings.contactEmail}</p>}
-                            </div>
-                            {paymentSettings?.qrCodeUrl && (
-                                <div className="text-center">
-                                    <img 
-                                        src={paymentSettings.qrCodeUrl} 
-                                        crossOrigin="anonymous" 
-                                        alt="QR Code"
-                                        style={{
-                                            width: `${paymentSettings.qrWidth || 112}px`,
-                                            height: `${paymentSettings.qrHeight || 112}px`
-                                        }}
-                                        className="mx-auto border p-1 rounded-md bg-white" 
-                                    />
-                                    {paymentSettings?.upiId && <p className="text-xs font-mono mt-1">{paymentSettings.upiId}</p>}
-                                </div>
-                            )}
-                        </div>
                     </CardContent>
+                    <CardFooter className="flex-col items-start text-xs text-muted-foreground p-6 pt-4 space-y-2">
+                        <Separator className="mb-4" />
+                        <div className="w-full flex justify-between gap-4">
+                            <div className="space-y-1 text-left">
+                                {paymentSettings?.regNo && <p>Reg. No.: {paymentSettings.regNo}</p>}
+                                {paymentSettings?.pan && <p>PAN: {paymentSettings.pan}</p>}
+                            </div>
+                             <div className="space-y-1 text-right">
+                                {paymentSettings?.address && <p>{paymentSettings.address}</p>}
+                            </div>
+                        </div>
+                        <p className="pt-2 text-center w-full">This is a computer-generated receipt and does not require a signature.</p>
+                    </CardFooter>
                 </div>
             </Card>
         </div>
