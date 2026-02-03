@@ -14,7 +14,6 @@
     "db:erase": "tsx scripts/erase.ts",
     "check": "tsx scripts/check.ts",
     "check:db": "tsx scripts/check-db.ts",
-    "check:rules": "tsx scripts/check-rules.ts",
     "check:storage": "tsx scripts/check-storage.ts",
     "fix:iam": "tsx scripts/fix-iam.ts"
   },
@@ -50,7 +49,7 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "embla-carousel-react": "^8.1.6",
-    "firebase": "^12.8.0",
+    "firebase": "11.11.1",
     "firebase-admin": "^13.6.0",
     "genkit": "^1.0.0",
     "handlebars": "^4.7.8",

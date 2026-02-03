@@ -11,7 +11,43 @@ const log = {
   warn: (msg: string) => console.warn(`\x1b[33m⚠️ ${msg}\x1b[0m`),
   step: (title: string) => console.log(`\n\x1b[36m--- ${title} ---\x1b[0m`),
   dim: (msg: string) => console.log(`\x1b[90m${msg}\x1b[0m`),
+  detail: (key: string, value: string) => console.log(`   - ${key}: \x1b[1m${value}\x1b[0m`),
 };
+
+// Recursive function to provide a detailed view of the storage bucket structure.
+const listFilesAndFolders = async (bucket: any, prefix = '', indent = '') => {
+    try {
+        const [files, , apiResponse] = await bucket.getFiles({ prefix, delimiter: '/' });
+        const subfolders = apiResponse.prefixes || [];
+
+        // Display subfolders
+        for (const folderPrefix of subfolders) {
+            const folderName = folderPrefix.substring(prefix.length).replace(/\/$/, '');
+            if (folderName) {
+                log.dim(`${indent}📁 ${folderName}/`);
+                // Recurse into subfolder
+                await listFilesAndFolders(bucket, folderPrefix, indent + '  ');
+            }
+        }
+
+        // Display files in the current folder
+        for (const file of files) {
+            // Don't show the "folder" placeholder object itself
+            if (file.name.endsWith('/') && file.name === prefix) continue;
+
+            const fileName = file.name.substring(prefix.length);
+            if (fileName) {
+                 const sizeInKb = file.metadata.size ? (Number(file.metadata.size) / 1024).toFixed(2) : '0.00';
+                 const lastModified = new Date(file.metadata.updated).toLocaleString();
+                 log.dim(`${indent}📄 ${fileName} (${sizeInKb} KB, type: ${file.metadata.contentType}, updated: ${lastModified})`);
+            }
+        }
+
+    } catch (e: any) {
+        log.error(`${indent}Could not list contents for prefix "${prefix}": ${e.message}`);
+    }
+};
+
 
 async function checkStorage() {
     log.step('Checking Firebase Storage Connectivity');
@@ -36,6 +72,10 @@ async function checkStorage() {
         
         if (exists) {
             log.success(`Successfully connected to Firebase Storage. Bucket "${bucket.name}" exists.`);
+
+            log.step('Inspecting Bucket Contents (Full Structure)');
+            await listFilesAndFolders(bucket);
+
         } else {
             throw new Error(`The bucket "${bucket.name}" does not exist in your Firebase project.`);
         }

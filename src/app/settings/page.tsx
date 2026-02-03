@@ -165,7 +165,7 @@ export default function SettingsPage() {
         toast({ title: 'Saving settings...', description: 'Please wait.' });
 
         try {
-            const { default: Resizer } = await import('react-image-file-resizer');
+            const Resizer = (await import('react-image-file-resizer')).default;
 
             // Branding Save Logic
             let logoUrl = brandingSettings?.logoUrl || '';
