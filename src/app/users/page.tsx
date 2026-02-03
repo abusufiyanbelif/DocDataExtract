@@ -1,18 +1,17 @@
-
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldAlert, UserCheck, UserX, Database } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, ShieldAlert, UserCheck, UserX, Database, ArrowUp, ArrowDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,9 +32,12 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { collection } from 'firebase/firestore';
 import { deleteUserAction } from './actions';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
+type SortKey = keyof UserProfile | 'srNo';
 
 export default function UsersPage() {
   const firestore = useFirestore();
@@ -43,6 +45,14 @@ export default function UsersPage() {
   const router = useRouter();
 
   const { userProfile, isLoading: isProfileLoading } = useSession();
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [roleFilter, setRoleFilter] = useState('All');
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const usersCollectionRef = useMemo(() => {
     if (!firestore || !userProfile) return null;
@@ -142,7 +152,76 @@ export default function UsersPage() {
     setUserToDelete(null);
   };
   
+  const handleSort = (key: SortKey) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+        direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+    setCurrentPage(1);
+  };
+
+  const filteredAndSortedUsers = useMemo(() => {
+    if (!users) return [];
+    let sortableItems = [...users];
+
+    // Filtering
+    if (statusFilter !== 'All') {
+        sortableItems = sortableItems.filter(u => u.status === statusFilter);
+    }
+    if (roleFilter !== 'All') {
+        sortableItems = sortableItems.filter(u => u.role === roleFilter);
+    }
+    if (searchTerm) {
+        const lowercasedTerm = searchTerm.toLowerCase();
+        sortableItems = sortableItems.filter(u => 
+            (u.name || '').toLowerCase().includes(lowercasedTerm) ||
+            (u.email || '').toLowerCase().includes(lowercasedTerm) ||
+            (u.phone || '').toLowerCase().includes(lowercasedTerm) ||
+            (u.loginId || '').toLowerCase().includes(lowercasedTerm) ||
+            (u.userKey || '').toLowerCase().includes(lowercasedTerm)
+        );
+    }
+
+    // Sorting
+    if (sortConfig !== null) {
+        sortableItems.sort((a, b) => {
+            if (sortConfig.key === 'srNo') return 0;
+            const aValue = a[sortConfig.key as keyof UserProfile] ?? '';
+            const bValue = b[sortConfig.key as keyof UserProfile] ?? '';
+            
+            if (aValue < bValue) {
+                return sortConfig.direction === 'ascending' ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortConfig.direction === 'ascending' ? 1 : -1;
+            }
+            return 0;
+        });
+    }
+
+    return sortableItems;
+  }, [users, searchTerm, statusFilter, roleFilter, sortConfig]);
+
+  const totalPages = Math.ceil(filteredAndSortedUsers.length / itemsPerPage);
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedUsers, currentPage, itemsPerPage]);
+
   const isLoading = areUsersLoading || isProfileLoading;
+  
+  const SortableHeader = ({ sortKey, children, className }: { sortKey: SortKey, children: React.ReactNode, className?: string }) => {
+    const isSorted = sortConfig?.key === sortKey;
+    return (
+        <TableHead className={cn("cursor-pointer hover:bg-muted/50", className)} onClick={() => handleSort(sortKey)}>
+            <div className="flex items-center gap-2">
+                {children}
+                {isSorted && (sortConfig?.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />)}
+            </div>
+        </TableHead>
+    );
+  };
   
   if (isLoading) {
     return (
@@ -199,23 +278,55 @@ export default function UsersPage() {
         </div>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
-            <CardTitle>User Management</CardTitle>
-            <div className="flex items-center gap-2">
-                {userProfile?.role === 'Admin' && (
-                     <Button variant="outline" asChild>
-                        <Link href="/seed">
-                            <Database className="mr-2 h-4 w-4" />
-                            Database Management
-                        </Link>
-                    </Button>
-                )}
-                {canCreate && (
-                    <Button onClick={handleAdd} disabled={areUsersLoading}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add User
-                    </Button>
-                )}
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
+              <div className="flex-1 space-y-2">
+                  <CardTitle>User Management ({filteredAndSortedUsers.length})</CardTitle>
+                  <div className="flex flex-wrap items-center gap-2">
+                      <Input 
+                          placeholder="Search name, email, phone..."
+                          value={searchTerm}
+                          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                          className="max-w-sm"
+                      />
+                      <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1); }}>
+                          <SelectTrigger className="w-auto md:w-[150px]">
+                              <SelectValue placeholder="Filter by status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="All">All Statuses</SelectItem>
+                              <SelectItem value="Active">Active</SelectItem>
+                              <SelectItem value="Inactive">Inactive</SelectItem>
+                          </SelectContent>
+                      </Select>
+                      <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}>
+                          <SelectTrigger className="w-auto md:w-[150px]">
+                              <SelectValue placeholder="Filter by role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="All">All Roles</SelectItem>
+                              <SelectItem value="Admin">Admin</SelectItem>
+                              <SelectItem value="User">User</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+              </div>
+              <div className="flex items-center gap-2">
+                  {userProfile?.role === 'Admin' && (
+                       <Button variant="outline" asChild>
+                          <Link href="/seed">
+                              <Database className="mr-2 h-4 w-4" />
+                              Database
+                          </Link>
+                      </Button>
+                  )}
+                  {canCreate && (
+                      <Button onClick={handleAdd} disabled={areUsersLoading}>
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add User
+                      </Button>
+                  )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -223,58 +334,19 @@ export default function UsersPage() {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/50">
-                            {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
-                            <TableHead className="w-[50px]">#</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Phone</TableHead>
-                            <TableHead>Login ID</TableHead>
-                            <TableHead>User Key</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Status</TableHead>
+                            <SortableHeader sortKey="name">Name</SortableHeader>
+                            <SortableHeader sortKey="email">Email</SortableHeader>
+                            <SortableHeader sortKey="phone">Phone</SortableHeader>
+                            <SortableHeader sortKey="loginId">Login ID</SortableHeader>
+                            <SortableHeader sortKey="userKey">User Key</SortableHeader>
+                            <SortableHeader sortKey="role">Role</SortableHeader>
+                            <SortableHeader sortKey="status">Status</SortableHeader>
+                             {(canUpdate || canDelete) && <TableHead className="w-[100px] text-right">Actions</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {users && users.map((user, index) => (
-                            <TableRow key={user.id}>
-                                {(canUpdate || canDelete) && (
-                                <TableCell className="text-center sticky left-0 bg-card z-10">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            {canUpdate && (
-                                                <DropdownMenuItem onClick={() => handleEdit(user)} className="cursor-pointer">
-                                                    <Edit className="mr-2 h-4 w-4" />
-                                                    View / Edit
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canUpdate && canDelete && <DropdownMenuSeparator />}
-                                            {canUpdate && user.status === 'Active' ? (
-                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="cursor-pointer">
-                                                    <UserX className="mr-2 h-4 w-4" />
-                                                    Deactivate
-                                                </DropdownMenuItem>
-                                            ) : canUpdate ? (
-                                                <DropdownMenuItem onClick={() => handleToggleStatus(user)} className="cursor-pointer">
-                                                    <UserCheck className="mr-2 h-4 w-4" />
-                                                    Activate
-                                                </DropdownMenuItem>
-                                            ) : null}
-                                            {canDelete && (
-                                                <DropdownMenuItem onClick={() => handleDeleteClick(user.id)} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                                )}
-                                <TableCell>{index + 1}</TableCell>
+                        {paginatedUsers && paginatedUsers.map((user) => (
+                            <TableRow key={user.id} onClick={() => handleEdit(user)} className="cursor-pointer">
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>{user.phone}</TableCell>
@@ -286,12 +358,49 @@ export default function UsersPage() {
                                 <TableCell>
                                 <Badge variant={user.status === 'Active' ? 'default' : 'outline'}>{user.status}</Badge>
                                 </TableCell>
+                                {(canUpdate || canDelete) && (
+                                <TableCell className="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                            <Button variant="ghost" size="icon">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            {canUpdate && (
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(user)}}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    View / Edit
+                                                </DropdownMenuItem>
+                                            )}
+                                            {canUpdate && canDelete && <DropdownMenuSeparator />}
+                                            {canUpdate && user.status === 'Active' ? (
+                                                <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleToggleStatus(user)}} disabled={user.userKey === 'admin' || user.id === userProfile?.id}>
+                                                    <UserX className="mr-2 h-4 w-4" />
+                                                    Deactivate
+                                                </DropdownMenuItem>
+                                            ) : canUpdate ? (
+                                                <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleToggleStatus(user)}}>
+                                                    <UserCheck className="mr-2 h-4 w-4" />
+                                                    Activate
+                                                </DropdownMenuItem>
+                                            ) : null}
+                                            {canDelete && (
+                                                <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleDeleteClick(user.id)}} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                                )}
                             </TableRow>
                         ))}
-                        {users && users.length === 0 && (
+                        {paginatedUsers && paginatedUsers.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={canUpdate || canDelete ? 9 : 8} className="text-center h-24 text-muted-foreground">
-                                No users found. The database may be empty.
+                            <TableCell colSpan={canUpdate || canDelete ? 8 : 7} className="text-center h-24 text-muted-foreground">
+                                No users found.
                             </TableCell>
                         </TableRow>
                         )}
@@ -299,6 +408,16 @@ export default function UsersPage() {
                 </Table>
             </div>
           </CardContent>
+          <CardFooter className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+                Showing {paginatedUsers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredAndSortedUsers.length)} of {filteredAndSortedUsers.length} users
+            </p>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
+                <span className="text-sm">{currentPage} / {totalPages}</span>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+            </div>
+          </CardFooter>
         </Card>
       </main>
       
