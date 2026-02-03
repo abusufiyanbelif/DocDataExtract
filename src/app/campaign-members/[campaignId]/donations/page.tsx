@@ -135,7 +135,6 @@ export default function DonationsPage() {
     const screenshotUrl = donationData.screenshotUrl;
     
     setIsDeleteDialogOpen(false);
-    toast({ title: 'Deleting...', description: 'Please wait while the donation is being deleted.'});
 
     const deleteDocument = () => {
         deleteDoc(docRef)
@@ -177,7 +176,6 @@ export default function DonationsPage() {
 
     setIsFormOpen(false);
     setEditingDonation(null);
-    toast({ title: "Saving...", description: `Please wait while the donation is being ${editingDonation ? 'updated' : 'added'}.`});
 
     const docRef = editingDonation
         ? doc(firestore, 'donations', editingDonation.id)
@@ -490,13 +488,18 @@ export default function DonationsPage() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
+                                            <DropdownMenuItem asChild className="cursor-pointer">
+                                                <Link href={`/campaign-members/${campaignId}/donations/${donation.id}`}>
+                                                    <Eye className="mr-2 h-4 w-4" /> View Details
+                                                </Link>
+                                            </DropdownMenuItem>
                                             {canUpdate && (
-                                                <DropdownMenuItem onClick={() => handleEdit(donation)}>
+                                                <DropdownMenuItem onClick={() => handleEdit(donation)} className="cursor-pointer">
                                                     <Edit className="mr-2 h-4 w-4" /> Edit
                                                 </DropdownMenuItem>
                                             )}
                                             {canDelete && (
-                                                <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                 </DropdownMenuItem>
                                             )}
