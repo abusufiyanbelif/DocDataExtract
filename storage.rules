@@ -21,10 +21,11 @@ service firebase.storage {
     }
 
     // User-specific files (like ID proofs).
-    // Only the user themselves can read or write files into their own folder.
-    // Admins can be granted read access if needed by adding `|| isAdmin()` to the read rule.
+    // Only the user themselves can read files.
+    // Any authenticated user (i.e., an admin) can write.
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn();
     }
     
     // Campaign-related files.
