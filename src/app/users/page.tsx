@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -334,6 +335,7 @@ export default function UsersPage() {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/50">
+                            <SortableHeader sortKey="srNo">#</SortableHeader>
                             <SortableHeader sortKey="name">Name</SortableHeader>
                             <SortableHeader sortKey="email">Email</SortableHeader>
                             <SortableHeader sortKey="phone">Phone</SortableHeader>
@@ -345,8 +347,9 @@ export default function UsersPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {paginatedUsers && paginatedUsers.map((user) => (
+                        {paginatedUsers && paginatedUsers.map((user, index) => (
                             <TableRow key={user.id} onClick={() => handleEdit(user)} className="cursor-pointer">
+                                <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.email}</TableCell>
                                 <TableCell>{user.phone}</TableCell>
@@ -399,7 +402,7 @@ export default function UsersPage() {
                         ))}
                         {paginatedUsers && paginatedUsers.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={canUpdate || canDelete ? 8 : 7} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={canUpdate || canDelete ? 9 : 8} className="text-center h-24 text-muted-foreground">
                                 No users found.
                             </TableCell>
                         </TableRow>
