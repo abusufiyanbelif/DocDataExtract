@@ -14,7 +14,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, UploadCloud, ShieldAlert, Save, Image as ImageIcon, QrCode, Edit } from 'lucide-react';
+import { ArrowLeft, Loader2, UploadCloud, ShieldAlert, Save, Image as ImageIcon, QrCode, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
@@ -40,12 +40,14 @@ export default function SettingsPage() {
     const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
     const [logoWidth, setLogoWidth] = useState<number | string>('');
     const [logoHeight, setLogoHeight] = useState<number | string>('');
+    const [logoDeleted, setLogoDeleted] = useState(false);
     
     // State for payment settings
     const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
     const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
     const [qrWidth, setQrWidth] = useState<number | string>('');
     const [qrHeight, setQrHeight] = useState<number | string>('');
+    const [qrCodeDeleted, setQrCodeDeleted] = useState(false);
     const [upiId, setUpiId] = useState('');
     const [paymentMobileNumber, setPaymentMobileNumber] = useState('');
     const [contactEmail, setContactEmail] = useState('');
@@ -54,14 +56,18 @@ export default function SettingsPage() {
     const [pan, setPan] = useState('');
     const [address, setAddress] = useState('');
     
-    // This effect populates the form state from the fetched settings ONLY when not in edit mode.
-    // This prevents user input from being overwritten if the underlying data changes during an edit.
+    // This effect populates the form state from the fetched settings.
+    // It runs when the source data changes, but only updates the form if not in edit mode.
     useEffect(() => {
         if (!isEditMode) {
             if (brandingSettings) {
                 setLogoWidth(brandingSettings.logoWidth || '');
                 setLogoHeight(brandingSettings.logoHeight || '');
                 setLogoPreviewUrl(brandingSettings.logoUrl || null);
+            } else {
+                setLogoWidth('');
+                setLogoHeight('');
+                setLogoPreviewUrl(null);
             }
             if (paymentSettings) {
                 setUpiId(paymentSettings.upiId || '');
@@ -78,31 +84,35 @@ export default function SettingsPage() {
         }
     }, [brandingSettings, paymentSettings, isEditMode]);
 
-    // This effect creates a preview URL for the selected logo file.
+    // When edit mode is turned on/off, reset any staged file changes or deletions.
+    useEffect(() => {
+        if (!isEditMode) {
+            setLogoFile(null);
+            setQrCodeFile(null);
+            setLogoDeleted(false);
+            setQrCodeDeleted(false);
+        }
+    }, [isEditMode]);
+
+    // Create a preview URL for a newly selected logo file.
     useEffect(() => {
         if (logoFile) {
             const reader = new FileReader();
             reader.onloadend = () => setLogoPreviewUrl(reader.result as string);
             reader.readAsDataURL(logoFile);
-        } else if (isEditMode) {
-            // If the file is cleared during edit mode, respect that.
-        } else {
-            setLogoPreviewUrl(brandingSettings?.logoUrl || null);
+            setLogoDeleted(false);
         }
-    }, [logoFile, brandingSettings, isEditMode]);
+    }, [logoFile]);
 
-    // This effect creates a preview URL for the selected QR code file.
+    // Create a preview URL for a newly selected QR code file.
     useEffect(() => {
         if (qrCodeFile) {
             const reader = new FileReader();
             reader.onloadend = () => setQrPreviewUrl(reader.result as string);
             reader.readAsDataURL(qrCodeFile);
-        } else if (isEditMode) {
-            // If the file is cleared during edit mode, respect that.
-        } else {
-            setQrPreviewUrl(paymentSettings?.qrCodeUrl || null);
+            setQrCodeDeleted(false);
         }
-    }, [qrCodeFile, paymentSettings, isEditMode]);
+    }, [qrCodeFile]);
 
     // This useMemo hook reliably determines if the form is "dirty" by comparing
     // the current form state to the original settings data on every render.
@@ -111,11 +121,13 @@ export default function SettingsPage() {
 
         const brandingIsDirty =
             logoFile !== null ||
+            logoDeleted ||
             String(logoWidth) !== String(brandingSettings?.logoWidth ?? '') ||
             String(logoHeight) !== String(brandingSettings?.logoHeight ?? '');
 
         const paymentIsDirty =
             qrCodeFile !== null ||
+            qrCodeDeleted ||
             upiId !== (paymentSettings?.upiId ?? '') ||
             paymentMobileNumber !== (paymentSettings?.paymentMobileNumber ?? '') ||
             contactEmail !== (paymentSettings?.contactEmail ?? '') ||
@@ -127,10 +139,22 @@ export default function SettingsPage() {
             address !== (paymentSettings?.address ?? '');
 
         return brandingIsDirty || paymentIsDirty;
-    }, [isEditMode, logoFile, logoWidth, logoHeight, qrCodeFile, upiId, paymentMobileNumber, contactEmail, contactPhone, qrWidth, qrHeight, regNo, pan, address, brandingSettings, paymentSettings]);
+    }, [isEditMode, logoFile, logoDeleted, logoWidth, logoHeight, qrCodeFile, qrCodeDeleted, upiId, paymentMobileNumber, contactEmail, contactPhone, qrWidth, qrHeight, regNo, pan, address, brandingSettings, paymentSettings]);
 
     const canUpdateSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.update;
     
+    const handleRemoveLogo = () => {
+        setLogoDeleted(true);
+        setLogoFile(null);
+        setLogoPreviewUrl(null);
+    };
+    
+    const handleRemoveQrCode = () => {
+        setQrCodeDeleted(true);
+        setQrCodeFile(null);
+        setQrPreviewUrl(null);
+    };
+
     const handleSave = async () => {
         if (!firestore || !canUpdateSettings || !isDirty) {
             toast({ title: 'Error', description: 'No changes to save or insufficient permissions.', variant: 'destructive'});
@@ -145,9 +169,12 @@ export default function SettingsPage() {
 
             // Branding Save Logic
             let logoUrl = brandingSettings?.logoUrl || '';
-            if (logoFile && storage) {
-                if (brandingSettings?.logoUrl) {
-                    deleteObject(storageRef(storage, brandingSettings.logoUrl)).catch(e => console.warn("Failed to delete old logo", e));
+            if (logoDeleted && logoUrl && storage) {
+                deleteObject(storageRef(storage, logoUrl)).catch(e => console.warn("Failed to delete old logo", e));
+                logoUrl = '';
+            } else if (logoFile && storage) {
+                if (logoUrl) {
+                    deleteObject(storageRef(storage, logoUrl)).catch(e => console.warn("Failed to delete old logo", e));
                 }
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(logoFile, 1024, 1024, 'JPEG', 80, 0, blob => resolve(blob as Blob), 'blob');
@@ -167,7 +194,12 @@ export default function SettingsPage() {
 
             // Payment Save Logic
             let qrCodeUrl = paymentSettings?.qrCodeUrl || '';
-            if (qrCodeFile && storage) {
+            if (qrCodeDeleted && qrCodeUrl && storage) {
+                 if (qrCodeUrl) {
+                    deleteObject(storageRef(storage, qrCodeUrl)).catch(e => console.warn("Failed to delete old QR code", e));
+                }
+                qrCodeUrl = '';
+            } else if (qrCodeFile && storage) {
                  if (qrCodeUrl) {
                     deleteObject(storageRef(storage, qrCodeUrl)).catch(e => console.warn("Failed to delete old QR code", e));
                 }
@@ -188,7 +220,7 @@ export default function SettingsPage() {
 
             toast({ title: 'Success!', description: 'Settings have been updated. The page will now reload.', variant: 'success', duration: 5000 });
             
-            setIsSubmitting(false); // Reset submitting state on success
+            setIsEditMode(false);
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
@@ -200,14 +232,13 @@ export default function SettingsPage() {
             } else {
                 toast({ title: 'Save Failed', description: error.message || 'An unexpected error occurred.', variant: 'destructive' });
             }
-            setIsSubmitting(false); // Ensure submitting state is reset on error
+        } finally {
+            setIsSubmitting(false);
         }
     };
     
     const handleCancel = () => {
         setIsEditMode(false);
-        setLogoFile(null);
-        setQrCodeFile(null);
         // The main useEffect will repopulate the form with original data since isEditMode is false
     };
 
@@ -281,28 +312,42 @@ export default function SettingsPage() {
                                 </p>
                             </div>
                             
-                            <div className="flex flex-col items-center gap-4">
-                                <div className="relative w-48 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
-                                    {logoPreviewUrl ? (
-                                        <Image src={logoPreviewUrl} alt="Logo preview" fill className="object-contain p-2" />
-                                    ) : (
-                                        <div className="text-muted-foreground text-center p-2">
-                                            <ImageIcon className="mx-auto h-8 w-8" />
-                                            <p className="text-xs mt-1">No logo uploaded</p>
+                            <div className="space-y-4">
+                                <div className="flex flex-col items-center gap-4">
+                                    <div className="relative w-48 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
+                                        {logoPreviewUrl ? (
+                                            <Image src={logoPreviewUrl} alt="Logo preview" fill className="object-contain p-2" />
+                                        ) : (
+                                            <div className="text-muted-foreground text-center p-2">
+                                                <ImageIcon className="mx-auto h-8 w-8" />
+                                                <p className="text-xs mt-1">No logo uploaded</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="w-full grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <Label htmlFor="logoWidth">Width (px)</Label>
+                                            <Input id="logoWidth" type="number" placeholder="e.g., 48" value={logoWidth} onChange={(e) => setLogoWidth(e.target.value)} disabled={isFormDisabled} />
                                         </div>
-                                    )}
-                                </div>
-                                <div className="w-full grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <Label htmlFor="logoWidth">Width (px)</Label>
-                                        <Input id="logoWidth" type="number" placeholder="e.g., 48" value={logoWidth} onChange={(e) => setLogoWidth(e.target.value)} disabled={isFormDisabled} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label htmlFor="logoHeight">Height (px)</Label>
-                                        <Input id="logoHeight" type="number" placeholder="e.g., 48" value={logoHeight} onChange={(e) => setLogoHeight(e.target.value)} disabled={isFormDisabled} />
+                                        <div className="space-y-1">
+                                            <Label htmlFor="logoHeight">Height (px)</Label>
+                                            <Input id="logoHeight" type="number" placeholder="e.g., 48" value={logoHeight} onChange={(e) => setLogoHeight(e.target.value)} disabled={isFormDisabled} />
+                                        </div>
                                     </div>
                                 </div>
-                                <Input id="logo-upload" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={(e) => e.target.files && setLogoFile(e.target.files[0])} disabled={isFormDisabled} />
+                                {isEditMode && (
+                                    <div className="flex gap-2 justify-center">
+                                        <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('logo-upload')?.click()} disabled={isSubmitting}>
+                                            <UploadCloud className="mr-2 h-4 w-4" /> Change Logo
+                                        </Button>
+                                        {logoPreviewUrl && (
+                                            <Button type="button" variant="destructive" size="sm" onClick={handleRemoveLogo} disabled={isSubmitting}>
+                                                <Trash2 className="mr-2 h-4 w-4" /> Remove
+                                            </Button>
+                                        )}
+                                        <Input id="logo-upload" type="file" className="hidden" accept="image/png, image/jpeg, image/svg+xml" onChange={(e) => e.target.files && setLogoFile(e.target.files[0])} />
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -352,7 +397,19 @@ export default function SettingsPage() {
                                                 <Input id="qrHeight" type="number" placeholder="e.g., 128" value={qrHeight} onChange={(e) => setQrHeight(e.target.value)} disabled={isFormDisabled} />
                                             </div>
                                         </div>
-                                        <Input id="qr-upload" type="file" accept="image/png, image/jpeg" onChange={(e) => e.target.files && setQrCodeFile(e.target.files[0])} disabled={isFormDisabled} />
+                                         {isEditMode && (
+                                            <div className="flex gap-2 justify-center">
+                                                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('qr-upload')?.click()} disabled={isSubmitting}>
+                                                    <UploadCloud className="mr-2 h-4 w-4" /> Change QR
+                                                </Button>
+                                                {qrPreviewUrl && (
+                                                    <Button type="button" variant="destructive" size="sm" onClick={handleRemoveQrCode} disabled={isSubmitting}>
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Remove
+                                                    </Button>
+                                                )}
+                                                <Input id="qr-upload" type="file" className="hidden" accept="image/png, image/jpeg" onChange={(e) => e.target.files && setQrCodeFile(e.target.files[0])} />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
