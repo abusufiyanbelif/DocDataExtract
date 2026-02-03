@@ -23,32 +23,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, isLoading } = useUser();
 
   const isLoginPage = pathname === '/login';
-  const isSeedPage = pathname === '/seed';
-  const isPublicCampaignPath = pathname.startsWith('/campaign-public');
-  const isHomePage = pathname === '/';
-  
-  const isPublicRoute = isLoginPage || isPublicCampaignPath || isHomePage || isSeedPage;
+  const isPublicRoute = isLoginPage || pathname.startsWith('/campaign-public') || pathname === '/' || pathname === '/seed';
 
-  // Redirect authenticated users from login page
   useEffect(() => {
-    if (isLoginPage && !isLoading && user) {
-        router.push('/');
+    if (isLoading) return; // Wait until auth state is resolved
+
+    const onPrivatePage = !isPublicRoute;
+    
+    // Not logged in and on a private page: redirect to login
+    if (!user && onPrivatePage) {
+      router.push('/login');
     }
-  }, [isLoginPage, isLoading, user, router]);
-  
-  // Redirect unauthenticated users from private pages
-  useEffect(() => {
-      if (!isPublicRoute && !isLoading && !user) {
-          router.push('/login');
-      }
-  }, [isPublicRoute, isLoading, user, router]);
+    
+    // Logged in and on the login page: redirect to home
+    if (user && isLoginPage) {
+      router.push('/');
+    }
+  }, [isLoading, user, isPublicRoute, isLoginPage, pathname, router]);
 
-  // Show a loader while authenticating on private routes, or redirecting from login
-  if ((!isPublicRoute && (isLoading || !user)) || (isLoginPage && (isLoading || user))) {
-      return <RedirectLoader message="Authenticating..." />;
+  // Determine if we should show a loader
+  const showLoader = 
+    (isLoading && !isPublicRoute) || // Still loading auth state on a private page
+    (!isLoading && !user && !isPublicRoute) || // No user, on private page (waiting for redirect)
+    (!isLoading && user && isLoginPage); // User, on login page (waiting for redirect)
+
+  if (showLoader) {
+    return <RedirectLoader message="Authenticating..." />;
   }
   
-  // Provide session to all pages
+  // Render content
   return (
     <SessionProvider authUser={user}>
         {children}
