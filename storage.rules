@@ -2,43 +2,66 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Diagnostics path for testing user-specific writes.
-    match /diagnostics/{userId}/{allPaths=**} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    /**
+     * Checks if the request is from the owner of the user-specific data.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Settings files (logo, qr code) are publicly readable.
-    // Assumes the upload logic is secured by a backend function or admin-only UI
-    // that checks for admin role before allowing an upload/delete.
+    // ----------------------------------------------------------------------
+    // Rule Definitions
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Publicly readable settings files (logo, QR code).
+     * @note Write access is granted to any authenticated user. The application's
+     * UI is responsible for ensuring only Admin users can trigger uploads or deletes.
+     */
     match /settings/{allPaths=**} {
       allow read: if true;
       allow write: if isSignedIn();
     }
 
-    // User-specific files (like ID proofs).
-    // Only the user themselves can read files.
-    // Any authenticated user (i.e., an admin) can write.
+    /**
+     * @description User-specific files, such as ID proofs.
+     * @note Read access is restricted to the file owner. Write access
+     * is granted to any signed-in user to allow Admins to manage profiles
+     * through the UI. Frontend logic must enforce who can upload/delete.
+     */
     match /users/{userId}/{allPaths=**} {
-      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isOwner(userId);
       allow write: if isSignedIn();
     }
     
-    // Campaign-related files.
-    // Public files are readable by anyone.
-    // Writing is allowed for any authenticated user, assuming the upload logic
-    // on the client validates the user's role (e.g., admin or campaign manager).
+    /**
+     * @description Files related to public campaigns.
+     * @note All campaign files are publicly readable to support public summary pages.
+     * Write access is granted to any signed-in user, with the UI controlling
+     * role-based access to upload/delete functions.
+     */
     match /campaigns/{campaignId}/{allPaths=**} {
        allow read: if true;
        allow write: if isSignedIn();
     }
 
-    // Lead-related files should be private.
-    // Assumes upload logic is secured by a backend function or admin-only UI.
+    /**
+     * @description Files related to internal leads.
+     * @note Leads are considered internal. Both read and write access
+     * are restricted to authenticated users.
+     */
     match /leads/{leadId}/{allPaths=**} {
         allow read, write: if isSignedIn();
     }
