@@ -1,5 +1,3 @@
-src/app/campaign-members/[campaignId]/page.tsx(47,19): error TS7016: Could not find a declaration file for module 'jspdf'. '/home/user/studio/node_modules/jspdf/dist/jspdf.node.min.js' implicitly has an 'any' type.
-  Try `npm i --save-dev @types/jspdf` if it exists or add a new declaration (.d.ts) file containing `declare module 'jspdf';`
 src/app/campaign-members/create/page.tsx(16,10): error TS2305: Module '"react-hook-form"' has no exported member 'useForm'.
 src/app/campaign-members/create/page.tsx(17,10): error TS2305: Module '"@hookform/resolvers/zod"' has no exported member 'zodResolver'.
 src/app/leads/create/page.tsx(16,10): error TS2305: Module '"react-hook-form"' has no exported member 'useForm'.

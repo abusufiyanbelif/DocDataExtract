@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import * as ReactHookForm from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore } from '@/firebase';
@@ -50,7 +50,7 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState('');
   const [isSendingReset, setIsSendingReset] = useState(false);
 
-  const form = useForm<LoginFormValues>({
+  const form = ReactHookForm.useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       loginId: '',
