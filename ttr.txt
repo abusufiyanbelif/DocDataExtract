@@ -1,14 +1,14 @@
+src/app/campaign-members/create/page.tsx(16,10): error TS2305: Module '"react-hook-form"' has no exported member 'useForm'.
 src/app/campaign-members/create/page.tsx(17,10): error TS2305: Module '"@hookform/resolvers/zod"' has no exported member 'zodResolver'.
-src/app/campaign-members/create/page.tsx(65,30): error TS2339: Property 'useForm' does not exist on type 'typeof import("/home/user/studio/node_modules/react-hook-form/dist/index")'.
+src/app/leads/create/page.tsx(16,10): error TS2305: Module '"react-hook-form"' has no exported member 'useForm'.
 src/app/leads/create/page.tsx(17,10): error TS2305: Module '"@hookform/resolvers/zod"' has no exported member 'zodResolver'.
-src/app/leads/create/page.tsx(65,30): error TS2339: Property 'useForm' does not exist on type 'typeof import("/home/user/studio/node_modules/react-hook-form/dist/index")'.
+src/app/login/page.tsx(5,10): error TS2305: Module '"react-hook-form"' has no exported member 'useForm'.
 src/app/login/page.tsx(6,10): error TS2305: Module '"@hookform/resolvers/zod"' has no exported member 'zodResolver'.
-src/app/login/page.tsx(53,30): error TS2339: Property 'useForm' does not exist on type 'typeof import("/home/user/studio/node_modules/react-hook-form/dist/index")'.
+src/components/beneficiary-form.tsx(5,10): error TS2305: Module '"react-hook-form"' has no exported member 'useForm'.
 src/components/beneficiary-form.tsx(6,10): error TS2305: Module '"@hookform/resolvers/zod"' has no exported member 'zodResolver'.
-src/components/beneficiary-form.tsx(65,30): error TS2339: Property 'useForm' does not exist on type 'typeof import("/home/user/studio/node_modules/react-hook-form/dist/index")'.
+src/components/donation-form.tsx(5,10): error TS2305: Module '"react-hook-form"' has no exported member 'useForm'.
 src/components/donation-form.tsx(6,10): error TS2305: Module '"@hookform/resolvers/zod"' has no exported member 'zodResolver'.
-src/components/donation-form.tsx(70,30): error TS2339: Property 'useForm' does not exist on type 'typeof import("/home/user/studio/node_modules/react-hook-form/dist/index")'.
-src/components/ui/form.tsx(11,28): error TS2339: Property 'FormProvider' does not exist on type 'typeof import("/home/user/studio/node_modules/react-hook-form/dist/index")'.
-src/components/ui/form.tsx(40,54): error TS2339: Property 'useFormContext' does not exist on type 'typeof import("/home/user/studio/node_modules/react-hook-form/dist/index")'.
+src/components/ui/form.tsx(7,3): error TS2305: Module '"react-hook-form"' has no exported member 'FormProvider'.
+src/components/ui/form.tsx(8,3): error TS2305: Module '"react-hook-form"' has no exported member 'useFormContext'.
+src/components/user-form.tsx(6,10): error TS2305: Module '"react-hook-form"' has no exported member 'useForm'.
 src/components/user-form.tsx(7,10): error TS2305: Module '"@hookform/resolvers/zod"' has no exported member 'zodResolver'.
-src/components/user-form.tsx(88,30): error TS2339: Property 'useForm' does not exist on type 'typeof import("/home/user/studio/node_modules/react-hook-form/dist/index")'.

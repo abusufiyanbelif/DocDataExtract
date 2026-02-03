@@ -1,11 +1,9 @@
 /**
- * Auto TSC Fix Orchestrator
+ * Auto Build Fix Orchestrator
  * Stops on:
  *  1) Ctrl + C
  *  2) touch .STOP
  *  3) Max runtime exceeded
- * Success condition:
- *  - tsc-errors.txt size === 0
  */
 
 import { execSync } from "child_process";
@@ -13,10 +11,10 @@ import fs from "fs";
 import fetch from "node-fetch";
 
 // ================= CONFIG =================
-const MAX_RUNS = 20;
-const ERROR_FILE = "tsc-errors.txt";
+const MAX_RUNS = 30;
+const BUILD_LOG = "build-errors-03-feb.txt";
 const STOP_FILE = ".STOP";
-const MAX_TIME_MINUTES = 10; // ⏰ change as needed
+const MAX_TIME_MINUTES = 180; // ⏰ change as needed
 // ==========================================
 
 const START_TIME = Date.now();
@@ -43,17 +41,18 @@ function stopFileExists() {
 }
 
 // ---------- Core Actions ----------
-function runTsc() {
+function runBuild() {
   try {
-    execSync(`npx tsc --noEmit > ${ERROR_FILE} 2>&1`, {
+    execSync(`npm run build > ${BUILD_LOG} 2>&1`, {
       stdio: "inherit",
     });
+    return true; // build success
   } catch {
-    // Expected when TSC errors exist
+    return false; // build failed
   }
 }
 
-async function callGemini(errorLog) {
+async function callGemini(buildLog) {
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
     {
@@ -65,16 +64,18 @@ async function callGemini(errorLog) {
             parts: [
               {
                 text: `
-You are a senior TypeScript engineer.
-Analyze the following TypeScript compiler errors and propose fixes.
+You are a senior full-stack engineer.
+The following "npm run build" failed.
+Analyze the error and propose exact fixes.
 
 Return:
 1) Root cause
 2) Files to change
-3) Corrected code snippets
+3) Code snippets
+4) Commands if needed
 
-Errors:
-${errorLog}
+Build log:
+${buildLog}
 `,
               },
             ],
@@ -90,7 +91,7 @@ ${errorLog}
 
 // ---------- Main Loop ----------
 async function main() {
-  console.log("🚀 Auto TSC Fixer started");
+  console.log("🚀 Auto Build Fixer started");
   console.log(`⏰ Max runtime: ${MAX_TIME_MINUTES} minutes`);
   console.log(`🛑 Stop file: ${STOP_FILE}`);
 
@@ -100,35 +101,35 @@ async function main() {
       break;
     }
 
-    console.log(`\n🔁 TSC run ${i}/${MAX_RUNS}`);
-    runTsc();
+    console.log(`\n🔁 Build attempt ${i}/${MAX_RUNS}`);
 
-    if (!fs.existsSync(ERROR_FILE)) {
-      console.log("⚠️ Error file not found. Stopping.");
+    const success = runBuild();
+    if (success) {
+      console.log("🎉 npm run build SUCCESS");
+      fs.writeFileSync("BUILD_SUCCESS", new Date().toISOString());
       break;
     }
 
-    const size = fs.statSync(ERROR_FILE).size;
-    if (size === 0) {
-      console.log("🎉 TSC clean (0-byte error file). Done.");
+    if (!fs.existsSync(BUILD_LOG)) {
+      console.log("⚠️ No build log found. Stopping.");
       break;
     }
 
-    const errors = fs.readFileSync(ERROR_FILE, "utf8");
-    console.log("❌ TSC errors found. Sending to Gemini...");
+    const log = fs.readFileSync(BUILD_LOG, "utf8");
+    console.log("❌ Build failed. Sending log to Gemini...");
 
-    const fix = await callGemini(errors);
+    const fix = await callGemini(log);
     if (!fix) {
       console.log("⚠️ Gemini returned no response. Stopping.");
       break;
     }
 
-    const fixFile = `gemini-tsc-fix-${i}.md`;
+    const fixFile = `gemini-build-fix-${i}.md`;
     fs.writeFileSync(fixFile, fix);
     console.log(`📄 Gemini suggestions written to ${fixFile}`);
   }
 
-  console.log("👋 Auto TSC Fixer exited safely.");
+  console.log("👋 Auto Build Fixer exited safely.");
 }
 
 main().catch((err) => {
