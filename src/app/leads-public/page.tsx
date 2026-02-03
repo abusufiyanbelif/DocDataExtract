@@ -1,7 +1,7 @@
 
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -100,7 +100,7 @@ export default function PublicLeadPage() {
                     <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
-                                <CardTitle className="line-clamp-2">{lead.name}</CardTitle>
+                                <CardTitle>{lead.name}</CardTitle>
                                 <Badge variant={
                                     lead.status === 'Active' ? 'success' :
                                     lead.status === 'Completed' ? 'secondary' : 'outline'

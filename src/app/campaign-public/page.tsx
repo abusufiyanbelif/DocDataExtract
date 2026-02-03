@@ -100,7 +100,7 @@ export default function PublicCampaignPage() {
                     <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
-                                <CardTitle className="truncate">{campaign.name}</CardTitle>
+                                <CardTitle>{campaign.name}</CardTitle>
                                 <Badge variant={
                                     campaign.status === 'Active' ? 'success' :
                                     campaign.status === 'Completed' ? 'secondary' : 'outline'
