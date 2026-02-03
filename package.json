@@ -15,6 +15,7 @@
     "check": "tsx scripts/check.ts",
     "check:db": "tsx scripts/check-db.ts",
     "check:rules": "tsx scripts/check-rules.ts",
+    "check:storage": "tsx scripts/check-storage.ts",
     "fix:iam": "tsx scripts/fix-iam.ts"
   },
   "dependencies": {
