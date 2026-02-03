@@ -38,7 +38,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
                         {brandingSettings?.logoUrl && (
-                             <img src={brandingSettings.logoUrl} alt="Logo" className="w-24 h-auto mx-auto" />
+                             <img src={brandingSettings.logoUrl} crossOrigin="anonymous" alt="Logo" className="w-24 h-auto mx-auto" />
                         )}
                         <CardTitle className="text-2xl">Donation Receipt</CardTitle>
                     </CardHeader>
@@ -57,6 +57,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         <Separator />
                         <div className="space-y-3">
                              <h3 className="font-semibold">Transaction Details</h3>
+                            <ReceiptRow label="Receiver Name" value={donation.receiverName} />
                             <ReceiptRow label="Amount" value={`Rupee ${donation.amount.toFixed(2)}`} isMono />
                              <ReceiptRow label="Category" value={<Badge variant="secondary">{donation.type}</Badge>} />
                             <ReceiptRow label="Payment Type" value={<Badge variant="outline">{donation.donationType}</Badge>} />
@@ -71,7 +72,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                             </div>
                             {paymentSettings?.qrCodeUrl && (
                                 <div className="text-center">
-                                    <img src={paymentSettings.qrCodeUrl} alt="QR Code" className="w-28 h-28 mx-auto border p-1 rounded-md bg-white" />
+                                    <img src={paymentSettings.qrCodeUrl} crossOrigin="anonymous" alt="QR Code" className="w-28 h-28 mx-auto border p-1 rounded-md bg-white" />
                                     {paymentSettings?.upiId && <p className="text-xs font-mono mt-1">{paymentSettings.upiId}</p>}
                                 </div>
                             )}
