@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ReactNode } from 'react';
@@ -16,7 +17,7 @@ function Watermark() {
     }
 
     return (
-        <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-[-10] flex items-center justify-center pointer-events-none">
             <img
                 src={brandingSettings.logoUrl}
                 alt="Watermark"

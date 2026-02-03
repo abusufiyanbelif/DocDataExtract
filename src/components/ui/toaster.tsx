@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useToast } from "@/hooks/use-toast"
@@ -58,7 +59,7 @@ export function Toaster() {
                     <>
                       <ToastAction
                         altText="Copy"
-                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                        className="border border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                         onClick={(e) => {
                           e.preventDefault();
                           handleCopy(title, description);
@@ -77,7 +78,7 @@ export function Toaster() {
                      <>
                       <ToastAction
                         altText="Copy"
-                        className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        className="border border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                         onClick={(e) => {
                           e.preventDefault();
                           handleCopy(title, description);

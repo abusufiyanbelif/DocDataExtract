@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -57,11 +58,10 @@ export function DocuExtractHeader() {
                 <Skeleton className="h-full w-full" />
             ) : (
                 brandingSettings?.logoUrl && (
-                <Image
+                <img
                     src={brandingSettings.logoUrl}
                     alt="Company Logo"
-                    fill
-                    className="object-contain"
+                    className="object-contain h-full w-full"
                     crossOrigin="anonymous"
                 />
                 )

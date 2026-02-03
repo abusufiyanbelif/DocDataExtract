@@ -7,28 +7,23 @@ service firebase.storage {
     // Helper Functions
     // ----------------------------------------------------------------------
 
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the request is from the owner of the user-specific data.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
     // ----------------------------------------------------------------------
-    // Rule Definitions
+    // Publicly Readable Paths
     // ----------------------------------------------------------------------
 
     /**
-     * @description Publicly readable settings files (logo, QR code).
-     * @note Write access is granted to any authenticated user. The application's
-     * UI is responsible for ensuring only Admin users can trigger uploads or deletes.
+     * @description Public settings files (logo, QR code).
+     * Anyone can read these files to display them on public pages.
+     * Only authenticated users can upload/delete. The app UI must restrict
+     * this to Admin users.
      */
     match /settings/{allPaths=**} {
       allow read: if true;
@@ -36,34 +31,39 @@ service firebase.storage {
     }
 
     /**
-     * @description User-specific files, such as ID proofs.
-     * @note Read access is restricted to the file owner. Write access
-     * is granted to any signed-in user to allow Admins to manage profiles
-     * through the UI. Frontend logic must enforce who can upload/delete.
-     */
-    match /users/{userId}/{allPaths=**} {
-      allow read: if isOwner(userId);
-      allow write: if isSignedIn();
-    }
-    
-    /**
-     * @description Files related to public campaigns.
-     * @note All campaign files are publicly readable to support public summary pages.
-     * Write access is granted to any signed-in user, with the UI controlling
-     * role-based access to upload/delete functions.
+     * @description Files related to public campaigns (e.g., donation screenshots).
+     * These are publicly readable to support public summary pages if the app
+     * generates a public URL (controlled by the `screenshotIsPublic` flag in Firestore).
+     * Writes are restricted to any signed-in user, with the UI handling role permissions.
      */
     match /campaigns/{campaignId}/{allPaths=**} {
        allow read: if true;
        allow write: if isSignedIn();
     }
 
+    // ----------------------------------------------------------------------
+    // Authenticated-Only Paths
+    // ----------------------------------------------------------------------
+    
     /**
      * @description Files related to internal leads.
-     * @note Leads are considered internal. Both read and write access
-     * are restricted to authenticated users.
+     * Leads are considered internal data. Both read and write access
+     * are restricted to any authenticated user.
      */
     match /leads/{leadId}/{allPaths=**} {
         allow read, write: if isSignedIn();
+    }
+    
+    /**
+     * @description User-specific private files, such as ID proofs.
+     * Only the owner of the data can read their own files.
+     * Any signed-in user can write (e.g., an Admin uploading on behalf
+     * of a user), but this is a permissive rule that relies on the UI
+     * to enforce correct behavior.
+     */
+    match /users/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId);
+      allow write: if isSignedIn();
     }
   }
 }
