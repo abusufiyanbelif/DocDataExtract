@@ -75,7 +75,11 @@ export default function UserDetailsPage() {
     let idProofUrl = user?.idProofUrl || '';
     try {
         if (data.idProofDeleted && idProofUrl) {
-            await deleteObject(storageRef(storage, idProofUrl));
+            await deleteObject(storageRef(storage, idProofUrl)).catch(err => {
+                if (err.code !== 'storage/object-not-found') {
+                    console.warn("Failed to delete old ID proof:", err);
+                }
+            });
             idProofUrl = '';
         }
 
@@ -299,3 +303,5 @@ export default function UserDetailsPage() {
     </div>
   );
 }
+
+    

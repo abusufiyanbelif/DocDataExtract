@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -155,8 +156,11 @@ export default function BeneficiariesPage() {
     };
 
     if (idProofUrl) {
-        await deleteObject(storageRef(storage, idProofUrl))
-            .catch(err => console.warn("Failed to delete ID proof from storage:", err));
+        await deleteObject(storageRef(storage, idProofUrl)).catch(err => {
+            if (err.code !== 'storage/object-not-found') {
+                console.warn("Failed to delete ID proof from storage:", err);
+            }
+        });
     }
     deleteDocument();
   };
@@ -194,7 +198,11 @@ export default function BeneficiariesPage() {
         let idProofUrl = editingBeneficiary?.idProofUrl || '';
     
         if (data.idProofDeleted && idProofUrl) {
-            await deleteObject(storageRef(storage, idProofUrl));
+            await deleteObject(storageRef(storage, idProofUrl)).catch(err => {
+                if (err.code !== 'storage/object-not-found') {
+                    console.warn("Failed to delete ID proof during replacement:", err)
+                }
+            });
             idProofUrl = '';
         }
 
@@ -929,3 +937,5 @@ export default function BeneficiariesPage() {
     </div>
   );
 }
+
+    

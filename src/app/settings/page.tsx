@@ -169,11 +169,19 @@ export default function SettingsPage() {
             // Branding Save Logic
             let logoUrl = brandingSettings?.logoUrl || '';
             if (logoDeleted && logoUrl && storage) {
-                deleteObject(storageRef(storage, logoUrl)).catch(e => console.warn("Failed to delete old logo", e));
+                deleteObject(storageRef(storage, logoUrl)).catch(e => {
+                    if (e.code !== 'storage/object-not-found') {
+                        console.warn("Failed to delete old logo", e);
+                    }
+                });
                 logoUrl = '';
             } else if (logoFile && storage) {
                 if (logoUrl) {
-                    deleteObject(storageRef(storage, logoUrl)).catch(e => console.warn("Failed to delete old logo", e));
+                    deleteObject(storageRef(storage, logoUrl)).catch(e => {
+                        if (e.code !== 'storage/object-not-found') {
+                            console.warn("Failed to delete old logo", e);
+                        }
+                    });
                 }
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(logoFile, 1024, 1024, 'JPEG', 80, 0, blob => resolve(blob as Blob), 'blob');
@@ -195,12 +203,20 @@ export default function SettingsPage() {
             let qrCodeUrl = paymentSettings?.qrCodeUrl || '';
             if (qrCodeDeleted && qrCodeUrl && storage) {
                  if (qrCodeUrl) {
-                    deleteObject(storageRef(storage, qrCodeUrl)).catch(e => console.warn("Failed to delete old QR code", e));
+                    deleteObject(storageRef(storage, qrCodeUrl)).catch(e => {
+                        if (e.code !== 'storage/object-not-found') {
+                            console.warn("Failed to delete old QR code", e);
+                        }
+                    });
                 }
                 qrCodeUrl = '';
             } else if (qrCodeFile && storage) {
                  if (qrCodeUrl) {
-                    deleteObject(storageRef(storage, qrCodeUrl)).catch(e => console.warn("Failed to delete old QR code", e));
+                    deleteObject(storageRef(storage, qrCodeUrl)).catch(e => {
+                        if (e.code !== 'storage/object-not-found') {
+                             console.warn("Failed to delete old QR code", e);
+                        }
+                    });
                 }
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(qrCodeFile, 1024, 1024, 'JPEG', 80, 0, blob => resolve(blob as Blob), 'blob');
@@ -453,3 +469,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    

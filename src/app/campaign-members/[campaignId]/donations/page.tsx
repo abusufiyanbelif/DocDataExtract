@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
@@ -149,8 +150,11 @@ export default function DonationsPage() {
     };
 
     if (screenshotUrl) {
-        await deleteObject(storageRef(storage, screenshotUrl))
-            .catch(err => console.warn("Failed to delete screenshot from storage:", err));
+        await deleteObject(storageRef(storage, screenshotUrl)).catch(err => {
+            if (err.code !== 'storage/object-not-found') {
+                console.warn("Failed to delete screenshot from storage:", err);
+            }
+        });
     }
     
     deleteDocument();
@@ -187,7 +191,11 @@ export default function DonationsPage() {
         let screenshotUrl = editingDonation?.screenshotUrl || '';
     
         if (data.screenshotDeleted && screenshotUrl) {
-            await deleteObject(storageRef(storage, screenshotUrl));
+            await deleteObject(storageRef(storage, screenshotUrl)).catch(err => {
+                if (err.code !== 'storage/object-not-found') {
+                    console.warn("Failed to delete old screenshot:", err);
+                }
+            });
             screenshotUrl = '';
         }
         
@@ -604,3 +612,5 @@ export default function DonationsPage() {
     </div>
   );
 }
+
+    
