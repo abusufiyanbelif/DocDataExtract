@@ -131,6 +131,9 @@ export default function Home() {
                     <Button asChild size="lg">
                         <Link href="/campaign-public">View Public Campaigns</Link>
                     </Button>
+                    <Button asChild variant="outline" size="lg">
+                        <Link href="/leads-public">View Public Leads</Link>
+                    </Button>
                     <Button asChild variant="secondary" size="lg">
                         <Link href="/login">Member Login</Link>
                     </Button>

@@ -23,7 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, isLoading } = useUser();
 
   const isLoginPage = pathname === '/login';
-  const isPublicRoute = isLoginPage || pathname.startsWith('/campaign-public') || pathname === '/' || pathname === '/seed';
+  const isPublicRoute = isLoginPage || pathname.startsWith('/campaign-public') || pathname.startsWith('/leads-public') || pathname === '/' || pathname === '/seed';
 
   useEffect(() => {
     if (isLoading) {
