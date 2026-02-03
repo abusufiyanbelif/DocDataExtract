@@ -340,13 +340,17 @@ export default function CampaignPage() {
                             </div>
                             <CardDescription>{campaign.startDate} to {campaign.endDate}</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-grow">
+                        <CardContent className="flex-grow space-y-2">
                              <div className="flex justify-between text-sm text-muted-foreground">
                                 <Badge variant="outline">{campaign.category}</Badge>
                                 <Badge variant={
                                     campaign.status === 'Active' ? 'success' :
                                     campaign.status === 'Completed' ? 'secondary' : 'outline'
                                 }>{campaign.status}</Badge>
+                            </div>
+                            <div className="flex justify-between text-sm text-muted-foreground pt-2">
+                                <Badge variant="outline">{campaign.authenticityStatus || 'N/A'}</Badge>
+                                <Badge variant="outline">{campaign.publicVisibility || 'N/A'}</Badge>
                             </div>
                         </CardContent>
                         <CardFooter>

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { adminDb } from '@/lib/firebase-admin-sdk';
@@ -39,6 +40,8 @@ export async function copyCampaignAction(options: CopyCampaignOptions): Promise<
       ...sourceCampaignData,
       name: newName,
       status: 'Upcoming', // Copied campaigns should start as Upcoming
+      authenticityStatus: 'Pending Verification',
+      publicVisibility: 'Hold',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       // We assume the copier is the creator. In a real app you'd pass the userId.
       createdByName: 'System Copy',

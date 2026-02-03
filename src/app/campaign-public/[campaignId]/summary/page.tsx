@@ -263,13 +263,6 @@ Your contribution, big or small, makes a huge difference.
             } else { // pdf
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-                const ratio = imgWidth / imgHeight;
-                
-                let finalImgWidth = pdfWidth - 20; // with margin
-                let finalImgHeight = finalImgWidth / ratio;
                 
                 let position = 20;
 
@@ -293,13 +286,18 @@ Your contribution, big or small, makes a huge difference.
                 pdf.setLineWidth(0.5);
                 pdf.line(15, 18, pdfWidth - 15, 18);
                 
-                pdf.addImage(imgData, 'PNG', 10, position, finalImgWidth, finalImgHeight);
+                const canvasAspectRatio = canvas.width / canvas.height;
+                const printableWidth = pdfWidth - 20; // 10mm margin on each side
+                const printableHeight = printableWidth / canvasAspectRatio;
+
+                pdf.addImage(imgData, 'PNG', 10, position, printableWidth, printableHeight);
                 
                 pdf.save(`campaign-summary-${campaignId}.pdf`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Download failed:", error);
-            toast({ title: 'Download Failed', description: 'Could not generate the file. Please try again.', variant: 'destructive'});
+            const errorMessage = error.message ? `: ${error.message}` : '. Please check console for details.';
+            toast({ title: 'Download Failed', description: `Could not generate the file${errorMessage}`, variant: 'destructive', duration: 9000 });
         }
     };
 
@@ -311,16 +309,16 @@ Your contribution, big or small, makes a huge difference.
         );
     }
 
-    if (!campaign) {
+    if (!campaign || campaign.authenticityStatus !== 'Verified' || campaign.publicVisibility !== 'Published') {
         return (
             <div className="min-h-screen text-foreground">
                 <DocuExtractHeader />
                 <main className="container mx-auto p-4 md:p-8 text-center">
-                    <p className="text-lg text-muted-foreground">Campaign not found.</p>
+                    <p className="text-lg text-muted-foreground">This campaign could not be found or is not publicly available.</p>
                     <Button asChild className="mt-4">
                         <Link href="/campaign-public">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Campaigns
+                            Back to Public Campaigns
                         </Link>
                     </Button>
                 </main>
