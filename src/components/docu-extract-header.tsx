@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Image from 'next/image';
 import { LogOut, User, LogIn, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/firebase';
@@ -67,11 +68,12 @@ export function DocuExtractHeader() {
                 <Skeleton className="h-full w-full" />
             ) : (
                 brandingSettings?.logoUrl && (
-                <img
+                <Image
                     src={brandingSettings.logoUrl}
                     alt="Company Logo"
-                    crossOrigin="anonymous"
-                    className="object-contain w-full h-full"
+                    fill
+                    className="object-contain"
+                    priority
                 />
                 )
             )}

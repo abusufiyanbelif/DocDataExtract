@@ -110,11 +110,8 @@ service cloud.firestore {
      * @allow (write) Only authenticated users can modify campaigns.
      */
     match /campaigns/{campaignId} {
-      allow get: if true;
+      allow read: if true;
       allow write: if isSignedIn();
-    }
-    match /campaigns {
-      allow list: if true;
     }
     
     /**
@@ -157,15 +154,12 @@ service cloud.firestore {
      * @allow (write) Only authenticated users can modify leads.
      */
     match /leads/{leadId} {
-      allow get: if true;
+      allow read: if true;
       allow write: if isSignedIn();
       
       match /beneficiaries/{beneficiaryId} {
         allow read, write: if isSignedIn();
       }
-    }
-    match /leads {
-        allow list: if true;
     }
 
     // ----------------------------------------------------------------------

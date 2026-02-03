@@ -54,12 +54,8 @@ export function Toaster() {
                {!isConfirmationToast ? (
                 <div className="mt-4 flex gap-2">
                     {action}
-                    <ToastAction asChild altText="OK" className="w-full flex-1">
-                        <Button variant="secondary" size="sm" className="w-full">OK</Button>
-                    </ToastAction>
-                    <ToastAction asChild altText="Copy message" onClick={(e) => { e.preventDefault(); handleCopy(title, description); }} className="w-full flex-1">
-                        <Button variant="outline" size="sm" className="w-full">Copy</Button>
-                    </ToastAction>
+                    <ToastAction altText="OK">OK</ToastAction>
+                    <ToastAction altText="Copy message" onClick={(e) => { e.preventDefault(); handleCopy(title, description); }}>Copy</ToastAction>
                 </div>
               ) : (action)}
             </div>
