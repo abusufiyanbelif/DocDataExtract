@@ -27,17 +27,6 @@ export function DocuExtractHeader() {
   const auth = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (brandingSettings?.logoUrl) {
-      document.body.style.setProperty(
-        '--watermark-url',
-        `url(${brandingSettings.logoUrl})`
-      );
-    } else {
-      document.body.style.removeProperty('--watermark-url');
-    }
-  }, [brandingSettings]);
-
   const handleLogout = async () => {
     if (auth) {
       await signOut(auth);
@@ -74,6 +63,7 @@ export function DocuExtractHeader() {
                     fill
                     className="object-contain"
                     priority
+                    crossOrigin="anonymous"
                 />
                 )
             )}

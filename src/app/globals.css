@@ -37,24 +37,6 @@
   * {
     @apply border-border;
   }
-
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    background-image: var(--watermark-url);
-    background-repeat: no-repeat;
-    background-position: center;
-    opacity: 0.12;
-    pointer-events: none;
-  }
-
-  @media (min-width: 768px) {
-    body::before {
-      background-size: 500px; /* Desktop size */
-    }
-  }
 }
 
 body {
