@@ -2,7 +2,7 @@
 'use server';
 
 import { adminDb } from '@/lib/firebase-admin-sdk';
-import type { Lead } from '@/lib/types';
+import type { Lead, Beneficiary } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import * as admin from 'firebase-admin';
 
@@ -64,7 +64,7 @@ export async function copyLeadAction(options: CopyLeadOptions): Promise<{ succes
         let count = 0;
 
         for (const doc of beneficiariesSnap.docs) {
-            const beneficiaryData = doc.data() as any;
+            const beneficiaryData = doc.data() as Omit<Beneficiary, 'id'>;
             const newBeneficiaryRef = newLeadRef.collection('beneficiaries').doc();
             
             const newBeneficiaryData = {

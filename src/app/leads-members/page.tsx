@@ -40,9 +40,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-// Note: You would create a similar CopyLeadDialog component
-// import { CopyLeadDialog } from '@/components/copy-lead-dialog';
-// import { copyLeadAction } from './actions';
+import { CopyLeadDialog } from '@/components/copy-lead-dialog';
+import { copyLeadAction } from './actions';
 
 
 export default function LeadPage() {
@@ -62,8 +61,8 @@ export default function LeadPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(6);
 
-  // const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
-  // const [leadToCopy, setLeadToCopy] = useState<Lead | null>(null);
+  const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
+  const [leadToCopy, setLeadToCopy] = useState<Lead | null>(null);
   
   const { userProfile, isLoading: isProfileLoading } = useSession();
 
@@ -81,31 +80,30 @@ export default function LeadPage() {
   };
 
   const handleCopyClick = (lead: Lead) => {
-    // if (!canCreate) return;
-    // setLeadToCopy(lead);
-    // setIsCopyDialogOpen(true);
-    toast({ title: "Coming Soon", description: "Copying leads will be available in a future update."});
+    if (!canCreate) return;
+    setLeadToCopy(lead);
+    setIsCopyDialogOpen(true);
   };
 
-  // const handleCopyConfirm = async (options: { newName: string; copyBeneficiaries: boolean; copyRationLists: boolean; }) => {
-  //   if (!leadToCopy || !canCreate) return;
+  const handleCopyConfirm = async (options: { newName: string; copyBeneficiaries: boolean; copyRationLists: boolean; }) => {
+    if (!leadToCopy || !canCreate) return;
 
-  //   setIsCopyDialogOpen(false);
-  //   toast({ title: 'Copying lead...', description: `Please wait while '${leadToCopy.name}' is being copied.`});
+    setIsCopyDialogOpen(false);
+    toast({ title: 'Copying lead...', description: `Please wait while '${leadToCopy.name}' is being copied.`});
     
-  //   const result = await copyLeadAction({
-  //       sourceLeadId: leadToCopy.id,
-  //       ...options
-  //   });
+    const result = await copyLeadAction({
+        sourceLeadId: leadToCopy.id,
+        ...options
+    });
 
-  //   if (result.success) {
-  //       toast({ title: 'Lead Copied', description: result.message, variant: 'success' });
-  //   } else {
-  //       toast({ title: 'Copy Failed', description: result.message, variant: 'destructive' });
-  //   }
+    if (result.success) {
+        toast({ title: 'Lead Copied', description: result.message, variant: 'success' });
+    } else {
+        toast({ title: 'Copy Failed', description: result.message, variant: 'destructive' });
+    }
 
-  //   setLeadToCopy(null);
-  // };
+    setLeadToCopy(null);
+  };
 
   const handleDeleteConfirm = async () => {
     if (!leadToDelete || !firestore || !storage || !canDelete) {
@@ -462,6 +460,13 @@ export default function LeadPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+        
+      <CopyLeadDialog
+            open={isCopyDialogOpen}
+            onOpenChange={setIsCopyDialogOpen}
+            lead={leadToCopy}
+            onCopyConfirm={handleCopyConfirm}
+        />
 
     </div>
   );
