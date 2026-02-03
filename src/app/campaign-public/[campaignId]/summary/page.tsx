@@ -245,7 +245,6 @@ Your contribution, big or small, makes a huge difference.
             toast({ title: 'Error', description: 'Cannot generate download, content is missing.', variant: 'destructive' });
             return;
         }
-        toast({ title: 'Preparing download...', description: 'Please wait a moment.' });
 
         try {
             const canvas = await html2canvas(summaryRef.current, { 
@@ -434,7 +433,16 @@ Your contribution, big or small, makes a huge difference.
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Kit Amount Required</CardTitle>
+                                <Target className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
+                            </CardContent>
+                        </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Kit Funding (Verified)</CardTitle>

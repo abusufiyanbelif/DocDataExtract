@@ -324,7 +324,6 @@ Your contribution, big or small, makes a huge difference.
             toast({ title: 'Error', description: 'Cannot generate download, content is missing.', variant: 'destructive' });
             return;
         }
-        toast({ title: 'Preparing download...', description: 'Please wait a moment.' });
 
         try {
             const canvas = await html2canvas(summaryRef.current, { 
@@ -545,7 +544,7 @@ Your contribution, big or small, makes a huge difference.
                                     <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
                                 )}
                             </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div className="space-y-1">
                                     <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Fundraising Goal (Target)</Label>
                                     {editMode && canUpdate ? (
@@ -559,10 +558,6 @@ Your contribution, big or small, makes a huge difference.
                                     ) : (
                                         <p className="mt-1 text-lg font-semibold">Rupee {(campaign.targetAmount || 0).toLocaleString('en-IN')}</p>
                                     )}
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-sm font-medium text-muted-foreground">Calculated Kit Costs</Label>
-                                    <p className="mt-1 text-lg font-semibold">Rupee {(summaryData?.totalKitAmountRequired ?? 0).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <Label htmlFor="category" className="text-sm font-medium text-muted-foreground">Category</Label>
@@ -650,7 +645,16 @@ Your contribution, big or small, makes a huge difference.
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                         <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Kit Amount Required</CardTitle>
+                                <Target className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
+                            </CardContent>
+                        </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Kit Funding (Verified)</CardTitle>

@@ -141,7 +141,6 @@ export default function BeneficiariesPage() {
     const idProofUrl = beneficiaryData.idProofUrl;
 
     setIsDeleteDialogOpen(false);
-    toast({ title: 'Deleting...', description: 'Please wait while the beneficiary is being deleted.'});
 
     const deleteDocument = () => {
         deleteDoc(docRef)
@@ -184,7 +183,6 @@ export default function BeneficiariesPage() {
 
     setIsFormOpen(false);
     setEditingBeneficiary(null);
-    toast({ title: "Saving...", description: `Please wait while the beneficiary is being ${editingBeneficiary ? 'updated' : 'added'}.`});
 
     const docRef = editingBeneficiary
         ? doc(firestore, `campaigns/${campaignId}/beneficiaries`, editingBeneficiary.id)
@@ -411,7 +409,6 @@ export default function BeneficiariesPage() {
         return;
     };
     setIsSyncing(true);
-    toast({ title: 'Syncing...', description: 'Recalculating and updating kit amounts for eligible beneficiaries.' });
 
     const { rationLists } = campaign;
     if (!rationLists || Object.keys(rationLists).length === 0) {
@@ -426,48 +423,63 @@ export default function BeneficiariesPage() {
     
     const batch = writeBatch(firestore);
     let updatesCount = 0;
+    let totalRequiredAmount = 0;
 
     for (const beneficiary of beneficiaries) {
-        if (beneficiary.status === 'Given') {
-            continue;
-        }
-
-        let expectedAmount = 0;
-        const members = beneficiary.members;
-
-        const exactMatchList = members > 0 ? rationLists[String(members)] : undefined;
-        const listToUse = exactMatchList || generalList;
-
-        if (listToUse) {
-            expectedAmount = calculateTotal(listToUse);
+        let finalKitAmount = beneficiary.kitAmount || 0;
+        
+        if (beneficiary.status !== 'Given') {
+            const members = beneficiary.members;
+            const exactMatchList = members > 0 ? rationLists[String(members)] : undefined;
+            const listToUse = exactMatchList || generalList;
+            let expectedAmount = 0;
+            if (listToUse) {
+                expectedAmount = calculateTotal(listToUse);
+            }
+            
+            if (beneficiary.kitAmount !== expectedAmount) {
+                const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiary.id);
+                batch.update(docRef, { kitAmount: expectedAmount });
+                updatesCount++;
+            }
+            finalKitAmount = expectedAmount;
         }
         
-        if (beneficiary.kitAmount !== expectedAmount) {
-            const docRef = doc(firestore, `campaigns/${campaignId}/beneficiaries`, beneficiary.id);
-            batch.update(docRef, { kitAmount: expectedAmount });
-            updatesCount++;
-        }
+        totalRequiredAmount += finalKitAmount;
     }
 
-    if (updatesCount === 0) {
-        toast({ title: 'No Updates Needed', description: 'All beneficiary kit amounts are already up to date.' });
+    const campaignTargetUpdated = campaign.targetAmount !== totalRequiredAmount;
+    if (campaignTargetUpdated) {
+        const campaignDocRef = doc(firestore, 'campaigns', campaignId);
+        batch.update(campaignDocRef, { targetAmount: totalRequiredAmount });
+    }
+
+    if (updatesCount === 0 && !campaignTargetUpdated) {
+        toast({ title: 'No Updates Needed', description: 'All amounts are already up to date.' });
         setIsSyncing(false);
         return;
     }
 
     try {
         await batch.commit();
-        toast({ title: 'Sync Complete', description: `${updatesCount} beneficiary kit amounts were updated successfully.`, variant: 'success' });
+        let description = '';
+        if (updatesCount > 0) {
+            description += `${updatesCount} beneficiary kit amounts were updated. `;
+        }
+        if (campaignTargetUpdated) {
+            description += `Campaign target synced to Rupee ${totalRequiredAmount.toFixed(2)}.`;
+        }
+        toast({ title: 'Sync Complete', description: description.trim(), variant: 'success' });
     } catch (serverError: any) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `campaigns/${campaignId}/beneficiaries`,
+            path: `campaigns/${campaignId}`,
             operation: 'update',
-            requestResourceData: { note: `Batch update for ${updatesCount} beneficiaries` }
+            requestResourceData: { note: `Batch update for sync kit amounts` }
         }));
     } finally {
         setIsSyncing(false);
     }
-  };
+};
 
 
   const uniqueReferrals = useMemo(() => {
