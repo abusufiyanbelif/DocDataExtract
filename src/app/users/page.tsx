@@ -347,7 +347,22 @@ export default function UsersPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {paginatedUsers && paginatedUsers.map((user, index) => (
+                        {isLoading ? (
+                            [...Array(5)].map((_, i) => (
+                                <TableRow key={`skeleton-${i}`}>
+                                    <TableCell><Skeleton className="h-5 w-5" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                                    {(canUpdate || canDelete) && <TableCell><Skeleton className="h-5 w-10 ml-auto" /></TableCell>}
+                                </TableRow>
+                            ))
+                        ) : paginatedUsers.length > 0 ? (
+                            paginatedUsers.map((user, index) => (
                             <TableRow key={user.id} onClick={() => handleEdit(user)} className="cursor-pointer">
                                 <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
                                 <TableCell className="font-medium">{user.name}</TableCell>
@@ -399,11 +414,11 @@ export default function UsersPage() {
                                 </TableCell>
                                 )}
                             </TableRow>
-                        ))}
-                        {paginatedUsers && paginatedUsers.length === 0 && (
+                        ))
+                        ) : (
                         <TableRow>
                             <TableCell colSpan={canUpdate || canDelete ? 9 : 8} className="text-center h-24 text-muted-foreground">
-                                No users found.
+                                No users found matching your criteria.
                             </TableCell>
                         </TableRow>
                         )}

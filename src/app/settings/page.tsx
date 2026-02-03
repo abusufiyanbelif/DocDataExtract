@@ -247,8 +247,24 @@ export default function SettingsPage() {
 
     if (isLoading) {
         return (
-             <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="min-h-screen text-foreground">
+                <DocuExtractHeader />
+                <main className="container mx-auto p-4 md:p-8">
+                     <div className="mb-4">
+                        <Skeleton className="h-10 w-44" />
+                    </div>
+                    <Skeleton className="h-9 w-64 mb-4" />
+                    <div className="grid gap-8 md:grid-cols-2">
+                        <Card>
+                            <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
+                            <CardContent><Skeleton className="h-64 w-full" /></CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader><Skeleton className="h-8 w-64" /></CardHeader>
+                            <CardContent><Skeleton className="h-64 w-full" /></CardContent>
+                        </Card>
+                    </div>
+                </main>
             </div>
         )
     }

@@ -558,10 +558,30 @@ export default function BeneficiariesPage() {
     );
   };
 
-  if (isLoading) {
+  if (isLoading && !campaign) {
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="min-h-screen text-foreground">
+             <DocuExtractHeader />
+             <main className="container mx-auto p-4 md:p-8">
+                 <div className="mb-4">
+                    <Skeleton className="h-10 w-44" />
+                </div>
+                <Skeleton className="h-9 w-64 mb-4" />
+                 <div className="flex w-max space-x-4 border-b mb-4">
+                    <Skeleton className="h-10 w-24" />
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-10 w-36" />
+                </div>
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/2" />
+                        <Skeleton className="h-5 w-1/3" />
+                    </CardHeader>
+                    <CardContent>
+                        <Skeleton className="h-64 w-full" />
+                    </CardContent>
+                </Card>
+            </main>
         </div>
     );
   }
@@ -631,7 +651,7 @@ export default function BeneficiariesPage() {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex-1 space-y-1.5">
-                    <CardTitle>Beneficiary List ({filteredAndSortedBeneficiaries.length})</CardTitle>
+                    <CardTitle>Beneficiary List ({areBeneficiariesLoading ? '...' : filteredAndSortedBeneficiaries.length})</CardTitle>
                     <p className="text-muted-foreground">
                         Total amount for filtered beneficiaries: <span className="font-bold text-foreground">Rupee {totalKitAmount.toFixed(2)}</span>
                     </p>
@@ -730,14 +750,28 @@ export default function BeneficiariesPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {areBeneficiariesLoading && (
-                        [...Array(3)].map((_, i) => (
-                            <TableRow key={i}>
-                                <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14}><Skeleton className="h-6 w-full" /></TableCell>
-                            </TableRow>
-                        ))
-                        )}
-                        {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.map((beneficiary, index) => (
+                        {areBeneficiariesLoading ? (
+                            [...Array(5)].map((_, i) => (
+                                <TableRow key={`skeleton-${i}`}>
+                                    {(canUpdate || canDelete) && <TableCell className="sticky left-0 z-10 bg-card text-center"><Skeleton className="h-6 w-12 mx-auto" /></TableCell>}
+                                    <TableCell><Skeleton className="h-6 w-8" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-32" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-40" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-12" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-28" /></TableCell>
+                                    <TableCell><Skeleton className="h-9 w-20" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
+                                    <TableCell><Skeleton className="h-7 w-20 rounded-full" /></TableCell>
+                                </TableRow>
+                            ))
+                        ) : filteredAndSortedBeneficiaries.length > 0 ? (
+                            filteredAndSortedBeneficiaries.map((beneficiary, index) => (
                             <TableRow key={beneficiary.id}>
                                 {(canUpdate || canDelete) && (
                                 <TableCell className="sticky left-0 z-10 bg-card text-center">
@@ -794,8 +828,8 @@ export default function BeneficiariesPage() {
                                     }>{beneficiary.status}</Badge>
                                 </TableCell>
                             </TableRow>
-                        ))}
-                        {!areBeneficiariesLoading && filteredAndSortedBeneficiaries.length === 0 && (
+                        ))
+                        ) : (
                         <TableRow>
                             <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14} className="text-center h-24 text-muted-foreground">
                                 No beneficiaries found matching your criteria.

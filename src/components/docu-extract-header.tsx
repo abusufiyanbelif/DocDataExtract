@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -63,24 +62,28 @@ export function DocuExtractHeader() {
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
-          <div className="relative h-12 flex-shrink-0" style={{ width: `${brandingSettings?.logoWidth || 48}px` }}>
-            {brandingSettings?.logoUrl && (
-               <img
-                src={brandingSettings.logoUrl}
-                alt="Company Logo"
-                crossOrigin="anonymous"
-                className="object-contain w-full h-full"
-              />
+          <div className="relative h-12 flex-shrink-0" style={{ width: `${(isLoading ? 48 : brandingSettings?.logoWidth) || 48}px` }}>
+            {isLoading ? (
+                <Skeleton className="h-full w-full" />
+            ) : (
+                brandingSettings?.logoUrl && (
+                <img
+                    src={brandingSettings.logoUrl}
+                    alt="Company Logo"
+                    crossOrigin="anonymous"
+                    className="object-contain w-full h-full"
+                />
+                )
             )}
-          </div>
+            </div>
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block">
             Baitulmal Samajik Sanstha Solapur
           </h1>
         </Link>
 
-        {isLoading && <Skeleton className="h-10 w-10 rounded-full" />}
-
-        {!isLoading && user && userProfile && (
+        {isLoading ? (
+            <Skeleton className="h-10 w-10 rounded-full" />
+        ) : user && userProfile ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -131,7 +134,7 @@ export function DocuExtractHeader() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
+        ) : null}
       </div>
     </header>
   );
