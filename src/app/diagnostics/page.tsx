@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useAuth, useStorage, useFirestore } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { firebaseConfig } from '@/firebase/config';
-import { collection, query, limit, getDocs, doc, where } from 'firebase/firestore';
+import { collection, query, limit, getDocs, doc, where, getDoc } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
 import { runDiagnosticCheck } from '@/ai/flows/run-diagnostic-check';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -98,13 +98,16 @@ export default function DiagnosticsPage() {
                     return { status: 'failure', details: 'Cannot perform Firestore test because the service is not initialized.' };
                 }
                 try {
-                    const lookupsRef = collection(firestore, 'user_lookups');
+                    // Test `get` on a public-readable document. `get` is allowed on user_lookups for login.
+                    const lookupDocRef = doc(firestore, 'user_lookups', 'admin');
+                    await getDoc(lookupDocRef);
+                    
+                    // Test `list` on a public-readable collection.
                     const settingsRef = collection(firestore, 'settings');
-                    const q1 = query(lookupsRef, limit(1));
                     const q2 = query(settingsRef, limit(1));
-                    await getDocs(q1);
                     await getDocs(q2);
-                    return { status: 'success', details: 'Successfully connected and performed public reads from "user_lookups" and "settings". This confirms basic connectivity and security rules.' };
+                    
+                    return { status: 'success', details: 'Successfully connected and performed public reads. This confirms basic connectivity and security rules are working as expected.' };
                 } catch (error: any) {
                     return { status: 'failure', details: `Firestore public read failed. This could be a connectivity issue or a problem with your Security Rules. Error: ${error.message}` };
                 }
@@ -120,9 +123,10 @@ export default function DiagnosticsPage() {
                     return { status: 'failure', details: 'Cannot perform Firestore test because the service is not initialized.' };
                 }
                 try {
-                    const adminLookupSnap = await getDocs(query(collection(firestore, 'user_lookups'), where('userKey', '==', 'admin')));
+                    // Use a direct `get` which is allowed by the security rules for lookups.
+                    const adminLookupSnap = await getDoc(doc(firestore, 'user_lookups', 'admin'));
 
-                    if (adminLookupSnap.empty) {
+                    if (!adminLookupSnap.exists()) {
                         return { status: 'failure', details: (
                             <span>
                                 <strong>Admin user lookup record not found.</strong> This is required for login. Please run <strong>`npm run db:seed`</strong> from your terminal to create it.
@@ -130,6 +134,7 @@ export default function DiagnosticsPage() {
                         )};
                     }
                     
+                    // This query requires admin privileges to list the 'users' collection.
                     const adminUserDocSnap = await getDocs(query(collection(firestore, 'users'), where('userKey', '==', 'admin')));
 
                     if (adminUserDocSnap.empty) {
