@@ -1,8 +1,6 @@
-
 'use client';
 
 import { ReactNode } from 'react';
-import Image from 'next/image';
 import { AuthProvider } from '@/components/auth-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { FirebaseContentWrapper } from '@/components/FirebaseContentWrapper';
@@ -18,8 +16,8 @@ function Watermark() {
     }
 
     return (
-        <div className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
-            <Image
+        <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none">
+            <img
                 src={brandingSettings.logoUrl}
                 alt="Watermark"
                 width={500}
