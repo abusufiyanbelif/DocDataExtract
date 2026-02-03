@@ -42,7 +42,7 @@
     content: "";
     position: fixed; /* Fixed to viewport */
     inset: 0;
-    z-index: -10; /* Far behind everything */
+    z-index: 100; /* High z-index to be on top */
     background-image: var(--watermark-url);
     background-repeat: no-repeat;
     background-position: center;

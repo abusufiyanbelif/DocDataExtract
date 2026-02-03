@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -32,6 +33,8 @@ export default function SettingsPage() {
     // State for branding
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+    const [logoWidth, setLogoWidth] = useState<number | string>('');
+    const [logoHeight, setLogoHeight] = useState<number | string>('');
     const [isBrandingSubmitting, setIsBrandingSubmitting] = useState(false);
 
     // State for payment settings
@@ -45,6 +48,11 @@ export default function SettingsPage() {
 
     // Effect for branding logo preview
     useEffect(() => {
+        if (brandingSettings) {
+            setLogoWidth(brandingSettings.logoWidth || '');
+            setLogoHeight(brandingSettings.logoHeight || '');
+        }
+
         if (logoFile) {
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -79,48 +87,56 @@ export default function SettingsPage() {
     const canUpdateSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.update;
 
     const handleBrandingSave = async () => {
-        if (!logoFile || !storage || !firestore || !canUpdateSettings) {
+        if (!firestore || !canUpdateSettings) {
             toast({
                 title: 'Error',
-                description: 'No file selected or insufficient permissions.',
+                description: 'Insufficient permissions.',
                 variant: 'destructive',
             });
             return;
         }
 
         setIsBrandingSubmitting(true);
-        toast({ title: 'Uploading logo...', description: 'Please wait.' });
+        toast({ title: 'Saving branding settings...', description: 'Please wait.' });
 
         try {
-            const filePath = 'settings/logo';
-            const fileRef = storageRef(storage, filePath);
-            
-            if (brandingSettings?.logoUrl) {
-                try {
-                     const oldFileRef = storageRef(storage, brandingSettings.logoUrl);
-                     await deleteObject(oldFileRef);
-                } catch (e: any) {
-                    if (e.code !== 'storage/object-not-found') {
-                        console.warn("Could not delete old logo, it may not exist or rules are restrictive.", e);
+            let logoUrl = brandingSettings?.logoUrl || '';
+
+            if (logoFile && storage) {
+                const filePath = 'settings/logo';
+                const fileRef = storageRef(storage, filePath);
+                
+                if (brandingSettings?.logoUrl) {
+                    try {
+                         const oldFileRef = storageRef(storage, brandingSettings.logoUrl);
+                         await deleteObject(oldFileRef);
+                    } catch (e: any) {
+                        if (e.code !== 'storage/object-not-found') {
+                            console.warn("Could not delete old logo, it may not exist or rules are restrictive.", e);
+                        }
                     }
                 }
+                
+                const uploadResult = await uploadBytes(fileRef, logoFile);
+                logoUrl = await getDownloadURL(uploadResult.ref);
             }
-            
-            const uploadResult = await uploadBytes(fileRef, logoFile);
-            const downloadUrl = await getDownloadURL(uploadResult.ref);
 
             const settingsDocRef = doc(firestore, 'settings', 'branding');
-            await setDoc(settingsDocRef, { logoUrl: downloadUrl }, { merge: true });
+            await setDoc(settingsDocRef, { 
+                logoUrl,
+                logoWidth: Number(logoWidth) || null,
+                logoHeight: Number(logoHeight) || null
+            }, { merge: true });
 
             toast({
                 title: 'Success!',
-                description: 'Logo has been updated successfully.',
+                description: 'Branding settings have been updated successfully.',
                 variant: 'success',
             });
             setLogoFile(null);
 
         } catch (error: any) {
-            console.error('Logo upload failed:', error);
+            console.error('Branding settings save failed:', error);
             if (error.code === 'permission-denied') {
                 errorEmitter.emit('permission-error', new FirestorePermissionError({
                     path: 'settings/branding',
@@ -128,7 +144,7 @@ export default function SettingsPage() {
                 }));
             } else {
                 toast({
-                    title: 'Upload Failed',
+                    title: 'Save Failed',
                     description: error.message || 'An unexpected error occurred.',
                     variant: 'destructive',
                 });
@@ -149,13 +165,13 @@ export default function SettingsPage() {
         try {
             let qrCodeUrl = paymentSettings?.qrCodeUrl || '';
             
-            if (qrCodeFile) {
+            if (qrCodeFile && storage) {
                 const filePath = 'settings/payment_qr';
-                const fileRef = storageRef(storage!, filePath);
+                const fileRef = storageRef(storage, filePath);
 
                 if (qrCodeUrl) {
                     try {
-                        const oldFileRef = storageRef(storage!, qrCodeUrl);
+                        const oldFileRef = storageRef(storage, qrCodeUrl);
                         await deleteObject(oldFileRef);
                     } catch (e: any) {
                         if (e.code !== 'storage/object-not-found') {
@@ -263,10 +279,20 @@ export default function SettingsPage() {
                                         </div>
                                     )}
                                 </div>
+                                <div className="w-full grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <Label htmlFor="logoWidth">Width (px)</Label>
+                                        <Input id="logoWidth" type="number" placeholder="e.g., 48" value={logoWidth} onChange={(e) => setLogoWidth(e.target.value)} disabled={!canUpdateSettings || isBrandingSubmitting} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label htmlFor="logoHeight">Height (px)</Label>
+                                        <Input id="logoHeight" type="number" placeholder="e.g., 48" value={logoHeight} onChange={(e) => setLogoHeight(e.target.value)} disabled={!canUpdateSettings || isBrandingSubmitting} />
+                                    </div>
+                                </div>
                                 <Input id="logo-upload" type="file" accept="image/png, image/jpeg, image/svg+xml" onChange={(e) => e.target.files && setLogoFile(e.target.files[0])} disabled={!canUpdateSettings || isBrandingSubmitting} />
-                                <Button onClick={handleBrandingSave} disabled={!logoFile || isBrandingSubmitting || !canUpdateSettings} className="w-full">
+                                <Button onClick={handleBrandingSave} disabled={isBrandingSubmitting || !canUpdateSettings} className="w-full">
                                     {isBrandingSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                    Upload and Save Logo
+                                    Save Branding
                                 </Button>
                             </div>
                         </CardContent>
@@ -316,7 +342,7 @@ export default function SettingsPage() {
                             </div>
                             <Button onClick={handlePaymentSave} disabled={isPaymentSubmitting || !canUpdateSettings} className="w-full">
                                 {isPaymentSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                Save Settings
+                                Save Payment Settings
                             </Button>
                         </CardContent>
                     </Card>

@@ -1,8 +1,11 @@
+
 import type { DocumentData } from 'firebase/firestore';
 import type { UserPermissions } from './modules';
 
 export interface BrandingSettings extends DocumentData {
   logoUrl?: string;
+  logoWidth?: number;
+  logoHeight?: number;
 }
 
 export interface PaymentSettings extends DocumentData {
