@@ -37,6 +37,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogFooter,
 } from "@/components/ui/dialog";
 import { DonationForm, type DonationFormData } from '@/components/donation-form';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -572,3 +573,4 @@ export default function DonationsPage() {
     </div>
   );
 }
+
