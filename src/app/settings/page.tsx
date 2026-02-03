@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
@@ -34,11 +34,6 @@ export default function SettingsPage() {
     // Edit Mode State
     const [isEditMode, setIsEditMode] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isDirty, setIsDirty] = useState(false);
-
-    // Initial State for Dirty Check
-    const [initialBranding, setInitialBranding] = useState({});
-    const [initialPayment, setInitialPayment] = useState({});
 
     // State for branding
     const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -58,100 +53,81 @@ export default function SettingsPage() {
     const [regNo, setRegNo] = useState('');
     const [pan, setPan] = useState('');
     const [address, setAddress] = useState('');
-
-    const populateFormStates = () => {
-        if (brandingSettings) {
-            const initialData = {
-                logoWidth: brandingSettings.logoWidth || '',
-                logoHeight: brandingSettings.logoHeight || '',
-            };
-            setLogoWidth(initialData.logoWidth);
-            setLogoHeight(initialData.logoHeight);
-            setLogoPreviewUrl(brandingSettings.logoUrl || null);
-            setInitialBranding(initialData);
-        }
-        if (paymentSettings) {
-            const initialData = {
-                upiId: paymentSettings.upiId || '',
-                paymentMobileNumber: paymentSettings.paymentMobileNumber || '',
-                contactEmail: paymentSettings.contactEmail || '',
-                contactPhone: paymentSettings.contactPhone || '',
-                qrWidth: paymentSettings.qrWidth || '',
-                qrHeight: paymentSettings.qrHeight || '',
-                regNo: paymentSettings.regNo || '',
-                pan: paymentSettings.pan || '',
-                address: paymentSettings.address || '',
-            };
-            setUpiId(initialData.upiId);
-            setPaymentMobileNumber(initialData.paymentMobileNumber);
-            setContactEmail(initialData.contactEmail);
-            setContactPhone(initialData.contactPhone);
-            setQrWidth(initialData.qrWidth);
-            setQrHeight(initialData.qrHeight);
-            setRegNo(initialData.regNo);
-            setPan(initialData.pan);
-            setAddress(initialData.address);
-            setQrPreviewUrl(paymentSettings.qrCodeUrl || null);
-            setInitialPayment(initialData);
-        }
-    };
     
-    // Populate form state from fetched settings
-    useEffect(() => {
-        populateFormStates();
-    }, [brandingSettings, paymentSettings]);
-
-    // Check for dirty state
+    // This effect populates the form state from the fetched settings ONLY when not in edit mode.
+    // This prevents user input from being overwritten if the underlying data changes during an edit.
     useEffect(() => {
         if (!isEditMode) {
-            setIsDirty(false);
-            return;
+            if (brandingSettings) {
+                setLogoWidth(brandingSettings.logoWidth || '');
+                setLogoHeight(brandingSettings.logoHeight || '');
+                setLogoPreviewUrl(brandingSettings.logoUrl || null);
+            }
+            if (paymentSettings) {
+                setUpiId(paymentSettings.upiId || '');
+                setPaymentMobileNumber(paymentSettings.paymentMobileNumber || '');
+                setContactEmail(paymentSettings.contactEmail || '');
+                setContactPhone(paymentSettings.contactPhone || '');
+                setQrWidth(paymentSettings.qrWidth || '');
+                setQrHeight(paymentSettings.qrHeight || '');
+                setRegNo(paymentSettings.regNo || '');
+                setPan(paymentSettings.pan || '');
+                setAddress(paymentSettings.address || '');
+                setQrPreviewUrl(paymentSettings.qrCodeUrl || null);
+            }
         }
-        const brandingIsDirty = 
-            logoFile !== null ||
-            logoWidth !== initialBranding.logoWidth ||
-            logoHeight !== initialBranding.logoHeight;
+    }, [brandingSettings, paymentSettings, isEditMode]);
 
-        const paymentIsDirty = 
-            qrCodeFile !== null ||
-            upiId !== initialPayment.upiId ||
-            paymentMobileNumber !== initialPayment.paymentMobileNumber ||
-            contactEmail !== initialPayment.contactEmail ||
-            contactPhone !== initialPayment.contactPhone ||
-            qrWidth !== initialPayment.qrWidth ||
-            qrHeight !== initialPayment.qrHeight ||
-            regNo !== initialPayment.regNo ||
-            pan !== initialPayment.pan ||
-            address !== initialPayment.address;
-
-        setIsDirty(brandingIsDirty || paymentIsDirty);
-    }, [isEditMode, logoFile, logoWidth, logoHeight, qrCodeFile, upiId, paymentMobileNumber, contactEmail, contactPhone, qrWidth, qrHeight, regNo, pan, address, initialBranding, initialPayment]);
-
-    // Handle logo preview
+    // This effect creates a preview URL for the selected logo file.
     useEffect(() => {
         if (logoFile) {
             const reader = new FileReader();
             reader.onloadend = () => setLogoPreviewUrl(reader.result as string);
             reader.readAsDataURL(logoFile);
-        } else if (brandingSettings?.logoUrl) {
-            setLogoPreviewUrl(brandingSettings.logoUrl);
+        } else if (isEditMode) {
+            // If the file is cleared during edit mode, respect that.
         } else {
-            setLogoPreviewUrl(null);
+            setLogoPreviewUrl(brandingSettings?.logoUrl || null);
         }
-    }, [logoFile, brandingSettings]);
+    }, [logoFile, brandingSettings, isEditMode]);
 
-    // Handle QR preview
+    // This effect creates a preview URL for the selected QR code file.
     useEffect(() => {
         if (qrCodeFile) {
             const reader = new FileReader();
             reader.onloadend = () => setQrPreviewUrl(reader.result as string);
             reader.readAsDataURL(qrCodeFile);
-        } else if (paymentSettings?.qrCodeUrl) {
-            setQrPreviewUrl(paymentSettings.qrCodeUrl);
+        } else if (isEditMode) {
+            // If the file is cleared during edit mode, respect that.
         } else {
-            setQrPreviewUrl(null);
+            setQrPreviewUrl(paymentSettings?.qrCodeUrl || null);
         }
-    }, [qrCodeFile, paymentSettings]);
+    }, [qrCodeFile, paymentSettings, isEditMode]);
+
+    // This useMemo hook reliably determines if the form is "dirty" by comparing
+    // the current form state to the original settings data on every render.
+    const isDirty = useMemo(() => {
+        if (!isEditMode) return false;
+
+        const brandingIsDirty =
+            logoFile !== null ||
+            String(logoWidth) !== String(brandingSettings?.logoWidth ?? '') ||
+            String(logoHeight) !== String(brandingSettings?.logoHeight ?? '');
+
+        const paymentIsDirty =
+            qrCodeFile !== null ||
+            upiId !== (paymentSettings?.upiId ?? '') ||
+            paymentMobileNumber !== (paymentSettings?.paymentMobileNumber ?? '') ||
+            contactEmail !== (paymentSettings?.contactEmail ?? '') ||
+            contactPhone !== (paymentSettings?.contactPhone ?? '') ||
+            String(qrWidth) !== String(paymentSettings?.qrWidth ?? '') ||
+            String(qrHeight) !== String(paymentSettings?.qrHeight ?? '') ||
+            regNo !== (paymentSettings?.regNo ?? '') ||
+            pan !== (paymentSettings?.pan ?? '') ||
+            address !== (paymentSettings?.address ?? '');
+
+        return brandingIsDirty || paymentIsDirty;
+    }, [isEditMode, logoFile, logoWidth, logoHeight, qrCodeFile, upiId, paymentMobileNumber, contactEmail, contactPhone, qrWidth, qrHeight, regNo, pan, address, brandingSettings, paymentSettings]);
 
     const canUpdateSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.update;
     
@@ -171,17 +147,11 @@ export default function SettingsPage() {
             let logoUrl = brandingSettings?.logoUrl || '';
             if (logoFile && storage) {
                 if (brandingSettings?.logoUrl) {
-                    // Fire and forget deletion of old file
                     deleteObject(storageRef(storage, brandingSettings.logoUrl)).catch(e => console.warn("Failed to delete old logo", e));
                 }
-
                 const resizedBlob = await new Promise<Blob>((resolve) => {
-                    Resizer.imageFileResizer(
-                        logoFile, 1024, 1024, 'JPEG', 80, 0,
-                        blob => { resolve(blob as Blob); }, 'blob'
-                    );
+                    Resizer.imageFileResizer(logoFile, 1024, 1024, 'JPEG', 80, 0, blob => resolve(blob as Blob), 'blob');
                 });
-                
                 const timestamp = Date.now();
                 const filePath = `settings/logo_${timestamp}.jpeg`;
                 const fileRef = storageRef(storage, filePath);
@@ -199,17 +169,11 @@ export default function SettingsPage() {
             let qrCodeUrl = paymentSettings?.qrCodeUrl || '';
             if (qrCodeFile && storage) {
                  if (qrCodeUrl) {
-                    // Fire and forget deletion of old file
                     deleteObject(storageRef(storage, qrCodeUrl)).catch(e => console.warn("Failed to delete old QR code", e));
                 }
-
                 const resizedBlob = await new Promise<Blob>((resolve) => {
-                    Resizer.imageFileResizer(
-                        qrCodeFile, 1024, 1024, 'JPEG', 80, 0,
-                        blob => { resolve(blob as Blob); }, 'blob'
-                    );
+                    Resizer.imageFileResizer(qrCodeFile, 1024, 1024, 'JPEG', 80, 0, blob => resolve(blob as Blob), 'blob');
                 });
-
                 const timestamp = Date.now();
                 const filePath = `settings/payment_qr_${timestamp}.jpeg`;
                 const fileRef = storageRef(storage, filePath);
@@ -224,7 +188,7 @@ export default function SettingsPage() {
 
             toast({ title: 'Success!', description: 'Settings have been updated. The page will now reload.', variant: 'success', duration: 5000 });
             
-            // Force a reload to ensure all components get the new data from hooks
+            setIsSubmitting(false); // Reset submitting state on success
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
@@ -236,15 +200,15 @@ export default function SettingsPage() {
             } else {
                 toast({ title: 'Save Failed', description: error.message || 'An unexpected error occurred.', variant: 'destructive' });
             }
-            setIsSubmitting(false);
+            setIsSubmitting(false); // Ensure submitting state is reset on error
         }
     };
     
     const handleCancel = () => {
-        populateFormStates();
         setIsEditMode(false);
         setLogoFile(null);
         setQrCodeFile(null);
+        // The main useEffect will repopulate the form with original data since isEditMode is false
     };
 
     const isLoading = isSessionLoading || isBrandingLoading || isPaymentLoading;
