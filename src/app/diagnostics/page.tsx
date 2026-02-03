@@ -8,7 +8,7 @@ import { ref as storageRef, getMetadata } from 'firebase/storage';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle2, XCircle, Loader2, PlayCircle, ExternalLink, BrainCircuit, Database } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, XCircle, Loader2, PlayCircle, ExternalLink, BrainCircuit, Database, FileCog, KeyRound, DatabaseZap, FolderKanban } from 'lucide-react';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -56,7 +56,7 @@ export default function DiagnosticsPage() {
             id: 'firebase-config',
             name: 'Firebase Configuration',
             description: 'Verifies essential configuration values in your environment.',
-            icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" />,
+            icon: <FileCog className="h-6 w-6 text-primary" />,
             run: async () => {
                 await new Promise(res => setTimeout(res, 300));
                 if (firebaseConfig.projectId && firebaseConfig.storageBucket) {
@@ -77,7 +77,7 @@ export default function DiagnosticsPage() {
             id: 'firebase-auth',
             name: 'Firebase Authentication',
             description: 'Checks the current user authentication status.',
-            icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" />,
+            icon: <KeyRound className="h-6 w-6 text-primary" />,
             run: async () => {
                 await new Promise(res => setTimeout(res, 300));
                 if (user) {
@@ -91,7 +91,7 @@ export default function DiagnosticsPage() {
             id: 'firestore-read',
             name: 'Firestore Connectivity',
             description: 'Attempts public reads from the "user_lookups" and "settings" collections.',
-            icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" />,
+            icon: <DatabaseZap className="h-6 w-6 text-primary" />,
             run: async () => {
                 if (!firestore) {
                     return { status: 'failure', details: 'Cannot perform Firestore test because the service is not initialized.' };
@@ -152,7 +152,7 @@ export default function DiagnosticsPage() {
             id: 'storage-connectivity',
             name: 'Firebase Storage Connectivity',
             description: 'Attempts to read metadata from a public file to verify read access.',
-            icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" />,
+            icon: <FolderKanban className="h-6 w-6 text-primary" />,
             run: async () => {
                 if (!storage || !firebaseConfig.storageBucket) {
                     return { status: 'failure', details: `Cannot perform Storage test without the Storage service or a configured Storage Bucket.` };
