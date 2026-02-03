@@ -1,7 +1,6 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import { AuthProvider } from '@/components/auth-provider';
 import * as React from 'react';
 
 export const metadata: Metadata = {
@@ -20,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        {children}
       </body>
     </html>
   );
