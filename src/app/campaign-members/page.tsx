@@ -60,6 +60,9 @@ export default function CampaignPage() {
 
   const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
   const [campaignToCopy, setCampaignToCopy] = useState<Campaign | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
   
   const { userProfile, isLoading: isProfileLoading } = useSession();
 
@@ -221,6 +224,12 @@ export default function CampaignPage() {
     return sortableItems;
   }, [campaigns, searchTerm, statusFilter, categoryFilter]);
 
+  const totalPages = Math.ceil(filteredAndSortedCampaigns.length / itemsPerPage);
+  const paginatedCampaigns = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedCampaigns.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedCampaigns, currentPage, itemsPerPage]);
+
   const isLoading = areCampaignsLoading || isProfileLoading || isDeleting;
   
   const campaignPerms = userProfile?.permissions?.campaigns;
@@ -275,16 +284,16 @@ export default function CampaignPage() {
         <Card>
           <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
              <div className="flex-1 space-y-2">
-                <CardTitle>Campaigns</CardTitle>
+                <CardTitle>Campaigns ({filteredAndSortedCampaigns.length})</CardTitle>
                  <div className="flex flex-wrap items-center gap-2">
                     <Input 
                         placeholder="Search by name..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                         className="max-w-sm"
                         disabled={isLoading}
                     />
-                     <Select value={statusFilter} onValueChange={setStatusFilter} disabled={isLoading}>
+                     <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} disabled={isLoading}>
                         <SelectTrigger className="w-auto md:w-[180px]">
                             <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
@@ -295,7 +304,7 @@ export default function CampaignPage() {
                             <SelectItem value="Completed">Completed</SelectItem>
                         </SelectContent>
                     </Select>
-                     <Select value={categoryFilter} onValueChange={setCategoryFilter} disabled={isLoading}>
+                     <Select value={categoryFilter} onValueChange={(value) => { setCategoryFilter(value); setCurrentPage(1); }} disabled={isLoading}>
                         <SelectTrigger className="w-auto md:w-[180px]">
                             <SelectValue placeholder="Filter by category" />
                         </SelectTrigger>
@@ -323,7 +332,7 @@ export default function CampaignPage() {
                 {isLoading && (
                     [...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
                 )}
-                {!isLoading && filteredAndSortedCampaigns.map((campaign) => (
+                {!isLoading && paginatedCampaigns.map((campaign) => (
                     <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
@@ -433,6 +442,18 @@ export default function CampaignPage() {
                 </div>
             )}
           </CardContent>
+           {totalPages > 1 && (
+            <CardFooter className="flex items-center justify-between pt-6">
+                <p className="text-sm text-muted-foreground">
+                    Showing {paginatedCampaigns.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredAndSortedCampaigns.length)} of {filteredAndSortedCampaigns.length} campaigns
+                </p>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
+                    <span className="text-sm">{currentPage} / {totalPages}</span>
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+                </div>
+            </CardFooter>
+          )}
         </Card>
       </main>
 

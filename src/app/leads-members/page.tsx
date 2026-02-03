@@ -59,6 +59,9 @@ export default function LeadPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
+
   // const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
   // const [leadToCopy, setLeadToCopy] = useState<Lead | null>(null);
   
@@ -211,6 +214,12 @@ export default function LeadPage() {
     return sortableItems;
   }, [leads, searchTerm, statusFilter, categoryFilter]);
 
+  const totalPages = Math.ceil(filteredAndSortedLeads.length / itemsPerPage);
+  const paginatedLeads = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedLeads.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedLeads, currentPage, itemsPerPage]);
+
   const isLoading = areLeadsLoading || isProfileLoading || isDeleting;
   
   const canViewLeads = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.read;
@@ -259,16 +268,16 @@ export default function LeadPage() {
         <Card>
           <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
              <div className="flex-1 space-y-2">
-                <CardTitle>Leads</CardTitle>
+                <CardTitle>Leads ({filteredAndSortedLeads.length})</CardTitle>
                  <div className="flex flex-wrap items-center gap-2">
                     <Input 
                         placeholder="Search by name..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                         className="max-w-sm"
                         disabled={isLoading}
                     />
-                     <Select value={statusFilter} onValueChange={setStatusFilter} disabled={isLoading}>
+                     <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} disabled={isLoading}>
                         <SelectTrigger className="w-auto md:w-[180px]">
                             <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
@@ -279,7 +288,7 @@ export default function LeadPage() {
                             <SelectItem value="Completed">Completed</SelectItem>
                         </SelectContent>
                     </Select>
-                     <Select value={categoryFilter} onValueChange={setCategoryFilter} disabled={isLoading}>
+                     <Select value={categoryFilter} onValueChange={(value) => { setCategoryFilter(value); setCurrentPage(1); }} disabled={isLoading}>
                         <SelectTrigger className="w-auto md:w-[180px]">
                             <SelectValue placeholder="Filter by category" />
                         </SelectTrigger>
@@ -307,7 +316,7 @@ export default function LeadPage() {
                 {isLoading && (
                     [...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
                 )}
-                {!isLoading && filteredAndSortedLeads.map((lead) => (
+                {!isLoading && paginatedLeads.map((lead) => (
                     <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
@@ -420,6 +429,18 @@ export default function LeadPage() {
                 </div>
             )}
           </CardContent>
+          {totalPages > 1 && (
+            <CardFooter className="flex items-center justify-between pt-6">
+                <p className="text-sm text-muted-foreground">
+                    Showing {paginatedLeads.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredAndSortedLeads.length)} of {filteredAndSortedLeads.length} leads
+                </p>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
+                    <span className="text-sm">{currentPage} / {totalPages}</span>
+                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+                </div>
+            </CardFooter>
+          )}
         </Card>
       </main>
 
