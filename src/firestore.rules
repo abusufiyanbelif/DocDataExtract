@@ -106,23 +106,23 @@ service cloud.firestore {
     /**
      * @description Manages campaigns, which are publicly viewable.
      * @path /campaigns/{campaignId}
-     * @allow (read) Anyone can read campaign data for public pages.
-     * @allow (write) Only authenticated users can modify campaigns.
      */
     match /campaigns/{campaignId} {
-      allow read: if true;
+      // Allow GET if document is public OR user is signed in
+      allow get: if (resource.data.authenticityStatus == 'Verified' && resource.data.publicVisibility == 'Published') || isSignedIn();
+      // Allow LIST for all; client query is responsible for filtering.
+      allow list: if true;
+      // Allow WRITE only for signed-in users (UI manages roles).
       allow write: if isSignedIn();
     }
     
     /**
      * @description Manages beneficiaries within a campaign.
      * @path /campaigns/{campaignId}/beneficiaries/{beneficiaryId}
-     * @allow (read) Anyone can read beneficiary lists for public campaign summaries.
-     * @allow (write) Only authenticated users can modify beneficiaries.
      */
     match /campaigns/{campaignId}/beneficiaries/{beneficiaryId} {
-        allow read: if true;
-        allow write: if isSignedIn();
+        // Beneficiaries should only be readable/writable by signed-in users.
+        allow read, write: if isSignedIn();
     }
 
     /**
@@ -150,11 +150,13 @@ service cloud.firestore {
     /**
      * @description Manages leads, which are publicly viewable in some cases.
      * @path /leads/{leadId}
-     * @allow (get, list) Anyone can read leads for public pages.
-     * @allow (write) Only authenticated users can modify leads.
      */
     match /leads/{leadId} {
-      allow read: if true;
+      // Allow GET if document is public OR user is signed in
+      allow get: if (resource.data.authenticityStatus == 'Verified' && resource.data.publicVisibility == 'Published') || isSignedIn();
+      // Allow LIST for all; client query is responsible for filtering.
+      allow list: if true;
+      // Allow WRITE only for signed-in users (UI manages roles).
       allow write: if isSignedIn();
       
       match /beneficiaries/{beneficiaryId} {

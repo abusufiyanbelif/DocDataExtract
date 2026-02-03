@@ -1,4 +1,3 @@
-
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,7 +11,7 @@ import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 
 
 export default function PublicLeadPage() {
@@ -24,7 +23,10 @@ export default function PublicLeadPage() {
 
   const leadsCollectionRef = useMemo(() => {
     if (!firestore) return null;
-    return collection(firestore, 'leads');
+    return query(collection(firestore, 'leads'),
+        where('authenticityStatus', '==', 'Verified'),
+        where('publicVisibility', '==', 'Published')
+    );
   }, [firestore]);
 
   const { data: leads, isLoading } = useCollection<Lead>(leadsCollectionRef);
@@ -32,8 +34,6 @@ export default function PublicLeadPage() {
   const filteredLeads = useMemo(() => {
     if (!leads) return [];
     return leads.filter(l => 
-        l.authenticityStatus === 'Verified' &&
-        l.publicVisibility === 'Published' &&
         (statusFilter === 'All' || l.status === statusFilter) &&
         (categoryFilter === 'All' || l.category === categoryFilter) &&
         (l.name.toLowerCase().includes(searchTerm.toLowerCase()))

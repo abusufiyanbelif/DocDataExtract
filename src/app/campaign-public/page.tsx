@@ -1,4 +1,3 @@
-
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,7 +11,7 @@ import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 
 
 export default function PublicCampaignPage() {
@@ -24,7 +23,10 @@ export default function PublicCampaignPage() {
 
   const campaignsCollectionRef = useMemo(() => {
     if (!firestore) return null;
-    return collection(firestore, 'campaigns');
+    return query(collection(firestore, 'campaigns'), 
+        where('authenticityStatus', '==', 'Verified'),
+        where('publicVisibility', '==', 'Published')
+    );
   }, [firestore]);
 
   const { data: campaigns, isLoading } = useCollection<Campaign>(campaignsCollectionRef);
@@ -32,8 +34,6 @@ export default function PublicCampaignPage() {
   const filteredCampaigns = useMemo(() => {
     if (!campaigns) return [];
     return campaigns.filter(c => 
-        c.authenticityStatus === 'Verified' &&
-        c.publicVisibility === 'Published' &&
         (statusFilter === 'All' || c.status === statusFilter) &&
         (categoryFilter === 'All' || c.category === categoryFilter) &&
         (c.name.toLowerCase().includes(searchTerm.toLowerCase()))
