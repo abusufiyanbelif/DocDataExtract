@@ -5,7 +5,6 @@ import { useSession } from '@/hooks/use-session';
 import { firebaseConfig } from '@/firebase/config';
 import { collection, query, limit, getDocs, doc, where, getDoc } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, deleteObject } from 'firebase/storage';
-import { runDiagnosticCheck } from '@/ai/flows/run-diagnostic-check';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -204,7 +203,20 @@ export default function DiagnosticsPage() {
             icon: <BrainCircuit className="h-6 w-6 text-primary" />,
             run: async () => {
                 try {
-                    const genkitResult = await runDiagnosticCheck();
+                    const apiResponse = await fetch('/api/run-diagnostic-check', { method: 'POST' });
+                    
+                    if (!apiResponse.ok) {
+                        const errorText = await apiResponse.text();
+                        try {
+                            const errorData = JSON.parse(errorText);
+                            throw new Error(errorData.error || `Server responded with status ${apiResponse.status}`);
+                        } catch (e) {
+                             throw new Error(`Server responded with status ${apiResponse.status}: ${errorText}`);
+                        }
+                    }
+
+                    const genkitResult = await apiResponse.json();
+
                     if (genkitResult.ok) {
                         return { status: 'success', details: genkitResult.message };
                     } else {
@@ -231,17 +243,7 @@ export default function DiagnosticsPage() {
                         )};
                     }
                 } catch (error: any) {
-                    let details: React.ReactNode = `The diagnostic check itself failed to run. Error: ${error.message}`;
-                    if (error.message.includes('can only export async functions')) {
-                        details = (
-                            <div className="space-y-2">
-                                <p><strong>`'use server'` Configuration Error.</strong> A file marked with `'use server'` is improperly exporting a non-function object. This commonly happens if the core Genkit configuration file (`src/ai/genkit.ts`) contains the `'use server'` directive.</p>
-                                <p><strong>Solution:</strong> Ensure that `'use server'` is removed from `src/ai/genkit.ts`. This directive should only be in your flow files (e.g., `src/ai/flows/your-flow.ts`).</p>
-                                <p className="font-mono text-xs bg-muted p-2 rounded-md">Error Details: {error.message}</p>
-                            </div>
-                        );
-                    }
-                    return { status: 'failure', details };
+                    return { status: 'failure', details: `The diagnostic check failed to run. Error: ${error.message}` };
                 }
             },
         }
