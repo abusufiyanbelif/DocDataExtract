@@ -147,18 +147,24 @@ service cloud.firestore {
         allow write: if isSignedIn();
     }
 
+    /**
+     * @description Manages leads, which are publicly viewable in some cases.
+     * @path /leads/{leadId}
+     * @allow (get, list) Anyone can read leads for public pages.
+     * @allow (write) Only authenticated users can modify leads.
+     */
+    match /leads/{leadId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+      
+      match /beneficiaries/{beneficiaryId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+
     // ----------------------------------------------------------------------
     // Internal & Private Collections
     // ----------------------------------------------------------------------
-    
-    /**
-     * @description Manages leads, which are internal to the organization.
-     * @path /leads/{leadId}
-     * @allow (read, write) Only authenticated users can access leads.
-     */
-    match /leads/{leadId}/{allSubcollections=**} {
-        allow read, write: if isSignedIn();
-    }
     
     /**
      * @description Lookup table for finding a user's email by loginId or phone.
