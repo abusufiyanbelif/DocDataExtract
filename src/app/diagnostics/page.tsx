@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useAuth, useStorage, useFirestore } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { firebaseConfig } from '@/firebase/config';
@@ -13,7 +13,7 @@ import { ArrowLeft, CheckCircle2, XCircle, Loader2, PlayCircle, ExternalLink, Br
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-type TestResult = 'success' | 'failure' | 'pending';
+type TestResult = 'success' | 'failure' | 'pending' | 'skipped';
 type TestStatus = TestResult | 'running';
 
 interface DiagnosticCheck {
@@ -33,12 +33,12 @@ export default function DiagnosticsPage() {
     const firestore = useFirestore();
     const auth = useAuth();
     const storage = useStorage();
-    const { user } = useSession();
+    const { user, userProfile } = useSession();
     
     const [checkResults, setCheckResults] = useState<Record<string, CheckResult>>({});
     const [isAllRunning, setIsAllRunning] = useState(false);
     
-    const diagnosticChecks: DiagnosticCheck[] = [
+    const diagnosticChecks: DiagnosticCheck[] = useMemo(() => [
         {
             id: 'firebase-init',
             name: 'Firebase Initialization',
@@ -98,16 +98,14 @@ export default function DiagnosticsPage() {
                     return { status: 'failure', details: 'Cannot perform Firestore test because the service is not initialized.' };
                 }
                 try {
-                    // Test `get` on a public-readable document. `get` is allowed on user_lookups for login.
+                    // Test `get` on public-readable documents.
                     const lookupDocRef = doc(firestore, 'user_lookups', 'admin');
                     await getDoc(lookupDocRef);
                     
-                    // Test `list` on a public-readable collection.
-                    const settingsRef = collection(firestore, 'settings');
-                    const q2 = query(settingsRef, limit(1));
-                    await getDocs(q2);
+                    const settingsDocRef = doc(firestore, 'settings', 'branding');
+                    await getDoc(settingsDocRef);
                     
-                    return { status: 'success', details: 'Successfully connected and performed public reads. This confirms basic connectivity and security rules are working as expected.' };
+                    return { status: 'success', details: 'Successfully connected and performed public reads from `user_lookups` and `settings`.' };
                 } catch (error: any) {
                     return { status: 'failure', details: `Firestore public read failed. This could be a connectivity issue or a problem with your Security Rules. Error: ${error.message}` };
                 }
@@ -119,13 +117,11 @@ export default function DiagnosticsPage() {
             description: 'Verifies that the default admin user exists in the database.',
             icon: <Database className="h-6 w-6 text-primary" />,
             run: async () => {
-                 if (!firestore) {
-                    return { status: 'failure', details: 'Cannot perform Firestore test because the service is not initialized.' };
-                }
+                 if (!firestore) return { status: 'failure', details: 'Firestore is not initialized.' };
+                 if (!userProfile) return { status: 'skipped', details: 'Cannot run test without a logged-in user profile.' };
+                
                 try {
-                    // Use a direct `get` which is allowed by the security rules for lookups.
                     const adminLookupSnap = await getDoc(doc(firestore, 'user_lookups', 'admin'));
-
                     if (!adminLookupSnap.exists()) {
                         return { status: 'failure', details: (
                             <span>
@@ -133,10 +129,12 @@ export default function DiagnosticsPage() {
                             </span>
                         )};
                     }
-                    
-                    // This query requires admin privileges to list the 'users' collection.
-                    const adminUserDocSnap = await getDocs(query(collection(firestore, 'users'), where('userKey', '==', 'admin')));
 
+                    if (userProfile.role !== 'Admin') {
+                        return { status: 'skipped', details: 'Admin lookup record found. Skipped user profile document verification because you are not an administrator.'};
+                    }
+                    
+                    const adminUserDocSnap = await getDocs(query(collection(firestore, 'users'), where('userKey', '==', 'admin')));
                     if (adminUserDocSnap.empty) {
                          return { status: 'failure', details: (
                             <span>
@@ -247,7 +245,7 @@ export default function DiagnosticsPage() {
                 }
             },
         }
-    ];
+    ], [firestore, auth, storage, user, userProfile]);
 
     const runSingleCheck = useCallback(async (check: DiagnosticCheck) => {
         setCheckResults(prev => ({
@@ -261,7 +259,7 @@ export default function DiagnosticsPage() {
             ...prev,
             [check.id]: { status: result.status, details: result.details }
         }));
-    }, [user]);
+    }, []);
 
     const runAllChecks = async () => {
         setIsAllRunning(true);
@@ -283,6 +281,8 @@ export default function DiagnosticsPage() {
                 return <CheckCircle2 className="h-5 w-5 text-green-500" />;
             case 'failure':
                 return <XCircle className="h-5 w-5 text-destructive" />;
+            case 'skipped':
+                return <CheckCircle2 className="h-5 w-5 text-yellow-500" />;
             case 'running':
                 return <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />;
             case 'pending':

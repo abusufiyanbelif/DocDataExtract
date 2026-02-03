@@ -7,6 +7,11 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // Diagnostics path for testing user-specific writes.
+    match /diagnostics/{userId}/{allPaths=**} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
     // Settings files (logo, qr code) are publicly readable.
     // Assumes the upload logic is secured by a backend function or admin-only UI
     // that checks for admin role before allowing an upload/delete.
