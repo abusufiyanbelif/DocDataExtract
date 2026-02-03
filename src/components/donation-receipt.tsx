@@ -68,15 +68,23 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                     </CardContent>
                     <CardFooter className="flex-col items-start text-xs text-muted-foreground p-6 pt-4 space-y-2">
                         <Separator className="mb-4" />
-                        <div className="w-full flex justify-between gap-4">
+                        <div className="w-full grid grid-cols-2 gap-4">
                             <div className="space-y-1 text-left">
                                 {paymentSettings?.regNo && <p>Reg. No.: {paymentSettings.regNo}</p>}
                                 {paymentSettings?.pan && <p>PAN: {paymentSettings.pan}</p>}
+                                {paymentSettings?.contactEmail && <p>Email: {paymentSettings.contactEmail}</p>}
+                                {paymentSettings?.contactPhone && <p>Phone: {paymentSettings.contactPhone}</p>}
                             </div>
                              <div className="space-y-1 text-right">
-                                {paymentSettings?.address && <p>{paymentSettings.address}</p>}
+                                {paymentSettings?.address && <p className="whitespace-pre-line">{paymentSettings.address}</p>}
+                                {paymentSettings?.upiId && <p>UPI: {paymentSettings.upiId}</p>}
                             </div>
                         </div>
+                        {paymentSettings?.qrCodeUrl && (
+                            <div className="w-full flex justify-center pt-4">
+                                <img src={paymentSettings.qrCodeUrl} crossOrigin="anonymous" alt="QR Code" style={{ width: '80px', height: '80px' }} />
+                            </div>
+                        )}
                         <p className="pt-2 text-center w-full">This is a computer-generated receipt and does not require a signature.</p>
                     </CardFooter>
                 </div>

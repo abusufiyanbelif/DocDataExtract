@@ -100,16 +100,65 @@ export default function DonationDetailsPage() {
                 link.download = `donation-receipt-${donationId}.png`;
                 link.href = imgData;
                 link.click();
-            } else {
+            } else { // PDF
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-                const ratio = imgWidth / imgHeight;
-                let finalImgWidth = pdfWidth;
-                let finalImgHeight = finalImgWidth / ratio;
+                const pageHeight = pdf.internal.pageSize.getHeight();
                 
-                pdf.addImage(imgData, 'PNG', 0, 0, finalImgWidth, finalImgHeight);
+                // Add receipt image
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfImageHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfImageHeight);
+                
+                let finalY = pdfImageHeight + 10;
+                const footerHeight = 50; // Estimated footer height
+
+                if (finalY + footerHeight > pageHeight) {
+                    pdf.addPage();
+                    finalY = 20;
+                }
+
+                // --- Footer ---
+                pdf.setLineWidth(0.2);
+                pdf.line(15, finalY, pdfWidth - 15, finalY);
+                finalY += 8;
+
+                pdf.setFontSize(12);
+                pdf.text('For Donations & Contact', 15, finalY);
+                finalY += 6;
+                pdf.setFontSize(9);
+                
+                const qrSize = 30;
+                const qrX = pdfWidth - 15 - qrSize;
+
+                if (paymentSettings?.qrCodeUrl) {
+                    try {
+                        const qrImg = new Image();
+                        qrImg.crossOrigin = 'anonymous';
+                        qrImg.src = paymentSettings.qrCodeUrl;
+                        await new Promise<void>((resolve, reject) => {
+                            qrImg.onload = () => resolve();
+                            qrImg.onerror = (err) => reject(new Error('QR Code image failed to load.'));
+                        });
+                        pdf.addImage(qrImg, 'PNG', qrX, finalY - 2, qrSize, qrSize);
+                    } catch (e) {
+                        console.warn("Could not add QR code to PDF", e);
+                    }
+                }
+                
+                if (paymentSettings?.upiId) {
+                    pdf.text(`UPI: ${paymentSettings.upiId}`, 15, finalY);
+                    finalY += 5;
+                }
+                if (paymentSettings?.paymentMobileNumber) {
+                    pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, finalY);
+                    finalY += 5;
+                }
+                if (paymentSettings?.contactEmail) {
+                    pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, finalY);
+                    finalY += 5;
+                }
+                
                 pdf.save(`donation-receipt-${donationId}.pdf`);
             }
         } catch (error) {
