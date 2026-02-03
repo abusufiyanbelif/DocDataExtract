@@ -1,6 +1,5 @@
 import type {Metadata} from 'next';
 import '../globals.css';
-import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: 'Donations',
@@ -15,7 +14,6 @@ export default function DonationsLayout({
   return (
     <>
       {children}
-      <Toaster />
     </>
   );
 }

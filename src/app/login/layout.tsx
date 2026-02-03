@@ -1,6 +1,5 @@
 import type {Metadata} from 'next';
 import '../globals.css';
-import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: 'Login',
@@ -15,7 +14,6 @@ export default function LoginLayout({
   return (
     <>
       {children}
-      <Toaster />
     </>
   );
 }
