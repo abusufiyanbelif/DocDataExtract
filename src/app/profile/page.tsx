@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useSession } from '@/hooks/use-session';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -36,13 +36,30 @@ export default function ProfilePage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
-    const [role, setRole] = useState<'Admin' | 'User'>('User');
-    const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
+    
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDirty, setIsDirty] = useState(false);
 
     const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
     const [imageToView, setImageToView] = useState<string | null>(null);
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
+    
+    useEffect(() => {
+        if (userProfile) {
+            setName(userProfile.name);
+            setPhone(userProfile.phone);
+        }
+    }, [userProfile]);
+
+    useEffect(() => {
+        if (isEditMode && userProfile) {
+            setIsDirty(name !== userProfile.name || phone !== userProfile.phone);
+        } else {
+            setIsDirty(false);
+        }
+    }, [name, phone, userProfile, isEditMode]);
+
 
     const handleViewImage = (url: string) => {
         setImageToView(url);
@@ -55,44 +72,31 @@ export default function ProfilePage() {
         if (userProfile) {
             setName(userProfile.name);
             setPhone(userProfile.phone);
-            setRole(userProfile.role);
-            setStatus(userProfile.status);
             setIsEditMode(true);
         }
     };
 
     const handleCancel = () => {
+        if (userProfile) {
+            setName(userProfile.name);
+            setPhone(userProfile.phone);
+        }
         setIsEditMode(false);
     };
 
     const handleSave = async () => {
-        if (!firestore || !userProfile) {
-            toast({ title: 'Error', description: 'Could not save profile.', variant: 'destructive'});
+        if (!firestore || !userProfile || !isDirty) {
+            toast({ title: 'Error', description: 'No changes to save or services are unavailable.', variant: 'destructive'});
             return;
         }
-
-        if (userProfile.userKey === 'admin' && role !== 'Admin') {
-            toast({ title: 'Invalid Action', description: 'The default System Admin cannot be demoted.', variant: 'destructive'});
-            return;
-        }
-        if (userProfile.userKey === 'admin' && status !== 'Active') {
-            toast({ title: 'Invalid Action', description: 'The default System Admin cannot be deactivated.', variant: 'destructive'});
-            return;
-        }
+        setIsSubmitting(true);
 
         const batch = writeBatch(firestore);
         const userDocRef = doc(firestore, 'users', userProfile.id);
 
-        const updateData: {name?: string, phone?: string, role?: 'Admin' | 'User', status?: 'Active' | 'Inactive' } = {};
+        const updateData: {name?: string, phone?: string } = {};
         if (name !== userProfile.name) updateData.name = name;
         if (phone !== userProfile.phone) updateData.phone = phone;
-        if (role !== userProfile.role) updateData.role = role;
-        if (status !== userProfile.status) updateData.status = status;
-
-        if (Object.keys(updateData).length === 0) {
-            setIsEditMode(false);
-            return;
-        }
 
         batch.update(userDocRef, updateData);
 
@@ -121,6 +125,8 @@ export default function ProfilePage() {
             } else {
                 toast({ title: 'Error', description: 'Failed to update profile.', variant: 'destructive'});
             }
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -156,8 +162,11 @@ export default function ProfilePage() {
                                 <Button onClick={handleEdit}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
                              ) : (
                                 <div className="flex gap-2">
-                                    <Button variant="ghost" onClick={handleCancel}>Cancel</Button>
-                                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4" /> Save</Button>
+                                    <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
+                                    <Button onClick={handleSave} disabled={isSubmitting || !isDirty}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                        Save
+                                    </Button>
                                 </div>
                              )}
                         </div>
@@ -166,12 +175,12 @@ export default function ProfilePage() {
                         {userProfile ? (
                             <>
                                 <ProfileDetail icon={<User />} label="Full Name" value={userProfile.name} isEditing={isEditMode}>
-                                    <Input value={name} onChange={(e) => setName(e.target.value)} />
+                                    <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSubmitting}/>
                                 </ProfileDetail>
                                 <ProfileDetail icon={<Mail />} label="Email Address" value={userProfile.email} />
                                 <ProfileDetail icon={<LogIn />} label="Login ID" value={userProfile.loginId} />
                                 <ProfileDetail icon={<Phone />} label="Phone Number" value={userProfile.phone} isEditing={isEditMode}>
-                                     <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+                                     <Input value={phone} onChange={(e) => setPhone(e.target.value)} disabled={isSubmitting}/>
                                 </ProfileDetail>
                                 <ProfileDetail icon={<KeyRound />} label="User Key (System ID)" value={userProfile.userKey} />
                                 
@@ -179,31 +188,13 @@ export default function ProfilePage() {
                                     icon={<Shield />} 
                                     label="Role" 
                                     value={<Badge variant={userProfile.role === 'Admin' ? 'destructive' : 'secondary'}>{userProfile.role}</Badge>} 
-                                    isEditing={isEditMode && userProfile.role === 'Admin'}
-                                >
-                                     <Select value={role} onValueChange={(value: 'Admin' | 'User') => setRole(value)}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Admin">Admin</SelectItem>
-                                            <SelectItem value="User">User</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </ProfileDetail>
+                                />
                                 
                                 <ProfileDetail 
                                     icon={userProfile.status === 'Active' ? <CheckCircle className="text-success" /> : <XCircle className="text-destructive" />} 
                                     label="Status" 
                                     value={<Badge variant={userProfile.status === 'Active' ? 'default' : 'outline'}>{userProfile.status}</Badge>} 
-                                    isEditing={isEditMode && userProfile.role === 'Admin'}
-                                >
-                                    <Select value={status} onValueChange={(value: 'Active' | 'Inactive') => setStatus(value)}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Active">Active</SelectItem>
-                                            <SelectItem value="Inactive">Inactive</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </ProfileDetail>
+                                />
 
                                 {userProfile.idProofUrl && (
                                     <ProfileDetail 

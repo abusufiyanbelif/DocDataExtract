@@ -195,7 +195,6 @@ export default function UserDetailsPage() {
   };
 
   const isLoading = isUserLoading || isProfileLoading;
-  const isFormDisabled = isLoading || isSubmitting;
 
   if (isLoading) {
     return (
@@ -269,9 +268,9 @@ export default function UserDetailsPage() {
                     <CardTitle>User: {user.name}</CardTitle>
                     <CardDescription>View user details or switch to edit mode.</CardDescription>
                 </div>
-                {canUpdate && (
-                    <Button onClick={() => setIsEditMode(!isEditMode)}>
-                        {isEditMode ? 'Cancel' : <><Edit className="mr-2 h-4 w-4" /> Edit</>}
+                {canUpdate && !isEditMode && (
+                    <Button onClick={() => setIsEditMode(true)}>
+                        <Edit className="mr-2 h-4 w-4" /> Edit
                     </Button>
                 )}
             </div>
@@ -292,6 +291,7 @@ export default function UserDetailsPage() {
                 onCancel={handleCancel}
                 isSubmitting={isSubmitting}
                 isLoading={isUserLoading}
+                isReadOnly={!isEditMode || !canUpdate}
             />
           </CardContent>
         </Card>

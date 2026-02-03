@@ -73,9 +73,10 @@ interface UserFormProps {
   onCancel: () => void;
   isSubmitting: boolean;
   isLoading: boolean;
+  isReadOnly?: boolean;
 }
 
-export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: UserFormProps) {
+export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading, isReadOnly = false }: UserFormProps) {
   const isEditing = !!user;
   const { userProfile: currentUser } = useCurrentUserSession();
   const isCurrentUserAdmin = currentUser?.role === 'Admin';
@@ -103,7 +104,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
     },
   });
 
-  const { watch, setValue, register, control, handleSubmit, getValues } = form;
+  const { watch, setValue, register, control, handleSubmit, getValues, formState: { isDirty } } = form;
   const nameValue = watch('name');
   const roleValue = watch('role');
   const idProofFile = watch('idProofFile');
@@ -272,7 +273,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
       onSubmit(dataWithPermissions);
   };
   
-  const isFormDisabled = isSubmitting || isLoading;
+  const isFormDisabled = isSubmitting || isLoading || isReadOnly;
   
   return (
     <Form {...form}>
@@ -443,19 +444,21 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                         ) : (
                             <Image src={preview} alt="ID Proof Preview" fill className="object-contain" />
                         )}
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('user-id-proof-file-input')?.click()}>
-                                <Replace className="h-5 w-5"/>
-                                <span className="sr-only">Replace Image</span>
-                            </Button>
-                            <Button type="button" size="icon" variant="destructive" onClick={handleDeleteProof}>
-                                <Trash2 className="h-5 w-5"/>
-                                <span className="sr-only">Delete Image</span>
-                            </Button>
-                        </div>
+                        {!isReadOnly && 
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('user-id-proof-file-input')?.click()}>
+                                  <Replace className="h-5 w-5"/>
+                                  <span className="sr-only">Replace Image</span>
+                              </Button>
+                              <Button type="button" size="icon" variant="destructive" onClick={handleDeleteProof}>
+                                  <Trash2 className="h-5 w-5"/>
+                                  <span className="sr-only">Delete Image</span>
+                              </Button>
+                          </div>
+                        }
                     </div>
                 )}
-                 {idProofFile?.length > 0 && (
+                 {idProofFile?.length > 0 && !isReadOnly && (
                     <Button 
                         type="button" 
                         className="w-full"
@@ -529,13 +532,15 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
                 />
             </div>
             
-            <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isFormDisabled}>Cancel</Button>
-            <Button type="submit" disabled={isFormDisabled}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isSubmitting ? 'Saving...' : 'Save User'}
-            </Button>
-            </div>
+            {!isReadOnly && (
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={onCancel} disabled={isFormDisabled}>Cancel</Button>
+                <Button type="submit" disabled={isFormDisabled || !isDirty}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isSubmitting ? 'Saving...' : 'Save User'}
+                </Button>
+              </div>
+            )}
         </form>
     </Form>
   );

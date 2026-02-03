@@ -66,6 +66,7 @@ interface DonationFormProps {
 export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps) {
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
+  const isEditing = !!donation;
 
   const form = useForm<DonationFormData>({
     resolver: zodResolver(formSchema),
@@ -475,7 +476,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
           
           <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting || !isDirty}>
+              <Button type="submit" disabled={isSubmitting || (isEditing && !isDirty)}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isSubmitting ? 'Saving...' : 'Save Donation'}
               </Button>

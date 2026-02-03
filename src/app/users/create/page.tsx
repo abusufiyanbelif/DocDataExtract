@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -235,6 +236,7 @@ export default function CreateUserPage() {
                 onCancel={handleCancel}
                 isSubmitting={isSubmitting}
                 isLoading={isLoading}
+                isReadOnly={false}
             />
           </CardContent>
         </Card>

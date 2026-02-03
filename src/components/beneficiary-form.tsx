@@ -61,6 +61,7 @@ interface BeneficiaryFormProps {
 export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }: BeneficiaryFormProps) {
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
+  const isEditing = !!beneficiary;
 
   const form = useForm<BeneficiaryFormData>({
     resolver: zodResolver(formSchema),
@@ -82,7 +83,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     },
   });
 
-  const { formState: { isSubmitting }, watch, setValue, register, getValues } = form;
+  const { formState: { isSubmitting, isDirty }, watch, setValue, register, getValues } = form;
   const [preview, setPreview] = useState<string | null>(beneficiary?.idProofUrl || null);
   const idProofFile = watch('idProofFile');
 
@@ -479,7 +480,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
 
         <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || (isEditing && !isDirty)}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? 'Saving...' : 'Save Beneficiary'}
             </Button>
