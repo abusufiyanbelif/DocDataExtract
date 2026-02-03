@@ -10,6 +10,8 @@ export interface BrandingSettings extends DocumentData {
 
 export interface PaymentSettings extends DocumentData {
   qrCodeUrl?: string;
+  qrWidth?: number;
+  qrHeight?: number;
   upiId?: string;
   paymentMobileNumber?: string;
   contactEmail?: string;

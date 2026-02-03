@@ -93,7 +93,13 @@ export function AppFooter() {
         {/* QR Code */}
         <div className="flex justify-center md:justify-end">
           {paymentSettings?.qrCodeUrl && (
-            <div className="relative h-32 w-32 border-4 border-primary rounded-lg overflow-hidden p-1 bg-white">
+            <div 
+              className="relative border-4 border-primary rounded-lg overflow-hidden p-1 bg-white"
+              style={{
+                width: `${paymentSettings.qrWidth || 128}px`,
+                height: `${paymentSettings.qrHeight || 128}px`,
+              }}
+            >
               <Image src={paymentSettings.qrCodeUrl} alt="UPI QR Code" fill className="object-contain" />
             </div>
           )}

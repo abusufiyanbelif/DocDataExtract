@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -72,7 +73,16 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                             </div>
                             {paymentSettings?.qrCodeUrl && (
                                 <div className="text-center">
-                                    <img src={paymentSettings.qrCodeUrl} crossOrigin="anonymous" alt="QR Code" className="w-28 h-28 mx-auto border p-1 rounded-md bg-white" />
+                                    <img 
+                                        src={paymentSettings.qrCodeUrl} 
+                                        crossOrigin="anonymous" 
+                                        alt="QR Code"
+                                        style={{
+                                            width: `${paymentSettings.qrWidth || 112}px`,
+                                            height: `${paymentSettings.qrHeight || 112}px`
+                                        }}
+                                        className="mx-auto border p-1 rounded-md bg-white" 
+                                    />
                                     {paymentSettings?.upiId && <p className="text-xs font-mono mt-1">{paymentSettings.upiId}</p>}
                                 </div>
                             )}

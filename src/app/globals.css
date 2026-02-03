@@ -40,15 +40,14 @@
 
   body::before {
     content: "";
-    position: fixed; /* Fixed to viewport */
+    position: fixed;
     inset: 0;
-    z-index: 100; /* High z-index to be on top */
+    z-index: 40;
     background-image: var(--watermark-url);
     background-repeat: no-repeat;
     background-position: center;
-    background-attachment: fixed;
     opacity: 0.12;
-    pointer-events: none; /* Make it non-interactive */
+    pointer-events: none;
   }
 
   @media (min-width: 768px) {
@@ -60,7 +59,6 @@
 
 body {
   @apply bg-background text-foreground;
-  position: relative;
 }
 
 /* App content container */

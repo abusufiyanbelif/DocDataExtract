@@ -40,6 +40,8 @@ export default function SettingsPage() {
     // State for payment settings
     const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
     const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
+    const [qrWidth, setQrWidth] = useState<number | string>('');
+    const [qrHeight, setQrHeight] = useState<number | string>('');
     const [upiId, setUpiId] = useState('');
     const [paymentMobileNumber, setPaymentMobileNumber] = useState('');
     const [contactEmail, setContactEmail] = useState('');
@@ -71,6 +73,8 @@ export default function SettingsPage() {
             setPaymentMobileNumber(paymentSettings.paymentMobileNumber || '');
             setContactEmail(paymentSettings.contactEmail || '');
             setContactPhone(paymentSettings.contactPhone || '');
+            setQrWidth(paymentSettings.qrWidth || '');
+            setQrHeight(paymentSettings.qrHeight || '');
         }
         if (qrCodeFile) {
             const reader = new FileReader();
@@ -186,6 +190,8 @@ export default function SettingsPage() {
             const settingsDocRef = doc(firestore, 'settings', 'payment');
             const dataToSave = {
                 qrCodeUrl,
+                qrWidth: Number(qrWidth) || null,
+                qrHeight: Number(qrHeight) || null,
                 upiId,
                 paymentMobileNumber,
                 contactEmail,
@@ -317,6 +323,16 @@ export default function SettingsPage() {
                                                     <p className="text-xs mt-1">No QR code uploaded</p>
                                                 </div>
                                             )}
+                                        </div>
+                                        <div className="w-full grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label htmlFor="qrWidth">Width (px)</Label>
+                                                <Input id="qrWidth" type="number" placeholder="e.g., 128" value={qrWidth} onChange={(e) => setQrWidth(e.target.value)} disabled={!canUpdateSettings || isPaymentSubmitting} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label htmlFor="qrHeight">Height (px)</Label>
+                                                <Input id="qrHeight" type="number" placeholder="e.g., 128" value={qrHeight} onChange={(e) => setQrHeight(e.target.value)} disabled={!canUpdateSettings || isPaymentSubmitting} />
+                                            </div>
                                         </div>
                                         <Input id="qr-upload" type="file" accept="image/png, image/jpeg" onChange={(e) => e.target.files && setQrCodeFile(e.target.files[0])} disabled={!canUpdateSettings || isPaymentSubmitting} />
                                     </div>
