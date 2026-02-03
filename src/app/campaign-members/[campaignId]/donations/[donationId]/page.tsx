@@ -19,7 +19,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { DonationReceipt } from '@/components/donation-receipt';
 import { DonationForm, type DonationFormData } from '@/components/donation-form';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Edit, Download, Loader2, Image as ImageIcon, FileText } from 'lucide-react';
@@ -111,7 +111,7 @@ export default function DonationDetailsPage() {
                 pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfImageHeight);
                 
                 let finalY = pdfImageHeight + 10;
-                const footerHeight = 50; // Estimated footer height
+                const footerHeight = 60; // Estimated footer height
 
                 if (finalY + footerHeight > pageHeight) {
                     pdf.addPage();
@@ -157,6 +157,17 @@ export default function DonationDetailsPage() {
                 if (paymentSettings?.contactEmail) {
                     pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, finalY);
                     finalY += 5;
+                }
+                if (paymentSettings?.pan) {
+                    pdf.text(`PAN: ${paymentSettings.pan}`, 15, finalY);
+                    finalY += 5;
+                }
+                if (paymentSettings?.regNo) {
+                    pdf.text(`Reg No: ${paymentSettings.regNo}`, 15, finalY);
+                    finalY += 5;
+                }
+                if (paymentSettings?.address) {
+                    pdf.text(`Address: ${paymentSettings.address}`, 15, finalY);
                 }
                 
                 pdf.save(`donation-receipt-${donationId}.pdf`);

@@ -311,7 +311,7 @@ Your contribution, big or small, makes a huge difference.
                 pdf.addImage(imgData, 'PNG', 10, position, printableWidth, printableHeight);
                 
                 let finalY = position + printableHeight + 10;
-                const footerHeight = 50; // Estimated footer height
+                const footerHeight = 60; // Estimated footer height
 
                 if (finalY + footerHeight > pageHeight) {
                     pdf.addPage();
@@ -364,6 +364,10 @@ Your contribution, big or small, makes a huge difference.
                 }
                  if (paymentSettings?.regNo) {
                     pdf.text(`Reg No: ${paymentSettings.regNo}`, 15, finalY);
+                    finalY += 5;
+                }
+                 if (paymentSettings?.address) {
+                    pdf.text(`Address: ${paymentSettings.address}`, 15, finalY);
                 }
 
                 pdf.save(`campaign-summary-${campaignId}.pdf`);
