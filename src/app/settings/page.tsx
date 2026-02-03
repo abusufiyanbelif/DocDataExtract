@@ -222,10 +222,13 @@ export default function SettingsPage() {
             };
             await setDoc(doc(firestore, 'settings', 'payment'), paymentData, { merge: true });
 
-            toast({ title: 'Success!', description: 'Settings have been updated successfully.', variant: 'success' });
-            setLogoFile(null);
-            setQrCodeFile(null);
-            setIsEditMode(false);
+            toast({ title: 'Success!', description: 'Settings have been updated. The page will now reload.', variant: 'success', duration: 5000 });
+            
+            // Force a reload to ensure all components get the new data from hooks
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+
         } catch (error: any) {
             console.error('Settings save failed:', error);
             if (error.code === 'permission-denied') {
@@ -233,7 +236,6 @@ export default function SettingsPage() {
             } else {
                 toast({ title: 'Save Failed', description: error.message || 'An unexpected error occurred.', variant: 'destructive' });
             }
-        } finally {
             setIsSubmitting(false);
         }
     };
