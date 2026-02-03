@@ -38,8 +38,10 @@ const listFilesAndFolders = async (bucket: any, prefix = '', indent = '') => {
             const fileName = file.name.substring(prefix.length);
             if (fileName) {
                  const sizeInKb = file.metadata.size ? (Number(file.metadata.size) / 1024).toFixed(2) : '0.00';
-                 const lastModified = new Date(file.metadata.updated).toLocaleString();
-                 log.dim(`${indent}📄 ${fileName} (${sizeInKb} KB, type: ${file.metadata.contentType}, updated: ${lastModified})`);
+                 const created = new Date(file.metadata.timeCreated).toISOString();
+                 const updated = new Date(file.metadata.updated).toISOString();
+                 const metadataString = `(size: ${sizeInKb} KB, type: ${file.metadata.contentType}, created: ${created}, updated: ${updated})`;
+                 log.dim(`${indent}📄 ${fileName} ${metadataString}`);
             }
         }
 

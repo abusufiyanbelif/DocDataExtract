@@ -4,7 +4,7 @@ import { useAuth, useStorage, useFirestore } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { firebaseConfig } from '@/firebase/config';
 import { collection, query, limit, getDocs, doc, where, getDoc } from 'firebase/firestore';
-import { ref as storageRef, list } from 'firebase/storage';
+import { ref as storageRef, getMetadata } from 'firebase/storage';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -151,24 +151,30 @@ export default function DiagnosticsPage() {
         {
             id: 'storage-connectivity',
             name: 'Firebase Storage Connectivity',
-            description: 'Attempts to list items from the public /settings folder to verify read access.',
+            description: 'Attempts to read metadata from a public file to verify read access.',
             icon: <img src="https://www.gstatic.com/mobilesdk/160503_mobilesdk/logo/2x/firebase_28.png" alt="Firebase" className="h-6 w-6" />,
             run: async () => {
                 if (!storage || !firebaseConfig.storageBucket) {
                     return { status: 'failure', details: `Cannot perform Storage test without the Storage service or a configured Storage Bucket.` };
                 }
                 
-                const settingsRef = storageRef(storage, 'settings/');
+                const publicFileRef = storageRef(storage, 'settings/logo');
                 try {
-                    await list(settingsRef, { maxResults: 1 });
-                    return { status: 'success', details: 'Successfully connected and verified read access to a public path in Firebase Storage.' };
+                    await getMetadata(publicFileRef);
+                    return { status: 'success', details: 'Successfully connected and verified read access to a public file in Firebase Storage.' };
                 } catch (error: any) {
-                    if (error.code === 'storage/unauthorized') {
+                    if (error.code === 'storage/object-not-found') {
+                        return { status: 'failure', details: (
+                            <span>
+                                <strong>File Not Found.</strong> The test tried to access <strong>settings/logo</strong> but it does not exist. Please ensure you have uploaded a logo in the Settings page. This might also indicate a permissions issue masking the file's existence.
+                            </span>
+                        )};
+                    } else if (error.code === 'storage/unauthorized') {
                         const storageRulesUrl = `https://console.firebase.google.com/project/${firebaseConfig.projectId}/storage/${firebaseConfig.storageBucket}/rules`;
                         return { status: 'failure', details: (
                             <div className="space-y-2">
                                 <p><strong>Permission Denied.</strong> This is a Firebase Storage Security Rules issue.</p>
-                                <p>The test could not list files from the public `/settings` folder. This is unexpected with the default rules.</p>
+                                <p>The test could not read metadata from the public `/settings/logo` file. This is unexpected with the default rules.</p>
                                 <p><strong>Solution:</strong> Go to the Storage Rules editor and ensure you have a rule allowing public reads for the `settings` path.</p>
                                 <pre className="p-2 text-xs bg-muted rounded-md font-code">
         {`match /settings/{allPaths=**} {
