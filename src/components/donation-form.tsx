@@ -86,7 +86,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     },
   });
 
-  const { formState: { isSubmitting }, register, watch, setValue, getValues } = form;
+  const { formState: { isSubmitting, isDirty }, register, watch, setValue, getValues } = form;
   const [preview, setPreview] = useState<string | null>(donation?.screenshotUrl || null);
   const screenshotFile = watch('screenshotFile');
   const donationTypeValue = watch('donationType');
@@ -475,7 +475,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
           
           <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || !isDirty}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isSubmitting ? 'Saving...' : 'Save Donation'}
               </Button>

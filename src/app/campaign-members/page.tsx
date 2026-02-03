@@ -1,3 +1,4 @@
+
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -320,7 +321,7 @@ export default function CampaignPage() {
                     <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
-                                <CardTitle className="truncate flex-1">{campaign.name}</CardTitle>
+                                <CardTitle className="flex-1">{campaign.name}</CardTitle>
                                  <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">

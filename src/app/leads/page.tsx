@@ -1,3 +1,4 @@
+
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -291,7 +292,7 @@ export default function LeadPage() {
                     <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
-                                <CardTitle className="truncate flex-1">{lead.name}</CardTitle>
+                                <CardTitle className="flex-1">{lead.name}</CardTitle>
                                  <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
@@ -299,16 +300,11 @@ export default function LeadPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        {canUpdate && (
-                                            <DropdownMenuItem
-                                                onClick={() => toast({ title: "Coming Soon", description: "Editing leads will be available in a future update."})}
-                                                className="cursor-pointer"
-                                                disabled
-                                            >
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit
-                                            </DropdownMenuItem>
-                                        )}
+                                        <DropdownMenuItem asChild className="cursor-pointer">
+                                            <Link href={`/leads/${lead.id}`}>
+                                                <Edit className="mr-2 h-4 w-4" /> View / Edit
+                                            </Link>
+                                        </DropdownMenuItem>
                                         {canCreate && (
                                             <DropdownMenuItem
                                                 onClick={() => handleCopyClick(lead)}
@@ -318,7 +314,7 @@ export default function LeadPage() {
                                                 Copy
                                             </DropdownMenuItem>
                                         )}
-                                        {(canUpdate || canCreate) && canDelete && <DropdownMenuSeparator />}
+                                        {canDelete && <DropdownMenuSeparator />}
                                         {canDelete && (
                                             <DropdownMenuItem
                                                 onClick={(e) => { e.stopPropagation(); handleDeleteClick(lead); }}
@@ -343,8 +339,10 @@ export default function LeadPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={() => toast({title: "Coming Soon"})} className="w-full" disabled>
-                                View Details
+                            <Button asChild className="w-full">
+                                <Link href={`/leads/${lead.id}`}>
+                                    View Details
+                                </Link>
                             </Button>
                         </CardFooter>
                     </Card>

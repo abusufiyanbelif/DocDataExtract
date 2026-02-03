@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -64,7 +65,7 @@ export default function UsersPage() {
 
   const handleEdit = (user: UserProfile) => {
     if (!canUpdate) return;
-    router.push(`/users/edit/${user.id}`);
+    router.push(`/users/${user.id}`);
   };
 
   const handleDeleteClick = (id: string) => {
@@ -129,7 +130,6 @@ export default function UsersPage() {
     }
     
     setIsDeleteDialogOpen(false);
-    toast({ title: 'Deleting...', description: `Please wait while user '${userBeingDeleted.name}' is being completely removed from the system.`});
 
     const result = await deleteUserAction(userToDelete);
 
@@ -249,7 +249,7 @@ export default function UsersPage() {
                                             {canUpdate && (
                                                 <DropdownMenuItem onClick={() => handleEdit(user)} className="cursor-pointer">
                                                     <Edit className="mr-2 h-4 w-4" />
-                                                    Edit
+                                                    View / Edit
                                                 </DropdownMenuItem>
                                             )}
                                             {canUpdate && canDelete && <DropdownMenuSeparator />}
