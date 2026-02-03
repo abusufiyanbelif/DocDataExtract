@@ -106,7 +106,7 @@ export default function UsersPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!userToDelete || !canDelete) {
+    if (!userToDelete || !canDelete || !users) {
         toast({ title: 'Permission Denied', description: 'You do not have permission to delete users.', variant: 'destructive'});
         return;
     };
@@ -235,7 +235,7 @@ export default function UsersPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {users.map((user, index) => (
+                        {users && users.map((user, index) => (
                             <TableRow key={user.id}>
                                 {(canUpdate || canDelete) && (
                                 <TableCell className="text-center sticky left-0 bg-card z-10">
@@ -288,7 +288,7 @@ export default function UsersPage() {
                                 </TableCell>
                             </TableRow>
                         ))}
-                        {users.length === 0 && (
+                        {users && users.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={canUpdate || canDelete ? 9 : 8} className="text-center h-24 text-muted-foreground">
                                 No users found. The database may be empty.

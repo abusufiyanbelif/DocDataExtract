@@ -2,12 +2,13 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
+import type { SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, setDoc, DocumentReference } from 'firebase/firestore';
 import type { Donation, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +61,7 @@ export default function DonationsPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
+  const { userProfile, isLoading: isProfileLoading } = useSession();
   
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId) return null;
@@ -125,7 +126,7 @@ export default function DonationsPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!donationToDelete || !firestore || !storage || !canDelete) return;
+    if (!donationToDelete || !firestore || !storage || !canDelete || !donations) return;
 
     const donationData = donations.find(d => d.id === donationToDelete);
     if (!donationData) return;
@@ -163,7 +164,7 @@ export default function DonationsPage() {
     if (!editingDonation && !canCreate) return;
 
     if (data.isTransactionIdRequired && data.transactionId && !editingDonation) {
-        const isDuplicate = donations.some(d => d.transactionId === data.transactionId && d.campaignId === campaignId);
+        const isDuplicate = donations && donations.some(d => d.transactionId === data.transactionId && d.campaignId === campaignId);
         if (isDuplicate) {
             toast({
                 title: 'Duplicate Transaction ID',
@@ -296,8 +297,8 @@ export default function DonationsPage() {
     if (sortConfig !== null) {
         sortableItems.sort((a, b) => {
             if (sortConfig.key === 'srNo') return 0;
-            const aValue = a[sortConfig.key] ?? '';
-            const bValue = b[sortConfig.key] ?? '';
+            const aValue = a[sortConfig.key as keyof Donation] ?? '';
+            const bValue = b[sortConfig.key as keyof Donation] ?? '';
             
             if (sortConfig.key === 'amount') {
                  return sortConfig.direction === 'ascending' ? (aValue as number) - (bValue as number) : (bValue as number) - (aValue as number);

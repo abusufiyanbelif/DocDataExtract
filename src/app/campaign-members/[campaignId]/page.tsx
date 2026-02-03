@@ -2,7 +2,8 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useDoc, errorEmitter, FirestorePermissionError } from '@/firebase';
+import type { SecurityRuleContext } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { doc, updateDoc, DocumentReference } from 'firebase/firestore';
 import type { Campaign, RationItem } from '@/lib/types';
@@ -43,6 +44,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { get } from '@/lib/utils';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
 
 const quantityTypes = ['kg', 'litre', 'gram', 'ml', 'piece', 'packet', 'dozen'];
 
@@ -320,8 +324,6 @@ export default function CampaignDetailsPage() {
         }
 
     } else if (format === 'pdf') {
-        const { default: jsPDF } = await import('jspdf');
-        await import('jspdf-autotable');
         const doc = new jsPDF();
         let startY = 15;
 

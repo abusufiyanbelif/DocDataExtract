@@ -2,7 +2,8 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useDoc, useCollection, errorEmitter, FirestorePermissionError } from '@/firebase';
+import type { SecurityRuleContext } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { doc, collection, updateDoc, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
@@ -678,7 +679,7 @@ Please donate and share this message. Every contribution helps!
                                             dataKey="value"
                                             radius={4}
                                         >
-                                             {summaryData?.donationChartData.map((entry) => (
+                                             {summaryData?.donationChartData && summaryData.donationChartData.map((entry) => (
                                                 <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
                                             ))}
                                         </Bar>
@@ -709,7 +710,7 @@ Please donate and share this message. Every contribution helps!
                                             cy="50%"
                                             outerRadius={80}
                                         >
-                                            {summaryData?.donationPaymentTypeChartData.map((entry) => (
+                                            {summaryData?.donationPaymentTypeChartData && summaryData.donationPaymentTypeChartData.map((entry) => (
                                                 <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
                                             ))}
                                         </Pie>

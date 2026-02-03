@@ -6,8 +6,6 @@ let adminAuth: admin.auth.Auth;
 let adminDb: admin.firestore.Firestore;
 let adminStorage: admin.storage.Storage;
 
-const DATABASE_ID = 'bmss-solapur-v6';
-
 try {
     if (!admin.apps.length) {
         const serviceAccount = require('../../serviceAccountKey.json');
@@ -27,7 +25,7 @@ try {
 
 // Initialize services after app initialization
 adminAuth = admin.auth();
-adminDb = admin.firestore(undefined, DATABASE_ID); // Point to the correct database
+adminDb = admin.firestore(); // Point to the (default) database
 adminStorage = admin.storage();
 
 export { adminAuth, adminDb, adminStorage };

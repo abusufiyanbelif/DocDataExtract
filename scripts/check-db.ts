@@ -20,7 +20,7 @@ async function checkDatabaseDetails() {
         throw new Error('Admin DB not initialized. Check serviceAccountKey.json.');
     }
     try {
-        log.info('This script targets the "bmss-solapur-v6" Firestore database.');
+        log.info('This script targets the (default) Firestore database.');
         const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'N/A';
         log.detail('Project ID', projectId);
 

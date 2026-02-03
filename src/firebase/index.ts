@@ -7,8 +7,6 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
-const DATABASE_ID = 'bmss-solapur-v6';
-
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
   if (!getApps().length) {
@@ -40,7 +38,7 @@ export function getSdks(firebaseApp: FirebaseApp) {
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp, DATABASE_ID),
+    firestore: getFirestore(firebaseApp),
     storage: getStorage(firebaseApp),
   };
 }

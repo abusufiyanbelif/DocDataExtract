@@ -2,12 +2,13 @@
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError, type SecurityRuleContext } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
+import type { SecurityRuleContext } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBatch, setDoc, DocumentReference } from 'firebase/firestore';
 import type { Beneficiary, Campaign, RationItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useUserProfile } from '@/hooks/use-user-profile';
+import { useSession } from '@/hooks/use-session';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +61,7 @@ export default function BeneficiariesPage() {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
-  const { userProfile, isLoading: isProfileLoading } = useUserProfile();
+  const { userProfile, isLoading: isProfileLoading } = useSession();
   
   const campaignDocRef = useMemo(() => {
     if (!firestore || !campaignId) return null;
@@ -131,7 +132,7 @@ export default function BeneficiariesPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!beneficiaryToDelete || !firestore || !storage || !campaignId || !canDelete) return;
+    if (!beneficiaryToDelete || !firestore || !storage || !campaignId || !canDelete || !beneficiaries) return;
 
     const beneficiaryData = beneficiaries.find(b => b.id === beneficiaryToDelete);
     if (!beneficiaryData) return;
@@ -167,7 +168,7 @@ export default function BeneficiariesPage() {
     if (!editingBeneficiary && !canCreate) return;
 
     if (!editingBeneficiary) {
-        const isDuplicate = beneficiaries.some(b => 
+        const isDuplicate = beneficiaries && beneficiaries.some(b => 
             b.name.trim().toLowerCase() === data.name.trim().toLowerCase() &&
             (b.phone || '') === (data.phone || '')
         );
