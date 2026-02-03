@@ -51,6 +51,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type SortKey = keyof Donation | 'srNo';
 
@@ -340,6 +341,21 @@ export default function DonationsPage() {
                 </Link>
             </Button>
         </div>
+
+        <div className="border-b mb-4">
+            <ScrollArea className="w-full whitespace-nowrap">
+                <div className="flex w-max space-x-4">
+                    <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
+                        <Link href="/donations">All Donations</Link>
+                    </Button>
+                    <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
+                        <Link href="/donations/summary">Summary</Link>
+                    </Button>
+                </div>
+                <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+        </div>
+        
         <Card>
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
