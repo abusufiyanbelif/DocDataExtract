@@ -88,7 +88,9 @@ export function AppFooter() {
             {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.upiId && (
                 <div className="flex items-center gap-2">
                 <QrCode className="h-4 w-4" />
-                <p className="font-mono text-sm">{paymentSettings.upiId}</p>
+                <a href={`upi://pay?pa=${paymentSettings.upiId}&pn=${encodeURIComponent(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}&cu=INR`} className="font-mono text-sm hover:underline">
+                    {paymentSettings.upiId}
+                </a>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(paymentSettings!.upiId!, 'UPI ID')}>
                     <Copy className="h-4 w-4" />
                 </Button>
@@ -97,7 +99,9 @@ export function AppFooter() {
             {isLoading ? <Skeleton className="h-5 w-3/5" /> : paymentSettings?.paymentMobileNumber && (
                 <div className="flex items-center gap-2">
                 <Smartphone className="h-4 w-4" />
-                <p className="font-mono text-sm">{paymentSettings.paymentMobileNumber}</p>
+                <a href={`upi://pay?pa=${paymentSettings.paymentMobileNumber}&pn=${encodeURIComponent(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}&cu=INR`} className="font-mono text-sm hover:underline">
+                    {paymentSettings.paymentMobileNumber}
+                </a>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(paymentSettings!.paymentMobileNumber!, 'Phone Number')}>
                     <Copy className="h-4 w-4" />
                 </Button>
