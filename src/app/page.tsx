@@ -83,7 +83,12 @@ export default function Home() {
 
   const visibleCards = userProfile ? dashboardCards.filter(card => {
     if (userProfile.role === 'Admin') return true;
-    return getSubPermission(userProfile.permissions, card.permissionKey);
+    const permissionKey = card.permissionKey === 'campaigns' ? 'campaigns' : card.permissionKey;
+    if (permissionKey === 'campaigns') {
+        const campaignPerms = userProfile.permissions?.campaigns;
+        return !!(campaignPerms?.create || campaignPerms?.update || campaignPerms?.delete || campaignPerms?.summary?.read || campaignPerms?.ration?.read || campaignPerms?.beneficiaries?.read || campaignPerms?.donations?.read)
+    }
+    return get(userProfile.permissions, permissionKey, false);
   }) : [];
   
   return (

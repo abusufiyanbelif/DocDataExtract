@@ -75,7 +75,7 @@ export default function LeadDetailsPage() {
     }
   }, [editMode, lead])
   
-  const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads.update', false);
+  const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.update', false);
 
   const isLoading = isLeadLoading || isProfileLoading;
 
@@ -158,7 +158,7 @@ export default function LeadDetailsPage() {
             <main className="container mx-auto p-4 md:p-8 text-center">
                 <p className="text-lg text-muted-foreground">Lead not found.</p>
                 <Button asChild className="mt-4">
-                    <Link href="/leads">
+                    <Link href="/leads-members">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back to Leads
                     </Link>
@@ -174,7 +174,7 @@ export default function LeadDetailsPage() {
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
             <Button variant="outline" asChild>
-                <Link href="/leads">
+                <Link href="/leads-members">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Leads
                 </Link>

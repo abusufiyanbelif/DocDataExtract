@@ -203,29 +203,29 @@ export function PermissionsTable({ permissions, onPermissionChange, role, disabl
             <TableCell className="font-medium">Leads</TableCell>
             <TableCell className="text-center">
               <Checkbox
-                checked={!!get(permissions, 'leads.create', false)}
-                onCheckedChange={handleCheckedChange('leads.create')}
+                checked={!!get(permissions, 'leads-members.create', false)}
+                onCheckedChange={handleCheckedChange('leads-members.create')}
                 disabled={isDisabled}
               />
             </TableCell>
             <TableCell className="text-center">
               <Checkbox
-                checked={!!get(permissions, 'leads.read', false)}
-                onCheckedChange={handleCheckedChange('leads.read')}
+                checked={!!get(permissions, 'leads-members.read', false)}
+                onCheckedChange={handleCheckedChange('leads-members.read')}
                 disabled={isDisabled}
               />
             </TableCell>
             <TableCell className="text-center">
               <Checkbox
-                checked={!!get(permissions, 'leads.update', false)}
-                onCheckedChange={handleCheckedChange('leads.update')}
+                checked={!!get(permissions, 'leads-members.update', false)}
+                onCheckedChange={handleCheckedChange('leads-members.update')}
                 disabled={isDisabled}
               />
             </TableCell>
             <TableCell className="text-center">
               <Checkbox
-                checked={!!get(permissions, 'leads.delete', false)}
-                onCheckedChange={handleCheckedChange('leads.delete')}
+                checked={!!get(permissions, 'leads-members.delete', false)}
+                onCheckedChange={handleCheckedChange('leads-members.delete')}
                 disabled={isDisabled}
               />
             </TableCell>
