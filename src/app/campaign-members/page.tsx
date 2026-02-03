@@ -186,7 +186,7 @@ export default function CampaignPage() {
         if (statusA !== statusB) {
             return statusA - statusB;
         }
-        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
     });
     
     return sortableItems;
