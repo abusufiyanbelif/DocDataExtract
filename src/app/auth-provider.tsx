@@ -23,43 +23,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { user, isLoading } = useUser();
 
   const isLoginPage = pathname === '/login';
-  const isSeedPage = pathname === '/seed';
-  const isPublicCampaignPath = pathname.startsWith('/campaign-public');
-  // The home page is public for non-logged-in users, but a private dashboard for logged-in users.
-  // The component at `page.tsx` handles this dual role.
-  const isHomePage = pathname === '/';
-  
-  const isPublicRoute = isLoginPage || isPublicCampaignPath || isHomePage || isSeedPage;
+  const isPublicRoute = isLoginPage || pathname.startsWith('/campaign-public') || pathname === '/' || pathname === '/seed';
 
   useEffect(() => {
-    // Wait until the auth state is fully resolved.
-    if (isLoading) {
-      return;
-    }
+    if (isLoading) return; // Wait until auth state is resolved
 
-    // If the user is logged in and tries to access the login page, redirect them to the dashboard.
+    const onPrivatePage = !isPublicRoute;
+    
+    // Not logged in and on a private page: redirect to login
+    if (!user && onPrivatePage) {
+      router.push('/login');
+    }
+    
+    // Logged in and on the login page: redirect to home
     if (user && isLoginPage) {
       router.push('/');
     }
-    
-    // If the user is not logged in and tries to access a private route, redirect them to login.
-    if (!user && !isPublicRoute) {
-      router.push('/login');
-    }
-  }, [isLoginPage, isPublicRoute, isLoading, user, router, pathname]);
+  }, [isLoading, user, isPublicRoute, isLoginPage, pathname, router]);
 
-  // Show a loader while the initial authentication check is running, but only for private routes.
-  // This prevents a flash of private content for unauthenticated users.
-  if (isLoading && !isPublicRoute) {
-      return <RedirectLoader message="Authenticating..." />;
-  }
+  // Determine if we should show a loader
+  const showLoader = 
+    (isLoading && !isPublicRoute) || // Still loading auth state on a private page
+    (!isLoading && !user && !isPublicRoute) || // No user, on private page (waiting for redirect)
+    (!isLoading && user && isLoginPage); // User, on login page (waiting for redirect)
 
-  // A specific check to prevent rendering private pages while the redirect is in flight for an unauthenticated user.
-  if (!isLoading && !user && !isPublicRoute) {
-      return <RedirectLoader message="Redirecting to login..." />;
+  if (showLoader) {
+    return <RedirectLoader message="Authenticating..." />;
   }
   
-  // Provide session to all pages
+  // Render content
   return (
     <SessionProvider authUser={user}>
         {children}
