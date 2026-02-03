@@ -1,21 +1,24 @@
 
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Copy, Smartphone, QrCode, Mail, Phone } from 'lucide-react';
+import { Copy, Smartphone, QrCode, Mail, Phone, Download } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { useBranding } from '@/hooks/use-branding';
 import { Separator } from './ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+
 
 export function AppFooter() {
   const { paymentSettings, isLoading: isPaymentLoading } = usePaymentSettings();
   const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
   const { toast } = useToast();
   const pathname = usePathname();
+  const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
 
   const isSummaryPage = pathname.includes('/summary');
   const isLoading = isPaymentLoading || isBrandingLoading;
@@ -23,6 +26,21 @@ export function AppFooter() {
   const copyToClipboard = (text: string, type: string) => {
     navigator.clipboard.writeText(text).then(() => {
       toast({ title: `${type} Copied!`, description: text, duration: 3000 });
+    });
+  };
+  
+  const handleDownloadQr = () => {
+    if (!paymentSettings?.qrCodeUrl) return;
+    const link = document.createElement('a');
+    link.href = paymentSettings.qrCodeUrl;
+    link.download = 'payment-qr-code.png'; // Or a more dynamic name
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({
+        title: "QR Code Downloading...",
+        description: "Your QR code image has started downloading.",
+        variant: "success"
     });
   };
 
@@ -93,13 +111,40 @@ export function AppFooter() {
             <Skeleton className="h-32 w-32 rounded-lg" />
           ) : (
             paymentSettings && paymentSettings.qrCodeUrl && (
-                <img 
-                    src={paymentSettings.qrCodeUrl}
-                    alt="UPI QR Code"
-                    width={paymentSettings.qrWidth || 128}
-                    height={paymentSettings.qrHeight || 128}
-                    className="object-contain border-4 border-primary rounded-lg p-1 bg-white"
-                />
+                 <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
+                    <DialogTrigger asChild>
+                        <button className="cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
+                            <img
+                                src={paymentSettings.qrCodeUrl}
+                                alt="UPI QR Code"
+                                width={paymentSettings.qrWidth || 128}
+                                height={paymentSettings.qrHeight || 128}
+                                className="object-contain border-4 border-primary rounded-lg p-1 bg-white"
+                            />
+                        </button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Scan to Pay</DialogTitle>
+                            <DialogDescription>
+                                Use any UPI app to scan this QR code for your donation.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="flex items-center justify-center p-4 bg-secondary/30 rounded-lg">
+                            <img
+                                src={paymentSettings.qrCodeUrl}
+                                alt="UPI QR Code"
+                                className="w-full max-w-xs h-auto rounded-lg"
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={handleDownloadQr} className="w-full">
+                                <Download className="mr-2 h-4 w-4" />
+                                Download QR Code
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             )
           )}
         </div>
