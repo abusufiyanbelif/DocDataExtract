@@ -155,7 +155,6 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
     }
     
     setIsScanning(true);
-    toast({ title: "Scanning document...", description: "Please wait while the AI extracts the details." });
 
     const file = fileList[0];
     const reader = new FileReader();

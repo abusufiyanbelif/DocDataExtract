@@ -84,7 +84,6 @@ export default function CampaignPage() {
     if (!campaignToCopy || !canCreate) return;
 
     setIsCopyDialogOpen(false);
-    toast({ title: 'Copying campaign...', description: `Please wait while '${campaignToCopy.name}' is being copied.`});
     
     const result = await copyCampaignAction({
         sourceCampaignId: campaignToCopy.id,
@@ -108,7 +107,6 @@ export default function CampaignPage() {
 
     setIsDeleteDialogOpen(false);
     setIsDeleting(true);
-    toast({ title: 'Deleting...', description: `Please wait while '${campaignToDelete.name}' and all its data are being deleted.`});
 
     try {
         const campaignId = campaignToDelete.id;

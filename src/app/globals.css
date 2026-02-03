@@ -43,22 +43,20 @@ body {
   @apply bg-background text-foreground;
 }
 
-body::before {
+.app-root::before {
   content: "";
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 9999;
+  z-index: -1; /* Behind .app-root's content */
   background-image: var(--watermark-url);
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 320px; /* Mobile-first size */
+  background-attachment: fixed; /* Crucial to keep it fixed to viewport */
   opacity: 0.12;
-  pointer-events: none;
-  mix-blend-mode: multiply;
 }
 
 @media (min-width: 768px) {
-  body::before {
+  .app-root::before {
     background-size: 500px; /* Desktop size */
   }
 }
@@ -69,4 +67,6 @@ body::before {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative; /* New stacking context */
+  isolation: isolate; /* New stacking context without transform side-effects */
 }

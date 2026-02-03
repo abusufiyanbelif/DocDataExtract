@@ -123,7 +123,6 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
     }
     
     setIsScanning(true);
-    toast({ title: "Scanning screenshot...", description: "Please wait while the AI extracts the details." });
 
     const file = fileList[0];
     const reader = new FileReader();
