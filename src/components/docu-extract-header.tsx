@@ -4,7 +4,6 @@
 import { useEffect } from 'react';
 import { LogOut, User, LogIn, Settings } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useAuth } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
