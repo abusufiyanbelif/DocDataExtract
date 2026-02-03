@@ -62,7 +62,6 @@ export function DocuExtractHeader() {
                     alt="Company Logo"
                     fill
                     className="object-contain"
-                    priority
                     crossOrigin="anonymous"
                 />
                 )
