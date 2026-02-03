@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import Image from 'next/image';
 import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
@@ -332,7 +331,7 @@ export default function SettingsPage() {
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="relative w-48 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
                                         {logoPreviewUrl ? (
-                                            <Image src={logoPreviewUrl} alt="Logo preview" fill className="object-contain p-2" />
+                                            <img src={logoPreviewUrl} alt="Logo preview" className="object-contain p-2 h-full w-full" crossOrigin="anonymous"/>
                                         ) : (
                                             <div className="text-muted-foreground text-center p-2">
                                                 <ImageIcon className="mx-auto h-8 w-8" />
@@ -395,7 +394,7 @@ export default function SettingsPage() {
                                      <div className="flex flex-col items-center gap-4">
                                         <div className="relative w-48 h-48 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
                                             {qrPreviewUrl ? (
-                                                <Image src={qrPreviewUrl} alt="QR Code preview" fill className="object-contain p-2" />
+                                                <img src={qrPreviewUrl} alt="QR Code preview" className="object-contain p-2 h-full w-full" crossOrigin="anonymous"/>
                                             ) : (
                                                 <div className="text-muted-foreground text-center p-2">
                                                     <QrCode className="mx-auto h-8 w-8" />
