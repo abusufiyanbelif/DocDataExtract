@@ -1,4 +1,3 @@
-
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -49,7 +48,6 @@ export default function LeadPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Lead; direction: 'ascending' | 'descending' } | null>({ key: 'startDate', direction: 'descending' });
   const [isDeleting, setIsDeleting] = useState(false);
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -166,31 +164,23 @@ export default function LeadPage() {
         );
     }
 
-    if (sortConfig !== null) {
-        sortableItems.sort((a, b) => {
-            const aValue = a[sortConfig.key] ?? '';
-            const bValue = b[sortConfig.key] ?? '';
-            
-            if (sortConfig.key === 'startDate' || sortConfig.key === 'endDate') {
-                return sortConfig.direction === 'ascending' ? new Date(aValue as string).getTime() - new Date(bValue as string).getTime() : new Date(bValue as string).getTime() - new Date(aValue as string).getTime();
-            }
+    const statusOrder: { [key: string]: number } = {
+        'Active': 1,
+        'Upcoming': 2,
+        'Completed': 3
+    };
 
-            if (typeof aValue === 'number' && typeof bValue === 'number') {
-                return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
-            }
-            if (typeof aValue === 'string' && typeof bValue === 'string') {
-                 if (aValue.toLowerCase() < bValue.toLowerCase()) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
-                }
-                if (aValue.toLowerCase() > bValue.toLowerCase()) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
-                }
-            }
-            return 0;
-        });
-    }
+    sortableItems.sort((a, b) => {
+        const statusA = statusOrder[a.status] || 99;
+        const statusB = statusOrder[b.status] || 99;
+        if (statusA !== statusB) {
+            return statusA - statusB;
+        }
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+    });
+
     return sortableItems;
-  }, [leads, searchTerm, statusFilter, categoryFilter, sortConfig]);
+  }, [leads, searchTerm, statusFilter, categoryFilter]);
 
   const isLoading = areLeadsLoading || isProfileLoading || isDeleting;
   
@@ -292,7 +282,7 @@ export default function LeadPage() {
                     <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
-                                <CardTitle className="flex-1">{lead.name}</CardTitle>
+                                <CardTitle>{lead.name}</CardTitle>
                                  <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">

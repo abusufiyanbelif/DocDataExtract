@@ -1,11 +1,10 @@
-
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Plus, ArrowUp, ArrowDown, ShieldAlert, MoreHorizontal, Trash2, Edit, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, ShieldAlert, MoreHorizontal, Trash2, Edit, Copy } from 'lucide-react';
 import { useCollection, useFirestore, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import type { Campaign, Beneficiary, Donation } from '@/lib/types';
@@ -34,13 +33,10 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { CopyCampaignDialog } from '@/components/copy-campaign-dialog';
 import { copyCampaignAction } from './actions';
 
-
-type SortKey = keyof Campaign | 'srNo';
 
 export default function CampaignPage() {
   const router = useRouter();
@@ -51,7 +47,6 @@ export default function CampaignPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'startDate', direction: 'descending' });
   const [isDeleting, setIsDeleting] = useState(false);
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -159,15 +154,6 @@ export default function CampaignPage() {
         setCampaignToDelete(null);
     }
   };
-
-
-  const handleSort = (key: SortKey) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
-        direction = 'descending';
-    }
-    setSortConfig({ key, direction });
-  };
   
   const filteredAndSortedCampaigns = useMemo(() => {
     if (!campaigns) return [];
@@ -188,32 +174,23 @@ export default function CampaignPage() {
     }
 
     // Sorting
-    if (sortConfig !== null) {
-        sortableItems.sort((a, b) => {
-            if (sortConfig.key === 'srNo') return 0; // srNo is just index, no real sorting
-            const aValue = a[sortConfig.key] ?? '';
-            const bValue = b[sortConfig.key] ?? '';
-            
-            if (sortConfig.key === 'startDate' || sortConfig.key === 'endDate') {
-                return sortConfig.direction === 'ascending' ? new Date(aValue).getTime() - new Date(bValue).getTime() : new Date(bValue).getTime() - new Date(aValue).getTime();
-            }
+    const statusOrder: { [key: string]: number } = {
+        'Active': 1,
+        'Upcoming': 2,
+        'Completed': 3
+    };
 
-            if (typeof aValue === 'number' && typeof bValue === 'number') {
-                return sortConfig.direction === 'ascending' ? aValue - bValue : bValue - aValue;
-            }
-            if (typeof aValue === 'string' && typeof bValue === 'string') {
-                 if (aValue.toLowerCase() < bValue.toLowerCase()) {
-                    return sortConfig.direction === 'ascending' ? -1 : 1;
-                }
-                if (aValue.toLowerCase() > bValue.toLowerCase()) {
-                    return sortConfig.direction === 'ascending' ? 1 : -1;
-                }
-            }
-            return 0;
-        });
-    }
+    sortableItems.sort((a, b) => {
+        const statusA = statusOrder[a.status] || 99;
+        const statusB = statusOrder[b.status] || 99;
+        if (statusA !== statusB) {
+            return statusA - statusB;
+        }
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+    });
+    
     return sortableItems;
-  }, [campaigns, searchTerm, statusFilter, categoryFilter, sortConfig]);
+  }, [campaigns, searchTerm, statusFilter, categoryFilter]);
 
   const isLoading = areCampaignsLoading || isProfileLoading || isDeleting;
   
@@ -284,8 +261,8 @@ export default function CampaignPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="All">All Statuses</SelectItem>
-                            <SelectItem value="Upcoming">Upcoming</SelectItem>
                             <SelectItem value="Active">Active</SelectItem>
+                            <SelectItem value="Upcoming">Upcoming</SelectItem>
                             <SelectItem value="Completed">Completed</SelectItem>
                         </SelectContent>
                     </Select>
@@ -321,7 +298,7 @@ export default function CampaignPage() {
                     <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
-                                <CardTitle className="flex-1">{campaign.name}</CardTitle>
+                                <CardTitle>{campaign.name}</CardTitle>
                                  <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
