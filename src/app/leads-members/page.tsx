@@ -319,10 +319,9 @@ export default function LeadPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem asChild className="cursor-pointer">
-                                            <Link href={`/leads-members/${lead.id}`}>
-                                                <Edit className="mr-2 h-4 w-4" /> View / Edit
-                                            </Link>
+                                        <DropdownMenuItem onClick={() => router.push(`/leads-members/${lead.id}`)} className="cursor-pointer">
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            View Details
                                         </DropdownMenuItem>
                                         {canUpdate && <DropdownMenuSeparator />}
                                         {canUpdate && (
