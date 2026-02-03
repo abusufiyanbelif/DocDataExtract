@@ -53,7 +53,7 @@ export function DocuExtractHeader() {
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
-          <div className="relative h-12 flex-shrink-0" style={{ width: `${(isLoading ? 48 : brandingSettings?.logoWidth) || 48}px` }}>
+          <div className="relative h-12 w-24 flex-shrink-0">
             {isLoading ? (
                 <Skeleton className="h-full w-full" />
             ) : (
@@ -61,6 +61,7 @@ export function DocuExtractHeader() {
                 <img
                     src={brandingSettings.logoUrl}
                     alt="Company Logo"
+                    crossOrigin="anonymous"
                     className="object-contain h-full w-full"
                 />
                 )

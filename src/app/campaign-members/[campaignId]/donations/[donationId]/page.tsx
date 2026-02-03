@@ -167,7 +167,8 @@ export default function DonationDetailsPage() {
                     finalY += 5;
                 }
                 if (paymentSettings?.address) {
-                    pdf.text(`Address: ${paymentSettings.address}`, 15, finalY);
+                    const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth - qrSize - 30);
+                    pdf.text(addressLines, 15, finalY);
                 }
                 
                 pdf.save(`donation-receipt-${donationId}.pdf`);

@@ -25,6 +25,7 @@ function Watermark() {
                     alt="Watermark"
                     width={500}
                     height={500}
+                    crossOrigin="anonymous"
                     className="object-contain opacity-10"
                 />
             ) : (
