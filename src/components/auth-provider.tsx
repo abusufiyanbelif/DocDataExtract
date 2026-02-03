@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -21,98 +20,60 @@ function RedirectLoader({ message }: { message: string }) {
     );
 }
 
-// This component is for routes that need Firebase, but are public.
-// e.g. the home page and public campaign pages.
-const PublicFirebaseContent = ({ children }: { children: ReactNode }) => {
-    // We don't need to check for a user here, just provide the session.
-    return (
-      <SessionProvider>
-        <FirebaseContentWrapper>
-          <div className="app-root">
-            {children}
-            <AppFooter />
-          </div>
-          <Toaster />
-        </FirebaseContentWrapper>
-      </SessionProvider>
-    );
-}
-
-// This component is ONLY for authenticated routes. It assumes it's inside FirebaseProvider.
-const AuthenticatedContent = ({ children }: { children: ReactNode }) => {
-  const { user, isLoading } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login');
-    }
-  }, [isLoading, user, router]);
-
-  if (isLoading || !user) {
-    return <RedirectLoader message="Authenticating..." />;
-  }
-
-  return (
-    <SessionProvider authUser={user}>
-      <FirebaseContentWrapper>
-        <div className="app-root">
-          {children}
-          <AppFooter />
-        </div>
-        <Toaster />
-      </FirebaseContentWrapper>
-    </SessionProvider>
-  );
-};
-
-const LoginPageContent = ({ children }: { children: ReactNode }) => {
-    const { user, isLoading } = useUser();
-    const router = useRouter();
-
-    useEffect(() => {
-        if (!isLoading && user) {
-            router.push('/');
-        }
-    }, [isLoading, user, router]);
-
-    if (isLoading || user) {
-        return <RedirectLoader message="Redirecting..." />;
-    }
-
-    return (
-        <div className="app-root">
-            {children}
-            <AppFooter />
-            <Toaster />
-        </div>
-    );
-};
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isLoading } = useUser();
 
   const isLoginPage = pathname === '/login';
   const isSeedPage = pathname === '/seed';
   const isPublicCampaignPath = pathname.startsWith('/campaign-public');
   const isHomePage = pathname === '/';
   
-  // Routes that are public but DO need firebase
-  if (isPublicCampaignPath || isHomePage || isSeedPage) {
-    return (
-      <PublicFirebaseContent>{children}</PublicFirebaseContent>
-    );
-  }
-  
-  // Login page needs firebase for auth checks
+  const isPublicRoute = isPublicCampaignPath || isHomePage || isSeedPage;
+
+  // Handle redirect for login page
+  useEffect(() => {
+    if (isLoginPage && !isLoading && user) {
+        router.push('/');
+    }
+  }, [isLoginPage, isLoading, user, router]);
+
   if (isLoginPage) {
-    return (
-      <LoginPageContent>{children}</LoginPageContent>
-    );
+      if (isLoading || user) {
+          return <RedirectLoader message="Redirecting..." />;
+      }
+      // Render login page without the full provider wrapper if needed, but for now this is fine
+      return (
+        <div className="app-root">
+            {children}
+            <AppFooter />
+            <Toaster />
+        </div>
+      );
   }
 
-  // All other pages are private by default and need Firebase
+  // Handle redirect for private routes
+  useEffect(() => {
+      if (!isPublicRoute && !isLoading && !user) {
+          router.push('/login');
+      }
+  }, [isPublicRoute, isLoading, user, router]);
+
+  if (!isPublicRoute && (isLoading || !user)) {
+      return <RedirectLoader message="Authenticating..." />;
+  }
+
+  // For both public and authenticated private routes, render the main content with all providers
   return (
-    <AuthenticatedContent>{children}</AuthenticatedContent>
+    <SessionProvider authUser={user}>
+        <FirebaseContentWrapper>
+            <div className="app-root">
+                {children}
+                <AppFooter />
+            </div>
+            <Toaster />
+        </FirebaseContentWrapper>
+    </SessionProvider>
   );
 }
