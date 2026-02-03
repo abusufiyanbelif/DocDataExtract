@@ -54,8 +54,58 @@ export function Toaster() {
                {!isConfirmationToast ? (
                 <div className="mt-4 flex gap-2">
                     {action}
-                    <ToastAction altText="OK">OK</ToastAction>
-                    <ToastAction altText="Copy message" onClick={(e) => { e.preventDefault(); handleCopy(title, description); }}>Copy</ToastAction>
+                    {props.variant === 'success' ? (
+                    <>
+                      <ToastAction
+                        altText="Copy"
+                        className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleCopy(title, description);
+                        }}
+                      >
+                        Copy
+                      </ToastAction>
+                      <ToastAction
+                        altText="OK"
+                        className="border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
+                      >
+                        OK
+                      </ToastAction>
+                    </>
+                  ) : props.variant === 'destructive' ? (
+                     <>
+                      <ToastAction
+                        altText="Copy"
+                        className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleCopy(title, description);
+                        }}
+                      >
+                        Copy
+                      </ToastAction>
+                      <ToastAction
+                        altText="OK"
+                        className="border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        OK
+                      </ToastAction>
+                    </>
+                  ) : (
+                    <>
+                      <ToastAction altText="OK">OK</ToastAction>
+                      <ToastAction
+                        altText="Copy message"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleCopy(title, description);
+                        }}
+                      >
+                        Copy
+                      </ToastAction>
+                    </>
+                  )}
                 </div>
               ) : (action)}
             </div>
