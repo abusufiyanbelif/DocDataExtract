@@ -119,6 +119,8 @@ export default function CampaignSummaryPage() {
                 category: campaign.category || 'General',
                 status: campaign.status || 'Upcoming',
                 targetAmount: campaign.targetAmount || 0,
+                authenticityStatus: campaign.authenticityStatus || 'Pending Verification',
+                publicVisibility: campaign.publicVisibility || 'Hold',
             });
         }
     }, [campaign, editMode]);
@@ -140,6 +142,8 @@ export default function CampaignSummaryPage() {
             category: editableCampaign.category || 'General',
             status: editableCampaign.status || 'Upcoming',
             targetAmount: editableCampaign.targetAmount || 0,
+            authenticityStatus: editableCampaign.authenticityStatus || 'Pending Verification',
+            publicVisibility: editableCampaign.publicVisibility || 'Hold',
         };
 
         updateDoc(campaignDocRef, saveData)
@@ -167,6 +171,8 @@ export default function CampaignSummaryPage() {
                 category: campaign.category || 'General',
                 status: campaign.status || 'Upcoming',
                 targetAmount: campaign.targetAmount || 0,
+                authenticityStatus: campaign.authenticityStatus || 'Pending Verification',
+                publicVisibility: campaign.publicVisibility || 'Hold',
             });
         }
         setEditMode(true);
@@ -604,6 +610,48 @@ Your contribution, big or small, makes a huge difference.
                                         />
                                     ) : (
                                         <p className="mt-1 text-lg font-semibold">{campaign.endDate}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="authenticityStatus" className="text-sm font-medium text-muted-foreground">Authenticity Status</Label>
+                                    {editMode && canUpdate ? (
+                                        <Select
+                                            value={editableCampaign.authenticityStatus}
+                                            onValueChange={(value) => setEditableCampaign(p => ({...p, authenticityStatus: value as any}))}
+                                        >
+                                            <SelectTrigger id="authenticityStatus" className="mt-1">
+                                                <SelectValue placeholder="Select a status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Pending Verification">Pending Verification</SelectItem>
+                                                <SelectItem value="Verified">Verified</SelectItem>
+                                                <SelectItem value="On Hold">On Hold</SelectItem>
+                                                <SelectItem value="Rejected">Rejected</SelectItem>
+                                                <SelectItem value="Need More Details">Need More Details</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <p className="mt-1 text-lg font-semibold">{campaign.authenticityStatus || 'N/A'}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="publicVisibility" className="text-sm font-medium text-muted-foreground">Public Visibility</Label>
+                                    {editMode && canUpdate ? (
+                                        <Select
+                                            value={editableCampaign.publicVisibility}
+                                            onValueChange={(value) => setEditableCampaign(p => ({...p, publicVisibility: value as any}))}
+                                        >
+                                            <SelectTrigger id="publicVisibility" className="mt-1">
+                                                <SelectValue placeholder="Select visibility" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Hold">Hold (Private)</SelectItem>
+                                                <SelectItem value="Ready to Publish">Ready to Publish</SelectItem>
+                                                <SelectItem value="Published">Published</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <p className="mt-1 text-lg font-semibold">{campaign.publicVisibility || 'N/A'}</p>
                                     )}
                                 </div>
                             </div>

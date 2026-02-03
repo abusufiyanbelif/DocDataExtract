@@ -12,6 +12,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Plus, Trash2, Download, Loader2, Edit, Save, Copy } from 'lucide-react';
@@ -90,7 +91,9 @@ export default function LeadDetailsPage() {
         endDate: editableLead.endDate,
         status: editableLead.status,
         category: editableLead.category,
-        targetAmount: editableLead.targetAmount
+        targetAmount: editableLead.targetAmount,
+        authenticityStatus: editableLead.authenticityStatus,
+        publicVisibility: editableLead.publicVisibility,
     };
     
     updateDoc(leadDocRef, saveData)
@@ -245,6 +248,37 @@ export default function LeadDetailsPage() {
                         <Label htmlFor="targetAmount">Target Amount</Label>
                         <Input id="targetAmount" type="number" value={editableLead.targetAmount} onChange={(e) => handleFieldChange('targetAmount', Number(e.target.value))} disabled={!editMode || !canUpdate} />
                     </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-1">
+                        <Label htmlFor="authenticityStatus">Authenticity Status</Label>
+                        <Select value={editableLead.authenticityStatus || 'Pending Verification'} onValueChange={(value) => handleFieldChange('authenticityStatus', value)} disabled={!editMode || !canUpdate}>
+                            <SelectTrigger id="authenticityStatus"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Pending Verification">Pending Verification</SelectItem>
+                                <SelectItem value="Verified">Verified</SelectItem>
+                                <SelectItem value="On Hold">On Hold</SelectItem>
+                                <SelectItem value="Rejected">Rejected</SelectItem>
+                                <SelectItem value="Need More Details">Need More Details</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor="publicVisibility">Public Visibility</Label>
+                        <Select value={editableLead.publicVisibility || 'Hold'} onValueChange={(value) => handleFieldChange('publicVisibility', value)} disabled={!editMode || !canUpdate}>
+                            <SelectTrigger id="publicVisibility"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Hold">Hold (Private)</SelectItem>
+                                <SelectItem value="Ready to Publish">Ready to Publish</SelectItem>
+                                <SelectItem value="Published">Published</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <div className="space-y-1">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea id="description" value={editableLead.description || ''} onChange={(e) => handleFieldChange('description', e.target.value)} disabled={!editMode || !canUpdate} placeholder="A brief description of the lead..." />
                 </div>
           </CardContent>
         </Card>
