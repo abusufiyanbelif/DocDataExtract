@@ -2,7 +2,7 @@
 'use client';
 
 import { z } from 'zod';
-import * as ReactHookForm from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
@@ -62,7 +62,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
 
-  const form = ReactHookForm.useForm<BeneficiaryFormData>({
+  const form = useForm<BeneficiaryFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: beneficiary?.name || '',

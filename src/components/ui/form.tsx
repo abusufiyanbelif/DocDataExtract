@@ -3,16 +3,23 @@
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
-import * as ReactHookForm from "react-hook-form"
+import {
+  FormProvider,
+  useFormContext,
+  Controller,
+  type FieldValues,
+  type FieldPath,
+  type ControllerProps,
+} from "react-hook-form"
 
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
-const Form = ReactHookForm.FormProvider
+const Form = FormProvider
 
 type FormFieldContextValue<
-  TFieldValues extends ReactHookForm.FieldValues = ReactHookForm.FieldValues,
-  TName extends ReactHookForm.FieldPath<TFieldValues> = ReactHookForm.FieldPath<TFieldValues>
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 > = {
   name: TName
 }
@@ -22,14 +29,14 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
 )
 
 const FormField = <
-  TFieldValues extends ReactHookForm.FieldValues = ReactHookForm.FieldValues,
-  TName extends ReactHookForm.FieldPath<TFieldValues> = ReactHookForm.FieldPath<TFieldValues>
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 >({
   ...props
-}: ReactHookForm.ControllerProps<TFieldValues, TName>) => {
+}: ControllerProps<TFieldValues, TName>) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
-      <ReactHookForm.Controller {...props} />
+      <Controller {...props} />
     </FormFieldContext.Provider>
   )
 }
@@ -37,7 +44,7 @@ const FormField = <
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext)
   const itemContext = React.useContext(FormItemContext)
-  const { getFieldState, formState } = ReactHookForm.useFormContext()
+  const { getFieldState, formState } = useFormContext()
 
   const fieldState = getFieldState(fieldContext.name, formState)
 

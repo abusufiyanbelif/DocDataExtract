@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
-import * as ReactHookForm from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -62,7 +62,7 @@ export default function CreateLeadPage() {
 
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.leads?.create;
 
-  const form = ReactHookForm.useForm<LeadFormValues>({
+  const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
     defaultValues: {
       name: '',

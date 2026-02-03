@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { z } from 'zod';
-import * as ReactHookForm from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import {
@@ -85,7 +85,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading }: 
   const [permissions, setPermissions] = useState<UserPermissions>(user?.permissions || {});
   const [isScanning, setIsScanning] = useState(false);
   
-  const form = ReactHookForm.useForm<z.infer<typeof formSchema>>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: user?.name || '',

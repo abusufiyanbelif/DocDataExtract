@@ -2,7 +2,7 @@
 'use client';
 
 import { z } from 'zod';
-import * as ReactHookForm from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -67,7 +67,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   const { toast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
 
-  const form = ReactHookForm.useForm<DonationFormData>({
+  const form = useForm<DonationFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       donorName: donation?.donorName || '',
