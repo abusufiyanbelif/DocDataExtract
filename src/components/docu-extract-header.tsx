@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -66,11 +65,11 @@ export function DocuExtractHeader() {
         <Link href="/" className="flex items-center gap-3 w-fit">
           <div className="relative h-12 w-12 flex-shrink-0">
             {brandingSettings?.logoUrl && (
-              <img
+              <Image
                 src={brandingSettings.logoUrl}
                 alt="Company Logo"
-                className="object-contain w-full h-full p-1"
-                crossOrigin="anonymous"
+                fill
+                className="object-contain p-1"
               />
             )}
           </div>

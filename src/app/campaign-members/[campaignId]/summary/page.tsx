@@ -59,7 +59,7 @@ import { get } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ShareDialog } from '@/components/share-dialog';
-import { SummaryFooter } from '@/components/summary-footer';
+import { AppFooter } from '@/components/app-footer';
 
 
 const donationTypeChartConfig = {
@@ -287,10 +287,6 @@ export default function CampaignSummaryPage() {
             });
             return;
         }
-
-        const remainingToCollectText = summaryData.remainingToCollect > 0
-            ? `*Remaining for Kits: Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*`
-            : `*Kit funding goal achieved! Thank you!*`;
         
         const shareText = `
 *Assalamualaikum Warahmatullahi Wabarakatuh*
@@ -815,7 +811,7 @@ Your contribution, big or small, makes a huge difference.
                             </CardContent>
                         </Card>
                     </div>
-                    <SummaryFooter />
+                    <AppFooter />
                 </div>
 
                 <ShareDialog 
