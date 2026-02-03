@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
@@ -27,7 +28,7 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass, Download } from 'lucide-react';
+import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -41,6 +42,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   ChartContainer,
   ChartTooltip,
@@ -130,16 +145,17 @@ export default function PublicCampaignSummaryPage() {
 
         const beneficiaryCategoryData = beneficiaries.reduce((acc, beneficiary) => {
             const members = beneficiary.members;
-            const categoryKey = members && members > 0 ? `${members} Members` : 'General';
+            const categoryKey = members && members > 0 ? `${members}` : 'General';
             
             if (!acc[categoryKey]) {
-                acc[categoryKey] = { count: 0, totalAmount: 0 };
+                acc[categoryKey] = { count: 0, totalAmount: 0, beneficiaries: [] };
             }
             acc[categoryKey].count++;
             acc[categoryKey].totalAmount += beneficiary.kitAmount || 0;
+            acc[categoryKey].beneficiaries.push(beneficiary);
             
             return acc;
-        }, {} as Record<string, { count: number; totalAmount: number }>);
+        }, {} as Record<string, { count: number; totalAmount: number; beneficiaries: Beneficiary[] }>);
 
         const beneficiaryCategoryBreakdown = Object.entries(beneficiaryCategoryData).map(([name, data]) => ({
             name,
@@ -251,7 +267,7 @@ Your contribution, big or small, makes a huge difference.
                 scale: 2, 
                 useCORS: true,
                 allowTaint: false,
-                backgroundColor: 'hsl(var(--background))',
+                backgroundColor: '#ffffff',
             });
             
             const imgData = canvas.toDataURL('image/png');
@@ -497,26 +513,40 @@ Your contribution, big or small, makes a huge difference.
                             <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
+                             <Accordion type="single" collapsible className="w-full">
                                 {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
                                     summaryData.beneficiaryCategoryBreakdown.map((item, index) => (
-                                        <React.Fragment key={item.name}>
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-medium text-foreground">{item.name}</p>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        {item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'}
-                                                    </p>
+                                        <AccordionItem value={`item-${index}`} key={item.name}>
+                                            <AccordionTrigger>
+                                                <div className="flex justify-between w-full pr-4">
+                                                    <span className="font-medium text-foreground">{item.name === 'General' ? 'General' : `${item.name} Members`}</span>
+                                                    <span className="text-sm text-muted-foreground">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Total: Rupee {item.totalAmount.toLocaleString('en-IN')}</span>
                                                 </div>
-                                                <p className="font-mono text-right text-foreground">Required Rupee {item.totalAmount.toLocaleString('en-IN')}</p>
-                                            </div>
-                                            {index < summaryData.beneficiaryCategoryBreakdown.length - 1 && <Separator />}
-                                        </React.Fragment>
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Name</TableHead>
+                                                            <TableHead className="text-right">Kit Amount (Rupee)</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {item.beneficiaries.map(beneficiary => (
+                                                            <TableRow key={beneficiary.id}>
+                                                                <TableCell>{beneficiary.name}</TableCell>
+                                                                <TableCell className="text-right font-mono">{(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </AccordionContent>
+                                        </AccordionItem>
                                     ))
                                 ) : (
                                     <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
                                 )}
-                            </div>
+                            </Accordion>
                         </CardContent>
                     </Card>
 

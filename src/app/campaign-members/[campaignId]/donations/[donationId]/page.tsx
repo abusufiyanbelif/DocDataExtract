@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useRef } from 'react';
@@ -91,7 +92,7 @@ export default function DonationDetailsPage() {
         }
         
         try {
-            const canvas = await html2canvas(receiptRef.current, { scale: 2, useCORS: true, backgroundColor: 'hsl(var(--background))' });
+            const canvas = await html2canvas(receiptRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             const imgData = canvas.toDataURL('image/png');
 
             if (format === 'png') {
