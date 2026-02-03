@@ -1,4 +1,0 @@
-.next/types/app/leads/layout.ts(2,24): error TS2307: Cannot find module '../../../../src/app/leads/layout.js' or its corresponding type declarations.
-.next/types/app/leads/layout.ts(5,29): error TS2307: Cannot find module '../../../../src/app/leads/layout.js' or its corresponding type declarations.
-.next/types/app/leads/page.ts(2,24): error TS2307: Cannot find module '../../../../src/app/leads/page.js' or its corresponding type declarations.
-.next/types/app/leads/page.ts(5,29): error TS2307: Cannot find module '../../../../src/app/leads/page.js' or its corresponding type declarations.
