@@ -1,0 +1,4 @@
+src/app/campaign-members/[campaignId]/summary/page.tsx(12,25): error TS7016: Could not find a declaration file for module 'html2canvas'. '/home/user/studio/node_modules/html2canvas/dist/html2canvas.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/html2canvas` if it exists or add a new declaration (.d.ts) file containing `declare module 'html2canvas';`
+src/app/campaign-public/[campaignId]/summary/page.tsx(10,25): error TS7016: Could not find a declaration file for module 'html2canvas'. '/home/user/studio/node_modules/html2canvas/dist/html2canvas.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/html2canvas` if it exists or add a new declaration (.d.ts) file containing `declare module 'html2canvas';`
