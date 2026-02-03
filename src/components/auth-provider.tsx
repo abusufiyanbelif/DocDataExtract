@@ -5,9 +5,6 @@ import { ReactNode, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { SessionProvider } from '@/components/session-provider';
 import { useUser } from '@/firebase';
-import { AppFooter } from '@/components/app-footer';
-import { Toaster } from '@/components/ui/toaster';
-import { FirebaseContentWrapper } from './FirebaseContentWrapper';
 
 function RedirectLoader({ message }: { message: string }) {
     return (
@@ -32,48 +29,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const isPublicRoute = isPublicCampaignPath || isHomePage || isSeedPage;
 
-  // Handle redirect for login page
+  // Redirect authenticated users from login page
   useEffect(() => {
     if (isLoginPage && !isLoading && user) {
         router.push('/');
     }
   }, [isLoginPage, isLoading, user, router]);
-
-  if (isLoginPage) {
-      if (isLoading || user) {
-          return <RedirectLoader message="Redirecting..." />;
-      }
-      // Render login page without the full provider wrapper if needed, but for now this is fine
-      return (
-        <div className="app-root">
-            {children}
-            <AppFooter />
-            <Toaster />
-        </div>
-      );
-  }
-
-  // Handle redirect for private routes
+  
+  // Redirect unauthenticated users from private pages
   useEffect(() => {
       if (!isPublicRoute && !isLoading && !user) {
           router.push('/login');
       }
   }, [isPublicRoute, isLoading, user, router]);
 
-  if (!isPublicRoute && (isLoading || !user)) {
+  // Show a loader while authenticating on private routes, or redirecting from login
+  if ((!isPublicRoute && (isLoading || !user)) || (isLoginPage && (isLoading || user))) {
       return <RedirectLoader message="Authenticating..." />;
   }
-
-  // For both public and authenticated private routes, render the main content with all providers
+  
+  // Provide session to all pages
   return (
     <SessionProvider authUser={user}>
-        <FirebaseContentWrapper>
-            <div className="app-root">
-                {children}
-                <AppFooter />
-            </div>
-            <Toaster />
-        </FirebaseContentWrapper>
+        {children}
     </SessionProvider>
   );
 }
