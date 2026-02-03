@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -11,9 +10,8 @@ export function useUser() {
 
   useEffect(() => {
     if (!auth) {
-      // If auth is not available, we are not loading and there is no user.
-      // This can happen if Firebase is not configured.
-      setIsLoading(false);
+      // If the auth service isn't ready, we are still loading.
+      // The hook will re-run once the auth service is available.
       return;
     }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
