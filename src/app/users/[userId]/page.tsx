@@ -85,14 +85,6 @@ export default function UserDetailsPage() {
 
         const fileList = data.idProofFile as FileList | undefined;
         if (fileList && fileList.length > 0) {
-            if (idProofUrl) {
-                await deleteObject(storageRef(storage, idProofUrl)).catch(err => {
-                    if (err.code !== 'storage/object-not-found') {
-                        console.warn("Failed to delete old file during replacement:", err);
-                    }
-                });
-            }
-            
             const file = fileList[0];
             const { default: Resizer } = await import('react-image-file-resizer');
             const resizedBlob = await new Promise<Blob>((resolve) => {
@@ -105,7 +97,7 @@ export default function UserDetailsPage() {
             });
             
             const fileExtension = 'jpeg';
-            const finalFileName = `${userId}_id_proof.${fileExtension}`;
+            const finalFileName = `${userId}_id_proof_${Date.now()}.${fileExtension}`;
             const filePath = `users/${userId}/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 
