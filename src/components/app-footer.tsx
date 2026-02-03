@@ -1,3 +1,4 @@
+
 'use client';
 import { useMemo } from 'react';
 import Image from 'next/image';
@@ -92,12 +93,13 @@ export function AppFooter() {
             <Skeleton className="h-32 w-32 rounded-lg" />
           ) : (
             paymentSettings?.qrCodeUrl && (
-                <Image 
+                <img 
                     src={paymentSettings.qrCodeUrl}
                     alt="UPI QR Code"
                     width={paymentSettings.qrWidth || 128}
                     height={paymentSettings.qrHeight || 128}
                     className="object-contain border-4 border-primary rounded-lg p-1 bg-white"
+                    crossOrigin="anonymous"
                 />
             )
           )}
