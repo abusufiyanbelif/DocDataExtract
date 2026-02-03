@@ -165,15 +165,27 @@ export default function SettingsPage() {
         toast({ title: 'Saving settings...', description: 'Please wait.' });
 
         try {
+            const { default: Resizer } = await import('react-image-file-resizer');
+
             // Branding Save Logic
             let logoUrl = brandingSettings?.logoUrl || '';
             if (logoFile && storage) {
-                const filePath = 'settings/logo';
-                const fileRef = storageRef(storage, filePath);
                 if (brandingSettings?.logoUrl) {
-                    try { await deleteObject(storageRef(storage, brandingSettings.logoUrl)); } catch (e) {}
+                    // Fire and forget deletion of old file
+                    deleteObject(storageRef(storage, brandingSettings.logoUrl)).catch(e => console.warn("Failed to delete old logo", e));
                 }
-                const uploadResult = await uploadBytes(fileRef, logoFile);
+
+                const resizedBlob = await new Promise<Blob>((resolve) => {
+                    Resizer.imageFileResizer(
+                        logoFile, 1024, 1024, 'JPEG', 80, 0,
+                        blob => { resolve(blob as Blob); }, 'blob'
+                    );
+                });
+                
+                const timestamp = Date.now();
+                const filePath = `settings/logo_${timestamp}.jpeg`;
+                const fileRef = storageRef(storage, filePath);
+                const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 logoUrl = await getDownloadURL(uploadResult.ref);
             }
             const brandingData = { 
@@ -186,12 +198,22 @@ export default function SettingsPage() {
             // Payment Save Logic
             let qrCodeUrl = paymentSettings?.qrCodeUrl || '';
             if (qrCodeFile && storage) {
-                const filePath = 'settings/payment_qr';
-                const fileRef = storageRef(storage, filePath);
-                if (qrCodeUrl) {
-                    try { await deleteObject(storageRef(storage, qrCodeUrl)); } catch (e) {}
+                 if (qrCodeUrl) {
+                    // Fire and forget deletion of old file
+                    deleteObject(storageRef(storage, qrCodeUrl)).catch(e => console.warn("Failed to delete old QR code", e));
                 }
-                const uploadResult = await uploadBytes(fileRef, qrCodeFile);
+
+                const resizedBlob = await new Promise<Blob>((resolve) => {
+                    Resizer.imageFileResizer(
+                        qrCodeFile, 1024, 1024, 'JPEG', 80, 0,
+                        blob => { resolve(blob as Blob); }, 'blob'
+                    );
+                });
+
+                const timestamp = Date.now();
+                const filePath = `settings/payment_qr_${timestamp}.jpeg`;
+                const fileRef = storageRef(storage, filePath);
+                const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 qrCodeUrl = await getDownloadURL(uploadResult.ref);
             }
             const paymentData = {
