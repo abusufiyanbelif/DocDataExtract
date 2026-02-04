@@ -162,7 +162,7 @@ export default function DonationDetailsPage() {
                     const qrSize = 130;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
-                ctx.fillStyle = '#0a2913';
+                ctx.fillStyle = 'rgb(10, 41, 19)';
                 ctx.font = 'bold 18px sans-serif';
                 ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
                 ctx.font = '14px sans-serif';

@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import type { UserPermissions } from '@/lib/modules';
 import { get } from '@/lib/utils';
+import { Separator } from './ui/separator';
 
 interface PermissionsTableProps {
   permissions: UserPermissions;
@@ -198,6 +199,11 @@ export function PermissionsTable({ permissions, onPermissionChange, role, disabl
             </TableCell>
           </TableRow>
 
+          {/* Spacer Row */}
+          <TableRow>
+            <TableCell colSpan={5} className="p-0 h-2 bg-background"></TableCell>
+          </TableRow>
+
           {/* Leads */}
           <TableRow>
             <TableCell className="font-medium">Leads</TableCell>
@@ -208,13 +214,7 @@ export function PermissionsTable({ permissions, onPermissionChange, role, disabl
                 disabled={isDisabled}
               />
             </TableCell>
-            <TableCell className="text-center">
-              <Checkbox
-                checked={!!get(permissions, 'leads-members.read', false)}
-                onCheckedChange={handleCheckedChange('leads-members.read')}
-                disabled={isDisabled}
-              />
-            </TableCell>
+            <TableCell className="text-center text-muted-foreground">--</TableCell>
             <TableCell className="text-center">
               <Checkbox
                 checked={!!get(permissions, 'leads-members.update', false)}
@@ -229,6 +229,93 @@ export function PermissionsTable({ permissions, onPermissionChange, role, disabl
                 disabled={isDisabled}
               />
             </TableCell>
+          </TableRow>
+          
+           {/* Lead Submodules */}
+          <TableRow className="bg-muted/30 hover:bg-muted/50">
+            <TableCell className="pl-12 text-muted-foreground">Summary</TableCell>
+            <TableCell />
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.summary.read', false)}
+                onCheckedChange={handleCheckedChange('leads-members.summary.read')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.summary.update', false)}
+                onCheckedChange={handleCheckedChange('leads-members.summary.update')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell />
+          </TableRow>
+          <TableRow className="bg-muted/30 hover:bg-muted/50">
+            <TableCell className="pl-12 text-muted-foreground">Beneficiary List</TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.beneficiaries.create', false)}
+                onCheckedChange={handleCheckedChange('leads-members.beneficiaries.create')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.beneficiaries.read', false)}
+                onCheckedChange={handleCheckedChange('leads-members.beneficiaries.read')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.beneficiaries.update', false)}
+                onCheckedChange={handleCheckedChange('leads-members.beneficiaries.update')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.beneficiaries.delete', false)}
+                onCheckedChange={handleCheckedChange('leads-members.beneficiaries.delete')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+          </TableRow>
+          <TableRow className="bg-muted/30 hover:bg-muted/50">
+            <TableCell className="pl-12 text-muted-foreground">Donations</TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.donations.create', false)}
+                onCheckedChange={handleCheckedChange('leads-members.donations.create')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.donations.read', false)}
+                onCheckedChange={handleCheckedChange('leads-members.donations.read')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.donations.update', false)}
+                onCheckedChange={handleCheckedChange('leads-members.donations.update')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+            <TableCell className="text-center">
+              <Checkbox
+                checked={!!get(permissions, 'leads-members.donations.delete', false)}
+                onCheckedChange={handleCheckedChange('leads-members.donations.delete')}
+                disabled={isDisabled}
+              />
+            </TableCell>
+          </TableRow>
+
+          <TableRow>
+            <TableCell colSpan={5} className="p-0 h-2 bg-background"></TableCell>
           </TableRow>
           
           {/* Other Modules */}

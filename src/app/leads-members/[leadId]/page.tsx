@@ -75,7 +75,10 @@ export default function LeadDetailsPage() {
       setEditableLead(JSON.parse(JSON.stringify(lead)));
     }
   }, [editMode, lead])
-  
+
+  const canReadSummary = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.summary.read', false);
+  const canReadBeneficiaries = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.beneficiaries.read', false);
+  const canReadDonations = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.donations.read', false);
   const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.update', false);
 
   const isLoading = isLeadLoading || isProfileLoading;
@@ -183,6 +186,37 @@ export default function LeadDetailsPage() {
                     Back to Leads
                 </Link>
             </Button>
+        </div>
+        <div className="flex justify-between items-center mb-4">
+            <h1 className="text-3xl font-bold">{editableLead.name}</h1>
+        </div>
+
+        <div className="border-b mb-4">
+            <ScrollArea className="w-full whitespace-nowrap">
+                <div className="flex w-max space-x-4">
+                    {userProfile && canReadSummary && (
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none">
+                          <Link href={`/leads-members/${leadId}/summary`}>Summary</Link>
+                      </Button>
+                    )}
+                    {userProfile && (
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none" data-active="true">
+                          <Link href={`/leads-members/${leadId}`}>Item List</Link>
+                      </Button>
+                    )}
+                    {userProfile && canReadBeneficiaries && (
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none">
+                          <Link href={`/leads-members/${leadId}/beneficiaries`}>Beneficiary List</Link>
+                      </Button>
+                    )}
+                     {userProfile && canReadDonations && (
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none">
+                          <Link href={`/leads-members/${leadId}/donations`}>Donations</Link>
+                      </Button>
+                    )}
+                </div>
+                <ScrollBar orientation="horizontal" />
+            </ScrollArea>
         </div>
         
         <Card>

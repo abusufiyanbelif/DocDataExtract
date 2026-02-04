@@ -6,12 +6,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import type { Donation, Campaign, BrandingSettings, PaymentSettings } from '@/lib/types';
+import type { Donation, Campaign, Lead, BrandingSettings, PaymentSettings } from '@/lib/types';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from './ui/table';
 
 interface DonationReceiptProps {
   donation: Donation;
-  campaign: Campaign;
+  campaign: Campaign | Lead;
   brandingSettings: BrandingSettings | null;
   paymentSettings: PaymentSettings | null;
 }
@@ -51,8 +51,8 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                     <CardContent className="space-y-6">
                         <div className="space-y-3">
                             <ReceiptRow label="Donation ID" value={donation.id} isMono />
-                            <ReceiptRow label="Campaign ID" value={campaign.id} isMono />
-                            <ReceiptRow label="Campaign" value={campaign.name} />
+                            <ReceiptRow label="Campaign/Lead ID" value={campaign.id} isMono />
+                            <ReceiptRow label="Campaign/Lead" value={campaign.name} />
                             <ReceiptRow label="Date" value={donation.donationDate} />
                         </div>
                         <Separator />
