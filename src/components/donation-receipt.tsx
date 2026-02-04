@@ -28,13 +28,16 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
         <div ref={ref} className="bg-background p-4 sm:p-8 rounded-lg">
             <Card className="w-full max-w-2xl mx-auto shadow-none border-border relative overflow-hidden">
                  {brandingSettings?.logoUrl && (
-                    <div
-                        className="absolute inset-0 bg-no-repeat bg-center opacity-5 pointer-events-none"
+                    <img
+                        src={brandingSettings.logoUrl}
+                        crossOrigin="anonymous"
+                        alt="Watermark"
+                        className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
                         style={{
-                            backgroundImage: `url(${brandingSettings.logoUrl})`,
-                            backgroundSize: '75%',
+                            width: '75%',
+                            height: '75%',
                         }}
-                    ></div>
+                    />
                 )}
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
