@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { useStorage, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc, writeBatch } from 'firebase/firestore';
+import { doc, writeBatch } from 'firebase/firestore';
 
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -54,11 +54,12 @@ export default function SettingsPage() {
 
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
-
-    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
-    const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
     
     const canUpdateSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.update;
+
+    const handleFieldChange = useCallback((field: keyof FormDataType, value: string | number) => {
+        setEditableData(prev => prev ? { ...prev, [field]: value } : null);
+    }, []);
 
     useEffect(() => {
         if (isEditMode) {
@@ -77,8 +78,6 @@ export default function SettingsPage() {
                 pan: paymentSettings?.pan || '',
                 address: paymentSettings?.address || '',
             });
-            setLogoPreviewUrl(brandingSettings?.logoUrl || null);
-            setQrPreviewUrl(paymentSettings?.qrCodeUrl || null);
         } else {
             setEditableData(null);
             setLogoFile(null);
@@ -89,39 +88,27 @@ export default function SettingsPage() {
      useEffect(() => {
         if (logoFile) {
             const reader = new FileReader();
-            reader.onloadend = () => setLogoPreviewUrl(reader.result as string);
+            reader.onloadend = () => handleFieldChange('logoUrl', reader.result as string);
             reader.readAsDataURL(logoFile);
         }
-    }, [logoFile]);
+    }, [logoFile, handleFieldChange]);
 
     useEffect(() => {
         if (qrCodeFile) {
             const reader = new FileReader();
-            reader.onloadend = () => setQrPreviewUrl(reader.result as string);
+            reader.onloadend = () => handleFieldChange('qrCodeUrl', reader.result as string);
             reader.readAsDataURL(qrCodeFile);
         }
-    }, [qrCodeFile]);
+    }, [qrCodeFile, handleFieldChange]);
 
-    const handleFieldChange = (field: keyof FormDataType, value: string | number) => {
-        if (editableData) {
-            setEditableData(prev => prev ? { ...prev, [field]: value } : null);
-        }
-    };
-    
     const handleRemoveLogo = () => {
         setLogoFile(null);
-        setLogoPreviewUrl(null);
-        if (editableData) {
-            setEditableData(prev => prev ? { ...prev, logoUrl: '' } : null);
-        }
+        handleFieldChange('logoUrl', '');
     };
     
     const handleRemoveQrCode = () => {
         setQrCodeFile(null);
-        setQrPreviewUrl(null);
-        if (editableData) {
-             setEditableData(prev => prev ? { ...prev, qrCodeUrl: '' } : null);
-        }
+        handleFieldChange('qrCodeUrl', '');
     };
 
     const handleSave = async () => {
@@ -143,11 +130,12 @@ export default function SettingsPage() {
                  const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(logoFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
-                const filePath = 'settings/logo'; // Fixed path
+                const filePath = 'settings/logo';
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 newLogoUrl = await getDownloadURL(uploadResult.ref);
             }
+            
             const brandingData = { 
                 logoUrl: newLogoUrl,
                 logoWidth: Number(editableData.logoWidth) || null,
@@ -161,7 +149,7 @@ export default function SettingsPage() {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(qrCodeFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
-                const filePath = 'settings/payment_qr'; // Fixed path
+                const filePath = 'settings/payment_qr';
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 newQrCodeUrl = await getDownloadURL(uploadResult.ref);
@@ -196,9 +184,26 @@ export default function SettingsPage() {
     const isLoading = isSessionLoading || isBrandingLoading || isPaymentLoading;
     const isFormDisabled = !isEditMode || isSubmitting;
     
-    const renderImagePreview = (previewUrl: string | null) => {
-        if (!previewUrl) return null;
+    const renderImagePreview = (previewUrl: string) => {
         return <ProxiedImage imageUrl={previewUrl} alt="Preview" className="object-contain p-2 h-full w-full" />;
+    };
+
+    const logoDisplayUrl = isEditMode ? editableData?.logoUrl : brandingSettings?.logoUrl;
+    const qrDisplayUrl = isEditMode ? editableData?.qrCodeUrl : paymentSettings?.qrCodeUrl;
+    const displayData = isEditMode && editableData ? editableData : {
+        logoUrl: brandingSettings?.logoUrl || '',
+        logoWidth: brandingSettings?.logoWidth || '',
+        logoHeight: brandingSettings?.logoHeight || '',
+        qrCodeUrl: paymentSettings?.qrCodeUrl || '',
+        qrWidth: paymentSettings?.qrWidth || '',
+        qrHeight: paymentSettings?.qrHeight || '',
+        upiId: paymentSettings?.upiId || '',
+        paymentMobileNumber: paymentSettings?.paymentMobileNumber || '',
+        contactEmail: paymentSettings?.contactEmail || '',
+        contactPhone: paymentSettings?.contactPhone || '',
+        regNo: paymentSettings?.regNo || '',
+        pan: paymentSettings?.pan || '',
+        address: paymentSettings?.address || '',
     };
 
     if (isLoading) {
@@ -241,22 +246,6 @@ export default function SettingsPage() {
             </div>
         );
     }
-    
-    const displayData = isEditMode && editableData ? editableData : {
-        logoUrl: brandingSettings?.logoUrl,
-        logoWidth: brandingSettings?.logoWidth,
-        logoHeight: brandingSettings?.logoHeight,
-        qrCodeUrl: paymentSettings?.qrCodeUrl,
-        qrWidth: paymentSettings?.qrWidth,
-        qrHeight: paymentSettings?.qrHeight,
-        upiId: paymentSettings?.upiId,
-        paymentMobileNumber: paymentSettings?.paymentMobileNumber,
-        contactEmail: paymentSettings?.contactEmail,
-        contactPhone: paymentSettings?.contactPhone,
-        regNo: paymentSettings?.regNo,
-        pan: paymentSettings?.pan,
-        address: paymentSettings?.address,
-    };
 
     return (
         <div className="min-h-screen text-foreground">
@@ -303,8 +292,8 @@ export default function SettingsPage() {
                             <div className="space-y-4">
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="relative w-48 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
-                                        {logoPreviewUrl ? (
-                                            renderImagePreview(logoPreviewUrl)
+                                        {logoDisplayUrl ? (
+                                            renderImagePreview(logoDisplayUrl)
                                         ) : (
                                             <div className="text-muted-foreground text-center p-2">
                                                 <ImageIcon className="mx-auto h-8 w-8" />
@@ -328,7 +317,7 @@ export default function SettingsPage() {
                                         <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('logo-upload')?.click()} disabled={isSubmitting}>
                                             <UploadCloud className="mr-2 h-4 w-4" /> Change Logo
                                         </Button>
-                                        {logoPreviewUrl && (
+                                        {editableData?.logoUrl && (
                                             <Button type="button" variant="destructive" size="sm" onClick={handleRemoveLogo} disabled={isSubmitting}>
                                                 <Trash2 className="mr-2 h-4 w-4" /> Remove
                                             </Button>
@@ -366,8 +355,8 @@ export default function SettingsPage() {
                                     <Label>UPI QR Code</Label>
                                      <div className="flex flex-col items-center gap-4">
                                         <div className="relative w-48 h-48 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
-                                            {qrPreviewUrl ? (
-                                                renderImagePreview(qrPreviewUrl)
+                                            {qrDisplayUrl ? (
+                                                renderImagePreview(qrDisplayUrl)
                                             ) : (
                                                 <div className="text-muted-foreground text-center p-2">
                                                     <QrCode className="mx-auto h-8 w-8" />
@@ -390,7 +379,7 @@ export default function SettingsPage() {
                                                 <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('qr-upload')?.click()} disabled={isSubmitting}>
                                                     <UploadCloud className="mr-2 h-4 w-4" /> Change QR
                                                 </Button>
-                                                {qrPreviewUrl && (
+                                                {editableData?.qrCodeUrl && (
                                                     <Button type="button" variant="destructive" size="sm" onClick={handleRemoveQrCode} disabled={isSubmitting}>
                                                         <Trash2 className="mr-2 h-4 w-4" /> Remove
                                                     </Button>
