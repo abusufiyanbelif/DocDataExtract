@@ -11,6 +11,7 @@ import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { doc, DocumentReference, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 import { useToast } from '@/hooks/use-toast';
 
@@ -98,7 +99,7 @@ export default function DonationDetailsPage() {
             const canvas = await html2canvas(element, { 
                 scale: 2, 
                 useCORS: true,
-                backgroundColor: '#FFFFFF' // Use a solid white background
+                backgroundColor: '#FFFFFF'
             });
             const imgData = canvas.toDataURL('image/png');
 
@@ -108,76 +109,24 @@ export default function DonationDetailsPage() {
                 link.href = imgData;
                 link.click();
             } else { // PDF
-                const { default: jsPDF } = await import('jspdf');
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
                 
-                // Add receipt image
                 const imgProps = pdf.getImageProperties(imgData);
                 const pdfImageHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfImageHeight);
                 
-                let finalY = pdfImageHeight + 10;
-                const footerHeight = 60; // Estimated footer height
-
-                if (finalY + footerHeight > pageHeight) {
+                let heightLeft = pdfImageHeight;
+                let position = 0;
+                
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfImageHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft > 0) {
+                    position = heightLeft - pdfImageHeight;
                     pdf.addPage();
-                    finalY = 20;
-                }
-                
-                // --- Footer ---
-                pdf.setLineWidth(0.2);
-                pdf.line(15, finalY, pdfWidth - 15, finalY);
-                finalY += 8;
-
-                pdf.setTextColor(10, 41, 19); // Set text color to dark green
-                pdf.setFontSize(12);
-                pdf.text('For Donations & Contact', 15, finalY);
-                finalY += 6;
-                pdf.setFontSize(9);
-                
-                const qrSize = 30;
-                const qrX = pdfWidth - 15 - qrSize;
-
-                if (paymentSettings?.qrCodeUrl) {
-                    try {
-                        const qrResponse = await fetch(`/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}`);
-                        const qrBlob = await qrResponse.blob();
-                        const qrDataUrl = await new Promise<string>(resolve => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result as string);
-                            reader.readAsDataURL(qrBlob);
-                        });
-                        pdf.addImage(qrDataUrl, 'PNG', qrX, finalY - 2, qrSize, qrSize);
-                    } catch(e) {
-                         console.warn("Could not add QR code to PDF", e);
-                    }
-                }
-                
-                if (paymentSettings?.upiId) {
-                    pdf.text(`UPI: ${paymentSettings.upiId}`, 15, finalY);
-                    finalY += 5;
-                }
-                if (paymentSettings?.paymentMobileNumber) {
-                    pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, finalY);
-                    finalY += 5;
-                }
-                if (paymentSettings?.contactEmail) {
-                    pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, finalY);
-                    finalY += 5;
-                }
-                if (paymentSettings?.pan) {
-                    pdf.text(`PAN: ${paymentSettings.pan}`, 15, finalY);
-                    finalY += 5;
-                }
-                if (paymentSettings?.regNo) {
-                    pdf.text(`Reg No: ${paymentSettings.regNo}`, 15, finalY);
-                    finalY += 5;
-                }
-                if (paymentSettings?.address) {
-                    const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth - qrSize - 30);
-                    pdf.text(addressLines, 15, finalY);
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfImageHeight);
+                    heightLeft -= pageHeight;
                 }
                 
                 pdf.save(`donation-receipt-${donationId}.pdf`);

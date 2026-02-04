@@ -12,6 +12,8 @@ import { useSession } from '@/hooks/use-session';
 import { doc, collection, updateDoc, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 import {
   BarChart,
@@ -354,121 +356,130 @@ Your contribution, big or small, makes a huge difference.
                 useCORS: true,
                 backgroundColor: '#FFFFFF'
             });
-            
-            const imgData = canvas.toDataURL('image/png');
+
+            // Common branding elements
+            const logoUrl = brandingSettings?.logoUrl?.trim() ? `/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl)}` : null;
+            const qrUrl = paymentSettings?.qrCodeUrl?.trim() ? `/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}` : null;
+
+            const fetchAsDataURL = async (url: string | null): Promise<string | null> => {
+                if (!url) return null;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Failed to fetch image: ${url}`);
+                const blob = await response.blob();
+                return new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            };
+
+            const [logoDataUrl, qrDataUrl] = await Promise.all([
+                fetchAsDataURL(logoUrl),
+                fetchAsDataURL(qrUrl)
+            ]);
 
             if (format === 'png') {
+                const PADDING = 40;
+                const HEADER_HEIGHT = 80;
+                const FOOTER_HEIGHT = 100;
+                
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = canvas.width + PADDING * 2;
+                finalCanvas.height = canvas.height + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING * 2;
+                const ctx = finalCanvas.getContext('2d')!;
+
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+                if (logoDataUrl) {
+                    const logoImg = await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = logoDataUrl; });
+                    const logoHeight = 50;
+                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+                    ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
+                }
+                ctx.fillStyle = '#0a2913';
+                ctx.font = 'bold 32px sans-serif';
+                ctx.fillText(campaign?.name || 'Campaign Summary', PADDING + 120, PADDING + 35);
+                
+                ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT);
+                
+                if (qrDataUrl) {
+                    const qrImg = await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = qrDataUrl; });
+                    const qrSize = 80;
+                    ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, finalCanvas.height - FOOTER_HEIGHT, qrSize, qrSize);
+                }
+                ctx.font = '16px sans-serif';
+                ctx.fillText('For Donations & Contact', PADDING, finalCanvas.height - FOOTER_HEIGHT + 20);
+                ctx.font = '12px sans-serif';
+                if (paymentSettings?.upiId) ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, finalCanvas.height - FOOTER_HEIGHT + 40);
+                if (paymentSettings?.contactPhone) ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, finalCanvas.height - FOOTER_HEIGHT + 55);
+
                 const link = document.createElement('a');
                 link.download = `campaign-summary-${campaignId}.png`;
-                link.href = imgData;
+                link.href = finalCanvas.toDataURL('image/png');
                 link.click();
             } else { // pdf
-                const { default: jsPDF } = await import('jspdf');
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
-                
-                let position = 10; // Initial top margin
-                pdf.setTextColor(10, 41, 19);
+                let position = 15;
 
-                // Add Header (Logo and Title)
-                if (brandingSettings?.logoUrl?.trim()) {
-                    try {
-                        const logoResponse = await fetch(`/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl)}`);
-                        if (!logoResponse.ok) throw new Error('Failed to fetch logo');
-                        const logoBlob = await logoResponse.blob();
-                        const logoDataUrl = await new Promise<string>((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result as string);
-                            reader.onerror = reject;
-                            reader.readAsDataURL(logoBlob);
-                        });
-                        
-                        const logoHeight = 10;
-                        const logoWidth = (brandingSettings?.logoWidth && brandingSettings?.logoHeight > 0)
-                            ? (brandingSettings.logoWidth / brandingSettings.logoHeight) * logoHeight
-                            : 30;
-                        pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
-                    } catch (e) {
-                        console.warn("Could not add logo to PDF", e);
-                        toast({ title: 'PDF Error', description: 'Failed to load the logo for the PDF.', variant: 'destructive' });
-                    }
+                if (logoDataUrl) {
+                    const logoImg = await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = logoDataUrl; });
+                    const logoHeight = 15;
+                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+                    pdf.addImage(logoDataUrl, 'PNG', 15, position - 5, logoWidth, logoHeight);
+                    pdf.setTextColor(10, 41, 19);
+                    pdf.setFontSize(20);
+                    pdf.text(campaign?.name || 'Campaign Summary', 15 + logoWidth + 10, position + 5);
+                } else {
+                    pdf.setTextColor(10, 41, 19);
+                    pdf.setFontSize(20);
+                    pdf.text(campaign?.name || 'Campaign Summary', 15, position + 5);
                 }
-                pdf.setFontSize(16);
-                pdf.text(campaign?.name || 'Campaign Summary', 50, position + 7);
-                position += 15;
-                pdf.setLineWidth(0.5);
-                pdf.line(15, position, pdfWidth - 15, position);
-                position += 5;
                 
-                const canvasAspectRatio = canvas.width / canvas.height;
-                const printableWidth = pdfWidth - 20; // 10mm margin on each side
-                const printableHeight = printableWidth / canvasAspectRatio;
+                position += 20;
 
-                pdf.addImage(imgData, 'PNG', 10, position, printableWidth, printableHeight);
-                
-                let finalY = position + printableHeight + 10;
-                const footerHeight = 60; // Estimated footer height
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = pdf.getImageProperties(imgData);
+                const contentHeight = (imgProps.height * (pdfWidth - 30)) / imgProps.width;
 
-                if (finalY + footerHeight > pageHeight) {
+                if (position + contentHeight > pageHeight - 30) {
                     pdf.addPage();
-                    finalY = 20;
+                    position = 15;
                 }
-
-                // --- Footer ---
+                pdf.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, contentHeight);
+                position += contentHeight + 10;
+                
+                if (position + 60 > pageHeight) {
+                    pdf.addPage();
+                    position = 15;
+                }
                 pdf.setLineWidth(0.2);
-                pdf.line(15, finalY, pdfWidth - 15, finalY);
-                finalY += 8;
+                pdf.line(15, position, pdfWidth - 15, position);
+                position += 8;
 
                 pdf.setFontSize(12);
-                pdf.text('For Donations & Contact', 15, finalY);
-                finalY += 6;
-
+                pdf.text('For Donations & Contact', 15, position);
+                position += 6;
                 pdf.setFontSize(9);
+                
                 const qrSize = 30;
                 const qrX = pdfWidth - 15 - qrSize;
 
-                if (paymentSettings?.qrCodeUrl?.trim()) {
-                    try {
-                        const qrResponse = await fetch(`/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}`);
-                        if (!qrResponse.ok) throw new Error('Failed to fetch QR code');
-                        const qrBlob = await qrResponse.blob();
-                        const qrDataUrl = await new Promise<string>((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result as string);
-                            reader.onerror = reject;
-                            reader.readAsDataURL(qrBlob);
-                        });
-                        pdf.addImage(qrDataUrl, 'PNG', qrX, finalY - 2, qrSize, qrSize);
-                    } catch(e) {
-                         console.warn("Could not add QR code to PDF", e);
-                         toast({ title: 'PDF Error', description: 'Failed to load the QR code for the PDF.', variant: 'destructive' });
-                    }
+                if (qrDataUrl) {
+                    pdf.addImage(qrDataUrl, 'PNG', qrX, position - 2, qrSize, qrSize);
                 }
                 
-                if (paymentSettings?.upiId) {
-                    pdf.text(`UPI: ${paymentSettings.upiId}`, 15, finalY);
-                    finalY += 5;
-                }
-                if (paymentSettings?.paymentMobileNumber) {
-                    pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, finalY);
-                    finalY += 5;
-                }
-                if (paymentSettings?.contactEmail) {
-                    pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, finalY);
-                    finalY += 5;
-                }
-                 if (paymentSettings?.pan) {
-                    pdf.text(`PAN: ${paymentSettings.pan}`, 15, finalY);
-                    finalY += 5;
-                }
-                 if (paymentSettings?.regNo) {
-                    pdf.text(`Reg No: ${paymentSettings.regNo}`, 15, finalY);
-                    finalY += 5;
-                }
+                if (paymentSettings?.upiId) { pdf.text(`UPI: ${paymentSettings.upiId}`, 15, position); position += 5; }
+                if (paymentSettings?.paymentMobileNumber) { pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, position); position += 5; }
+                if (paymentSettings?.contactEmail) { pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, position); position += 5; }
+                if (paymentSettings?.pan) { pdf.text(`PAN: ${paymentSettings.pan}`, 15, position); position += 5; }
+                if (paymentSettings?.regNo) { pdf.text(`Reg No: ${paymentSettings.regNo}`, 15, position); position += 5; }
                 if (paymentSettings?.address) {
                     const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth - qrSize - 30);
-                    pdf.text(addressLines, 15, finalY);
+                    pdf.text(addressLines, 15, position);
                 }
                 
                 pdf.save(`campaign-summary-${campaignId}.pdf`);
@@ -479,7 +490,6 @@ Your contribution, big or small, makes a huge difference.
             toast({ title: 'Download Failed', description: `Could not generate the file${errorMessage}. This can happen if images are blocked by browser security.`, variant: 'destructive', duration: 9000});
         }
     };
-
 
     if (isLoading) {
         return (
@@ -631,10 +641,6 @@ Your contribution, big or small, makes a huge difference.
                             alt="Watermark"
                             crossOrigin="anonymous"
                             className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
-                            style={{
-                                width: '75%',
-                                height: '75%',
-                            }}
                         />
                     )}
                     <Card>

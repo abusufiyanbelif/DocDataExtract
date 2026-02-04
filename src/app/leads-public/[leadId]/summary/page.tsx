@@ -7,6 +7,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useBranding, usePaymentSettings } from '@/firebase';
 import { doc, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 import type { Lead } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -16,7 +18,7 @@ import { ArrowLeft, Loader2, LogIn, Share2, Download } from 'lucide-react';
 import { AppFooter } from '@/components/app-footer';
 import { ShareDialog } from '@/components/share-dialog';
 import { useToast } from '@/hooks/use-toast';
-import html2canvas from 'html2canvas';
+
 
 export default function PublicLeadSummaryPage() {
     const params = useParams();
@@ -72,13 +74,11 @@ We are currently assessing the needs for this initiative. Your support and feedb
         }
 
         try {
-            const { default: jsPDF } = await import('jspdf');
             const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
             const imgData = canvas.toDataURL('image/png');
             
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
             
             const imgProps = pdf.getImageProperties(imgData);
             const pdfImageHeight = (imgProps.height * (pdfWidth - 20)) / imgProps.width;

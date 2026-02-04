@@ -43,10 +43,6 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         alt="Watermark"
                         crossOrigin="anonymous"
                         className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
-                        style={{
-                            width: '75%',
-                            height: '75%',
-                        }}
                     />
                 )}
                 <div className="relative">
@@ -58,8 +54,8 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                                 crossOrigin="anonymous"
                                 className="mx-auto object-contain"
                                 style={{ 
-                                    width: brandingSettings?.logoWidth ? `${brandingSettings.logoWidth}px` : '100px',
-                                    height: brandingSettings?.logoHeight ? `${brandingSettings.logoHeight}px` : '48px'
+                                    width: brandingSettings?.logoWidth ? `${brandingSettings.logoWidth * 1.5}px` : '150px',
+                                    height: brandingSettings?.logoHeight ? `${brandingSettings.logoHeight * 1.5}px` : '72px'
                                  }}
                               />
                         )}
@@ -137,8 +133,8 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                                     src={`/api/image-proxy?url=${encodeURIComponent(validQrCodeUrl)}`}
                                     alt="QR Code"
                                     crossOrigin="anonymous"
-                                    width={80}
-                                    height={80}
+                                    width={120}
+                                    height={120}
                                 />
                             </div>
                         )}
