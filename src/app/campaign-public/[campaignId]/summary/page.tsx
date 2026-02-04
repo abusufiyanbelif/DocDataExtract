@@ -42,12 +42,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
   Table,
   TableBody,
   TableCell,
@@ -119,12 +113,14 @@ export default function PublicCampaignSummaryPage() {
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
         const zakatCollected = verifiedDonationsList
-            .filter(d => d.type === 'Zakat')
-            .reduce((acc, d) => acc + d.amount, 0);
+            .flatMap(d => d.typeSplit)
+            .filter(split => split.category === 'Zakat')
+            .reduce((acc, split) => acc + split.amount, 0);
 
         const verifiedNonZakatDonations = verifiedDonationsList
-            .filter(d => d.type !== 'Zakat')
-            .reduce((acc, d) => acc + d.amount, 0);
+            .flatMap(d => d.typeSplit)
+            .filter(split => split.category !== 'Zakat')
+            .reduce((acc, split) => acc + split.amount, 0);
 
         const pendingDonations = donations
             .filter(d => d.status === 'Pending')
@@ -177,9 +173,11 @@ export default function PublicCampaignSummaryPage() {
             }
             
             const donationTypeData = filteredDonations.reduce((acc, d) => {
-                    acc[d.type] = (acc[d.type] || 0) + d.amount;
-                    return acc;
-                }, {} as Record<string, number>);
+                d.typeSplit.forEach(split => {
+                    acc[split.category] = (acc[split.category] || 0) + split.amount;
+                })
+                return acc;
+            }, {} as Record<string, number>);
                 
             const paymentTypeData = filteredDonations.reduce((acc, d) => {
                 if (d.donationType) {
@@ -605,40 +603,28 @@ Your contribution, big or small, makes a huge difference.
                             <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                             <Accordion type="single" collapsible className="w-full">
-                                {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
-                                    summaryData.beneficiaryCategoryBreakdown.map((item, index) => (
-                                        <AccordionItem value={`item-${index}`} key={item.name}>
-                                            <AccordionTrigger>
-                                                <div className="flex justify-between w-full pr-4">
-                                                    <span className="font-medium text-foreground">{item.name === 'General' ? 'General' : `${item.name} Members`}</span>
-                                                    <span className="text-sm text-muted-foreground">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Total: Rupee {item.totalAmount.toLocaleString('en-IN')}</span>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Name</TableHead>
-                                                            <TableHead className="text-right">Kit Amount (Rupee)</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {item.beneficiaries.map(beneficiary => (
-                                                            <TableRow key={beneficiary.id}>
-                                                                <TableCell>{beneficiary.name}</TableCell>
-                                                                <TableCell className="text-right font-mono">{(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
-                                )}
-                            </Accordion>
+                             {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Category</TableHead>
+                                            <TableHead className="text-center">Beneficiaries</TableHead>
+                                            <TableHead className="text-right">Total Kit Amount (Rupee)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {summaryData.beneficiaryCategoryBreakdown.map((item) => (
+                                            <TableRow key={item.name}>
+                                                <TableCell className="font-medium">{item.name === 'General' ? 'General' : `${item.name} Members`}</TableCell>
+                                                <TableCell className="text-center">{item.count}</TableCell>
+                                                <TableCell className="text-right font-mono">{item.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
+                            )}
                         </CardContent>
                     </Card>
 
