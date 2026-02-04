@@ -111,7 +111,7 @@ export default function DonationDetailsPage() {
         }
         
         try {
-            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: null });
             const imgData = canvas.toDataURL('image/png');
 
             if (format === 'png') {
