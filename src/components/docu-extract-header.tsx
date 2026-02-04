@@ -60,6 +60,7 @@ export function DocuExtractHeader() {
                 brandingSettings && brandingSettings.logoUrl && (
                 <img
                     src={brandingSettings.logoUrl}
+                    crossOrigin="anonymous"
                     alt="Company Logo"
                     className="object-contain h-full w-full"
                 />

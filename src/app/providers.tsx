@@ -22,6 +22,7 @@ function Watermark() {
             {brandingSettings && brandingSettings.logoUrl ? (
                 <img
                     src={brandingSettings.logoUrl}
+                    crossOrigin="anonymous"
                     alt="Watermark"
                     width={500}
                     height={500}
@@ -42,7 +43,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <FirebaseContentWrapper>
           <div className="app-root relative">
             <Watermark />
-            <div className="relative z-10 flex flex-col min-h-screen">
+            <div className="relative flex flex-col min-h-screen">
                 <div className="flex-grow">
                     {children}
                 </div>

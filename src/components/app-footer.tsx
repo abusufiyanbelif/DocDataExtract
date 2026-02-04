@@ -120,6 +120,7 @@ export function AppFooter() {
                         <button className="cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
                             <img
                                 src={paymentSettings.qrCodeUrl}
+                                crossOrigin="anonymous"
                                 alt="UPI QR Code"
                                 width={paymentSettings.qrWidth || 128}
                                 height={paymentSettings.qrHeight || 128}
