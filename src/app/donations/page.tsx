@@ -424,7 +424,7 @@ export default function DonationsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/50">
-                            {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
+                            <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>
                             <SortableHeader sortKey="srNo">#</SortableHeader>
                             <SortableHeader sortKey="status">Status</SortableHeader>
                             <SortableHeader sortKey="donorName">Donor Name</SortableHeader>
@@ -445,13 +445,12 @@ export default function DonationsPage() {
                         {isLoading ? (
                         [...Array(5)].map((_, i) => (
                             <TableRow key={i}>
-                                <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={15}><Skeleton className="h-6 w-full" /></TableCell>
                             </TableRow>
                         ))
                         ) : (filteredAndSortedDonations && filteredAndSortedDonations.length > 0) ? (
                         filteredAndSortedDonations.map((donation, index) => (
                             <TableRow key={donation.id}>
-                                {(canUpdate || canDelete) && (
                                 <TableCell className="text-center sticky left-0 bg-card z-10">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -475,7 +474,6 @@ export default function DonationsPage() {
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>
-                                )}
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>
                                     <Badge variant={donation.status === 'Verified' ? 'success' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
@@ -499,7 +497,7 @@ export default function DonationsPage() {
                                 <TableCell>{donation.donationDate}</TableCell>
                                 <TableCell>
                                     {donation.screenshotUrl && donation.screenshotIsPublic && (
-                                    <Button variant="outline" size="sm" onClick={() => donation.screenshotUrl && handleViewImage(donation.screenshotUrl)}>
+                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); donation.screenshotUrl && handleViewImage(donation.screenshotUrl); }}>
                                         <Eye className="mr-2 h-4 w-4" /> View
                                     </Button>
                                     )}
@@ -512,7 +510,7 @@ export default function DonationsPage() {
                         ))
                         ) : (
                         <TableRow>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={15} className="text-center h-24 text-muted-foreground">
                                 No donations found.
                             </TableCell>
                         </TableRow>
@@ -563,12 +561,13 @@ export default function DonationsPage() {
             </DialogHeader>
             {imageToView && (
                 <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
-                    <div
-                        className="absolute inset-0 transition-transform duration-200 ease-out"
+                     <img
+                        src={`/api/image-proxy?url=${encodeURIComponent(imageToView)}`}
+                        alt="Donation screenshot"
+                        className="object-contain h-full w-full"
                         style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
-                    >
-                        <Image src={imageToView} alt="Donation screenshot" fill className="object-contain" />
-                    </div>
+                        crossOrigin="anonymous"
+                    />
                 </div>
             )}
              <DialogFooter className="sm:justify-center pt-4">
@@ -582,5 +581,3 @@ export default function DonationsPage() {
     </div>
   );
 }
-
-

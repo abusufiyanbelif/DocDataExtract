@@ -2,7 +2,7 @@
 
 'use client';
 import { useState, useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { SecurityRuleContext } from '@/firebase';
@@ -59,6 +59,7 @@ type SortKey = keyof Donation | 'srNo';
 
 export default function DonationsPage() {
   const params = useParams();
+  const router = useRouter();
   const campaignId = params.campaignId as string;
   const firestore = useFirestore();
   const storage = useStorage();
@@ -462,7 +463,7 @@ export default function DonationsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/50">
-                            {(canUpdate || canDelete) && <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>}
+                            <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>
                             <SortableHeader sortKey="srNo">#</SortableHeader>
                             <SortableHeader sortKey="status">Status</SortableHeader>
                             <SortableHeader sortKey="donorName">Donor Name</SortableHeader>
@@ -482,40 +483,36 @@ export default function DonationsPage() {
                         {areDonationsLoading ? (
                         [...Array(3)].map((_, i) => (
                             <TableRow key={i}>
-                                <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13}><Skeleton className="h-6 w-full" /></TableCell>
+                                <TableCell colSpan={14}><Skeleton className="h-6 w-full" /></TableCell>
                             </TableRow>
                         ))
                         ) : (filteredAndSortedDonations && filteredAndSortedDonations.length > 0) ? (
                         filteredAndSortedDonations.map((donation, index) => (
-                            <TableRow key={donation.id}>
-                                {(canUpdate || canDelete) && (
+                            <TableRow key={donation.id} className="cursor-pointer" onClick={() => router.push(`/campaign-members/${campaignId}/donations/${donation.id}`)}>
                                 <TableCell className="text-center sticky left-0 bg-card z-10">
                                     <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
+                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                                             <Button variant="ghost" size="icon">
                                                 <MoreHorizontal className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem asChild className="cursor-pointer">
-                                                <Link href={`/campaign-members/${campaignId}/donations/${donation.id}`}>
-                                                    <Eye className="mr-2 h-4 w-4" /> View Details
-                                                </Link>
+                                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(`/campaign-members/${campaignId}/donations/${donation.id}`); }}>
+                                                <Eye className="mr-2 h-4 w-4" /> View Details
                                             </DropdownMenuItem>
                                             {canUpdate && (
-                                                <DropdownMenuItem onClick={() => handleEdit(donation)} className="cursor-pointer">
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(donation); }}>
                                                     <Edit className="mr-2 h-4 w-4" /> Edit
                                                 </DropdownMenuItem>
                                             )}
                                             {canDelete && (
-                                                <DropdownMenuItem onClick={() => handleDeleteClick(donation.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(donation.id); }} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                 </DropdownMenuItem>
                                             )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>
-                                )}
                                 <TableCell>{index + 1}</TableCell>
                                 <TableCell>
                                     <Badge variant={donation.status === 'Verified' ? 'success' : donation.status === 'Canceled' ? 'destructive' : 'outline'}>{donation.status}</Badge>
@@ -539,7 +536,7 @@ export default function DonationsPage() {
                                 <TableCell>{donation.donationDate}</TableCell>
                                 <TableCell>
                                     {donation.screenshotUrl && donation.screenshotIsPublic && (
-                                    <Button variant="outline" size="sm" onClick={() => donation.screenshotUrl && handleViewImage(donation.screenshotUrl)}>
+                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); donation.screenshotUrl && handleViewImage(donation.screenshotUrl); }}>
                                         <Eye className="mr-2 h-4 w-4" /> View
                                     </Button>
                                     )}
@@ -551,7 +548,7 @@ export default function DonationsPage() {
                         ))
                         ) : (
                         <TableRow>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 14 : 13} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={14} className="text-center h-24 text-muted-foreground">
                                 No donations found matching your criteria.
                             </TableCell>
                         </TableRow>
@@ -602,12 +599,13 @@ export default function DonationsPage() {
             </DialogHeader>
             {imageToView && (
                 <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
-                    <div
-                        className="absolute inset-0 transition-transform duration-200 ease-out"
+                    <img
+                        src={`/api/image-proxy?url=${encodeURIComponent(imageToView)}`}
+                        alt="Donation screenshot"
+                        className="object-contain h-full w-full"
                         style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
-                    >
-                        <Image src={imageToView} alt="Donation screenshot" fill className="object-contain" />
-                    </div>
+                        crossOrigin="anonymous"
+                    />
                 </div>
             )}
              <DialogFooter className="sm:justify-center pt-4">
@@ -621,5 +619,3 @@ export default function DonationsPage() {
     </div>
   );
 }
-
-    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -63,9 +64,9 @@ export function ShareDialog({ open, onOpenChange, shareData }: ShareDialogProps)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Share Campaign Summary</DialogTitle>
+          <DialogTitle>Share</DialogTitle>
           <DialogDescription>
-            Share this campaign with your network to help spread the word.
+            Share this with your network to help spread the word.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-4">
