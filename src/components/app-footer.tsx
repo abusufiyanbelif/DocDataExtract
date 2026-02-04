@@ -138,6 +138,7 @@ export function AppFooter() {
                         <div className="flex items-center justify-center p-4 bg-secondary/30 rounded-lg">
                             <img
                                 src={paymentSettings.qrCodeUrl}
+                                crossOrigin="anonymous"
                                 alt="UPI QR Code"
                                 className="w-full max-w-xs h-auto rounded-lg"
                             />
