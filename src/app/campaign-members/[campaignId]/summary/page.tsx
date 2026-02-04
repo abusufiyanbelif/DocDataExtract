@@ -12,7 +12,7 @@ import { useSession } from '@/hooks/use-session';
 import { doc, collection, updateDoc, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+
 import {
   BarChart,
   Bar,
@@ -379,6 +379,7 @@ Your contribution, big or small, makes a huge difference.
                 link.href = imgData;
                 link.click();
             } else { // pdf
+                const { default: jsPDF } = await import('jspdf');
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
@@ -468,9 +469,10 @@ Your contribution, big or small, makes a huge difference.
                     finalY += 5;
                 }
                 if (paymentSettings?.address) {
-                    pdf.text(`Address: ${paymentSettings.address}`, 15, finalY);
+                    const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth - qrSize - 30);
+                    pdf.text(addressLines, 15, finalY);
                 }
-
+                
                 pdf.save(`campaign-summary-${campaignId}.pdf`);
             }
         } catch (error: any) {

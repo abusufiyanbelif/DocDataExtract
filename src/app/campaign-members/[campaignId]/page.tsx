@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -45,8 +46,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { get } from '@/lib/utils';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+
 
 
 const quantityTypes = ['kg', 'litre', 'gram', 'ml', 'piece', 'packet', 'dozen'];
@@ -326,6 +326,8 @@ export default function CampaignDetailsPage() {
         }
 
     } else if (format === 'pdf') {
+        const { default: jsPDF } = await import('jspdf');
+        await import('jspdf-autotable');
         const doc = new jsPDF();
         let startY = 15;
 

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState, useRef } from 'react';
@@ -10,7 +11,7 @@ import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { doc, DocumentReference, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+
 import { useToast } from '@/hooks/use-toast';
 
 import type { Donation, Campaign, BrandingSettings, PaymentSettings } from '@/lib/types';
@@ -120,6 +121,7 @@ export default function DonationDetailsPage() {
                 link.href = imgData;
                 link.click();
             } else { // PDF
+                const { default: jsPDF } = await import('jspdf');
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();

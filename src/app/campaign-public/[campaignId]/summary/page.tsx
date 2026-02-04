@@ -10,7 +10,7 @@ import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { doc, collection, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+
 import {
   BarChart,
   Bar,
@@ -295,6 +295,7 @@ Your contribution, big or small, makes a huge difference.
                 link.href = imgData;
                 link.click();
             } else { // pdf
+                const { default: jsPDF } = await import('jspdf');
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
@@ -438,7 +439,7 @@ Your contribution, big or small, makes a huge difference.
                         <h1 className="text-3xl font-bold">{campaign.name}</h1>
                         <p className="text-muted-foreground">{campaign.status}</p>
                     </div>
-                    <div className="flex gap-2">
+                     <div className="flex gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline">
