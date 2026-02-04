@@ -23,8 +23,7 @@ function Watermark() {
         <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none opacity-10">
             {validLogoUrl ? (
                 <img
-                    src={validLogoUrl}
-                    crossOrigin="anonymous"
+                    src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
                     alt="Watermark"
                     width={500}
                     height={500}
