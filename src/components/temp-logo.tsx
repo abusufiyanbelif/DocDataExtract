@@ -5,7 +5,7 @@ export function TempLogo() {
       viewBox="0 0 100 100"
       width="500"
       height="500"
-      className="object-contain opacity-10"
+      className="object-contain"
     >
       <circle cx="50" cy="50" r="45" stroke="hsl(var(--foreground))" fill="none" strokeWidth="2" />
       <text

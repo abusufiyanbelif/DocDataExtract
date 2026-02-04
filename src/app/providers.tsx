@@ -20,7 +20,7 @@ function Watermark() {
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
 
     return (
-        <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none opacity-10">
             {validLogoUrl ? (
                 <img
                     src={validLogoUrl}
@@ -28,7 +28,7 @@ function Watermark() {
                     alt="Watermark"
                     width={500}
                     height={500}
-                    className="object-contain opacity-10"
+                    className="object-contain"
                 />
             ) : (
                 <TempLogo />
