@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -175,8 +174,7 @@ export default function SettingsPage() {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(logoFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
-                const dateString = new Date().toISOString().split('T')[0];
-                const filePath = `settings/logo_${dateString}.jpeg`;
+                const filePath = 'settings/logo';
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 newLogoUrl = await getDownloadURL(uploadResult.ref);
@@ -196,8 +194,7 @@ export default function SettingsPage() {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(qrCodeFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
-                const dateString = new Date().toISOString().split('T')[0];
-                const filePath = `settings/payment_qr_${dateString}.jpeg`;
+                const filePath = 'settings/payment_qr';
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 newQrCodeUrl = await getDownloadURL(uploadResult.ref);
@@ -214,14 +211,16 @@ export default function SettingsPage() {
 
             toast({ title: 'Success!', description: 'Settings have been updated.', variant: 'success' });
             
-            // Manually update the state to reflect the new saved URLs
-            setLogoPreviewUrl(newLogoUrl);
-            setQrPreviewUrl(newQrCodeUrl);
+            // This is the key change: immediately update the local state with the new URL
+            // This prevents the "disappearing preview" effect.
+            if (logoFile) setLogoPreviewUrl(newLogoUrl);
+            if (qrCodeFile) setQrPreviewUrl(newQrCodeUrl);
+            
             setLogoFile(null);
             setQrCodeFile(null);
             setLogoDeleted(false);
             setQrCodeDeleted(false);
-
+            
             setIsEditMode(false);
         } catch (error: any) {
             console.error('Settings save failed:', error);
@@ -460,3 +459,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    
