@@ -112,7 +112,7 @@
         "comments": { "type": "string", "description": "Comments from the donor or staff." },
         "suggestions": { "type": "string", "description": "Suggestions from the donor or staff." }
       },
-      "required": ["campaignId", "donorName", "amount", "typeSplit", "donationDate", "status"]
+      "required": ["donorName", "amount", "typeSplit", "donationDate", "status"]
     },
     "BrandingSettings": {
       "$schema": "http://json-schema.org/draft-07/schema#",

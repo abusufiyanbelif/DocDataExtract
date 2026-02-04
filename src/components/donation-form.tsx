@@ -2,7 +2,7 @@
 'use client';
 
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -25,10 +25,13 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { Donation } from '@/lib/types';
-import { Loader2, ScanLine, Replace, Trash2 } from 'lucide-react';
+import { Loader2, ScanLine, Replace, Trash2, Plus, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
+import { Textarea } from './ui/textarea';
+
+const donationCategories = ['General', 'Zakat', 'Sadqa', 'Interest', 'Lillah'] as const;
 
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -36,7 +39,10 @@ const formSchema = z.object({
   receiverName: z.string().min(2, { message: "Receiver name must be at least 2 characters." }),
   referral: z.string().min(1, { message: "Referral is required." }),
   amount: z.coerce.number().min(1, { message: "Amount must be at least 1." }),
-  type: z.enum(['Zakat', 'Sadqa', 'Interest', 'Lillah', 'General']),
+  typeSplit: z.array(z.object({
+    category: z.enum(donationCategories),
+    amount: z.coerce.number().min(0, { message: 'Amount cannot be negative.' }),
+  })).min(1, { message: 'At least one donation category is required.'}),
   donationType: z.enum(['Cash', 'Online Payment', 'Check', 'Other']),
   transactionId: z.string().optional(),
   donationDate: z.string().min(1, { message: "Donation date is required."}),
@@ -45,14 +51,26 @@ const formSchema = z.object({
   screenshotDeleted: z.boolean().optional(),
   screenshotIsPublic: z.boolean().optional(),
   isTransactionIdRequired: z.boolean().default(true),
+  comments: z.string().optional(),
+  suggestions: z.string().optional(),
+  isSplit: z.boolean().default(false),
 }).refine(data => {
     if (data.donationType === 'Online Payment' && data.isTransactionIdRequired) {
         return data.transactionId && data.transactionId.trim().length > 0;
     }
     return true;
 }, {
-    message: "Transaction ID is required when this option is enabled.",
+    message: "Transaction ID is required for online payments.",
     path: ['transactionId'],
+}).refine(data => {
+    if (data.isSplit && data.typeSplit.length > 0) {
+        const totalSplit = data.typeSplit.reduce((sum, split) => sum + split.amount, 0);
+        return Math.abs(totalSplit - data.amount) < 0.01; // Compare with a tolerance for floating point
+    }
+    return true;
+}, {
+    message: "The sum of split amounts must equal the total donation amount.",
+    path: ['typeSplit'],
 });
 
 export type DonationFormData = z.infer<typeof formSchema>;
@@ -76,7 +94,6 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
       receiverName: donation?.receiverName || '',
       referral: donation?.referral || '',
       amount: donation?.amount || 0,
-      type: donation?.type || 'General',
       donationType: donation?.donationType || 'Online Payment',
       transactionId: donation?.transactionId || '',
       donationDate: donation?.donationDate || new Date().toISOString().split('T')[0],
@@ -84,13 +101,37 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
       screenshotDeleted: false,
       screenshotIsPublic: donation?.screenshotIsPublic || false,
       isTransactionIdRequired: true,
+      comments: donation?.comments || '',
+      suggestions: donation?.suggestions || '',
+      isSplit: donation?.typeSplit ? donation.typeSplit.length > 1 : false,
+      typeSplit: donation?.typeSplit && donation.typeSplit.length > 0 ? donation.typeSplit : [{ category: 'General', amount: donation?.amount || 0 }],
     },
   });
 
-  const { formState: { isSubmitting, isDirty }, register, watch, setValue, getValues } = form;
+  const { formState: { isSubmitting, isDirty }, register, watch, setValue, getValues, control } = form;
   const [preview, setPreview] = useState<string | null>(donation?.screenshotUrl || null);
   const screenshotFile = watch('screenshotFile');
   const donationTypeValue = watch('donationType');
+  const isSplit = watch('isSplit');
+  const totalAmount = watch('amount');
+
+  const { fields, append, remove, replace } = useFieldArray({
+    control,
+    name: "typeSplit",
+  });
+  
+  useEffect(() => {
+    if (!isSplit) {
+      const currentSplits = getValues('typeSplit');
+      const firstCategory = currentSplits.length > 0 ? currentSplits[0].category : 'General';
+      replace([{ category: firstCategory, amount: totalAmount }]);
+    } else {
+        const currentSplits = getValues('typeSplit');
+        if (currentSplits.length === 1 && currentSplits[0].amount === 0) {
+            setValue('typeSplit.0.amount', totalAmount);
+        }
+    }
+  }, [isSplit, totalAmount, setValue, getValues, replace]);
 
   useEffect(() => {
     const fileList = screenshotFile as FileList | undefined;
@@ -263,45 +304,99 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
           </div>
 
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                      <FormItem>
-                      <FormLabel>Amount (Rupee) *</FormLabel>
+          <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                  <FormItem>
+                  <FormLabel>Amount (Rupee) *</FormLabel>
+                  <FormControl>
+                      <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  </FormItem>
+              )}
+          />
+        
+          <FormField
+              control={form.control}
+              name="isSplit"
+              render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                       <FormControl>
-                          <Input type="number" {...field} />
+                          <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                          />
                       </FormControl>
-                      <FormMessage />
-                      </FormItem>
-                  )}
-              />
-              <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                      <FormItem>
-                      <FormLabel>Type *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                          <SelectTrigger>
-                              <SelectValue placeholder="Select type" />
-                          </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                              <SelectItem value="General">General</SelectItem>
-                              <SelectItem value="Zakat">Zakat</SelectItem>
-                              <SelectItem value="Sadqa">Sadqa</SelectItem>
-                              <SelectItem value="Interest">Interest</SelectItem>
-                              <SelectItem value="Lillah">Lillah</SelectItem>
-                          </SelectContent>
-                      </Select>
-                      <FormMessage />
-                      </FormItem>
-                  )}
-              />
-          </div>
+                      <FormLabel className="font-normal">
+                          Split donation into multiple categories
+                      </FormLabel>
+                  </FormItem>
+              )}
+          />
+          
+          {isSplit ? (
+            <div className="space-y-4 rounded-md border p-4">
+                {fields.map((field, index) => (
+                    <div key={field.id} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                        <FormField
+                            control={control}
+                            name={`typeSplit.${index}.category`}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {donationCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={control}
+                            name={`typeSplit.${index}.amount`}
+                            render={({ field }) => (
+                                <FormItem>
+                                     <FormControl>
+                                        <Input type="number" placeholder="Amount" {...field}/>
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                            <Trash2 className="h-4 w-4 text-destructive"/>
+                        </Button>
+                    </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ category: 'General', amount: 0 })}>
+                    <Plus className="mr-2 h-4 w-4"/> Add Category
+                </Button>
+                 <FormMessage>{form.formState.errors.typeSplit?.root?.message}</FormMessage>
+            </div>
+          ) : (
+            <FormField
+                control={control}
+                name={`typeSplit.0.category`}
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Type *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {donationCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
+          )}
 
           <FormField
               control={form.control}
@@ -474,6 +569,33 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
               />
           </div>
           
+           <FormField
+              control={control}
+              name="comments"
+              render={({ field }) => (
+                  <FormItem>
+                  <FormLabel>Comments</FormLabel>
+                  <FormControl>
+                      <Textarea placeholder="Any comments from the donor or about the donation..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name="suggestions"
+              render={({ field }) => (
+                  <FormItem>
+                  <FormLabel>Suggestions</FormLabel>
+                  <FormControl>
+                      <Textarea placeholder="Any suggestions for the organization..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  </FormItem>
+              )}
+            />
+
           <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>
               <Button type="submit" disabled={isSubmitting || (isEditing && !isDirty)}>

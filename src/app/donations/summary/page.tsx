@@ -90,7 +90,11 @@ export default function DonationsSummaryPage() {
         const unallocatedCount = donations.length - allocatedCount;
 
         const donationTypeData = donations.reduce((acc, d) => {
-            (d.typeSplit || []).forEach(split => {
+            const splits = d.typeSplit && d.typeSplit.length > 0
+                ? d.typeSplit
+                : (d.type ? [{ category: d.type, amount: d.amount }] : []);
+            
+            splits.forEach(split => {
                 acc[split.category] = (acc[split.category] || 0) + split.amount;
             });
             return acc;
