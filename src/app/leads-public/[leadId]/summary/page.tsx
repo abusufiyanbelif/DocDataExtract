@@ -73,18 +73,39 @@ We are currently assessing the needs for this initiative. Your support and feedb
             return;
         }
 
+        toast({ title: 'Generating PDF...', description: 'Please wait.' });
+
         try {
             const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
             const imgData = canvas.toDataURL('image/png');
             
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
             
             const imgProps = pdf.getImageProperties(imgData);
-            const pdfImageHeight = (imgProps.height * (pdfWidth - 20)) / imgProps.width;
+            const contentHeight = (imgProps.height * (pdfWidth - 20)) / imgProps.width;
 
             pdf.setTextColor(10, 41, 19);
-            pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfImageHeight);
+            
+            let position = 15;
+             if (brandingSettings?.logoUrl) {
+                const logoImg = await new Promise<HTMLImageElement>((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = () => resolve(img);
+                    img.src = `/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl!)}`;
+                });
+                const logoHeight = 20;
+                const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+                pdf.addImage(logoImg, 'PNG', 15, position - 10, logoWidth, logoHeight);
+                position += logoHeight;
+            }
+
+            pdf.setFontSize(20).text(lead?.name || 'Lead Summary', 15, position);
+            position += 10;
+            
+            pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, contentHeight);
 
             pdf.save(`lead-summary-${leadId}.pdf`);
         } catch (error) {

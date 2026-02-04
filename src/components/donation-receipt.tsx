@@ -27,7 +27,6 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
   ({ donation, campaign, brandingSettings, paymentSettings }, ref) => {
     
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
-    const validQrCodeUrl = paymentSettings?.qrCodeUrl?.trim() ? paymentSettings.qrCodeUrl : null;
     
     const typeSplit = donation.typeSplit && donation.typeSplit.length > 0
       ? donation.typeSplit
@@ -47,18 +46,6 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                 )}
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
-                        {validLogoUrl && (
-                             <img
-                                src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
-                                alt="Logo"
-                                crossOrigin="anonymous"
-                                className="mx-auto object-contain"
-                                style={{ 
-                                    width: brandingSettings?.logoWidth ? `${brandingSettings.logoWidth * 1.5}px` : '150px',
-                                    height: brandingSettings?.logoHeight ? `${brandingSettings.logoHeight * 1.5}px` : '72px'
-                                 }}
-                              />
-                        )}
                         <CardTitle className="text-2xl">Donation Receipt</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -112,34 +99,9 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                                 </div>
                             </>
                         )}
+                         <Separator />
+                         <p className="pt-2 text-center w-full text-xs text-muted-foreground">This is a computer-generated receipt and does not require a signature.</p>
                     </CardContent>
-                    <CardFooter className="flex-col items-start text-xs text-muted-foreground p-6 pt-4 space-y-2">
-                        <Separator className="mb-4" />
-                        <div className="w-full grid grid-cols-2 gap-4">
-                            <div className="space-y-1 text-left">
-                                {paymentSettings?.regNo && <p>Reg. No.: {paymentSettings.regNo}</p>}
-                                {paymentSettings?.pan && <p>PAN: {paymentSettings.pan}</p>}
-                                {paymentSettings?.contactEmail && <p>Email: {paymentSettings.contactEmail}</p>}
-                                {paymentSettings?.contactPhone && <p>Phone: {paymentSettings.contactPhone}</p>}
-                            </div>
-                             <div className="space-y-1 text-right">
-                                {paymentSettings?.address && <p className="whitespace-pre-line">{paymentSettings.address}</p>}
-                                {paymentSettings?.upiId && <p>UPI: {paymentSettings.upiId}</p>}
-                            </div>
-                        </div>
-                        {validQrCodeUrl && (
-                            <div className="w-full flex justify-center pt-4">
-                                <img
-                                    src={`/api/image-proxy?url=${encodeURIComponent(validQrCodeUrl)}`}
-                                    alt="QR Code"
-                                    crossOrigin="anonymous"
-                                    width={120}
-                                    height={120}
-                                />
-                            </div>
-                        )}
-                        <p className="pt-2 text-center w-full">This is a computer-generated receipt and does not require a signature.</p>
-                    </CardFooter>
                 </div>
             </Card>
         </div>

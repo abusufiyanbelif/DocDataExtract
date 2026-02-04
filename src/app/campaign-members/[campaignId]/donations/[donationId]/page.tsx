@@ -95,45 +95,141 @@ export default function DonationDetailsPage() {
             return;
         }
 
+        toast({ title: `Generating ${format.toUpperCase()}...`, description: 'Please wait.' });
+
         try {
             const canvas = await html2canvas(element, { 
                 scale: 2, 
                 useCORS: true,
                 backgroundColor: '#FFFFFF'
             });
-            const imgData = canvas.toDataURL('image/png');
+
+            const logoUrl = brandingSettings?.logoUrl?.trim() ? `/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl)}` : null;
+            const qrUrl = paymentSettings?.qrCodeUrl?.trim() ? `/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}` : null;
+
+            const fetchAsDataURL = async (url: string | null): Promise<string | null> => {
+                if (!url) return null;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`Failed to fetch image: ${url}`);
+                    const blob = await response.blob();
+                    return new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error("Image fetch error:", error);
+                    return null;
+                }
+            };
+            
+            const [logoDataUrl, qrDataUrl] = await Promise.all([
+                fetchAsDataURL(logoUrl),
+                fetchAsDataURL(qrUrl)
+            ]);
+
+            const logoImg = logoDataUrl ? await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = logoDataUrl; }) : null;
+            const qrImg = qrDataUrl ? await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = qrDataUrl; }) : null;
 
             if (format === 'png') {
+                const PADDING = 40;
+                const HEADER_HEIGHT = 100;
+                const FOOTER_HEIGHT = 150;
+                
+                const finalCanvas = document.createElement('canvas');
+                const contentWidth = Math.min(canvas.width, 1200);
+                const contentHeight = (canvas.height * contentWidth) / canvas.width;
+
+                finalCanvas.width = contentWidth + PADDING * 2;
+                finalCanvas.height = contentHeight + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING * 2;
+                const ctx = finalCanvas.getContext('2d')!;
+                
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+                if (logoImg) {
+                    const logoHeight = brandingSettings?.logoHeight ? brandingSettings.logoHeight * 1.5 : 72;
+                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+                    ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
+                }
+                
+                ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT, contentWidth, contentHeight);
+                
+                const footerY = finalCanvas.height - FOOTER_HEIGHT - PADDING;
+                if (qrImg) {
+                    const qrSize = 130;
+                    ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
+                }
+                ctx.fillStyle = '#0a2913';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
+                ctx.font = '14px sans-serif';
+                let textY = footerY + 50;
+                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 20; }
+                if (paymentSettings?.paymentMobileNumber) { ctx.fillText(`Phone: ${paymentSettings.paymentMobileNumber}`, PADDING, textY); textY += 20; }
+                if (paymentSettings?.contactEmail) { ctx.fillText(`Email: ${paymentSettings.contactEmail}`, PADDING, textY); textY += 20; }
+                if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
+
                 const link = document.createElement('a');
                 link.download = `donation-receipt-${donationId}.png`;
-                link.href = imgData;
+                link.href = finalCanvas.toDataURL('image/png');
                 link.click();
             } else { // PDF
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
-                
-                const imgProps = pdf.getImageProperties(imgData);
-                const pdfImageHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                
-                let heightLeft = pdfImageHeight;
-                let position = 0;
-                
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfImageHeight);
-                heightLeft -= pageHeight;
-                
-                while (heightLeft > 0) {
-                    position = heightLeft - pdfImageHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfImageHeight);
-                    heightLeft -= pageHeight;
+                let position = 15;
+
+                if (logoImg) {
+                    const logoHeight = brandingSettings?.logoHeight ? (brandingSettings.logoHeight / 3) : 24;
+                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+                    pdf.addImage(logoDataUrl!, 'PNG', 15, position - 5, logoWidth, logoHeight);
                 }
                 
+                position += 20;
+
+                const imgData = canvas.toDataURL('image/png');
+                const imgProps = pdf.getImageProperties(imgData);
+                const contentHeight = (imgProps.height * (pdfWidth - 30)) / imgProps.width;
+
+                pdf.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, contentHeight);
+                position += contentHeight + 10;
+                
+                if (position > pageHeight - 60) {
+                    pdf.addPage();
+                    position = 15;
+                }
+                pdf.setLineWidth(0.2);
+                pdf.line(15, position, pdfWidth - 15, position);
+                position += 8;
+                
+                pdf.setFontSize(12);
+                pdf.setTextColor(10, 41, 19);
+                pdf.text('For Donations & Contact', 15, position);
+                let textY = position + 6;
+                pdf.setFontSize(9);
+
+                if (qrImg) {
+                    const qrSize = 35;
+                    const qrX = pdfWidth - 15 - qrSize;
+                    pdf.addImage(qrDataUrl!, 'PNG', qrX, position, qrSize, qrSize);
+                }
+                
+                if (paymentSettings?.upiId) { pdf.text(`UPI: ${paymentSettings.upiId}`, 15, textY); textY += 5; }
+                if (paymentSettings?.contactPhone) { pdf.text(`Phone: ${paymentSettings.contactPhone}`, 15, textY); textY += 5; }
+                if (paymentSettings?.address) {
+                    const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth / 2 - 30);
+                    pdf.text(addressLines, 15, textY);
+                }
+
                 pdf.save(`donation-receipt-${donationId}.pdf`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Download failed:", error);
-            toast({ title: 'Download Failed', description: 'Could not generate the file. Please try again.', variant: 'destructive' });
+            const errorMessage = error.message ? `: ${error.message}` : '. Please check console for details.';
+            toast({ title: 'Download Failed', description: `Could not generate the file${errorMessage}. This can happen if images are blocked by browser security.`, variant: 'destructive', duration: 9000});
         }
     };
 
@@ -228,13 +324,13 @@ export default function DonationDetailsPage() {
                         <CardContent className="space-y-4">
                             {donation.comments && (
                                 <div className="space-y-1">
-                                    <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><MessageSquare/>Comments</h3>
+                                    <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><MessageSquare/>Comments</h3>
                                     <p className="pl-6">{donation.comments}</p>
                                 </div>
                             )}
                              {donation.suggestions && (
                                 <div className="space-y-1">
-                                    <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><StickyNote/>Suggestions</h3>
+                                    <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><StickyNote/>Suggestions</h3>
                                     <p className="pl-6">{donation.suggestions}</p>
                                 </div>
                             )}
