@@ -102,6 +102,10 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                          <Separator />
                          <p className="pt-2 text-center w-full text-xs text-muted-foreground">This is a computer-generated receipt and does not require a signature.</p>
                     </CardContent>
+                    <CardFooter className="flex-col items-center justify-center text-center p-6 bg-muted/50">
+                        <p className="font-semibold text-primary">JazakAllah Khair!</p>
+                        <p className="text-sm text-muted-foreground">May Allah accept your donation and bless you abundantly.</p>
+                    </CardFooter>
                 </div>
             </Card>
         </div>

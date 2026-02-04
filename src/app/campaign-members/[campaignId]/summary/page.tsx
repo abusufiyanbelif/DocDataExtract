@@ -350,6 +350,8 @@ Your contribution, big or small, makes a huge difference.
             return;
         }
 
+        toast({ title: `Generating ${format.toUpperCase()}...`, description: 'Please wait.' });
+
         try {
             const canvas = await html2canvas(element, { 
                 scale: 2, 
@@ -379,10 +381,13 @@ Your contribution, big or small, makes a huge difference.
                 fetchAsDataURL(qrUrl)
             ]);
 
+            const logoImg = logoDataUrl ? await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = logoDataUrl; }) : null;
+            const qrImg = qrDataUrl ? await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = qrDataUrl; }) : null;
+
             if (format === 'png') {
                 const PADDING = 40;
-                const HEADER_HEIGHT = 80;
-                const FOOTER_HEIGHT = 100;
+                const HEADER_HEIGHT = 100;
+                const FOOTER_HEIGHT = 150;
                 
                 const finalCanvas = document.createElement('canvas');
                 finalCanvas.width = canvas.width + PADDING * 2;
@@ -392,28 +397,29 @@ Your contribution, big or small, makes a huge difference.
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-                if (logoDataUrl) {
-                    const logoImg = await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = logoDataUrl; });
-                    const logoHeight = 50;
+                if (logoImg) {
+                    const logoHeight = 60;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
                 }
-                ctx.fillStyle = '#0a2913';
+                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.font = 'bold 24px sans-serif';
+                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING, PADDING + 85);
                 ctx.font = 'bold 32px sans-serif';
-                ctx.fillText(campaign?.name || 'Campaign Summary', PADDING + 120, PADDING + 35);
+                ctx.fillText(campaign?.name || 'Campaign Summary', PADDING + (logoImg ? (logoImg.width / logoImg.height) * 60 + 20 : 0), PADDING + 40);
                 
                 ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT);
                 
-                if (qrDataUrl) {
-                    const qrImg = await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = qrDataUrl; });
-                    const qrSize = 80;
+                if (qrImg) {
+                    const qrSize = 130;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, finalCanvas.height - FOOTER_HEIGHT, qrSize, qrSize);
                 }
-                ctx.font = '16px sans-serif';
+                ctx.font = 'bold 18px sans-serif';
                 ctx.fillText('For Donations & Contact', PADDING, finalCanvas.height - FOOTER_HEIGHT + 20);
-                ctx.font = '12px sans-serif';
-                if (paymentSettings?.upiId) ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, finalCanvas.height - FOOTER_HEIGHT + 40);
-                if (paymentSettings?.contactPhone) ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, finalCanvas.height - FOOTER_HEIGHT + 55);
+                ctx.font = '14px sans-serif';
+                let textY = finalCanvas.height - FOOTER_HEIGHT + 45;
+                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 20; }
+                if (paymentSettings?.contactPhone) { ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, textY); textY += 20; }
 
                 const link = document.createElement('a');
                 link.download = `campaign-summary-${campaignId}.png`;
@@ -425,21 +431,19 @@ Your contribution, big or small, makes a huge difference.
                 const pageHeight = pdf.internal.pageSize.getHeight();
                 let position = 15;
 
-                if (logoDataUrl) {
-                    const logoImg = await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = logoDataUrl; });
-                    const logoHeight = 15;
+                if (logoImg) {
+                    const logoHeight = 20;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-                    pdf.addImage(logoDataUrl, 'PNG', 15, position - 5, logoWidth, logoHeight);
-                    pdf.setTextColor(10, 41, 19);
-                    pdf.setFontSize(20);
-                    pdf.text(campaign?.name || 'Campaign Summary', 15 + logoWidth + 10, position + 5);
-                } else {
-                    pdf.setTextColor(10, 41, 19);
-                    pdf.setFontSize(20);
-                    pdf.text(campaign?.name || 'Campaign Summary', 15, position + 5);
+                    pdf.addImage(logoDataUrl!, 'PNG', 15, position, logoWidth, logoHeight);
                 }
                 
-                position += 20;
+                pdf.setTextColor(10, 41, 19);
+                pdf.setFontSize(14);
+                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15, position + 25);
+                pdf.setFontSize(20);
+                pdf.text(campaign?.name || 'Campaign Summary', 15 + (logoImg ? (logoImg.width / logoImg.height) * 20 + 10 : 0), position + 10);
+                
+                position += 35;
 
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = pdf.getImageProperties(imgData);
@@ -468,8 +472,8 @@ Your contribution, big or small, makes a huge difference.
                 const qrSize = 30;
                 const qrX = pdfWidth - 15 - qrSize;
 
-                if (qrDataUrl) {
-                    pdf.addImage(qrDataUrl, 'PNG', qrX, position - 2, qrSize, qrSize);
+                if (qrImg) {
+                    pdf.addImage(qrDataUrl!, 'PNG', qrX, position - 2, qrSize, qrSize);
                 }
                 
                 if (paymentSettings?.upiId) { pdf.text(`UPI: ${paymentSettings.upiId}`, 15, position); position += 5; }
@@ -610,7 +614,7 @@ Your contribution, big or small, makes a huge difference.
                     <ScrollArea className="w-full whitespace-nowrap">
                         <div className="flex w-max space-x-4">
                             {userProfile && canReadSummary && (
-                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none" data-active="true">
+                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none" data-active="true">
                                   <Link href={`/campaign-members/${campaignId}/summary`}>Summary</Link>
                               </Button>
                             )}

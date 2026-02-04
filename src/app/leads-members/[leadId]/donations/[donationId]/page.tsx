@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useState, useRef } from 'react';
@@ -25,9 +24,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Edit, Download, Loader2, Image as ImageIcon, FileText, MessageSquare, StickyNote } from 'lucide-react';
+import { ArrowLeft, Edit, Download, Loader2, Image as ImageIcon, FileText, MessageSquare, StickyNote, Share2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
+import { ShareDialog } from '@/components/share-dialog';
 
 export default function DonationDetailsPage() {
     const params = useParams();
@@ -44,6 +44,7 @@ export default function DonationDetailsPage() {
     const { paymentSettings, isLoading: isPaymentLoading } = usePaymentSettings();
 
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
 
     const leadDocRef = useMemo(() => (firestore && leadId) ? doc(firestore, 'leads', leadId) as DocumentReference<Lead> : null, [firestore, leadId]);
     const donationDocRef = useMemo(() => (firestore && donationId) ? doc(firestore, 'donations', donationId) as DocumentReference<Donation> : null, [firestore, donationId]);
@@ -88,6 +89,11 @@ export default function DonationDetailsPage() {
         }
     };
     
+     const handleShare = () => {
+        if (!donation || !lead) return;
+        setIsShareDialogOpen(true);
+    };
+
     const handleDownload = async (format: 'png' | 'pdf') => {
         const element = receiptRef.current;
         if (!element) {
@@ -135,8 +141,8 @@ export default function DonationDetailsPage() {
 
             if (format === 'png') {
                 const PADDING = 40;
-                const HEADER_HEIGHT = 100;
-                const FOOTER_HEIGHT = 150;
+                const HEADER_HEIGHT = 120;
+                const FOOTER_HEIGHT = 160;
                 
                 const finalCanvas = document.createElement('canvas');
                 const contentWidth = Math.min(canvas.width, 1200);
@@ -150,16 +156,20 @@ export default function DonationDetailsPage() {
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
                 if (logoImg) {
-                    const logoHeight = brandingSettings?.logoHeight ? brandingSettings.logoHeight * 1.5 : 72;
+                    const logoHeight = brandingSettings?.logoHeight ? brandingSettings.logoHeight * 2 : 90;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
                 }
                 
+                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.font = 'bold 24px sans-serif';
+                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING + 120, PADDING + 55);
+
                 ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT, contentWidth, contentHeight);
                 
                 const footerY = finalCanvas.height - FOOTER_HEIGHT - PADDING;
                 if (qrImg) {
-                    const qrSize = 130;
+                    const qrSize = 160;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
                 ctx.fillStyle = 'rgb(10, 41, 19)';
@@ -183,12 +193,16 @@ export default function DonationDetailsPage() {
                 let position = 15;
 
                 if (logoImg) {
-                    const logoHeight = brandingSettings?.logoHeight ? (brandingSettings.logoHeight / 3) : 24;
+                    const logoHeight = brandingSettings?.logoHeight ? (brandingSettings.logoHeight / 2.5) : 30;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-                    pdf.addImage(logoDataUrl!, 'PNG', 15, position - 5, logoWidth, logoHeight);
+                    pdf.addImage(logoDataUrl!, 'PNG', 15, position, logoWidth, logoHeight);
                 }
                 
-                position += 20;
+                pdf.setTextColor(10, 41, 19);
+                pdf.setFontSize(16);
+                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + 40, position + 15);
+
+                position += 40;
 
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = pdf.getImageProperties(imgData);
@@ -206,19 +220,18 @@ export default function DonationDetailsPage() {
                 position += 8;
                 
                 pdf.setFontSize(12);
-                pdf.setTextColor(10, 41, 19);
                 pdf.text('For Donations & Contact', 15, position);
                 let textY = position + 6;
                 pdf.setFontSize(9);
 
                 if (qrImg) {
-                    const qrSize = 35;
+                    const qrSize = 45;
                     const qrX = pdfWidth - 15 - qrSize;
                     pdf.addImage(qrDataUrl!, 'PNG', qrX, position, qrSize, qrSize);
                 }
                 
                 if (paymentSettings?.upiId) { pdf.text(`UPI: ${paymentSettings.upiId}`, 15, textY); textY += 5; }
-                if (paymentSettings?.contactPhone) { pdf.text(`Phone: ${paymentSettings.contactPhone}`, 15, textY); textY += 5; }
+                if (paymentSettings?.paymentMobileNumber) { pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, textY); textY += 5; }
                 if (paymentSettings?.address) {
                     const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth / 2 - 30);
                     pdf.text(addressLines, 15, textY);
@@ -277,6 +290,9 @@ export default function DonationDetailsPage() {
                                 <Edit className="mr-2 h-4 w-4" /> Edit
                             </Button>
                         )}
+                        <Button variant="outline" onClick={handleShare}>
+                            <Share2 className="mr-2 h-4 w-4" /> Share
+                        </Button>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline">
@@ -314,6 +330,15 @@ export default function DonationDetailsPage() {
                     campaign={lead} 
                     brandingSettings={brandingSettings} 
                     paymentSettings={paymentSettings} 
+                />
+                 <ShareDialog 
+                    open={isShareDialogOpen} 
+                    onOpenChange={setIsShareDialogOpen} 
+                    shareData={{
+                        title: `Thank you for your donation!`,
+                        text: `JazakAllah Khair for your generous donation of Rupee ${donation.amount.toFixed(2)} towards the "${lead.name}" initiative. May Allah accept it and bless you abundantly.`,
+                        url: `${window.location.origin}/leads-public/${leadId}/summary`
+                    }} 
                 />
 
                 {(donation.comments || donation.suggestions) && (
