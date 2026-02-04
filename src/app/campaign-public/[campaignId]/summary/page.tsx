@@ -465,7 +465,19 @@ Your contribution, big or small, makes a huge difference.
                     </div>
                 </div>
 
-                <div className="space-y-6 bg-background p-4" ref={summaryRef}>
+                <div className="relative space-y-6 bg-background p-4" ref={summaryRef}>
+                    {brandingSettings?.logoUrl && (
+                        <img
+                            src={brandingSettings.logoUrl}
+                            crossOrigin="anonymous"
+                            alt="Watermark"
+                            className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
+                            style={{
+                                width: '75%',
+                                height: '75%',
+                            }}
+                        />
+                    )}
                     <Card>
                         <CardHeader>
                             <CardTitle>Campaign Details</CardTitle>
