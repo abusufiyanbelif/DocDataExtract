@@ -229,8 +229,7 @@ export default function CampaignSummaryPage() {
         }, {} as Record<string, number>);
 
         const beneficiaryCategoryData = beneficiaries.reduce((acc, beneficiary) => {
-            const members = beneficiary.members;
-            const categoryKey = members && members > 0 ? `${members}` : 'General';
+            const categoryKey = beneficiary.members && beneficiary.members > 0 ? `${beneficiary.members}` : 'General';
             
             if (!acc[categoryKey]) {
                 acc[categoryKey] = { count: 0, totalAmount: 0, beneficiaries: [] };
@@ -369,7 +368,7 @@ Your contribution, big or small, makes a huge difference.
             const canvas = await html2canvas(element, { 
                 scale: 2, 
                 useCORS: true,
-                backgroundColor: '#ffffff',
+                backgroundColor: null,
             });
             
             const imgData = canvas.toDataURL('image/png');
@@ -623,7 +622,7 @@ Your contribution, big or small, makes a huge difference.
                     </ScrollArea>
                 </div>
 
-                <div className="relative space-y-6 bg-transparent p-4" ref={summaryRef}>
+                <div className="relative space-y-6 p-4" ref={summaryRef}>
                     {brandingSettings?.logoUrl && (
                         <img
                             src={brandingSettings.logoUrl}

@@ -284,7 +284,7 @@ Your contribution, big or small, makes a huge difference.
             const canvas = await html2canvas(element, { 
                 scale: 2, 
                 useCORS: true,
-                backgroundColor: '#ffffff',
+                backgroundColor: null,
             });
             
             const imgData = canvas.toDataURL('image/png');
@@ -464,7 +464,7 @@ Your contribution, big or small, makes a huge difference.
                     </div>
                 </div>
 
-                <div className="relative space-y-6 bg-transparent p-4" ref={summaryRef}>
+                <div className="relative space-y-6 p-4" ref={summaryRef}>
                     {brandingSettings?.logoUrl && (
                         <img
                             src={brandingSettings.logoUrl}
