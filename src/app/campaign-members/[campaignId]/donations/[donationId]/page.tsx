@@ -94,7 +94,6 @@ export default function DonationDetailsPage() {
             return;
         }
 
-        // Wait for all images within the component to load
         const images = Array.from(element.getElementsByTagName('img'));
         const promises = images.map(img => {
             if (img.complete) return Promise.resolve();
@@ -155,14 +154,14 @@ export default function DonationDetailsPage() {
 
                 if (paymentSettings?.qrCodeUrl) {
                     try {
-                        const qrImg = new Image();
-                        qrImg.crossOrigin = 'anonymous';
-                        qrImg.src = paymentSettings.qrCodeUrl;
-                        await new Promise<void>((resolve, reject) => {
-                            qrImg.onload = () => resolve();
-                            qrImg.onerror = (err) => reject(err);
+                        const qrResponse = await fetch(`/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}`);
+                        const qrBlob = await qrResponse.blob();
+                        const qrDataUrl = await new Promise<string>(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result as string);
+                            reader.readAsDataURL(qrBlob);
                         });
-                        pdf.addImage(qrImg, 'PNG', qrX, finalY - 2, qrSize, qrSize);
+                        pdf.addImage(qrDataUrl, 'PNG', qrX, finalY - 2, qrSize, qrSize);
                     } catch(e) {
                          console.warn("Could not add QR code to PDF", e);
                     }

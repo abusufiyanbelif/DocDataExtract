@@ -41,6 +41,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                     <img
                         src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
                         alt="Watermark"
+                        crossOrigin="anonymous"
                         className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
                         style={{
                             width: '75%',
@@ -54,6 +55,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                              <img
                                 src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
                                 alt="Logo"
+                                crossOrigin="anonymous"
                                 className="mx-auto object-contain"
                                 style={{ 
                                     width: brandingSettings?.logoWidth ? `${brandingSettings.logoWidth}px` : '100px',
@@ -134,6 +136,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                                 <img
                                     src={`/api/image-proxy?url=${encodeURIComponent(validQrCodeUrl)}`}
                                     alt="QR Code"
+                                    crossOrigin="anonymous"
                                     width={80}
                                     height={80}
                                 />

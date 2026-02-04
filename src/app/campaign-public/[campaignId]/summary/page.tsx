@@ -309,14 +309,14 @@ Your contribution, big or small, makes a huge difference.
                 // Add Header (Logo and Title)
                 if (brandingSettings?.logoUrl?.trim()) {
                     try {
-                        const logoImg = new Image();
-                        logoImg.src = brandingSettings.logoUrl;
-                        logoImg.crossOrigin = 'anonymous';
-                        await new Promise<void>((resolve, reject) => {
-                            logoImg.onload = () => resolve();
-                            logoImg.onerror = (err) => reject(err);
+                        const logoResponse = await fetch(`/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl)}`);
+                        const logoBlob = await logoResponse.blob();
+                        const logoDataUrl = await new Promise<string>(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result as string);
+                            reader.readAsDataURL(logoBlob);
                         });
-                        pdf.addImage(logoImg, 'PNG', 15, 5, 30, 10);
+                        pdf.addImage(logoDataUrl, 'PNG', 15, 5, 30, 10);
                     } catch(e) {
                         console.warn("Could not add logo to PDF", e);
                     }
@@ -355,14 +355,14 @@ Your contribution, big or small, makes a huge difference.
 
                 if (paymentSettings?.qrCodeUrl?.trim()) {
                     try {
-                        const qrImg = new Image();
-                        qrImg.src = paymentSettings.qrCodeUrl;
-                        qrImg.crossOrigin = 'anonymous';
-                        await new Promise<void>((resolve, reject) => {
-                            qrImg.onload = () => resolve();
-                            qrImg.onerror = (err) => reject(err);
+                        const qrResponse = await fetch(`/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}`);
+                        const qrBlob = await qrResponse.blob();
+                        const qrDataUrl = await new Promise<string>(resolve => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result as string);
+                            reader.readAsDataURL(qrBlob);
                         });
-                        pdf.addImage(qrImg, 'PNG', qrX, finalY - 2, qrSize, qrSize);
+                        pdf.addImage(qrDataUrl, 'PNG', qrX, finalY - 2, qrSize, qrSize);
                     } catch(e) {
                          console.warn("Could not add QR code to PDF", e);
                     }
@@ -474,7 +474,7 @@ Your contribution, big or small, makes a huge difference.
                 <div className="relative space-y-6 p-4" ref={summaryRef}>
                     {validLogoUrl && (
                         <img
-                            src={validLogoUrl}
+                            src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
                             alt="Watermark"
                             crossOrigin="anonymous"
                             className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
