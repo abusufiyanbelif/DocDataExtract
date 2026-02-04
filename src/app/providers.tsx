@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { ReactNode } from 'react';
@@ -18,7 +19,7 @@ function Watermark() {
     }
 
     return (
-        <div className="fixed inset-0 z-0 flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none">
             {brandingSettings && brandingSettings.logoUrl ? (
                 <img
                     src={brandingSettings.logoUrl}
@@ -43,7 +44,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <FirebaseContentWrapper>
           <div className="app-root relative bg-background">
             <Watermark />
-            <div className="relative z-10 flex flex-col min-h-screen">
+            <div className="relative flex flex-col min-h-screen">
                 <div className="flex-grow">
                     {children}
                 </div>
