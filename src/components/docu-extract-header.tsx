@@ -61,12 +61,7 @@ export function DocuExtractHeader() {
                     src={brandingSettings.logoUrl}
                     alt="Company Logo"
                     crossOrigin="anonymous"
-                    style={{ 
-                        width: `${brandingSettings.logoWidth || 96}px`, 
-                        height: `${brandingSettings.logoHeight || 48}px`,
-                        maxHeight: '48px',
-                        objectFit: 'contain'
-                    }}
+                    className="h-full w-full object-contain"
                 />
                 )
             )}
