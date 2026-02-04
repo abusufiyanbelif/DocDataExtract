@@ -21,11 +21,12 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-import type { Donation } from '@/lib/types';
+import type { Donation, DonationCategory } from '@/lib/types';
+import { donationCategories } from '@/lib/modules';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Loader2, Wallet, CheckCircle, Hourglass, XCircle, Link as LinkIcon, Link2Off, Download } from 'lucide-react';
+import { ArrowLeft, Loader2, Wallet, CheckCircle, Hourglass, XCircle, Link as LinkIcon, Link2Off, Download, DatabaseZap } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -44,13 +45,16 @@ import type { ChartConfig } from '@/components/ui/chart';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
+import { syncDonationsAction } from '../actions';
+import { useToast } from '@/hooks/use-toast';
 
 const donationTypeChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
     Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
     Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
-    General: { label: "General", color: "hsl(var(--chart-5))" },
+    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
+    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
 const donationPaymentTypeChartConfig = {
@@ -69,6 +73,8 @@ const donationStatusChartConfig = {
 export default function DonationsSummaryPage() {
     const firestore = useFirestore();
     const { userProfile, isLoading: isProfileLoading } = useSession();
+    const { toast } = useToast();
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const donationsCollectionRef = useMemo(() => {
         if (!firestore) return null;
@@ -77,6 +83,25 @@ export default function DonationsSummaryPage() {
 
     const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
     const canRead = userProfile?.role === 'Admin' || !!userProfile?.permissions?.donations?.read;
+    const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.donations?.update;
+
+    const handleSync = async () => {
+        setIsSyncing(true);
+        toast({ title: 'Syncing Donations...', description: 'Please wait while old donation records are updated to the new format.' });
+
+        try {
+            const result = await syncDonationsAction();
+            if (result.success) {
+                toast({ title: 'Sync Complete', description: result.message, variant: 'success' });
+            } else {
+                toast({ title: 'Sync Failed', description: result.message, variant: 'destructive' });
+            }
+        } catch (error: any) {
+             toast({ title: 'Sync Error', description: 'An unexpected client-side error occurred.', variant: 'destructive' });
+        }
+
+        setIsSyncing(false);
+    };
 
     const summaryData = useMemo(() => {
         if (!donations) return null;
@@ -95,7 +120,10 @@ export default function DonationsSummaryPage() {
                 : (d.type ? [{ category: d.type, amount: d.amount }] : []);
             
             splits.forEach(split => {
-                acc[split.category] = (acc[split.category] || 0) + split.amount;
+                const category = (split.category as any) === 'General' ? 'Sadqa' : split.category;
+                if (donationCategories.includes(category as DonationCategory)) {
+                    acc[category] = (acc[category] || 0) + split.amount;
+                }
             });
             return acc;
         }, {} as Record<string, number>);
@@ -163,6 +191,16 @@ export default function DonationsSummaryPage() {
                             Back to Home
                         </Link>
                     </Button>
+                </div>
+
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-3xl font-bold">Donations Summary</h1>
+                    {canUpdate && (
+                        <Button onClick={handleSync} disabled={isSyncing}>
+                            {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DatabaseZap className="mr-2 h-4 w-4" />}
+                            Sync Donation Data
+                        </Button>
+                    )}
                 </div>
 
                 <div className="border-b mb-4">
@@ -310,7 +348,7 @@ export default function DonationsSummaryPage() {
                                             radius={4}
                                         >
                                              {summaryData?.donationTypeChartData?.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
+                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
                                             ))}
                                         </Bar>
                                     </BarChart>

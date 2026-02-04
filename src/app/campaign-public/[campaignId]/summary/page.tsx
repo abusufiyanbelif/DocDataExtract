@@ -62,6 +62,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { ShareDialog } from '@/components/share-dialog';
 import { AppFooter } from '@/components/app-footer';
+import { donationCategories } from '@/lib/modules';
 
 
 const donationTypeChartConfig = {
@@ -69,7 +70,8 @@ const donationTypeChartConfig = {
     Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
     Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
-    General: { label: "General", color: "hsl(var(--chart-5))" },
+    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
+    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
 const donationPaymentTypeChartConfig = {
@@ -110,26 +112,20 @@ export default function PublicCampaignSummaryPage() {
     // Memoized calculations
     const summaryData = useMemo(() => {
         if (!beneficiaries || !donations || !campaign) return null;
-
-        const normalizedDonations = donations.map(d => {
-            if (d.typeSplit && d.typeSplit.length > 0) return d;
-            if (d.type) return { ...d, typeSplit: [{ category: d.type, amount: d.amount }] };
-            return { ...d, typeSplit: [] };
-        });
-
-        const verifiedDonationsList = normalizedDonations.filter(d => d.status === 'Verified');
+        
+        const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
         const zakatCollected = verifiedDonationsList
-            .flatMap(d => d.typeSplit || [])
+            .flatMap(d => d.typeSplit && d.typeSplit.length > 0 ? d.typeSplit : (d.type ? [{ category: d.type, amount: d.amount }] : []))
             .filter(split => split.category === 'Zakat')
             .reduce((acc, split) => acc + split.amount, 0);
 
         const verifiedNonZakatDonations = verifiedDonationsList
-            .flatMap(d => d.typeSplit || [])
+             .flatMap(d => d.typeSplit && d.typeSplit.length > 0 ? d.typeSplit : (d.type ? [{ category: d.type, amount: d.amount }] : []))
             .filter(split => split.category !== 'Zakat')
             .reduce((acc, split) => acc + split.amount, 0);
 
-        const pendingDonations = normalizedDonations
+        const pendingDonations = donations
             .filter(d => d.status === 'Pending')
             .reduce((acc, d) => acc + d.amount, 0);
 
@@ -174,15 +170,22 @@ export default function PublicCampaignSummaryPage() {
         });
 
         const { donationChartData, donationPaymentTypeChartData } = (() => {
-            let filteredDonations = normalizedDonations;
+            let filteredDonations = donations;
             if (donationChartFilter !== 'All') {
-                filteredDonations = normalizedDonations.filter(d => d.status === donationChartFilter);
+                filteredDonations = donations.filter(d => d.status === donationChartFilter);
             }
             
             const donationTypeData = filteredDonations.reduce((acc, d) => {
-                (d.typeSplit || []).forEach(split => {
-                    acc[split.category] = (acc[split.category] || 0) + split.amount;
-                })
+                const splits = d.typeSplit && d.typeSplit.length > 0
+                    ? d.typeSplit
+                    : (d.type ? [{ category: d.type, amount: d.amount }] : []);
+                
+                splits.forEach(split => {
+                    const category = split.category as any === 'General' ? 'Sadqa' : split.category;
+                    if (donationCategories.includes(category)) {
+                        acc[category] = (acc[category] || 0) + split.amount;
+                    }
+                });
                 return acc;
             }, {} as Record<string, number>);
                 
@@ -684,7 +687,7 @@ Your contribution, big or small, makes a huge difference.
                                             radius={4}
                                         >
                                              {summaryData?.donationChartData && summaryData.donationChartData.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
+                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
                                             ))}
                                         </Bar>
                                     </BarChart>

@@ -27,7 +27,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-import type { Campaign, Beneficiary, Donation } from '@/lib/types';
+import type { Campaign, Beneficiary, Donation, DonationCategory } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -71,6 +71,9 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { ShareDialog } from '@/components/share-dialog';
 import { AppFooter } from '@/components/app-footer';
+import { Checkbox } from '@/components/ui/checkbox';
+import { donationCategories } from '@/lib/modules';
+import { Badge } from '@/components/ui/badge';
 
 
 const donationTypeChartConfig = {
@@ -78,7 +81,8 @@ const donationTypeChartConfig = {
     Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
     Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
-    General: { label: "General", color: "hsl(var(--chart-5))" },
+    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
+    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
 const donationPaymentTypeChartConfig = {
@@ -132,6 +136,7 @@ export default function CampaignSummaryPage() {
                 targetAmount: campaign.targetAmount || 0,
                 authenticityStatus: campaign.authenticityStatus || 'Pending Verification',
                 publicVisibility: campaign.publicVisibility || 'Hold',
+                allowedDonationTypes: campaign.allowedDonationTypes || [...donationCategories],
             });
         }
     }, [campaign, editMode]);
@@ -145,7 +150,7 @@ export default function CampaignSummaryPage() {
     const handleSave = () => {
         if (!campaignDocRef || !userProfile || !canUpdate) return;
         
-        const saveData = {
+        const saveData: Partial<Campaign> = {
             name: editableCampaign.name || '',
             description: editableCampaign.description || '',
             startDate: editableCampaign.startDate || '',
@@ -155,6 +160,7 @@ export default function CampaignSummaryPage() {
             targetAmount: editableCampaign.targetAmount || 0,
             authenticityStatus: editableCampaign.authenticityStatus || 'Pending Verification',
             publicVisibility: editableCampaign.publicVisibility || 'Hold',
+            allowedDonationTypes: editableCampaign.allowedDonationTypes,
         };
 
         updateDoc(campaignDocRef, saveData)
@@ -184,6 +190,7 @@ export default function CampaignSummaryPage() {
                 targetAmount: campaign.targetAmount || 0,
                 authenticityStatus: campaign.authenticityStatus || 'Pending Verification',
                 publicVisibility: campaign.publicVisibility || 'Hold',
+                allowedDonationTypes: campaign.allowedDonationTypes || [...donationCategories],
             });
         }
         setEditMode(true);
@@ -204,7 +211,12 @@ export default function CampaignSummaryPage() {
         let verifiedNonZakatDonations = 0;
 
         verifiedDonationsList.forEach(d => {
-            (d.typeSplit || []).forEach(split => {
+            const splits = d.typeSplit && d.typeSplit.length > 0
+              ? d.typeSplit
+              : (d.type ? [{ category: d.type, amount: d.amount }] : []);
+            
+            splits.forEach(split => {
+                // Treat 'General' as a non-Zakat donation (effectively 'Sadqa' for this calculation)
                 if (split.category === 'Zakat') {
                     zakatCollected += split.amount;
                 } else {
@@ -263,8 +275,15 @@ export default function CampaignSummaryPage() {
             }
             
             const donationTypeData = filteredDonations.reduce((acc, d) => {
-                (d.typeSplit || []).forEach(split => {
-                    acc[split.category] = (acc[split.category] || 0) + split.amount;
+                const splits = d.typeSplit && d.typeSplit.length > 0
+                  ? d.typeSplit
+                  : (d.type ? [{ category: d.type, amount: d.amount }] : []);
+                
+                splits.forEach(split => {
+                    const category = split.category as any === 'General' ? 'Sadqa' : split.category;
+                    if (donationCategories.includes(category)) {
+                        acc[category] = (acc[category] || 0) + split.amount;
+                    }
                 });
                 return acc;
             }, {} as Record<string, number>);
@@ -398,7 +417,7 @@ Your contribution, big or small, makes a huge difference.
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
                 if (logoImg) {
-                    const logoHeight = 60;
+                    const logoHeight = brandingSettings?.logoHeight ? brandingSettings.logoHeight * 1.5 : 60;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
                 }
@@ -411,7 +430,7 @@ Your contribution, big or small, makes a huge difference.
                 ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT);
                 
                 if (qrImg) {
-                    const qrSize = 130;
+                    const qrSize = paymentSettings?.qrWidth ? paymentSettings.qrWidth * 1.2 : 130;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, finalCanvas.height - FOOTER_HEIGHT, qrSize, qrSize);
                 }
                 ctx.font = 'bold 18px sans-serif';
@@ -432,18 +451,19 @@ Your contribution, big or small, makes a huge difference.
                 let position = 15;
 
                 if (logoImg) {
-                    const logoHeight = 20;
+                    const logoHeight = brandingSettings?.logoHeight ? brandingSettings.logoHeight / 2.5 : 20;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     pdf.addImage(logoDataUrl!, 'PNG', 15, position, logoWidth, logoHeight);
+                    position += logoHeight;
                 }
                 
                 pdf.setTextColor(10, 41, 19);
                 pdf.setFontSize(14);
-                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15, position + 25);
+                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15, position + 5);
                 pdf.setFontSize(20);
-                pdf.text(campaign?.name || 'Campaign Summary', 15 + (logoImg ? (logoImg.width / logoImg.height) * 20 + 10 : 0), position + 10);
+                pdf.text(campaign?.name || 'Campaign Summary', 15, position + 15);
                 
-                position += 35;
+                position += 25;
 
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = pdf.getImageProperties(imgData);
@@ -469,10 +489,10 @@ Your contribution, big or small, makes a huge difference.
                 position += 6;
                 pdf.setFontSize(9);
                 
-                const qrSize = 30;
-                const qrX = pdfWidth - 15 - qrSize;
+                const qrSize = paymentSettings?.qrWidth ? paymentSettings.qrWidth/4 : 30;
 
                 if (qrImg) {
+                    const qrX = pdfWidth - 15 - qrSize;
                     pdf.addImage(qrDataUrl!, 'PNG', qrX, position - 2, qrSize, qrSize);
                 }
                 
@@ -772,6 +792,47 @@ Your contribution, big or small, makes a huge difference.
                                     )}
                                 </div>
                             </div>
+                            <div className="space-y-2 pt-4">
+                                <Label className="text-sm font-medium text-muted-foreground">Allowed Donation Types</Label>
+                                {editMode && canUpdate ? (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 border rounded-md">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox 
+                                            id="select-all"
+                                            checked={editableCampaign.allowedDonationTypes?.length === donationCategories.length}
+                                            onCheckedChange={(checked) => {
+                                                setEditableCampaign(p => ({...p, allowedDonationTypes: checked ? [...donationCategories] : []}));
+                                            }}
+                                        />
+                                        <Label htmlFor="select-all" className="font-bold">Any</Label>
+                                    </div>
+                                    {donationCategories.map(type => (
+                                        <div key={type} className="flex items-center space-x-2">
+                                        <Checkbox 
+                                            id={`type-${type}`}
+                                            checked={editableCampaign.allowedDonationTypes?.includes(type)}
+                                            onCheckedChange={(checked) => {
+                                            const currentTypes = editableCampaign.allowedDonationTypes || [];
+                                            const newTypes = checked ? [...currentTypes, type] : currentTypes.filter(t => t !== type);
+                                            setEditableCampaign(p => ({...p, allowedDonationTypes: newTypes}));
+                                            }}
+                                        />
+                                        <Label htmlFor={`type-${type}`}>{type}</Label>
+                                        </div>
+                                    ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {(campaign.allowedDonationTypes && campaign.allowedDonationTypes.length > 0) ? (
+                                            campaign.allowedDonationTypes.map(type => (
+                                                <Badge key={type} variant="secondary">{type}</Badge>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">Not specified.</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -930,7 +991,7 @@ Your contribution, big or small, makes a huge difference.
                                             radius={4}
                                         >
                                              {summaryData?.donationChartData && summaryData.donationChartData.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
+                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
                                             ))}
                                         </Bar>
                                     </BarChart>
