@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useFirestore, useCollection, useDoc, useStorage, errorEmitter, FirestorePermissionError } from '@/firebase';
@@ -156,7 +156,8 @@ export default function BeneficiariesPage() {
     };
 
     if (idProofUrl) {
-        await deleteObject(storageRef(storage, idProofUrl)).catch(err => {
+        const fileRef = storageRef(storage, idProofUrl);
+        await deleteObject(fileRef).catch(err => {
             if (err.code !== 'storage/object-not-found') {
                 console.warn("Failed to delete ID proof from storage:", err);
             }
@@ -198,7 +199,8 @@ export default function BeneficiariesPage() {
         let idProofUrl = editingBeneficiary?.idProofUrl || '';
     
         if (data.idProofDeleted && idProofUrl) {
-            await deleteObject(storageRef(storage, idProofUrl)).catch(err => {
+            const oldFileRef = storageRef(storage, idProofUrl);
+            await deleteObject(oldFileRef).catch(err => {
                 if (err.code !== 'storage/object-not-found') {
                     console.warn("Failed to delete ID proof during replacement:", err)
                 }
@@ -209,7 +211,8 @@ export default function BeneficiariesPage() {
         const fileList = data.idProofFile as FileList | undefined;
         if (fileList && fileList.length > 0) {
             if (idProofUrl) {
-                await deleteObject(storageRef(storage, idProofUrl)).catch(err => {
+                const oldFileRef = storageRef(storage, idProofUrl);
+                await deleteObject(oldFileRef).catch(err => {
                     if (err.code !== 'storage/object-not-found') {
                         console.warn("Failed to delete old file during replacement:", err);
                     }
@@ -548,6 +551,22 @@ export default function BeneficiariesPage() {
     return sortableItems;
   }, [beneficiaries, searchTerm, statusFilter, referralFilter, membersFilter, kitAmountFilter, sortConfig]);
 
+  const groupedBeneficiaries = useMemo(() => {
+    if (!filteredAndSortedBeneficiaries) return {};
+    return filteredAndSortedBeneficiaries.reduce((acc, beneficiary) => {
+      const groupKey = beneficiary.members || 0;
+      if (!acc[groupKey]) {
+        acc[groupKey] = [];
+      }
+      acc[groupKey].push(beneficiary);
+      return acc;
+    }, {} as Record<number, Beneficiary[]>);
+  }, [filteredAndSortedBeneficiaries]);
+
+  const sortedGroupKeys = useMemo(() => {
+    return Object.keys(groupedBeneficiaries).map(Number).sort((a, b) => a - b);
+  }, [groupedBeneficiaries]);
+
   const totalKitAmount = useMemo(() => {
     return filteredAndSortedBeneficiaries.reduce((acc, b) => acc + (b.kitAmount || 0), 0);
   }, [filteredAndSortedBeneficiaries]);
@@ -778,65 +797,74 @@ export default function BeneficiariesPage() {
                                     <TableCell><Skeleton className="h-7 w-20 rounded-full" /></TableCell>
                                 </TableRow>
                             ))
-                        ) : filteredAndSortedBeneficiaries.length > 0 ? (
-                            filteredAndSortedBeneficiaries.map((beneficiary, index) => (
-                            <TableRow key={beneficiary.id}>
-                                {(canUpdate || canDelete) && (
-                                <TableCell className="sticky left-0 z-10 bg-card text-center">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            {canUpdate && (
-                                                <DropdownMenuItem onClick={() => handleEdit(beneficiary)}>
-                                                    <Edit className="mr-2 h-4 w-4" />
-                                                    Edit
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canDelete && (
-                                                <DropdownMenuItem onClick={() => handleDeleteClick(beneficiary.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                                )}
-                                <TableCell>{index + 1}</TableCell>
-                                <TableCell className="font-medium">{beneficiary.name}</TableCell>
-                                <TableCell>{beneficiary.address}</TableCell>
-                                <TableCell>{beneficiary.phone}</TableCell>
-                                <TableCell className="text-center">{beneficiary.members}</TableCell>
-                                <TableCell className="text-center">{beneficiary.earningMembers}</TableCell>
-                                <TableCell className="text-center">{beneficiary.male}/{beneficiary.female}</TableCell>
-                                <TableCell>{beneficiary.addedDate}</TableCell>
-                                <TableCell>{beneficiary.idProofType}</TableCell>
-                                <TableCell>{beneficiary.idNumber}</TableCell>
-                                <TableCell>
-                                    {beneficiary.idProofUrl && beneficiary.idProofIsPublic && (
-                                    <Button variant="outline" size="sm" onClick={() => handleViewImage(beneficiary.idProofUrl!)}>
-                                        <Eye className="mr-2 h-4 w-4" /> View
-                                    </Button>
+                        ) : sortedGroupKeys.length > 0 ? (
+                            sortedGroupKeys.map((memberCount) => (
+                            <React.Fragment key={`group-${memberCount}`}>
+                                <TableRow className="bg-muted hover:bg-muted">
+                                    <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14} className="font-bold">
+                                        Group: {memberCount} Members ({groupedBeneficiaries[memberCount].length} beneficiaries)
+                                    </TableCell>
+                                </TableRow>
+                                {groupedBeneficiaries[memberCount].map((beneficiary, index) => (
+                                <TableRow key={beneficiary.id}>
+                                    {(canUpdate || canDelete) && (
+                                    <TableCell className="sticky left-0 z-10 bg-card text-center">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                {canUpdate && (
+                                                    <DropdownMenuItem onClick={() => handleEdit(beneficiary)}>
+                                                        <Edit className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {canDelete && (
+                                                    <DropdownMenuItem onClick={() => handleDeleteClick(beneficiary.id)} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
                                     )}
-                                    {beneficiary.idProofUrl && !beneficiary.idProofIsPublic && "Private"}
-                                    {!beneficiary.idProofUrl && "N/A"}
-                                </TableCell>
-                                <TableCell>{beneficiary.referralBy}</TableCell>
-                                <TableCell className="text-right font-medium">Rupee {(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
-                                <TableCell>
-                                    <Badge variant={
-                                        beneficiary.status === 'Given' ? 'success' :
-                                        beneficiary.status === 'Verified' ? 'success' :
-                                        beneficiary.status === 'Pending' ? 'secondary' :
-                                        beneficiary.status === 'Hold' ? 'destructive' : 'outline'
-                                    }>{beneficiary.status}</Badge>
-                                </TableCell>
-                            </TableRow>
-                        ))
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell className="font-medium">{beneficiary.name}</TableCell>
+                                    <TableCell>{beneficiary.address}</TableCell>
+                                    <TableCell>{beneficiary.phone}</TableCell>
+                                    <TableCell className="text-center">{beneficiary.members}</TableCell>
+                                    <TableCell className="text-center">{beneficiary.earningMembers}</TableCell>
+                                    <TableCell className="text-center">{beneficiary.male}/{beneficiary.female}</TableCell>
+                                    <TableCell>{beneficiary.addedDate}</TableCell>
+                                    <TableCell>{beneficiary.idProofType}</TableCell>
+                                    <TableCell>{beneficiary.idNumber}</TableCell>
+                                    <TableCell>
+                                        {beneficiary.idProofUrl && beneficiary.idProofIsPublic && (
+                                        <Button variant="outline" size="sm" onClick={() => handleViewImage(beneficiary.idProofUrl!)}>
+                                            <Eye className="mr-2 h-4 w-4" /> View
+                                        </Button>
+                                        )}
+                                        {beneficiary.idProofUrl && !beneficiary.idProofIsPublic && "Private"}
+                                        {!beneficiary.idProofUrl && "N/A"}
+                                    </TableCell>
+                                    <TableCell>{beneficiary.referralBy}</TableCell>
+                                    <TableCell className="text-right font-medium">Rupee {(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={
+                                            beneficiary.status === 'Given' ? 'success' :
+                                            beneficiary.status === 'Verified' ? 'success' :
+                                            beneficiary.status === 'Pending' ? 'secondary' :
+                                            beneficiary.status === 'Hold' ? 'destructive' : 'outline'
+                                        }>{beneficiary.status}</Badge>
+                                    </TableCell>
+                                </TableRow>
+                                ))}
+                            </React.Fragment>
+                            ))
                         ) : (
                         <TableRow>
                             <TableCell colSpan={(canUpdate || canDelete) ? 15 : 14} className="text-center h-24 text-muted-foreground">
@@ -917,12 +945,13 @@ export default function BeneficiariesPage() {
             </DialogHeader>
             {imageToView && (
                  <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
-                    <div
-                        className="absolute inset-0 transition-transform duration-200 ease-out"
+                    <img
+                        src={imageToView}
+                        alt="ID proof"
+                        className="object-contain h-full w-full"
                         style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
-                    >
-                        <Image src={imageToView} alt="ID proof" fill className="object-contain" />
-                    </div>
+                        crossOrigin="anonymous"
+                    />
                 </div>
             )}
             <DialogFooter className="sm:justify-center pt-4">
