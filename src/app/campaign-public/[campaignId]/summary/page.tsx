@@ -470,7 +470,7 @@ Your contribution, big or small, makes a huge difference.
                             src={brandingSettings.logoUrl}
                             crossOrigin="anonymous"
                             alt="Watermark"
-                            className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
+                            className="absolute inset-0 m-auto object-contain opacity-10 pointer-events-none"
                             style={{
                                 width: '75%',
                                 height: '75%',
