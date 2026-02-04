@@ -18,13 +18,13 @@ function Watermark() {
     }
     
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
-    const proxiedLogoUrl = validLogoUrl ? `/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}` : null;
 
     return (
         <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none opacity-5">
-            {proxiedLogoUrl ? (
+            {validLogoUrl ? (
                 <img
-                    src={proxiedLogoUrl}
+                    src={validLogoUrl}
+                    crossOrigin="anonymous"
                     alt="Watermark"
                     width={500}
                     height={500}

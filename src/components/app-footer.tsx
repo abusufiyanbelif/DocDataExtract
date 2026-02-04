@@ -29,12 +29,11 @@ export function AppFooter() {
   };
   
   const validQrCodeUrl = paymentSettings?.qrCodeUrl?.trim() ? paymentSettings.qrCodeUrl : null;
-  const proxiedQrCodeUrl = validQrCodeUrl ? `/api/image-proxy?url=${encodeURIComponent(validQrCodeUrl)}` : null;
   
   const handleDownloadQr = () => {
-    if (!proxiedQrCodeUrl) return;
+    if (!validQrCodeUrl) return;
     const link = document.createElement('a');
-    link.href = proxiedQrCodeUrl;
+    link.href = validQrCodeUrl;
     link.download = 'payment-qr-code.png'; // Or a more dynamic name
     document.body.appendChild(link);
     link.click();
@@ -116,13 +115,14 @@ export function AppFooter() {
           {isLoading ? (
             <Skeleton className="h-32 w-32 rounded-lg" />
           ) : (
-            proxiedQrCodeUrl && (
+            validQrCodeUrl && (
                  <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
                     <DialogTrigger asChild>
                         <button className="cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
                             <img
-                                src={proxiedQrCodeUrl}
+                                src={validQrCodeUrl}
                                 alt="UPI QR Code"
+                                crossOrigin="anonymous"
                                 width={paymentSettings?.qrWidth || 128}
                                 height={paymentSettings?.qrHeight || 128}
                                 className="object-contain border-4 border-primary rounded-lg p-1 bg-white"
@@ -138,8 +138,9 @@ export function AppFooter() {
                         </DialogHeader>
                         <div className="flex items-center justify-center p-4 bg-secondary/30 rounded-lg">
                             <img
-                                src={proxiedQrCodeUrl}
+                                src={validQrCodeUrl}
                                 alt="UPI QR Code"
+                                crossOrigin="anonymous"
                                 className="w-full max-w-xs h-auto rounded-lg"
                                 width={300}
                                 height={300}
