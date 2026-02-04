@@ -257,16 +257,34 @@ Your contribution, big or small, makes a huge difference.
     };
 
     const handleDownload = async (format: 'png' | 'pdf') => {
-        if (!summaryRef.current) {
+        const element = summaryRef.current;
+        if (!element) {
             toast({ title: 'Error', description: 'Cannot generate download, content is missing.', variant: 'destructive' });
             return;
         }
 
+        const images = Array.from(element.getElementsByTagName('img'));
+        const promises = images.map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
+            });
+        });
+
         try {
-            const canvas = await html2canvas(summaryRef.current, { 
+            await Promise.all(promises);
+        } catch (error: any) {
+            console.error("Image loading failed for download:", error);
+            toast({ title: 'Download Failed', description: `Could not load an image required for the download. ${error.message}`, variant: 'destructive' });
+            return;
+        }
+
+        try {
+            const canvas = await html2canvas(element, { 
                 scale: 2, 
                 useCORS: true,
-                allowTaint: false,
+                allowTaint: true,
                 backgroundColor: '#ffffff',
             });
             

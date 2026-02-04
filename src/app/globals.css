@@ -40,7 +40,7 @@
 }
 
 body {
-  @apply bg-background text-foreground;
+  @apply text-foreground;
 }
 
 /* App content container */
@@ -48,4 +48,5 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  @apply bg-background;
 }

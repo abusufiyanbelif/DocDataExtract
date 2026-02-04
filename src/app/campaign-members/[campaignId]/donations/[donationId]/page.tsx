@@ -86,13 +86,32 @@ export default function DonationDetailsPage() {
     };
     
     const handleDownload = async (format: 'png' | 'pdf') => {
-        if (!receiptRef.current) {
+        const element = receiptRef.current;
+        if (!element) {
             toast({ title: 'Error', description: 'Cannot generate download, content is missing.', variant: 'destructive' });
+            return;
+        }
+
+        // Wait for all images within the component to load
+        const images = Array.from(element.getElementsByTagName('img'));
+        const promises = images.map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
+            });
+        });
+
+        try {
+            await Promise.all(promises);
+        } catch (error: any) {
+            console.error("Image loading failed for download:", error);
+            toast({ title: 'Download Failed', description: `Could not load an image required for the download. ${error.message}`, variant: 'destructive' });
             return;
         }
         
         try {
-            const canvas = await html2canvas(receiptRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff', allowTaint: true });
             const imgData = canvas.toDataURL('image/png');
 
             if (format === 'png') {
