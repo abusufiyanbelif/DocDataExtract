@@ -1,11 +1,9 @@
 
-
 'use client';
 
 import { useEffect } from 'react';
 import { LogOut, User, LogIn, Settings } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useAuth } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
@@ -49,6 +47,8 @@ export function DocuExtractHeader() {
   const isLoading = session.isLoading || isBrandingLoading;
   const user = session.user;
   const userProfile = session.userProfile;
+  
+  const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
 
   return (
     <header className="bg-card border-b p-2 shadow-sm">
@@ -58,13 +58,11 @@ export function DocuExtractHeader() {
             {isLoading ? (
                 <Skeleton className="h-full w-full" />
             ) : (
-                brandingSettings?.logoUrl?.trim() && (
-                  <Image
-                    src={brandingSettings.logoUrl}
+                validLogoUrl && (
+                  <img
+                    src={validLogoUrl}
                     alt="Company Logo"
-                    fill
-                    className="object-contain"
-                    unoptimized
+                    className="object-contain h-full w-full"
                     crossOrigin="anonymous"
                   />
                 )

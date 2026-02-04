@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -24,13 +23,16 @@ const ReceiptRow = ({ label, value, isMono = false }: { label: string; value: Re
 
 export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptProps>(
   ({ donation, campaign, brandingSettings, paymentSettings }, ref) => {
+    
+    const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
+    const validQrCodeUrl = paymentSettings?.qrCodeUrl?.trim() ? paymentSettings.qrCodeUrl : null;
 
     return (
         <div ref={ref} className="bg-background p-4 sm:p-8 rounded-lg">
             <Card className="w-full max-w-2xl mx-auto shadow-none border-border relative overflow-hidden">
-                 {brandingSettings?.logoUrl?.trim() && (
+                 {validLogoUrl && (
                     <img
-                        src={brandingSettings.logoUrl}
+                        src={validLogoUrl}
                         crossOrigin="anonymous"
                         alt="Watermark"
                         className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
@@ -42,14 +44,13 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                 )}
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
-                        {brandingSettings?.logoUrl?.trim() && (
-                             <Image
-                                src={brandingSettings.logoUrl}
+                        {validLogoUrl && (
+                             <img
+                                src={validLogoUrl}
                                 alt="Logo"
-                                width={brandingSettings.logoWidth || 100}
-                                height={brandingSettings.logoHeight || 48}
+                                width={brandingSettings?.logoWidth || 100}
+                                height={brandingSettings?.logoHeight || 48}
                                 className="mx-auto object-contain"
-                                unoptimized
                                 crossOrigin="anonymous"
                               />
                         )}
@@ -92,14 +93,13 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                                 {paymentSettings?.upiId && <p>UPI: {paymentSettings.upiId}</p>}
                             </div>
                         </div>
-                        {paymentSettings?.qrCodeUrl && (
+                        {validQrCodeUrl && (
                             <div className="w-full flex justify-center pt-4">
-                                <Image
-                                    src={paymentSettings.qrCodeUrl}
+                                <img
+                                    src={validQrCodeUrl}
                                     alt="QR Code"
                                     width={80}
                                     height={80}
-                                    unoptimized
                                     crossOrigin="anonymous"
                                 />
                             </div>

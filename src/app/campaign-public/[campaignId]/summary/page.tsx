@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
@@ -303,7 +302,7 @@ Your contribution, big or small, makes a huge difference.
                 let position = 20;
 
                 // Add Header (Logo and Title)
-                if (brandingSettings?.logoUrl) {
+                if (brandingSettings?.logoUrl?.trim()) {
                     try {
                         const logoImg = new Image();
                         logoImg.crossOrigin = 'anonymous';
@@ -349,7 +348,7 @@ Your contribution, big or small, makes a huge difference.
                 const qrSize = 30;
                 const qrX = pdfWidth - 15 - qrSize;
 
-                if (paymentSettings?.qrCodeUrl) {
+                if (paymentSettings?.qrCodeUrl?.trim()) {
                     try {
                         const qrImg = new Image();
                         qrImg.crossOrigin = 'anonymous';
@@ -393,7 +392,7 @@ Your contribution, big or small, makes a huge difference.
         } catch (error: any) {
             console.error("Download failed:", error);
             const errorMessage = error.message ? `: ${error.message}` : '. Please check console for details.';
-            toast({ title: 'Download Failed', description: `Could not generate the file${errorMessage}. This can happen if images are blocked by browser security.`, variant: 'destructive', duration: 9000 });
+            toast({ title: 'Download Failed', description: `Could not generate the file${errorMessage}. This can happen if images are blocked by browser security.`, variant: 'destructive', duration: 9000});
         }
     };
 
@@ -421,6 +420,8 @@ Your contribution, big or small, makes a huge difference.
             </div>
         );
     }
+
+    const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
     
     return (
         <div className="min-h-screen text-foreground">
@@ -466,9 +467,9 @@ Your contribution, big or small, makes a huge difference.
                 </div>
 
                 <div className="relative space-y-6 p-4" ref={summaryRef}>
-                    {brandingSettings?.logoUrl?.trim() && (
+                    {validLogoUrl && (
                         <img
-                            src={brandingSettings.logoUrl}
+                            src={validLogoUrl}
                             crossOrigin="anonymous"
                             alt="Watermark"
                             className="absolute inset-0 m-auto object-contain opacity-10 pointer-events-none"
@@ -680,7 +681,7 @@ Your contribution, big or small, makes a huge difference.
                                             dataKey="value"
                                             radius={4}
                                         >
-                                             {summaryData?.donationChartData.map((entry) => (
+                                             {summaryData?.donationChartData && summaryData.donationChartData.map((entry) => (
                                                 <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
                                             ))}
                                         </Bar>
@@ -711,7 +712,7 @@ Your contribution, big or small, makes a huge difference.
                                             cy="50%"
                                             outerRadius={80}
                                         >
-                                            {summaryData?.donationPaymentTypeChartData.map((entry) => (
+                                            {summaryData?.donationPaymentTypeChartData && summaryData.donationPaymentTypeChartData.map((entry) => (
                                                 <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
                                             ))}
                                         </Pie>

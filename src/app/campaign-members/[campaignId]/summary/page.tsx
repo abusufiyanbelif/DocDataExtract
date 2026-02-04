@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -387,7 +386,7 @@ Your contribution, big or small, makes a huge difference.
                 let position = 20;
 
                 // Add Header (Logo and Title)
-                if (brandingSettings?.logoUrl) {
+                if (brandingSettings?.logoUrl?.trim()) {
                     try {
                         const logoImg = new Image();
                         logoImg.crossOrigin = 'anonymous';
@@ -433,7 +432,7 @@ Your contribution, big or small, makes a huge difference.
                 const qrSize = 30;
                 const qrX = pdfWidth - 15 - qrSize;
 
-                if (paymentSettings?.qrCodeUrl) {
+                if (paymentSettings?.qrCodeUrl?.trim()) {
                     try {
                         const qrImg = new Image();
                         qrImg.crossOrigin = 'anonymous';
@@ -507,6 +506,8 @@ Your contribution, big or small, makes a huge difference.
             </div>
         );
     }
+    
+    const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
     
     return (
         <div className="min-h-screen text-foreground">
@@ -625,9 +626,9 @@ Your contribution, big or small, makes a huge difference.
                 </div>
 
                 <div className="relative space-y-6 p-4" ref={summaryRef}>
-                    {brandingSettings?.logoUrl?.trim() && (
+                    {validLogoUrl && (
                         <img
-                            src={brandingSettings.logoUrl}
+                            src={validLogoUrl}
                             crossOrigin="anonymous"
                             alt="Watermark"
                             className="absolute inset-0 m-auto object-contain opacity-10 pointer-events-none"

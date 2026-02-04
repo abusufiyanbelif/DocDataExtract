@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { ReactNode } from 'react';
@@ -17,12 +16,14 @@ function Watermark() {
     if (isLoading) {
         return null;
     }
+    
+    const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
 
     return (
         <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none">
-            {brandingSettings?.logoUrl?.trim() ? (
+            {validLogoUrl ? (
                 <img
-                    src={brandingSettings.logoUrl}
+                    src={validLogoUrl}
                     crossOrigin="anonymous"
                     alt="Watermark"
                     width={500}

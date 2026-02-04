@@ -1,7 +1,6 @@
 
 'use client';
 import { useMemo, useState } from 'react';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Copy, Smartphone, QrCode, Mail, Phone, Download } from 'lucide-react';
 import { Button } from './ui/button';
@@ -29,10 +28,12 @@ export function AppFooter() {
     });
   };
   
+  const validQrCodeUrl = paymentSettings?.qrCodeUrl?.trim() ? paymentSettings.qrCodeUrl : null;
+  
   const handleDownloadQr = () => {
-    if (!paymentSettings?.qrCodeUrl) return;
+    if (!validQrCodeUrl) return;
     const link = document.createElement('a');
-    link.href = paymentSettings.qrCodeUrl;
+    link.href = validQrCodeUrl;
     link.download = 'payment-qr-code.png'; // Or a more dynamic name
     document.body.appendChild(link);
     link.click();
@@ -48,7 +49,7 @@ export function AppFooter() {
     return null;
   }
   
-  const hasPaymentInfo = paymentSettings?.upiId || paymentSettings?.paymentMobileNumber || paymentSettings?.qrCodeUrl;
+  const hasPaymentInfo = paymentSettings?.upiId || paymentSettings?.paymentMobileNumber || validQrCodeUrl;
   const hasContactInfo = paymentSettings?.contactEmail || paymentSettings?.contactPhone;
   const hasOrgInfo = paymentSettings?.regNo || paymentSettings?.pan || paymentSettings?.address;
 
@@ -114,17 +115,16 @@ export function AppFooter() {
           {isLoading ? (
             <Skeleton className="h-32 w-32 rounded-lg" />
           ) : (
-            paymentSettings && paymentSettings.qrCodeUrl && (
+            validQrCodeUrl && (
                  <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
                     <DialogTrigger asChild>
                         <button className="cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
-                            <Image
-                                src={paymentSettings.qrCodeUrl}
+                            <img
+                                src={validQrCodeUrl}
                                 alt="UPI QR Code"
-                                width={paymentSettings.qrWidth || 128}
-                                height={paymentSettings.qrHeight || 128}
+                                width={paymentSettings?.qrWidth || 128}
+                                height={paymentSettings?.qrHeight || 128}
                                 className="object-contain border-4 border-primary rounded-lg p-1 bg-white"
-                                unoptimized
                                 crossOrigin="anonymous"
                             />
                         </button>
@@ -137,13 +137,12 @@ export function AppFooter() {
                             </DialogDescription>
                         </DialogHeader>
                         <div className="flex items-center justify-center p-4 bg-secondary/30 rounded-lg">
-                            <Image
-                                src={paymentSettings.qrCodeUrl}
+                            <img
+                                src={validQrCodeUrl}
                                 alt="UPI QR Code"
                                 className="w-full max-w-xs h-auto rounded-lg"
                                 width={300}
                                 height={300}
-                                unoptimized
                                 crossOrigin="anonymous"
                             />
                         </div>
