@@ -28,7 +28,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
     return (
         <div ref={ref} className="bg-background p-4 sm:p-8 rounded-lg">
             <Card className="w-full max-w-2xl mx-auto shadow-none border-border relative overflow-hidden">
-                 {brandingSettings?.logoUrl && (
+                 {brandingSettings?.logoUrl?.trim() && (
                     <img
                         src={brandingSettings.logoUrl}
                         crossOrigin="anonymous"
@@ -42,7 +42,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                 )}
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
-                        {brandingSettings?.logoUrl && (
+                        {brandingSettings?.logoUrl?.trim() && (
                              <Image
                                 src={brandingSettings.logoUrl}
                                 alt="Logo"

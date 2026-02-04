@@ -20,7 +20,7 @@ function Watermark() {
 
     return (
         <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none">
-            {brandingSettings && brandingSettings.logoUrl ? (
+            {brandingSettings?.logoUrl?.trim() ? (
                 <img
                     src={brandingSettings.logoUrl}
                     crossOrigin="anonymous"

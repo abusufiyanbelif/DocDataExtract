@@ -466,7 +466,7 @@ Your contribution, big or small, makes a huge difference.
                 </div>
 
                 <div className="relative space-y-6 p-4" ref={summaryRef}>
-                    {brandingSettings?.logoUrl && (
+                    {brandingSettings?.logoUrl?.trim() && (
                         <img
                             src={brandingSettings.logoUrl}
                             crossOrigin="anonymous"
