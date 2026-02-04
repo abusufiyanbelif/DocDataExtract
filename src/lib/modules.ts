@@ -3,6 +3,7 @@
 export const crudPermissions = ['create', 'read', 'update', 'delete'] as const;
 export const readUpdatePermissions = ['read', 'update'] as const;
 export const simpleReadPermission = ['read'] as const;
+export const donationCategories = ['Zakat', 'Sadqa', 'Interest', 'Lillah', 'Loan', 'Monthly Contribution'] as const;
 
 export type CrudPermissions = typeof crudPermissions;
 export type ReadUpdatePermissions = typeof readUpdatePermissions;

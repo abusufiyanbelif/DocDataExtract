@@ -42,7 +42,15 @@
         "endDate": { "type": "string", "format": "date" },
         "targetAmount": { "type": "number" },
         "authenticityStatus": { "type": "string", "enum": ["Pending Verification", "Verified", "Rejected", "On Hold", "Need More Details"] },
-        "publicVisibility": { "type": "string", "enum": ["Hold", "Ready to Publish", "Published"] }
+        "publicVisibility": { "type": "string", "enum": ["Hold", "Ready to Publish", "Published"] },
+        "allowedDonationTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Zakat", "Sadqa", "Interest", "Lillah", "Loan", "Monthly Contribution"]
+          },
+          "description": "A list of donation categories accepted for this campaign."
+        }
       },
       "required": ["name", "category", "status", "startDate", "endDate"]
     },
@@ -61,7 +69,15 @@
         "endDate": { "type": "string", "format": "date" },
         "targetAmount": { "type": "number" },
         "authenticityStatus": { "type": "string", "enum": ["Pending Verification", "Verified", "Rejected", "On Hold", "Need More Details"] },
-        "publicVisibility": { "type": "string", "enum": ["Hold", "Ready to Publish", "Published"] }
+        "publicVisibility": { "type": "string", "enum": ["Hold", "Ready to Publish", "Published"] },
+         "allowedDonationTypes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Zakat", "Sadqa", "Interest", "Lillah", "Loan", "Monthly Contribution"]
+          },
+          "description": "A list of donation categories accepted for this lead."
+        }
       },
       "required": ["name", "category", "status", "startDate", "endDate"]
     },
@@ -98,7 +114,7 @@
             "properties": {
               "category": {
                 "type": "string",
-                "enum": ["Zakat", "Sadqa", "Interest", "Lillah", "General"]
+                "enum": ["Zakat", "Sadqa", "Interest", "Lillah", "Loan", "Monthly Contribution"]
               },
               "amount": {
                 "type": "number"

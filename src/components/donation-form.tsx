@@ -24,14 +24,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import type { Donation } from '@/lib/types';
+import type { Donation, DonationCategory } from '@/lib/types';
+import { donationCategories } from '@/lib/modules';
 import { Loader2, ScanLine, Replace, Trash2, Plus, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from './ui/separator';
 import { Checkbox } from './ui/checkbox';
 import { Textarea } from './ui/textarea';
-
-const donationCategories = ['General', 'Zakat', 'Sadqa', 'Interest', 'Lillah'] as const;
 
 const formSchema = z.object({
   donorName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -104,7 +103,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
       comments: donation?.comments || '',
       suggestions: donation?.suggestions || '',
       isSplit: donation?.typeSplit ? donation.typeSplit.length > 1 : false,
-      typeSplit: donation?.typeSplit && donation.typeSplit.length > 0 ? donation.typeSplit : [{ category: 'General', amount: donation?.amount || 0 }],
+      typeSplit: donation?.typeSplit && donation.typeSplit.length > 0 ? donation.typeSplit : [{ category: 'Sadqa', amount: donation?.amount || 0 }],
     },
   });
 
@@ -123,7 +122,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   useEffect(() => {
     if (!isSplit) {
       const currentSplits = getValues('typeSplit');
-      const firstCategory = currentSplits.length > 0 ? currentSplits[0].category : 'General';
+      const firstCategory = currentSplits.length > 0 ? currentSplits[0].category : 'Sadqa';
       replace([{ category: firstCategory, amount: totalAmount }]);
     } else {
         const currentSplits = getValues('typeSplit');
@@ -370,7 +369,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                         </Button>
                     </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ category: 'General', amount: 0 })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ category: 'Sadqa', amount: 0 })}>
                     <Plus className="mr-2 h-4 w-4"/> Add Category
                 </Button>
                  <FormMessage>{form.formState.errors.typeSplit?.root?.message}</FormMessage>

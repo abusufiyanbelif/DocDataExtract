@@ -2,8 +2,12 @@
 
 import type { DocumentData } from 'firebase/firestore';
 import type { UserPermissions } from './modules';
+import { donationCategories } from './modules';
+
+export type DonationCategory = typeof donationCategories[number];
 
 export interface BrandingSettings extends DocumentData {
+  name?: string;
   logoUrl?: string;
   logoWidth?: number;
   logoHeight?: number;
@@ -58,6 +62,7 @@ export interface Campaign extends DocumentData {
   shopAddress: string;
   documents?: CampaignDocument[];
   rationLists: RationList;
+  allowedDonationTypes?: DonationCategory[];
   createdAt?: any;
   createdById?: string;
   createdByName?: string;
@@ -81,6 +86,7 @@ export interface Lead extends DocumentData {
   shopAddress: string;
   documents?: CampaignDocument[];
   rationLists: RationList;
+  allowedDonationTypes?: DonationCategory[];
   createdAt?: any;
   createdById?: string;
   createdByName?: string;
@@ -133,8 +139,8 @@ export interface Donation extends DocumentData {
   donorPhone: string;
   receiverName: string;
   amount: number;
-  type?: 'Zakat' | 'Sadqa' | 'Interest' | 'Lillah' | 'General'; // Legacy field for old data
-  typeSplit: { category: 'Zakat' | 'Sadqa' | 'Interest' | 'Lillah' | 'General'; amount: number }[];
+  type?: DonationCategory | 'General'; // Legacy field for old data
+  typeSplit: { category: DonationCategory; amount: number }[];
   donationType: 'Cash' | 'Online Payment' | 'Check' | 'Other';
   referral: string;
   donationDate: string;
