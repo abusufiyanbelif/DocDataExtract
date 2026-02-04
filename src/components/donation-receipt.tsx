@@ -24,45 +24,14 @@ const ReceiptRow = ({ label, value, isMono = false }: { label: string; value: Re
 
 export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptProps>(
   ({ donation, campaign, brandingSettings, paymentSettings }, ref) => {
-    const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
-    const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-
-    useEffect(() => {
-      const convertToDataUrl = async (url: string, setter: (dataUrl: string | null) => void) => {
-        try {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error('Network response was not ok.');
-          const blob = await response.blob();
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            setter(reader.result as string);
-          };
-          reader.readAsDataURL(blob);
-        } catch (error) {
-          console.error('Failed to convert image to data URL:', error);
-          setter(url); // Fallback to the original URL, which might cause canvas tainting
-        }
-      };
-
-      if (brandingSettings?.logoUrl) {
-        convertToDataUrl(brandingSettings.logoUrl, setLogoDataUrl);
-      } else {
-        setLogoDataUrl(null);
-      }
-
-      if (paymentSettings?.qrCodeUrl) {
-        convertToDataUrl(paymentSettings.qrCodeUrl, setQrDataUrl);
-      } else {
-        setQrDataUrl(null);
-      }
-    }, [brandingSettings?.logoUrl, paymentSettings?.qrCodeUrl]);
 
     return (
         <div ref={ref} className="bg-background p-4 sm:p-8 rounded-lg">
             <Card className="w-full max-w-2xl mx-auto shadow-none border-border relative overflow-hidden">
-                 {logoDataUrl && (
+                 {brandingSettings?.logoUrl && (
                     <img
-                        src={logoDataUrl}
+                        src={brandingSettings.logoUrl}
+                        crossOrigin="anonymous"
                         alt="Watermark"
                         className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
                         style={{
@@ -73,8 +42,8 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                 )}
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
-                        {logoDataUrl && brandingSettings?.logoUrl && (
-                             <img src={logoDataUrl} alt="Logo" className="mx-auto" style={{ width: `${brandingSettings.logoWidth || 100}px`, height: 'auto' }}/>
+                        {brandingSettings?.logoUrl && (
+                             <img src={brandingSettings.logoUrl} crossOrigin="anonymous" alt="Logo" className="mx-auto" style={{ width: `${brandingSettings.logoWidth || 100}px`, height: 'auto' }}/>
                         )}
                         <CardTitle className="text-2xl">Donation Receipt</CardTitle>
                     </CardHeader>
@@ -115,9 +84,9 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                                 {paymentSettings?.upiId && <p>UPI: {paymentSettings.upiId}</p>}
                             </div>
                         </div>
-                        {qrDataUrl && paymentSettings?.qrCodeUrl && (
+                        {paymentSettings?.qrCodeUrl && (
                             <div className="w-full flex justify-center pt-4">
-                                <img src={qrDataUrl} alt="QR Code" style={{ width: '80px', height: '80px' }} />
+                                <img src={paymentSettings.qrCodeUrl} crossOrigin="anonymous" alt="QR Code" style={{ width: '80px', height: '80px' }} />
                             </div>
                         )}
                         <p className="pt-2 text-center w-full">This is a computer-generated receipt and does not require a signature.</p>

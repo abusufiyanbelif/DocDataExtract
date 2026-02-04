@@ -118,22 +118,6 @@ export default function DonationDetailsPage() {
                     finalY = 20;
                 }
                 
-                const getImageDataUrl = async (url: string): Promise<string | null> => {
-                    try {
-                        const response = await fetch(url);
-                        if (!response.ok) return null;
-                        const blob = await response.blob();
-                        return new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result as string);
-                            reader.onerror = () => resolve(null);
-                            reader.readAsDataURL(blob);
-                        });
-                    } catch {
-                        return null;
-                    }
-                };
-
                 // --- Footer ---
                 pdf.setLineWidth(0.2);
                 pdf.line(15, finalY, pdfWidth - 15, finalY);
@@ -148,9 +132,17 @@ export default function DonationDetailsPage() {
                 const qrX = pdfWidth - 15 - qrSize;
 
                 if (paymentSettings?.qrCodeUrl) {
-                    const qrDataUrl = await getImageDataUrl(paymentSettings.qrCodeUrl);
-                    if(qrDataUrl) {
-                         pdf.addImage(qrDataUrl, 'PNG', qrX, finalY - 2, qrSize, qrSize);
+                    try {
+                        const qrImg = new Image();
+                        qrImg.crossOrigin = 'anonymous';
+                        qrImg.src = paymentSettings.qrCodeUrl;
+                        await new Promise<void>((resolve, reject) => {
+                            qrImg.onload = () => resolve();
+                            qrImg.onerror = (err) => reject(err);
+                        });
+                        pdf.addImage(qrImg, 'PNG', qrX, finalY - 2, qrSize, qrSize);
+                    } catch(e) {
+                         console.warn("Could not add QR code to PDF", e);
                     }
                 }
                 
