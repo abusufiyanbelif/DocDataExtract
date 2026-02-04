@@ -9,7 +9,6 @@ import { AppFooter } from '@/components/app-footer';
 import { Toaster } from '@/components/ui/toaster';
 import { useBranding } from '@/hooks/use-branding';
 import { TempLogo } from '@/components/temp-logo';
-import { ProxiedImage } from './proxied-image';
 
 function Watermark() {
     const { brandingSettings, isLoading } = useBranding();
@@ -23,8 +22,8 @@ function Watermark() {
     return (
         <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none opacity-5">
             {validLogoUrl ? (
-                <ProxiedImage
-                    imageUrl={validLogoUrl}
+                <img
+                    src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
                     alt="Watermark"
                     width={500}
                     height={500}

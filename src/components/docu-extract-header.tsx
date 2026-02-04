@@ -20,7 +20,6 @@ import {
 } from './ui/dropdown-menu';
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
-import { ProxiedImage } from './proxied-image';
 
 export function DocuExtractHeader() {
   const session = useSession();
@@ -60,8 +59,8 @@ export function DocuExtractHeader() {
                 <Skeleton className="h-full w-full" />
             ) : (
                 validLogoUrl && (
-                  <ProxiedImage
-                    imageUrl={validLogoUrl}
+                  <img
+                    src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
                     alt="Company Logo"
                     className="object-contain h-full w-full"
                   />

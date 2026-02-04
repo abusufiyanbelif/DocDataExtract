@@ -21,7 +21,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { ProxiedImage } from '@/components/proxied-image';
 
 interface FormDataType {
     logoUrl: string;
@@ -185,7 +184,10 @@ export default function SettingsPage() {
     const isFormDisabled = !isEditMode || isSubmitting;
     
     const renderImagePreview = (previewUrl: string) => {
-        return <ProxiedImage imageUrl={previewUrl} alt="Preview" className="object-contain p-2 h-full w-full" />;
+        const proxiedUrl = previewUrl.startsWith('http') 
+            ? `/api/image-proxy?url=${encodeURIComponent(previewUrl)}`
+            : previewUrl; // It's a data URL, so use it directly
+        return <img src={proxiedUrl} alt="Preview" className="object-contain p-2 h-full w-full" />;
     };
 
     const logoDisplayUrl = isEditMode ? editableData?.logoUrl : brandingSettings?.logoUrl;
