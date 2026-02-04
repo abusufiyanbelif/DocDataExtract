@@ -118,13 +118,14 @@ export function AppFooter() {
                  <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
                     <DialogTrigger asChild>
                         <button className="cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
-                            <img
+                            <Image
                                 src={paymentSettings.qrCodeUrl}
-                                crossOrigin="anonymous"
                                 alt="UPI QR Code"
                                 width={paymentSettings.qrWidth || 128}
                                 height={paymentSettings.qrHeight || 128}
                                 className="object-contain border-4 border-primary rounded-lg p-1 bg-white"
+                                unoptimized
+                                crossOrigin="anonymous"
                             />
                         </button>
                     </DialogTrigger>
@@ -136,11 +137,14 @@ export function AppFooter() {
                             </DialogDescription>
                         </DialogHeader>
                         <div className="flex items-center justify-center p-4 bg-secondary/30 rounded-lg">
-                            <img
+                            <Image
                                 src={paymentSettings.qrCodeUrl}
-                                crossOrigin="anonymous"
                                 alt="UPI QR Code"
                                 className="w-full max-w-xs h-auto rounded-lg"
+                                width={300}
+                                height={300}
+                                unoptimized
+                                crossOrigin="anonymous"
                             />
                         </div>
                         <DialogFooter>

@@ -43,7 +43,15 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
                         {brandingSettings?.logoUrl && (
-                             <img src={brandingSettings.logoUrl} crossOrigin="anonymous" alt="Logo" className="mx-auto" style={{ width: `${brandingSettings.logoWidth || 100}px`, height: 'auto' }}/>
+                             <Image
+                                src={brandingSettings.logoUrl}
+                                alt="Logo"
+                                width={brandingSettings.logoWidth || 100}
+                                height={brandingSettings.logoHeight || 48}
+                                className="mx-auto object-contain"
+                                unoptimized
+                                crossOrigin="anonymous"
+                              />
                         )}
                         <CardTitle className="text-2xl">Donation Receipt</CardTitle>
                     </CardHeader>
@@ -86,7 +94,14 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         </div>
                         {paymentSettings?.qrCodeUrl && (
                             <div className="w-full flex justify-center pt-4">
-                                <img src={paymentSettings.qrCodeUrl} crossOrigin="anonymous" alt="QR Code" style={{ width: '80px', height: '80px' }} />
+                                <Image
+                                    src={paymentSettings.qrCodeUrl}
+                                    alt="QR Code"
+                                    width={80}
+                                    height={80}
+                                    unoptimized
+                                    crossOrigin="anonymous"
+                                />
                             </div>
                         )}
                         <p className="pt-2 text-center w-full">This is a computer-generated receipt and does not require a signature.</p>

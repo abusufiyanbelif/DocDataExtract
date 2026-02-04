@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import { LogOut, User, LogIn, Settings } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
@@ -57,12 +58,15 @@ export function DocuExtractHeader() {
                 <Skeleton className="h-full w-full" />
             ) : (
                 brandingSettings && brandingSettings.logoUrl && (
-                <img
+                  <Image
                     src={brandingSettings.logoUrl}
                     alt="Company Logo"
+                    width={brandingSettings.logoWidth || 100}
+                    height={brandingSettings.logoHeight || 48}
+                    className="object-contain"
+                    unoptimized
                     crossOrigin="anonymous"
-                    className="h-full w-full object-contain"
-                />
+                  />
                 )
             )}
             </div>
