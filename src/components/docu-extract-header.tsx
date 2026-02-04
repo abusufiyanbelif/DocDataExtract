@@ -1,7 +1,7 @@
+
 'use client';
 
 import { useEffect } from 'react';
-import Image from 'next/image';
 import { LogOut, User, LogIn, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/firebase';
@@ -52,16 +52,21 @@ export function DocuExtractHeader() {
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
-          <div className="relative h-12 w-24 flex-shrink-0">
+          <div className="relative h-12 w-24 flex-shrink-0 flex items-center justify-center">
             {isLoading ? (
                 <Skeleton className="h-full w-full" />
             ) : (
                 brandingSettings && brandingSettings.logoUrl && (
-                <Image
+                <img
                     src={brandingSettings.logoUrl}
                     alt="Company Logo"
-                    fill
-                    className="object-contain"
+                    crossOrigin="anonymous"
+                    style={{ 
+                        width: `${brandingSettings.logoWidth || 96}px`, 
+                        height: `${brandingSettings.logoHeight || 48}px`,
+                        maxHeight: '48px',
+                        objectFit: 'contain'
+                    }}
                 />
                 )
             )}
