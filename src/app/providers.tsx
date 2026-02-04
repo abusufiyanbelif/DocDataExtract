@@ -18,7 +18,7 @@ function Watermark() {
     }
 
     return (
-        <div className="fixed inset-0 z-[-10] flex items-center justify-center pointer-events-none">
+        <div className="fixed inset-0 z-0 flex items-center justify-center pointer-events-none">
             {brandingSettings && brandingSettings.logoUrl ? (
                 <img
                     src={brandingSettings.logoUrl}
@@ -40,8 +40,8 @@ export function Providers({ children }: { children: ReactNode }) {
     <FirebaseClientProvider>
       <AuthProvider>
         <FirebaseContentWrapper>
-          <div className="app-root">
-            <Watermark />
+          <Watermark />
+          <div className="app-root relative z-10">
             {children}
             <AppFooter />
           </div>
