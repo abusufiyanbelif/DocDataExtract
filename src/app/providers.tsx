@@ -2,7 +2,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { AuthProvider } from '@/components/auth-provider';
+import { AuthProvider } from '@/app/auth-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { FirebaseContentWrapper } from '@/components/FirebaseContentWrapper';
 import { AppFooter } from '@/components/app-footer';
@@ -25,7 +25,6 @@ function Watermark() {
                     alt="Watermark"
                     width={500}
                     height={500}
-                    crossOrigin="anonymous"
                     className="object-contain opacity-10"
                 />
             ) : (
