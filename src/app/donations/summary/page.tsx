@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -89,7 +90,9 @@ export default function DonationsSummaryPage() {
         const unallocatedCount = donations.length - allocatedCount;
 
         const donationTypeData = donations.reduce((acc, d) => {
-            acc[d.type] = (acc[d.type] || 0) + d.amount;
+            d.typeSplit?.forEach(split => {
+                acc[split.category] = (acc[split.category] || 0) + split.amount;
+            });
             return acc;
         }, {} as Record<string, number>);
 
@@ -374,4 +377,5 @@ export default function DonationsSummaryPage() {
         </div>
     );
 }
+
 

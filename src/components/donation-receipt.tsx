@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import type { Donation, Campaign, BrandingSettings, PaymentSettings } from '@/lib/types';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from './ui/table';
 
 interface DonationReceiptProps {
   donation: Donation;
@@ -73,10 +75,29 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         <div className="space-y-3">
                              <h3 className="font-semibold">Transaction Details</h3>
                             <ReceiptRow label="Receiver Name" value={donation.receiverName} />
-                            <ReceiptRow label="Amount" value={`Rupee ${donation.amount.toFixed(2)}`} isMono />
-                             <ReceiptRow label="Category" value={<Badge variant="secondary">{donation.type}</Badge>} />
+                            <ReceiptRow label="Total Amount" value={`Rupee ${donation.amount.toFixed(2)}`} isMono />
                             <ReceiptRow label="Payment Type" value={<Badge variant="outline">{donation.donationType}</Badge>} />
                             {donation.transactionId && <ReceiptRow label="Transaction ID" value={donation.transactionId} isMono />}
+                        </div>
+                        <Separator />
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-medium">Category Breakdown</h3>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Category</TableHead>
+                                        <TableHead className="text-right">Amount</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {donation.typeSplit.map((split) => (
+                                        <TableRow key={split.category}>
+                                            <TableCell>{split.category}</TableCell>
+                                            <TableCell className="text-right font-mono">Rupee {split.amount.toFixed(2)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
                     </CardContent>
                     <CardFooter className="flex-col items-start text-xs text-muted-foreground p-6 pt-4 space-y-2">

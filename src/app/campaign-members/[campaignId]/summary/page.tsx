@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -203,13 +204,18 @@ export default function CampaignSummaryPage() {
 
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
-        const zakatCollected = verifiedDonationsList
-            .filter(d => d.type === 'Zakat')
-            .reduce((acc, d) => acc + d.amount, 0);
+        let zakatCollected = 0;
+        let verifiedNonZakatDonations = 0;
 
-        const verifiedNonZakatDonations = verifiedDonationsList
-            .filter(d => d.type !== 'Zakat')
-            .reduce((acc, d) => acc + d.amount, 0);
+        verifiedDonationsList.forEach(d => {
+            d.typeSplit?.forEach(split => {
+                if (split.category === 'Zakat') {
+                    zakatCollected += split.amount;
+                } else {
+                    verifiedNonZakatDonations += split.amount;
+                }
+            });
+        });
 
         const pendingDonations = donations
             .filter(d => d.status === 'Pending')
@@ -261,9 +267,11 @@ export default function CampaignSummaryPage() {
             }
             
             const donationTypeData = filteredDonations.reduce((acc, d) => {
-                    acc[d.type] = (acc[d.type] || 0) + d.amount;
-                    return acc;
-                }, {} as Record<string, number>);
+                d.typeSplit?.forEach(split => {
+                    acc[split.category] = (acc[split.category] || 0) + split.amount;
+                });
+                return acc;
+            }, {} as Record<string, number>);
                 
             const paymentTypeData = filteredDonations.reduce((acc, d) => {
                 if (d.donationType) {

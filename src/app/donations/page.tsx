@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -245,7 +246,7 @@ export default function DonationsPage() {
         sortableItems = sortableItems.filter(d => d.status === statusFilter);
     }
     if (typeFilter !== 'All') {
-        sortableItems = sortableItems.filter(d => d.type === typeFilter);
+        sortableItems = sortableItems.filter(d => d.typeSplit.some(s => s.category === typeFilter));
     }
     if (donationTypeFilter !== 'All') {
         sortableItems = sortableItems.filter(d => d.donationType === donationTypeFilter);
@@ -431,7 +432,7 @@ export default function DonationsPage() {
                             <SortableHeader sortKey="donorPhone">Phone</SortableHeader>
                             <SortableHeader sortKey="referral">Referral</SortableHeader>
                             <SortableHeader sortKey="amount" className="text-right">Amount (Rupee)</SortableHeader>
-                            <SortableHeader sortKey="type">Category</SortableHeader>
+                            <TableHead>Category</TableHead>
                             <SortableHeader sortKey="donationType">Donation Type</SortableHeader>
                             <SortableHeader sortKey="transactionId">Transaction ID</SortableHeader>
                             <SortableHeader sortKey="donationDate">Date</SortableHeader>
@@ -484,7 +485,15 @@ export default function DonationsPage() {
                                 <TableCell>{donation.donorPhone}</TableCell>
                                 <TableCell>{donation.referral}</TableCell>
                                 <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
-                                <TableCell><Badge variant="secondary">{donation.type}</Badge></TableCell>
+                                <TableCell>
+                                    <div className="flex flex-wrap gap-1">
+                                        {donation.typeSplit?.map(split => (
+                                            <Badge key={split.category} variant="secondary">
+                                                {split.category}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                </TableCell>
                                 <TableCell><Badge variant="outline">{donation.donationType}</Badge></TableCell>
                                 <TableCell>{donation.transactionId || 'N/A'}</TableCell>
                                 <TableCell>{donation.donationDate}</TableCell>
@@ -573,4 +582,5 @@ export default function DonationsPage() {
     </div>
   );
 }
+
 

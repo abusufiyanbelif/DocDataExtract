@@ -131,7 +131,7 @@ export interface Donation extends DocumentData {
   donorPhone: string;
   receiverName: string;
   amount: number;
-  type: 'Zakat' | 'Sadqa' | 'Interest' | 'Lillah' | 'General';
+  typeSplit: { category: 'Zakat' | 'Sadqa' | 'Interest' | 'Lillah' | 'General'; amount: number }[];
   donationType: 'Cash' | 'Online Payment' | 'Check' | 'Other';
   referral: string;
   donationDate: string;

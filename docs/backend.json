@@ -88,11 +88,27 @@
         "campaignId": { "type": "string" },
         "donorName": { "type": "string" },
         "amount": { "type": "number" },
-        "type": { "type": "string", "enum": ["Zakat", "Sadqa", "Interest", "Lillah", "General"] },
+        "typeSplit": {
+          "type": "array",
+          "description": "Breakdown of donation amounts by category.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "category": {
+                "type": "string",
+                "enum": ["Zakat", "Sadqa", "Interest", "Lillah", "General"]
+              },
+              "amount": {
+                "type": "number"
+              }
+            },
+            "required": ["category", "amount"]
+          }
+        },
         "donationDate": { "type": "string", "format": "date" },
         "status": { "type": "string", "enum": ["Verified", "Pending", "Canceled"] }
       },
-      "required": ["campaignId", "donorName", "amount", "type", "donationDate", "status"]
+      "required": ["campaignId", "donorName", "amount", "typeSplit", "donationDate", "status"]
     },
     "BrandingSettings": {
       "$schema": "http://json-schema.org/draft-07/schema#",
