@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -330,6 +331,7 @@ export default function CampaignDetailsPage() {
         await import('jspdf-autotable');
         const doc = new jsPDF();
         let startY = 15;
+        doc.setTextColor(10, 41, 19);
 
         if (brandingSettings?.logoUrl) {
             try {
@@ -384,7 +386,7 @@ export default function CampaignDetailsPage() {
                     head: [[categoryTitle]],
                     startY: startY,
                     theme: 'plain',
-                    styles: { fontStyle: 'bold', fontSize: 12 }
+                    styles: { fontStyle: 'bold', fontSize: 12, textColor: [10, 41, 19] }
                 });
                 startY = (doc as any).lastAutoTable.finalY;
 
@@ -392,7 +394,8 @@ export default function CampaignDetailsPage() {
                     head: headers,
                     body: body as any,
                     startY: startY,
-                    headStyles: { fillColor: [22, 163, 74] },
+                    headStyles: { fillColor: [22, 163, 74], textColor: [255, 255, 255] },
+                    styles: { textColor: [10, 41, 19] }
                 });
                 
                 startY = (doc as any).lastAutoTable.finalY + 10;

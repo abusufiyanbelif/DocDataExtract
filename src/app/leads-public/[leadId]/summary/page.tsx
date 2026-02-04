@@ -73,7 +73,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
 
         try {
             const { default: jsPDF } = await import('jspdf');
-            const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
             const imgData = canvas.toDataURL('image/png');
             
             const pdf = new jsPDF('p', 'mm', 'a4');
@@ -83,6 +83,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
             const imgProps = pdf.getImageProperties(imgData);
             const pdfImageHeight = (imgProps.height * (pdfWidth - 20)) / imgProps.width;
 
+            pdf.setTextColor(10, 41, 19);
             pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfImageHeight);
 
             pdf.save(`lead-summary-${leadId}.pdf`);

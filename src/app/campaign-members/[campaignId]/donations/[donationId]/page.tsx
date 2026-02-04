@@ -94,25 +94,12 @@ export default function DonationDetailsPage() {
             return;
         }
 
-        const images = Array.from(element.getElementsByTagName('img'));
-        const promises = images.map(img => {
-            if (img.complete) return Promise.resolve();
-            return new Promise<void>((resolve, reject) => {
-                img.onload = () => resolve();
-                img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
+        try {
+            const canvas = await html2canvas(element, { 
+                scale: 2, 
+                useCORS: true,
+                backgroundColor: '#FFFFFF' // Use a solid white background
             });
-        });
-
-        try {
-            await Promise.all(promises);
-        } catch (error: any) {
-            console.error("Image loading failed for download:", error);
-            toast({ title: 'Download Failed', description: `Could not load an image required for the download. ${error.message}`, variant: 'destructive' });
-            return;
-        }
-        
-        try {
-            const canvas = await html2canvas(element, { scale: 2, useCORS: true });
             const imgData = canvas.toDataURL('image/png');
 
             if (format === 'png') {
@@ -144,6 +131,7 @@ export default function DonationDetailsPage() {
                 pdf.line(15, finalY, pdfWidth - 15, finalY);
                 finalY += 8;
 
+                pdf.setTextColor(10, 41, 19); // Set text color to dark green
                 pdf.setFontSize(12);
                 pdf.text('For Donations & Contact', 15, finalY);
                 finalY += 6;

@@ -348,27 +348,11 @@ Your contribution, big or small, makes a huge difference.
             return;
         }
 
-        const images = Array.from(element.getElementsByTagName('img'));
-        const promises = images.map(img => {
-            if (img.complete) return Promise.resolve();
-            return new Promise<void>((resolve, reject) => {
-                img.onload = () => resolve();
-                img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
-            });
-        });
-
-        try {
-            await Promise.all(promises);
-        } catch (error: any) {
-            console.error("Image loading failed for download:", error);
-            toast({ title: 'Download Failed', description: `Could not load an image required for the download. ${error.message}`, variant: 'destructive' });
-            return;
-        }
-
         try {
             const canvas = await html2canvas(element, { 
                 scale: 2, 
                 useCORS: true,
+                backgroundColor: '#FFFFFF'
             });
             
             const imgData = canvas.toDataURL('image/png');
@@ -385,6 +369,7 @@ Your contribution, big or small, makes a huge difference.
                 const pageHeight = pdf.internal.pageSize.getHeight();
                 
                 let position = 10; // Initial top margin
+                pdf.setTextColor(10, 41, 19);
 
                 // Add Header (Logo and Title)
                 if (brandingSettings?.logoUrl?.trim()) {
@@ -404,15 +389,14 @@ Your contribution, big or small, makes a huge difference.
                             ? (brandingSettings.logoWidth / brandingSettings.logoHeight) * logoHeight
                             : 30;
                         pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
-                        position += logoHeight;
                     } catch (e) {
                         console.warn("Could not add logo to PDF", e);
                         toast({ title: 'PDF Error', description: 'Failed to load the logo for the PDF.', variant: 'destructive' });
                     }
                 }
                 pdf.setFontSize(16);
-                pdf.text(campaign?.name || 'Campaign Summary', 15, position + 5);
-                position += 10;
+                pdf.text(campaign?.name || 'Campaign Summary', 50, position + 7);
+                position += 15;
                 pdf.setLineWidth(0.5);
                 pdf.line(15, position, pdfWidth - 15, position);
                 position += 5;
