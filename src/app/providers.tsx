@@ -41,7 +41,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <FirebaseClientProvider>
       <AuthProvider>
         <FirebaseContentWrapper>
-          <div className="app-root relative">
+          <div className="app-root relative bg-background">
             <Watermark />
             <div className="relative z-10 flex flex-col min-h-screen">
                 <div className="flex-grow">
