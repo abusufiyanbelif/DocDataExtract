@@ -875,12 +875,14 @@ Your contribution, big or small, makes a huge difference.
                         <CardContent>
                             <Accordion type="single" collapsible className="w-full">
                                 {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
-                                    summaryData.beneficiaryCategoryBreakdown.map((item, index) => (
+                                    summaryData.beneficiaryCategoryBreakdown.map((item, index) => {
+                                        const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
+                                        return (
                                         <AccordionItem value={`item-${index}`} key={item.name}>
                                             <AccordionTrigger>
-                                                <div className="flex justify-between w-full pr-4">
+                                                <div className="flex justify-between w-full pr-4 flex-wrap gap-2">
                                                     <span className="font-medium text-foreground">{item.name === 'General' ? 'General' : `${item.name} Members`}</span>
-                                                    <span className="text-sm text-muted-foreground">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Total: Rupee {item.totalAmount.toLocaleString('en-IN')}</span>
+                                                    <span className="text-sm text-muted-foreground text-right">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Kit: Rupee {kitPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} | Total: Rupee {item.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                                                 </div>
                                             </AccordionTrigger>
                                             <AccordionContent>
@@ -902,7 +904,7 @@ Your contribution, big or small, makes a huge difference.
                                                 </Table>
                                             </AccordionContent>
                                         </AccordionItem>
-                                    ))
+                                    )})
                                 ) : (
                                     <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
                                 )}
@@ -1003,3 +1005,4 @@ Your contribution, big or small, makes a huge difference.
         </div>
     );
 }
+

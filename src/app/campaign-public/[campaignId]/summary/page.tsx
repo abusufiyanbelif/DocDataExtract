@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
@@ -609,17 +610,22 @@ Your contribution, big or small, makes a huge difference.
                                         <TableRow>
                                             <TableHead>Category</TableHead>
                                             <TableHead className="text-center">Beneficiaries</TableHead>
+                                            <TableHead className="text-right">Kit Price (Rupee)</TableHead>
                                             <TableHead className="text-right">Total Kit Amount (Rupee)</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {summaryData.beneficiaryCategoryBreakdown.map((item) => (
-                                            <TableRow key={item.name}>
-                                                <TableCell className="font-medium">{item.name === 'General' ? 'General' : `${item.name} Members`}</TableCell>
-                                                <TableCell className="text-center">{item.count}</TableCell>
-                                                <TableCell className="text-right font-mono">{item.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                            </TableRow>
-                                        ))}
+                                        {summaryData.beneficiaryCategoryBreakdown.map((item) => {
+                                            const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
+                                            return (
+                                                <TableRow key={item.name}>
+                                                    <TableCell className="font-medium">{item.name === 'General' ? 'General' : `${item.name} Members`}</TableCell>
+                                                    <TableCell className="text-center">{item.count}</TableCell>
+                                                    <TableCell className="text-right font-mono">{kitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                                    <TableCell className="text-right font-mono">{item.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             ) : (
