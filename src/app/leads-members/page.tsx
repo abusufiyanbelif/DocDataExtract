@@ -1,4 +1,5 @@
 
+
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -42,6 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { CopyLeadDialog } from '@/components/copy-lead-dialog';
 import { copyLeadAction } from './actions';
+import { hasLeadPermission } from '@/lib/modules';
 
 
 export default function LeadPage() {
@@ -72,6 +74,11 @@ export default function LeadPage() {
   }, [firestore]);
 
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsCollectionRef);
+  
+  const canViewLeads = hasLeadPermission(userProfile, 'create') || hasLeadPermission(userProfile, 'update') || hasLeadPermission(userProfile, 'delete') || hasLeadPermission(userProfile, 'read_any_sub');
+  const canCreate = hasLeadPermission(userProfile, 'create');
+  const canUpdate = hasLeadPermission(userProfile, 'update');
+  const canDelete = hasLeadPermission(userProfile, 'delete');
 
   const handleDeleteClick = (lead: Lead) => {
     if (!canDelete) return;
@@ -220,12 +227,6 @@ export default function LeadPage() {
 
   const isLoading = areLeadsLoading || isProfileLoading || isDeleting;
   
-  const canViewLeads = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.read;
-  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.create;
-  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.update;
-  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.['leads-members']?.delete;
-  
-  
   if (!isLoading && userProfile && !canViewLeads) {
     return (
         <div className="min-h-screen text-foreground">
@@ -326,7 +327,7 @@ export default function LeadPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => router.push(`/leads-members/${lead.id}`)} className="cursor-pointer">
+                                        <DropdownMenuItem onClick={() => router.push(`/leads-members/${lead.id}/summary`)} className="cursor-pointer">
                                             <Edit className="mr-2 h-4 w-4" />
                                             View Details
                                         </DropdownMenuItem>
@@ -406,7 +407,7 @@ export default function LeadPage() {
                         </CardContent>
                         <CardFooter>
                             <Button asChild className="w-full">
-                                <Link href={`/leads-members/${lead.id}`}>
+                                <Link href={`/leads-members/${lead.id}/summary`}>
                                     View Details
                                 </Link>
                             </Button>

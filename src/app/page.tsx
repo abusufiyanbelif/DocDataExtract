@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { useSession } from '@/hooks/use-session';
 import { Button } from '@/components/ui/button';
-import { get } from '@/lib/utils';
+import { get, hasCampaignPermission, hasLeadPermission } from '@/lib/modules';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const dashboardCards = [
@@ -32,7 +32,7 @@ const dashboardCards = [
     description: 'Track and manage ration distribution campaigns.',
     icon: <ClipboardList className="h-8 w-8 text-primary" />,
     href: '/campaign-members',
-    permissionKey: 'campaigns', // Special check
+    permissionKey: 'campaigns',
   },
    {
     title: 'Donations',
@@ -46,7 +46,7 @@ const dashboardCards = [
     description: 'Manage and track potential new leads or initiatives.',
     icon: <Lightbulb className="h-8 w-8 text-primary" />,
     href: '/leads-members',
-    permissionKey: 'leads-members.read',
+    permissionKey: 'leads-members',
   },
   {
     title: 'Extractor',
@@ -82,20 +82,14 @@ const dashboardCards = [
 export default function Home() {
   const { userProfile, isLoading } = useSession();
 
-  const getSubPermission = (perms: any, key: string) => {
-    if (!perms) return false;
-    if (key === 'campaigns') {
-       return perms.create || perms.update || perms.delete || perms.summary?.read || perms.ration?.read || perms.beneficiaries?.read || perms.donations?.read;
-    }
-    return get(perms, key, false);
-  }
-
   const visibleCards = userProfile ? dashboardCards.filter(card => {
     if (userProfile.role === 'Admin') return true;
     const permissionKey = card.permissionKey;
     if (permissionKey === 'campaigns') {
-        const campaignPerms = userProfile.permissions?.campaigns;
-        return !!(campaignPerms?.create || campaignPerms?.update || campaignPerms?.delete || campaignPerms?.summary?.read || campaignPerms?.ration?.read || campaignPerms?.beneficiaries?.read || campaignPerms?.donations?.read)
+        return hasCampaignPermission(userProfile, 'create') || hasCampaignPermission(userProfile, 'update') || hasCampaignPermission(userProfile, 'delete') || hasCampaignPermission(userProfile, 'read_any_sub');
+    }
+    if (permissionKey === 'leads-members') {
+         return hasLeadPermission(userProfile, 'create') || hasLeadPermission(userProfile, 'update') || hasLeadPermission(userProfile, 'delete') || hasLeadPermission(userProfile, 'read_any_sub');
     }
     return get(userProfile.permissions, permissionKey, false);
   }) : [];
