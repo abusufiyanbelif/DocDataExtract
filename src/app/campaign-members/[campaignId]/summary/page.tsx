@@ -47,12 +47,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
   Table,
   TableBody,
   TableCell,
@@ -872,43 +866,20 @@ Your contribution, big or small, makes a huge difference.
                             <CardTitle>Beneficiaries by Category</CardTitle>
                             <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <Accordion type="single" collapsible className="w-full">
-                                {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
-                                    summaryData.beneficiaryCategoryBreakdown.map((item, index) => {
-                                        const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
-                                        return (
-                                        <AccordionItem value={`item-${index}`} key={item.name}>
-                                            <AccordionTrigger>
-                                                <div className="flex justify-between w-full pr-4 flex-wrap gap-2">
-                                                    <span className="font-medium text-foreground">{item.name === 'General' ? 'General' : `${item.name} Members`}</span>
-                                                    <span className="text-sm text-muted-foreground text-right">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Kit: Rupee {kitPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} | Total: Rupee {item.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Name</TableHead>
-                                                            <TableHead className="text-right">Kit Amount (Rupee)</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {item.beneficiaries.map(beneficiary => (
-                                                            <TableRow key={beneficiary.id}>
-                                                                <TableCell>{beneficiary.name}</TableCell>
-                                                                <TableCell className="text-right font-mono">{(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    )})
-                                ) : (
-                                    <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
-                                )}
-                            </Accordion>
+                        <CardContent className="space-y-2">
+                            {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
+                                summaryData.beneficiaryCategoryBreakdown.map((item) => {
+                                    const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
+                                    return (
+                                        <div key={item.name} className="flex justify-between w-full p-4 border rounded-lg flex-wrap gap-2 items-center">
+                                            <span className="font-medium text-foreground">{item.name === 'General' ? 'General' : `${item.name} Members`}</span>
+                                            <span className="text-sm text-muted-foreground text-right">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Per Kit: Rupee {kitPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} | Total: Rupee {item.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                        </div>
+                                    )
+                                })
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -1005,4 +976,3 @@ Your contribution, big or small, makes a huge difference.
         </div>
     );
 }
-
