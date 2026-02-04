@@ -66,18 +66,24 @@ We are currently assessing the needs for this initiative. Your support and feedb
 
     const handleDownload = async () => {
         const element = summaryRef.current;
-        if (!element) return;
-        
+        if (!element) {
+            toast({ title: 'Error', description: 'Cannot generate download, content is missing.', variant: 'destructive' });
+            return;
+        }
+
         try {
             const { default: jsPDF } = await import('jspdf');
-            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: null });
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true });
             const imgData = canvas.toDataURL('image/png');
             
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pageHeight = pdf.internal.pageSize.getHeight();
             
-            pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, 0);
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfImageHeight = (imgProps.height * (pdfWidth - 20)) / imgProps.width;
+
+            pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfImageHeight);
 
             pdf.save(`lead-summary-${leadId}.pdf`);
         } catch (error) {

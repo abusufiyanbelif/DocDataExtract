@@ -369,7 +369,6 @@ Your contribution, big or small, makes a huge difference.
             const canvas = await html2canvas(element, { 
                 scale: 2, 
                 useCORS: true,
-                backgroundColor: null,
             });
             
             const imgData = canvas.toDataURL('image/png');
@@ -385,27 +384,38 @@ Your contribution, big or small, makes a huge difference.
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
                 
-                let position = 20;
+                let position = 10; // Initial top margin
 
                 // Add Header (Logo and Title)
                 if (brandingSettings?.logoUrl?.trim()) {
                     try {
                         const logoResponse = await fetch(`/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl)}`);
+                        if (!logoResponse.ok) throw new Error('Failed to fetch logo');
                         const logoBlob = await logoResponse.blob();
-                        const logoDataUrl = await new Promise<string>(resolve => {
+                        const logoDataUrl = await new Promise<string>((resolve, reject) => {
                             const reader = new FileReader();
                             reader.onload = () => resolve(reader.result as string);
+                            reader.onerror = reject;
                             reader.readAsDataURL(logoBlob);
                         });
-                        pdf.addImage(logoDataUrl, 'PNG', 15, 5, 30, 10);
+                        
+                        const logoHeight = 10;
+                        const logoWidth = (brandingSettings?.logoWidth && brandingSettings?.logoHeight > 0)
+                            ? (brandingSettings.logoWidth / brandingSettings.logoHeight) * logoHeight
+                            : 30;
+                        pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
+                        position += logoHeight;
                     } catch (e) {
                         console.warn("Could not add logo to PDF", e);
+                        toast({ title: 'PDF Error', description: 'Failed to load the logo for the PDF.', variant: 'destructive' });
                     }
                 }
                 pdf.setFontSize(16);
-                pdf.text(campaign?.name || 'Campaign Summary', 50, 12);
+                pdf.text(campaign?.name || 'Campaign Summary', 15, position + 5);
+                position += 10;
                 pdf.setLineWidth(0.5);
-                pdf.line(15, 18, pdfWidth - 15, 18);
+                pdf.line(15, position, pdfWidth - 15, position);
+                position += 5;
                 
                 const canvasAspectRatio = canvas.width / canvas.height;
                 const printableWidth = pdfWidth - 20; // 10mm margin on each side
@@ -437,15 +447,18 @@ Your contribution, big or small, makes a huge difference.
                 if (paymentSettings?.qrCodeUrl?.trim()) {
                     try {
                         const qrResponse = await fetch(`/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}`);
+                        if (!qrResponse.ok) throw new Error('Failed to fetch QR code');
                         const qrBlob = await qrResponse.blob();
-                        const qrDataUrl = await new Promise<string>(resolve => {
+                        const qrDataUrl = await new Promise<string>((resolve, reject) => {
                             const reader = new FileReader();
                             reader.onload = () => resolve(reader.result as string);
+                            reader.onerror = reject;
                             reader.readAsDataURL(qrBlob);
                         });
                         pdf.addImage(qrDataUrl, 'PNG', qrX, finalY - 2, qrSize, qrSize);
                     } catch(e) {
                          console.warn("Could not add QR code to PDF", e);
+                         toast({ title: 'PDF Error', description: 'Failed to load the QR code for the PDF.', variant: 'destructive' });
                     }
                 }
                 
@@ -627,7 +640,7 @@ Your contribution, big or small, makes a huge difference.
                     </ScrollArea>
                 </div>
 
-                <div className="relative space-y-6 p-4" ref={summaryRef}>
+                <div className="relative space-y-6 p-4 bg-background" ref={summaryRef}>
                     {validLogoUrl && (
                         <img
                             src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
