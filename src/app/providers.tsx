@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ReactNode } from 'react';
@@ -19,7 +20,7 @@ function Watermark() {
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
 
     return (
-        <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none opacity-10">
+        <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none opacity-5">
             {validLogoUrl ? (
                 <img
                     src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
