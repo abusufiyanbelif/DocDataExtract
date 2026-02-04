@@ -202,7 +202,7 @@ export default function CampaignSummaryPage() {
         let verifiedNonZakatDonations = 0;
 
         verifiedDonationsList.forEach(d => {
-            d.typeSplit?.forEach(split => {
+            (d.typeSplit || []).forEach(split => {
                 if (split.category === 'Zakat') {
                     zakatCollected += split.amount;
                 } else {
@@ -261,7 +261,7 @@ export default function CampaignSummaryPage() {
             }
             
             const donationTypeData = filteredDonations.reduce((acc, d) => {
-                d.typeSplit?.forEach(split => {
+                (d.typeSplit || []).forEach(split => {
                     acc[split.category] = (acc[split.category] || 0) + split.amount;
                 });
                 return acc;

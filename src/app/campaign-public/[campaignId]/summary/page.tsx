@@ -114,12 +114,12 @@ export default function PublicCampaignSummaryPage() {
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
         const zakatCollected = verifiedDonationsList
-            .flatMap(d => d.typeSplit)
+            .flatMap(d => d.typeSplit || [])
             .filter(split => split.category === 'Zakat')
             .reduce((acc, split) => acc + split.amount, 0);
 
         const verifiedNonZakatDonations = verifiedDonationsList
-            .flatMap(d => d.typeSplit)
+            .flatMap(d => d.typeSplit || [])
             .filter(split => split.category !== 'Zakat')
             .reduce((acc, split) => acc + split.amount, 0);
 
@@ -174,7 +174,7 @@ export default function PublicCampaignSummaryPage() {
             }
             
             const donationTypeData = filteredDonations.reduce((acc, d) => {
-                d.typeSplit.forEach(split => {
+                (d.typeSplit || []).forEach(split => {
                     acc[split.category] = (acc[split.category] || 0) + split.amount;
                 })
                 return acc;
