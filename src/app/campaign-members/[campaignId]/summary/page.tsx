@@ -369,19 +369,27 @@ Your contribution, big or small, makes a huge difference.
                 
                 let position = 20;
 
+                const getImageDataUrl = async (url: string): Promise<string | null> => {
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) return null;
+                        const blob = await response.blob();
+                        return new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result as string);
+                            reader.onerror = () => resolve(null);
+                            reader.readAsDataURL(blob);
+                        });
+                    } catch {
+                        return null;
+                    }
+                };
+
                 // Add Header (Logo and Title)
                 if (brandingSettings?.logoUrl) {
-                    try {
-                        const logoImg = new Image();
-                        logoImg.crossOrigin = 'anonymous';
-                        logoImg.src = brandingSettings.logoUrl;
-                        await new Promise<void>((resolve, reject) => {
-                            logoImg.onload = () => resolve();
-                            logoImg.onerror = (err) => reject(new Error('Logo image failed to load.'));
-                        });
-                        pdf.addImage(logoImg, 'PNG', 15, 5, 30, 10);
-                    } catch (e) {
-                        console.warn("Could not add logo to PDF:", e);
+                    const logoDataUrl = await getImageDataUrl(brandingSettings.logoUrl);
+                    if (logoDataUrl) {
+                        pdf.addImage(logoDataUrl, 'PNG', 15, 5, 30, 10);
                     }
                 }
                 pdf.setFontSize(16);
@@ -417,17 +425,9 @@ Your contribution, big or small, makes a huge difference.
                 const qrX = pdfWidth - 15 - qrSize;
 
                 if (paymentSettings?.qrCodeUrl) {
-                    try {
-                        const qrImg = new Image();
-                        qrImg.crossOrigin = 'anonymous';
-                        qrImg.src = paymentSettings.qrCodeUrl;
-                        await new Promise<void>((resolve, reject) => {
-                            qrImg.onload = () => resolve();
-                            qrImg.onerror = (err) => reject(new Error('QR Code image failed to load.'));
-                        });
-                        pdf.addImage(qrImg, 'PNG', qrX, finalY - 2, qrSize, qrSize);
-                    } catch (e) {
-                        console.warn("Could not add QR code to PDF", e);
+                    const qrDataUrl = await getImageDataUrl(paymentSettings.qrCodeUrl);
+                    if (qrDataUrl) {
+                        pdf.addImage(qrDataUrl, 'PNG', qrX, finalY - 2, qrSize, qrSize);
                     }
                 }
                 
