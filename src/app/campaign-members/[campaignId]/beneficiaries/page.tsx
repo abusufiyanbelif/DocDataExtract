@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, Check, ChevronsUpDown, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +48,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { BeneficiaryForm, type BeneficiaryFormData } from '@/components/beneficiary-form';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
@@ -93,7 +95,8 @@ export default function BeneficiariesPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [referralFilter, setReferralFilter] = useState('All');
+  const [referralFilter, setReferralFilter] = useState<string[]>([]);
+  const [openReferralPopover, setOpenReferralPopover] = useState(false);
   const [membersFilter, setMembersFilter] = useState('');
   const [kitAmountFilter, setKitAmountFilter] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'name', direction: 'ascending'});
@@ -496,7 +499,7 @@ export default function BeneficiariesPage() {
   const uniqueReferrals = useMemo(() => {
     if (!beneficiaries) return [];
     const referrals = new Set(beneficiaries.map(b => b.referralBy).filter(Boolean));
-    return ['All', ...Array.from(referrals).sort()];
+    return [...Array.from(referrals).sort()];
   }, [beneficiaries]);
   
   const filteredAndSortedBeneficiaries = useMemo(() => {
@@ -507,8 +510,8 @@ export default function BeneficiariesPage() {
     if (statusFilter !== 'All') {
         sortableItems = sortableItems.filter(b => b.status === statusFilter);
     }
-    if (referralFilter !== 'All') {
-        sortableItems = sortableItems.filter(b => b.referralBy === referralFilter);
+    if (referralFilter.length > 0) {
+        sortableItems = sortableItems.filter(b => b.referralBy && referralFilter.includes(b.referralBy));
     }
     if (membersFilter) {
         sortableItems = sortableItems.filter(b => String(b.members) === membersFilter);
@@ -706,52 +709,120 @@ export default function BeneficiariesPage() {
                     </div>
                 )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 pt-4">
-                <Input 
-                    placeholder="Search by name, phone, address, referral..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="max-w-sm"
-                />
-                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-auto md:w-[180px]">
-                        <SelectValue placeholder="Filter by status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="All">All Statuses</SelectItem>
-                        <SelectItem value="Given">Given</SelectItem>
-                        <SelectItem value="Verified">Verified</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Hold">Hold</SelectItem>
-                        <SelectItem value="Need More Details">Need More Details</SelectItem>
-                    </SelectContent>
-                </Select>
-                 <Select value={referralFilter} onValueChange={setReferralFilter}>
-                    <SelectTrigger className="w-auto md:w-[180px]">
-                        <SelectValue placeholder="Filter by referral" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {uniqueReferrals.map(referral => (
-                            <SelectItem key={referral} value={referral}>
-                                {referral === 'All' ? 'All Referrals' : referral}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                <Input
-                    placeholder="Filter by members"
-                    type="number"
-                    value={membersFilter}
-                    onChange={(e) => setMembersFilter(e.target.value)}
-                    className="w-auto md:w-[160px]"
-                />
-                <Input
-                    placeholder="Filter by kit amount"
-                    type="number"
-                    value={kitAmountFilter}
-                    onChange={(e) => setKitAmountFilter(e.target.value)}
-                    className="w-auto md:w-[160px]"
-                />
+            <div className="flex flex-col gap-2 pt-4">
+              <div className="flex flex-wrap items-center gap-2">
+                  <Input 
+                      placeholder="Search by name, phone, address, referral..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="max-w-sm"
+                  />
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-auto md:w-[180px]">
+                          <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="All">All Statuses</SelectItem>
+                          <SelectItem value="Given">Given</SelectItem>
+                          <SelectItem value="Verified">Verified</SelectItem>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Hold">Hold</SelectItem>
+                          <SelectItem value="Need More Details">Need More Details</SelectItem>
+                      </SelectContent>
+                  </Select>
+                  <Popover open={openReferralPopover} onOpenChange={setOpenReferralPopover}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={openReferralPopover}
+                        className="w-auto md:w-[250px] justify-between"
+                      >
+                        <span className="truncate">
+                          {referralFilter.length > 0
+                            ? `${referralFilter.length} selected`
+                            : "Filter by referral..."}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[250px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search referrals..." />
+                        <CommandList>
+                          <CommandEmpty>No referral found.</CommandEmpty>
+                          <CommandGroup>
+                            {uniqueReferrals.map((referral) => (
+                              <CommandItem
+                                key={referral}
+                                value={referral}
+                                onSelect={() => {
+                                  const selected = referralFilter.includes(referral);
+                                  if (selected) {
+                                    setReferralFilter(referralFilter.filter((r) => r !== referral));
+                                  } else {
+                                    setReferralFilter([...referralFilter, referral]);
+                                  }
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    referralFilter.includes(referral) ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {referral}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                      placeholder="Filter by members"
+                      type="number"
+                      value={membersFilter}
+                      onChange={(e) => setMembersFilter(e.target.value)}
+                      className="w-auto md:w-[160px]"
+                  />
+                  <Input
+                      placeholder="Filter by kit amount"
+                      type="number"
+                      value={kitAmountFilter}
+                      onChange={(e) => setKitAmountFilter(e.target.value)}
+                      className="w-auto md:w-[160px]"
+                  />
+              </div>
+              {referralFilter.length > 0 && (
+                  <div className="pt-2 flex flex-wrap gap-1 items-center">
+                      {referralFilter.map((referral) => (
+                          <Badge
+                              key={referral}
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                          >
+                              {referral}
+                              <button
+                                  type="button"
+                                  aria-label={`Remove ${referral} filter`}
+                                  onClick={() => setReferralFilter(referralFilter.filter((r) => r !== referral))}
+                                  className="ml-1 rounded-full p-0.5 hover:bg-background/50 focus:outline-none focus:ring-1 focus:ring-ring"
+                              >
+                                  <X className="h-3 w-3" />
+                              </button>
+                          </Badge>
+                      ))}
+                       <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto py-0.5 px-1 text-xs text-muted-foreground hover:bg-transparent"
+                          onClick={() => setReferralFilter([])}
+                      >
+                          Clear all
+                      </Button>
+                  </div>
+              )}
             </div>
           </CardHeader>
           <CardContent>
