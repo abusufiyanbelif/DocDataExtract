@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
     Select,
@@ -44,6 +45,7 @@ const formSchema = z.object({
   referralBy: z.string().min(2, { message: "Referral is required." }),
   kitAmount: z.coerce.number().min(0),
   status: z.enum(['Given', 'Pending', 'Hold', 'Need More Details', 'Verified']),
+  notes: z.string().optional(),
   idProofFile: z.any().optional(),
   idProofDeleted: z.boolean().optional(),
   idProofIsPublic: z.boolean().optional(),
@@ -78,6 +80,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
       referralBy: beneficiary?.referralBy || '',
       kitAmount: beneficiary?.kitAmount || 0,
       status: beneficiary?.status || 'Pending',
+      notes: beneficiary?.notes || '',
       idProofDeleted: false,
       idProofIsPublic: beneficiary?.idProofIsPublic || false,
     },
@@ -340,7 +343,7 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
                             <p className="text-sm text-center">PDF Document Uploaded</p>
                         </div>
                     ) : (
-                        <Image src={preview} alt="ID Proof Preview" fill className="object-contain" />
+                        <img src={preview} alt="ID Proof Preview" className="object-contain w-full h-full" />
                     )}
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('id-proof-file-input')?.click()}>
@@ -477,6 +480,20 @@ export function BeneficiaryForm({ beneficiary, onSubmit, onCancel, rationLists }
             )}
             />
         </div>
+
+        <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                    <Textarea placeholder="Any internal notes about the beneficiary..." {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+        />
 
         <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>Cancel</Button>

@@ -111,7 +111,13 @@ export default function PublicCampaignSummaryPage() {
     const summaryData = useMemo(() => {
         if (!beneficiaries || !donations || !campaign) return null;
 
-        const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
+        const normalizedDonations = donations.map(d => {
+            if (d.typeSplit && d.typeSplit.length > 0) return d;
+            if (d.type) return { ...d, typeSplit: [{ category: d.type, amount: d.amount }] };
+            return { ...d, typeSplit: [] };
+        });
+
+        const verifiedDonationsList = normalizedDonations.filter(d => d.status === 'Verified');
     
         const zakatCollected = verifiedDonationsList
             .flatMap(d => d.typeSplit || [])
@@ -123,7 +129,7 @@ export default function PublicCampaignSummaryPage() {
             .filter(split => split.category !== 'Zakat')
             .reduce((acc, split) => acc + split.amount, 0);
 
-        const pendingDonations = donations
+        const pendingDonations = normalizedDonations
             .filter(d => d.status === 'Pending')
             .reduce((acc, d) => acc + d.amount, 0);
 
@@ -168,9 +174,9 @@ export default function PublicCampaignSummaryPage() {
         });
 
         const { donationChartData, donationPaymentTypeChartData } = (() => {
-            let filteredDonations = donations;
+            let filteredDonations = normalizedDonations;
             if (donationChartFilter !== 'All') {
-                filteredDonations = donations.filter(d => d.status === donationChartFilter);
+                filteredDonations = normalizedDonations.filter(d => d.status === donationChartFilter);
             }
             
             const donationTypeData = filteredDonations.reduce((acc, d) => {
@@ -471,7 +477,7 @@ Your contribution, big or small, makes a huge difference.
                             src={validLogoUrl}
                             crossOrigin="anonymous"
                             alt="Watermark"
-                            className="absolute inset-0 m-auto object-contain opacity-10 pointer-events-none"
+                            className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
                             style={{
                                 width: '75%',
                                 height: '75%',

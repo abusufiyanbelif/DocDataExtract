@@ -54,6 +54,7 @@
       "properties": {
         "name": { "type": "string" },
         "description": { "type": "string" },
+        "notes": { "type": "string", "description": "Internal notes or comments about the lead." },
         "category": { "type": "string", "enum": ["Ration", "Relief", "General"] },
         "status": { "type": "string", "enum": ["Upcoming", "Active", "Completed"] },
         "startDate": { "type": "string", "format": "date" },
@@ -75,7 +76,8 @@
         "phone": { "type": "string" },
         "members": { "type": "number" },
         "status": { "type": "string", "enum": ["Given", "Pending", "Hold", "Need More Details", "Verified"] },
-        "kitAmount": { "type": "number" }
+        "kitAmount": { "type": "number" },
+        "notes": { "type": "string", "description": "Internal notes or comments about the beneficiary." }
       },
       "required": ["name", "status"]
     },
@@ -106,7 +108,9 @@
           }
         },
         "donationDate": { "type": "string", "format": "date" },
-        "status": { "type": "string", "enum": ["Verified", "Pending", "Canceled"] }
+        "status": { "type": "string", "enum": ["Verified", "Pending", "Canceled"] },
+        "comments": { "type": "string", "description": "Comments from the donor or staff." },
+        "suggestions": { "type": "string", "description": "Suggestions from the donor or staff." }
       },
       "required": ["campaignId", "donorName", "amount", "typeSplit", "donationDate", "status"]
     },

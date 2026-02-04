@@ -68,6 +68,7 @@ export interface Lead extends DocumentData {
   name: string;
   category: 'Ration' | 'Relief' | 'General';
   description?: string;
+  notes?: string;
   targetAmount?: number;
   startDate: string;
   endDate: string;
@@ -102,6 +103,7 @@ export interface Beneficiary extends DocumentData {
     status: 'Given' | 'Pending' | 'Hold' | 'Need More Details' | 'Verified';
     idProofUrl?: string;
     idProofIsPublic?: boolean;
+    notes?: string;
     createdAt?: any;
     createdById?: string;
     createdByName?: string;
@@ -131,6 +133,7 @@ export interface Donation extends DocumentData {
   donorPhone: string;
   receiverName: string;
   amount: number;
+  type?: 'Zakat' | 'Sadqa' | 'Interest' | 'Lillah' | 'General'; // Legacy field
   typeSplit: { category: 'Zakat' | 'Sadqa' | 'Interest' | 'Lillah' | 'General'; amount: number }[];
   donationType: 'Cash' | 'Online Payment' | 'Check' | 'Other';
   referral: string;
@@ -139,6 +142,8 @@ export interface Donation extends DocumentData {
   transactionId?: string;
   screenshotUrl?: string;
   screenshotIsPublic?: boolean;
+  comments?: string;
+  suggestions?: string;
   uploadedBy: string;
   uploadedById: string;
   campaignId?: string;

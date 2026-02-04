@@ -28,6 +28,11 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
     
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
     const validQrCodeUrl = paymentSettings?.qrCodeUrl?.trim() ? paymentSettings.qrCodeUrl : null;
+    
+    const typeSplit = donation.typeSplit && donation.typeSplit.length > 0
+      ? donation.typeSplit
+      : (donation.type ? [{ category: donation.type, amount: donation.amount }] : []);
+
 
     return (
         <div ref={ref} className="bg-background p-4 sm:p-8 rounded-lg">
@@ -50,9 +55,11 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                              <img
                                 src={validLogoUrl}
                                 alt="Logo"
-                                width={brandingSettings?.logoWidth || 100}
-                                height={brandingSettings?.logoHeight || 48}
                                 className="mx-auto object-contain"
+                                style={{ 
+                                    width: brandingSettings?.logoWidth ? `${brandingSettings.logoWidth}px` : '100px',
+                                    height: brandingSettings?.logoHeight ? `${brandingSettings.logoHeight}px` : '48px'
+                                 }}
                                 crossOrigin="anonymous"
                               />
                         )}
@@ -90,7 +97,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {donation.typeSplit.map((split) => (
+                                    {typeSplit.map((split) => (
                                         <TableRow key={split.category}>
                                             <TableCell>{split.category}</TableCell>
                                             <TableCell className="text-right font-mono">Rupee {split.amount.toFixed(2)}</TableCell>
@@ -99,6 +106,16 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                                 </TableBody>
                             </Table>
                         </div>
+                        {(donation.comments || donation.suggestions) && (
+                            <>
+                                <Separator />
+                                <div className="space-y-3 text-sm">
+                                    <h3 className="font-semibold">Additional Notes</h3>
+                                    {donation.comments && <p><strong>Comments:</strong> {donation.comments}</p>}
+                                    {donation.suggestions && <p><strong>Suggestions:</strong> {donation.suggestions}</p>}
+                                </div>
+                            </>
+                        )}
                     </CardContent>
                     <CardFooter className="flex-col items-start text-xs text-muted-foreground p-6 pt-4 space-y-2">
                         <Separator className="mb-4" />

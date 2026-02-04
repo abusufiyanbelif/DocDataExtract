@@ -87,6 +87,7 @@ export default function LeadDetailsPage() {
     const saveData: Partial<Lead> = {
         name: editableLead.name,
         description: editableLead.description,
+        notes: editableLead.notes,
         startDate: editableLead.startDate,
         endDate: editableLead.endDate,
         status: editableLead.status,
@@ -279,6 +280,10 @@ export default function LeadDetailsPage() {
                 <div className="space-y-1">
                     <Label htmlFor="description">Description</Label>
                     <Textarea id="description" value={editableLead.description || ''} onChange={(e) => handleFieldChange('description', e.target.value)} disabled={!editMode || !canUpdate} placeholder="A brief description of the lead..." />
+                </div>
+                <div className="space-y-1">
+                    <Label htmlFor="notes">Internal Notes</Label>
+                    <Textarea id="notes" value={editableLead.notes || ''} onChange={(e) => handleFieldChange('notes', e.target.value)} disabled={!editMode || !canUpdate} placeholder="Private notes about this lead..." />
                 </div>
           </CardContent>
         </Card>

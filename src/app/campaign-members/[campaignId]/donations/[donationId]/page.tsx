@@ -20,10 +20,11 @@ import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { DonationReceipt } from '@/components/donation-receipt';
 import { DonationForm, type DonationFormData } from '@/components/donation-form';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Edit, Download, Loader2, Image as ImageIcon, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, Download, Loader2, Image as ImageIcon, FileText, MessageSquare, StickyNote } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
 
@@ -282,6 +283,29 @@ export default function DonationDetailsPage() {
                     brandingSettings={brandingSettings} 
                     paymentSettings={paymentSettings} 
                 />
+
+                {(donation.comments || donation.suggestions) && (
+                    <Card className="mt-6">
+                        <CardHeader>
+                            <CardTitle>Additional Information</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {donation.comments && (
+                                <div className="space-y-1">
+                                    <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><MessageSquare/>Comments</h3>
+                                    <p className="pl-6">{donation.comments}</p>
+                                </div>
+                            )}
+                             {donation.suggestions && (
+                                <div className="space-y-1">
+                                    <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground"><StickyNote/>Suggestions</h3>
+                                    <p className="pl-6">{donation.suggestions}</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
+
 
                 <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                     <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
