@@ -22,6 +22,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { ProxiedImage } from '@/components/proxied-image';
 
 export default function SettingsPage() {
     const { userProfile, isLoading: isSessionLoading } = useSession();
@@ -237,6 +238,14 @@ export default function SettingsPage() {
 
     const isLoading = isSessionLoading || isBrandingLoading || isPaymentLoading;
     const isFormDisabled = !isEditMode || isSubmitting;
+    
+    const renderImagePreview = (previewUrl: string | null) => {
+        if (!previewUrl) return null;
+        if (previewUrl.startsWith('data:')) {
+            return <img src={previewUrl} alt="Preview" className="object-contain p-2 h-full w-full" />;
+        }
+        return <ProxiedImage imageUrl={previewUrl} alt="Preview" className="object-contain p-2 h-full w-full" />;
+    };
 
     if (isLoading) {
         return (
@@ -325,7 +334,7 @@ export default function SettingsPage() {
                                 <div className="flex flex-col items-center gap-4">
                                     <div className="relative w-48 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
                                         {logoPreviewUrl ? (
-                                            <img src={logoPreviewUrl} alt="Logo preview" className="object-contain p-2 h-full w-full"/>
+                                            renderImagePreview(logoPreviewUrl)
                                         ) : (
                                             <div className="text-muted-foreground text-center p-2">
                                                 <ImageIcon className="mx-auto h-8 w-8" />
@@ -363,7 +372,7 @@ export default function SettingsPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Organization, Payment & Contact Settings</CardTitle>
+                            <CardTitle>Organization, Payment &amp; Contact Settings</CardTitle>
                             <CardDescription>Configure QR code, UPI, and contact details for receipts and the footer.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -388,7 +397,7 @@ export default function SettingsPage() {
                                      <div className="flex flex-col items-center gap-4">
                                         <div className="relative w-48 h-48 border-2 border-dashed rounded-lg flex items-center justify-center bg-secondary/30">
                                             {qrPreviewUrl ? (
-                                                <img src={qrPreviewUrl} alt="QR Code preview" className="object-contain p-2 h-full w-full"/>
+                                                renderImagePreview(qrPreviewUrl)
                                             ) : (
                                                 <div className="text-muted-foreground text-center p-2">
                                                     <QrCode className="mx-auto h-8 w-8" />

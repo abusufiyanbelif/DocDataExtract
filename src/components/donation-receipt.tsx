@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import type { Donation, Campaign, BrandingSettings, PaymentSettings } from '@/lib/types';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from './ui/table';
+import { ProxiedImage } from './proxied-image';
 
 interface DonationReceiptProps {
   donation: Donation;
@@ -38,10 +39,9 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
         <div ref={ref} className="bg-background p-4 sm:p-8 rounded-lg">
             <Card className="w-full max-w-2xl mx-auto shadow-none border-border relative overflow-hidden">
                  {validLogoUrl && (
-                    <img
-                        src={validLogoUrl}
+                    <ProxiedImage
+                        imageUrl={validLogoUrl}
                         alt="Watermark"
-                        crossOrigin="anonymous"
                         className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
                         style={{
                             width: '75%',
@@ -52,10 +52,9 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
                         {validLogoUrl && (
-                             <img
-                                src={validLogoUrl}
+                             <ProxiedImage
+                                imageUrl={validLogoUrl}
                                 alt="Logo"
-                                crossOrigin="anonymous"
                                 className="mx-auto object-contain"
                                 style={{ 
                                     width: brandingSettings?.logoWidth ? `${brandingSettings.logoWidth}px` : '100px',
@@ -133,10 +132,9 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         </div>
                         {validQrCodeUrl && (
                             <div className="w-full flex justify-center pt-4">
-                                <img
-                                    src={validQrCodeUrl}
+                                <ProxiedImage
+                                    imageUrl={validQrCodeUrl}
                                     alt="QR Code"
-                                    crossOrigin="anonymous"
                                     width={80}
                                     height={80}
                                 />

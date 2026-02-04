@@ -10,6 +10,7 @@ import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { useBranding } from '@/hooks/use-branding';
 import { Separator } from './ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { ProxiedImage } from './proxied-image';
 
 
 export function AppFooter() {
@@ -119,10 +120,9 @@ export function AppFooter() {
                  <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
                     <DialogTrigger asChild>
                         <button className="cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
-                            <img
-                                src={validQrCodeUrl}
+                            <ProxiedImage
+                                imageUrl={validQrCodeUrl}
                                 alt="UPI QR Code"
-                                crossOrigin="anonymous"
                                 width={paymentSettings?.qrWidth || 128}
                                 height={paymentSettings?.qrHeight || 128}
                                 className="object-contain border-4 border-primary rounded-lg p-1 bg-white"
@@ -137,10 +137,9 @@ export function AppFooter() {
                             </DialogDescription>
                         </DialogHeader>
                         <div className="flex items-center justify-center p-4 bg-secondary/30 rounded-lg">
-                            <img
-                                src={validQrCodeUrl}
+                            <ProxiedImage
+                                imageUrl={validQrCodeUrl}
                                 alt="UPI QR Code"
-                                crossOrigin="anonymous"
                                 className="w-full max-w-xs h-auto rounded-lg"
                                 width={300}
                                 height={300}
