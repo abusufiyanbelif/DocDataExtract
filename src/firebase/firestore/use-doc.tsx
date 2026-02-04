@@ -7,7 +7,6 @@ import {
   DocumentData,
   FirestoreError,
   DocumentSnapshot,
-  getDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -26,10 +25,7 @@ export interface UseDocResult<T> {
 }
 
 /**
- * React hook to fetch a single Firestore document.
- * It fetches the data once and does not subscribe to real-time updates.
- * This is best for static or rarely-changing data like settings.
- * For real-time data, you would replace `getDoc` with `onSnapshot`.
+ * React hook to subscribe to a single Firestore document in real-time.
  * 
  * IMPORTANT! YOU MUST MEMOIZE the inputted memoizedDocRef or BAD THINGS WILL HAPPEN
  * use useMemo to memoize it per React guidence.  Also make sure that it's dependencies are stable
@@ -60,16 +56,18 @@ export function useDoc<T = any>(
     setIsLoading(true);
     setError(null);
     
-    getDoc(memoizedDocRef)
-      .then((snapshot) => {
+    const unsubscribe = onSnapshot(
+      memoizedDocRef,
+      (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
           setData({ ...(snapshot.data() as T), id: snapshot.id });
         } else {
-          setData(null);
+          setData(null); // Document doesn't exist
         }
         setError(null);
-      })
-      .catch((error: FirestoreError) => {
+        setIsLoading(false); // We have data or know it doesn't exist
+      },
+      (error: FirestoreError) => {
         const contextualError = new FirestorePermissionError({
           operation: 'get',
           path: memoizedDocRef.path,
@@ -77,11 +75,12 @@ export function useDoc<T = any>(
 
         setError(contextualError);
         setData(null);
-        errorEmitter.emit('permission-error', contextualError);
-      })
-      .finally(() => {
         setIsLoading(false);
-      });
+        errorEmitter.emit('permission-error', contextualError);
+      }
+    );
+
+    return () => unsubscribe(); // Cleanup subscription on unmount
 
   // The effect should re-run if the document reference changes.
   }, [memoizedDocRef]);
