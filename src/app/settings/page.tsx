@@ -170,7 +170,7 @@ export default function SettingsPage() {
             const batch = writeBatch(firestore);
 
             // Branding Save Logic
-            let logoUrl = brandingSettings?.logoUrl || '';
+            let newLogoUrl = brandingSettings?.logoUrl || '';
             if (logoFile && storage) {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(logoFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
@@ -179,19 +179,19 @@ export default function SettingsPage() {
                 const filePath = `settings/logo_${dateString}.jpeg`;
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
-                logoUrl = await getDownloadURL(uploadResult.ref);
+                newLogoUrl = await getDownloadURL(uploadResult.ref);
             } else if (logoDeleted) {
-                 logoUrl = '';
+                 newLogoUrl = '';
             }
             const brandingData = { 
-                logoUrl,
+                logoUrl: newLogoUrl,
                 logoWidth: Number(logoWidth) || null,
                 logoHeight: Number(logoHeight) || null
             };
             batch.set(doc(firestore, 'settings', 'branding'), brandingData, { merge: true });
 
             // Payment Save Logic
-            let qrCodeUrl = paymentSettings?.qrCodeUrl || '';
+            let newQrCodeUrl = paymentSettings?.qrCodeUrl || '';
             if (qrCodeFile && storage) {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(qrCodeFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
@@ -200,25 +200,29 @@ export default function SettingsPage() {
                 const filePath = `settings/payment_qr_${dateString}.jpeg`;
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
-                qrCodeUrl = await getDownloadURL(uploadResult.ref);
+                newQrCodeUrl = await getDownloadURL(uploadResult.ref);
             } else if (qrCodeDeleted) {
-                qrCodeUrl = '';
+                newQrCodeUrl = '';
             }
             const paymentData = {
-                qrCodeUrl, qrWidth: Number(qrWidth) || null, qrHeight: Number(qrHeight) || null,
+                qrCodeUrl: newQrCodeUrl, qrWidth: Number(qrWidth) || null, qrHeight: Number(qrHeight) || null,
                 upiId, paymentMobileNumber, contactEmail, contactPhone, regNo, pan, address
             };
             batch.set(doc(firestore, 'settings', 'payment'), paymentData, { merge: true });
 
             await batch.commit();
 
-            toast({ title: 'Success!', description: 'Settings have been updated. The page will now reload.', variant: 'success', duration: 5000 });
+            toast({ title: 'Success!', description: 'Settings have been updated.', variant: 'success' });
             
-            setIsEditMode(false);
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
+            // Manually update the state to reflect the new saved URLs
+            setLogoPreviewUrl(newLogoUrl);
+            setQrPreviewUrl(newQrCodeUrl);
+            setLogoFile(null);
+            setQrCodeFile(null);
+            setLogoDeleted(false);
+            setQrCodeDeleted(false);
 
+            setIsEditMode(false);
         } catch (error: any) {
             console.error('Settings save failed:', error);
             if (error.code === 'permission-denied') {
