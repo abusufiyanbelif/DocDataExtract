@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -228,7 +229,7 @@ export default function ProfilePage() {
                                 className="absolute inset-0 transition-transform duration-200 ease-out"
                                 style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
                             >
-                                <Image src={imageToView} alt="ID proof" fill className="object-contain" />
+                                <Image src={imageToView} alt="ID proof" fill className="object-contain" unoptimized />
                             </div>
                         </div>
                     )}

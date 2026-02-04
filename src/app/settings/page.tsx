@@ -23,6 +23,22 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { ProxiedImage } from '@/components/proxied-image';
 
+interface FormDataType {
+    logoUrl: string;
+    logoWidth: number | string;
+    logoHeight: number | string;
+    qrCodeUrl: string;
+    qrWidth: number | string;
+    qrHeight: number | string;
+    upiId: string;
+    paymentMobileNumber: string;
+    contactEmail: string;
+    contactPhone: string;
+    regNo: string;
+    pan: string;
+    address: string;
+}
+
 export default function SettingsPage() {
     const { userProfile, isLoading: isSessionLoading } = useSession();
     const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
@@ -31,133 +47,86 @@ export default function SettingsPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     
-    // Edit Mode State
     const [isEditMode, setIsEditMode] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const [editableData, setEditableData] = useState<FormDataType | null>(null);
 
-    // State for branding
     const [logoFile, setLogoFile] = useState<File | null>(null);
-    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
-    const [logoWidth, setLogoWidth] = useState<number | string>('');
-    const [logoHeight, setLogoHeight] = useState<number | string>('');
-    const [logoDeleted, setLogoDeleted] = useState(false);
-    
-    // State for payment settings
     const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
-    const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
-    const [qrWidth, setQrWidth] = useState<number | string>('');
-    const [qrHeight, setQrHeight] = useState<number | string>('');
-    const [qrCodeDeleted, setQrCodeDeleted] = useState(false);
-    const [upiId, setUpiId] = useState('');
-    const [paymentMobileNumber, setPaymentMobileNumber] = useState('');
-    const [contactEmail, setContactEmail] = useState('');
-    const [contactPhone, setContactPhone] = useState('');
-    const [regNo, setRegNo] = useState('');
-    const [pan, setPan] = useState('');
-    const [address, setAddress] = useState('');
-    
-    // This effect populates the form state from the fetched settings.
-    // It runs when the source data changes, but only updates the form if not in edit mode.
-    useEffect(() => {
-        if (!isEditMode) {
-            if (brandingSettings) {
-                setLogoWidth(brandingSettings.logoWidth || '');
-                setLogoHeight(brandingSettings.logoHeight || '');
-                setLogoPreviewUrl(brandingSettings.logoUrl || null);
-            } else {
-                setLogoWidth('');
-                setLogoHeight('');
-                setLogoPreviewUrl(null);
-            }
-            if (paymentSettings) {
-                setUpiId(paymentSettings.upiId || '');
-                setPaymentMobileNumber(paymentSettings.paymentMobileNumber || '');
-                setContactEmail(paymentSettings.contactEmail || '');
-                setContactPhone(paymentSettings.contactPhone || '');
-                setQrWidth(paymentSettings.qrWidth || '');
-                setQrHeight(paymentSettings.qrHeight || '');
-                setRegNo(paymentSettings.regNo || '');
-                setPan(paymentSettings.pan || '');
-                setAddress(paymentSettings.address || '');
-                setQrPreviewUrl(paymentSettings.qrCodeUrl || null);
-            }
-        }
-    }, [brandingSettings, paymentSettings, isEditMode]);
 
-    // When edit mode is turned on/off, reset any staged file changes or deletions.
+    const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+    const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
+    
+    const canUpdateSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.update;
+
     useEffect(() => {
-        if (!isEditMode) {
+        if (isEditMode) {
+            setEditableData({
+                logoUrl: brandingSettings?.logoUrl || '',
+                logoWidth: brandingSettings?.logoWidth || '',
+                logoHeight: brandingSettings?.logoHeight || '',
+                qrCodeUrl: paymentSettings?.qrCodeUrl || '',
+                qrWidth: paymentSettings?.qrWidth || '',
+                qrHeight: paymentSettings?.qrHeight || '',
+                upiId: paymentSettings?.upiId || '',
+                paymentMobileNumber: paymentSettings?.paymentMobileNumber || '',
+                contactEmail: paymentSettings?.contactEmail || '',
+                contactPhone: paymentSettings?.contactPhone || '',
+                regNo: paymentSettings?.regNo || '',
+                pan: paymentSettings?.pan || '',
+                address: paymentSettings?.address || '',
+            });
+            setLogoPreviewUrl(brandingSettings?.logoUrl || null);
+            setQrPreviewUrl(paymentSettings?.qrCodeUrl || null);
+        } else {
+            setEditableData(null);
             setLogoFile(null);
             setQrCodeFile(null);
-            setLogoDeleted(false);
-            setQrCodeDeleted(false);
         }
-    }, [isEditMode]);
+    }, [isEditMode, brandingSettings, paymentSettings]);
 
-    // Create a preview URL for a newly selected logo file.
-    useEffect(() => {
+     useEffect(() => {
         if (logoFile) {
             const reader = new FileReader();
             reader.onloadend = () => setLogoPreviewUrl(reader.result as string);
             reader.readAsDataURL(logoFile);
-            setLogoDeleted(false);
         }
     }, [logoFile]);
 
-    // Create a preview URL for a newly selected QR code file.
     useEffect(() => {
         if (qrCodeFile) {
             const reader = new FileReader();
             reader.onloadend = () => setQrPreviewUrl(reader.result as string);
             reader.readAsDataURL(qrCodeFile);
-            setQrCodeDeleted(false);
         }
     }, [qrCodeFile]);
 
-    // This useMemo hook reliably determines if the form is "dirty" by comparing
-    // the current form state to the original settings data on every render.
-    const isDirty = useMemo(() => {
-        if (!isEditMode) return false;
-
-        const brandingIsDirty =
-            logoFile !== null ||
-            logoDeleted ||
-            String(logoWidth) !== String(brandingSettings?.logoWidth ?? '') ||
-            String(logoHeight) !== String(brandingSettings?.logoHeight ?? '');
-
-        const paymentIsDirty =
-            qrCodeFile !== null ||
-            qrCodeDeleted ||
-            upiId !== (paymentSettings?.upiId ?? '') ||
-            paymentMobileNumber !== (paymentSettings?.paymentMobileNumber ?? '') ||
-            contactEmail !== (paymentSettings?.contactEmail ?? '') ||
-            contactPhone !== (paymentSettings?.contactPhone ?? '') ||
-            String(qrWidth) !== String(paymentSettings?.qrWidth ?? '') ||
-            String(qrHeight) !== String(paymentSettings?.qrHeight ?? '') ||
-            regNo !== (paymentSettings?.regNo ?? '') ||
-            pan !== (paymentSettings?.pan ?? '') ||
-            address !== (paymentSettings?.address ?? '');
-
-        return brandingIsDirty || paymentIsDirty;
-    }, [isEditMode, logoFile, logoDeleted, logoWidth, logoHeight, qrCodeFile, qrCodeDeleted, upiId, paymentMobileNumber, contactEmail, contactPhone, qrWidth, qrHeight, regNo, pan, address, brandingSettings, paymentSettings]);
-
-    const canUpdateSettings = userProfile?.role === 'Admin' || !!userProfile?.permissions?.settings?.update;
+    const handleFieldChange = (field: keyof FormDataType, value: string | number) => {
+        if (editableData) {
+            setEditableData(prev => prev ? { ...prev, [field]: value } : null);
+        }
+    };
     
     const handleRemoveLogo = () => {
-        setLogoDeleted(true);
         setLogoFile(null);
         setLogoPreviewUrl(null);
+        if (editableData) {
+            setEditableData(prev => prev ? { ...prev, logoUrl: '' } : null);
+        }
     };
     
     const handleRemoveQrCode = () => {
-        setQrCodeDeleted(true);
         setQrCodeFile(null);
         setQrPreviewUrl(null);
+        if (editableData) {
+             setEditableData(prev => prev ? { ...prev, qrCodeUrl: '' } : null);
+        }
     };
 
     const handleSave = async () => {
-        if (!firestore || !canUpdateSettings || !isDirty) {
-            toast({ title: 'Error', description: 'No changes to save or insufficient permissions.', variant: 'destructive'});
+        if (!firestore || !storage || !canUpdateSettings || !editableData) {
+            toast({ title: 'Error', description: 'Cannot save settings.', variant: 'destructive'});
             return;
         }
 
@@ -168,59 +137,45 @@ export default function SettingsPage() {
             const { default: Resizer } = await import('react-image-file-resizer');
             const batch = writeBatch(firestore);
 
-            // Branding Save Logic
-            let newLogoUrl = brandingSettings?.logoUrl || '';
-            if (logoFile && storage) {
-                const resizedBlob = await new Promise<Blob>((resolve) => {
+            // --- Branding Save Logic ---
+            let newLogoUrl = editableData.logoUrl;
+            if (logoFile) {
+                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(logoFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
-                const filePath = 'settings/logo';
+                const filePath = 'settings/logo'; // Fixed path
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 newLogoUrl = await getDownloadURL(uploadResult.ref);
-            } else if (logoDeleted) {
-                 newLogoUrl = '';
             }
             const brandingData = { 
                 logoUrl: newLogoUrl,
-                logoWidth: Number(logoWidth) || null,
-                logoHeight: Number(logoHeight) || null
+                logoWidth: Number(editableData.logoWidth) || null,
+                logoHeight: Number(editableData.logoHeight) || null
             };
             batch.set(doc(firestore, 'settings', 'branding'), brandingData, { merge: true });
 
-            // Payment Save Logic
-            let newQrCodeUrl = paymentSettings?.qrCodeUrl || '';
-            if (qrCodeFile && storage) {
+            // --- Payment Save Logic ---
+            let newQrCodeUrl = editableData.qrCodeUrl;
+            if (qrCodeFile) {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(qrCodeFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
-                const filePath = 'settings/payment_qr';
+                const filePath = 'settings/payment_qr'; // Fixed path
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 newQrCodeUrl = await getDownloadURL(uploadResult.ref);
-            } else if (qrCodeDeleted) {
-                newQrCodeUrl = '';
             }
             const paymentData = {
-                qrCodeUrl: newQrCodeUrl, qrWidth: Number(qrWidth) || null, qrHeight: Number(qrHeight) || null,
-                upiId, paymentMobileNumber, contactEmail, contactPhone, regNo, pan, address
+                qrCodeUrl: newQrCodeUrl, qrWidth: Number(editableData.qrWidth) || null, qrHeight: Number(editableData.qrHeight) || null,
+                upiId: editableData.upiId, paymentMobileNumber: editableData.paymentMobileNumber, contactEmail: editableData.contactEmail,
+                contactPhone: editableData.contactPhone, regNo: editableData.regNo, pan: editableData.pan, address: editableData.address
             };
             batch.set(doc(firestore, 'settings', 'payment'), paymentData, { merge: true });
 
             await batch.commit();
 
             toast({ title: 'Success!', description: 'Settings have been updated.', variant: 'success' });
-            
-            // This is the key change: immediately update the local state with the new URL
-            // This prevents the "disappearing preview" effect.
-            if (logoFile) setLogoPreviewUrl(newLogoUrl);
-            if (qrCodeFile) setQrPreviewUrl(newQrCodeUrl);
-            
-            setLogoFile(null);
-            setQrCodeFile(null);
-            setLogoDeleted(false);
-            setQrCodeDeleted(false);
-            
             setIsEditMode(false);
         } catch (error: any) {
             console.error('Settings save failed:', error);
@@ -236,7 +191,6 @@ export default function SettingsPage() {
     
     const handleCancel = () => {
         setIsEditMode(false);
-        // The main useEffect will repopulate the form with original data since isEditMode is false
     };
 
     const isLoading = isSessionLoading || isBrandingLoading || isPaymentLoading;
@@ -244,9 +198,6 @@ export default function SettingsPage() {
     
     const renderImagePreview = (previewUrl: string | null) => {
         if (!previewUrl) return null;
-        if (previewUrl.startsWith('data:')) {
-            return <img src={previewUrl} alt="Preview" className="object-contain p-2 h-full w-full" />;
-        }
         return <ProxiedImage imageUrl={previewUrl} alt="Preview" className="object-contain p-2 h-full w-full" />;
     };
 
@@ -291,6 +242,22 @@ export default function SettingsPage() {
         );
     }
     
+    const displayData = isEditMode && editableData ? editableData : {
+        logoUrl: brandingSettings?.logoUrl,
+        logoWidth: brandingSettings?.logoWidth,
+        logoHeight: brandingSettings?.logoHeight,
+        qrCodeUrl: paymentSettings?.qrCodeUrl,
+        qrWidth: paymentSettings?.qrWidth,
+        qrHeight: paymentSettings?.qrHeight,
+        upiId: paymentSettings?.upiId,
+        paymentMobileNumber: paymentSettings?.paymentMobileNumber,
+        contactEmail: paymentSettings?.contactEmail,
+        contactPhone: paymentSettings?.contactPhone,
+        regNo: paymentSettings?.regNo,
+        pan: paymentSettings?.pan,
+        address: paymentSettings?.address,
+    };
+
     return (
         <div className="min-h-screen text-foreground">
             <DocuExtractHeader />
@@ -311,7 +278,7 @@ export default function SettingsPage() {
                     ) : (
                         <div className="flex gap-2">
                             <Button variant="outline" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
-                            <Button onClick={handleSave} disabled={isSubmitting || !isDirty}>
+                            <Button onClick={handleSave} disabled={isSubmitting}>
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                                 Save All
                             </Button>
@@ -348,11 +315,11 @@ export default function SettingsPage() {
                                     <div className="w-full grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
                                             <Label htmlFor="logoWidth">Width (px)</Label>
-                                            <Input id="logoWidth" type="number" placeholder="e.g., 48" value={logoWidth} onChange={(e) => setLogoWidth(e.target.value)} disabled={isFormDisabled} />
+                                            <Input id="logoWidth" type="number" placeholder="e.g., 48" value={displayData.logoWidth || ''} onChange={(e) => handleFieldChange('logoWidth', e.target.value)} disabled={isFormDisabled} />
                                         </div>
                                         <div className="space-y-1">
                                             <Label htmlFor="logoHeight">Height (px)</Label>
-                                            <Input id="logoHeight" type="number" placeholder="e.g., 48" value={logoHeight} onChange={(e) => setLogoHeight(e.target.value)} disabled={isFormDisabled} />
+                                            <Input id="logoHeight" type="number" placeholder="e.g., 48" value={displayData.logoHeight || ''} onChange={(e) => handleFieldChange('logoHeight', e.target.value)} disabled={isFormDisabled} />
                                         </div>
                                     </div>
                                 </div>
@@ -382,15 +349,15 @@ export default function SettingsPage() {
                              <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="regNo">Registration No.</Label>
-                                    <Input id="regNo" value={regNo} onChange={(e) => setRegNo(e.target.value)} placeholder="e.g. Solapur/0000373/2025" disabled={isFormDisabled} />
+                                    <Input id="regNo" value={displayData.regNo || ''} onChange={(e) => handleFieldChange('regNo', e.target.value)} placeholder="e.g. Solapur/0000373/2025" disabled={isFormDisabled} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="pan">PAN</Label>
-                                    <Input id="pan" value={pan} onChange={(e) => setPan(e.target.value)} placeholder="e.g. AAPAB1213J" disabled={isFormDisabled} />
+                                    <Input id="pan" value={displayData.pan || ''} onChange={(e) => handleFieldChange('pan', e.target.value)} placeholder="e.g. AAPAB1213J" disabled={isFormDisabled} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="address">Address</Label>
-                                    <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Full address of the organization" disabled={isFormDisabled} />
+                                    <Textarea id="address" value={displayData.address || ''} onChange={(e) => handleFieldChange('address', e.target.value)} placeholder="Full address of the organization" disabled={isFormDisabled} />
                                 </div>
                             </div>
                             <Separator />
@@ -411,11 +378,11 @@ export default function SettingsPage() {
                                         <div className="w-full grid grid-cols-2 gap-4">
                                             <div className="space-y-1">
                                                 <Label htmlFor="qrWidth">Width (px)</Label>
-                                                <Input id="qrWidth" type="number" placeholder="e.g., 128" value={qrWidth} onChange={(e) => setQrWidth(e.target.value)} disabled={isFormDisabled} />
+                                                <Input id="qrWidth" type="number" placeholder="e.g., 128" value={displayData.qrWidth || ''} onChange={(e) => handleFieldChange('qrWidth', e.target.value)} disabled={isFormDisabled} />
                                             </div>
                                             <div className="space-y-1">
                                                 <Label htmlFor="qrHeight">Height (px)</Label>
-                                                <Input id="qrHeight" type="number" placeholder="e.g., 128" value={qrHeight} onChange={(e) => setQrHeight(e.target.value)} disabled={isFormDisabled} />
+                                                <Input id="qrHeight" type="number" placeholder="e.g., 128" value={displayData.qrHeight || ''} onChange={(e) => handleFieldChange('qrHeight', e.target.value)} disabled={isFormDisabled} />
                                             </div>
                                         </div>
                                          {isEditMode && (
@@ -436,20 +403,20 @@ export default function SettingsPage() {
 
                                 <div className="space-y-2">
                                     <Label htmlFor="upiId">UPI ID</Label>
-                                    <Input id="upiId" value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="e.g. 1234567890@upi" disabled={isFormDisabled} />
+                                    <Input id="upiId" value={displayData.upiId || ''} onChange={(e) => handleFieldChange('upiId', e.target.value)} placeholder="e.g. 1234567890@upi" disabled={isFormDisabled} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="paymentMobile">Payment Mobile Number</Label>
-                                    <Input id="paymentMobile" value={paymentMobileNumber} onChange={(e) => setPaymentMobileNumber(e.target.value)} placeholder="e.g. 9876543210" disabled={isFormDisabled} />
+                                    <Input id="paymentMobile" value={displayData.paymentMobileNumber || ''} onChange={(e) => handleFieldChange('paymentMobileNumber', e.target.value)} placeholder="e.g. 9876543210" disabled={isFormDisabled} />
                                 </div>
                                 <Separator />
                                  <div className="space-y-2">
                                     <Label htmlFor="contactEmail">Contact Email</Label>
-                                    <Input id="contactEmail" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="e.g. contact@example.com" disabled={isFormDisabled} />
+                                    <Input id="contactEmail" value={displayData.contactEmail || ''} onChange={(e) => handleFieldChange('contactEmail', e.target.value)} placeholder="e.g. contact@example.com" disabled={isFormDisabled} />
                                 </div>
                                  <div className="space-y-2">
                                     <Label htmlFor="contactPhone">Contact Phone</Label>
-                                    <Input id="contactPhone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="e.g. 9876543210" disabled={isFormDisabled} />
+                                    <Input id="contactPhone" value={displayData.contactPhone || ''} onChange={(e) => handleFieldChange('contactPhone', e.target.value)} placeholder="e.g. 9876543210" disabled={isFormDisabled} />
                                 </div>
                             </div>
                         </CardContent>
@@ -459,5 +426,3 @@ export default function SettingsPage() {
         </div>
     )
 }
-
-    

@@ -444,7 +444,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                   />
                   {preview && (
                       <div className="relative group w-full h-48 mt-2 rounded-md overflow-hidden border">
-                          <Image src={preview} alt="Donation screenshot preview" fill className="object-contain" />
+                          <Image src={preview} alt="Donation screenshot preview" fill className="object-contain" unoptimized />
                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button type="button" size="icon" variant="outline" onClick={() => document.getElementById('screenshot-file-input')?.click()}>
                                     <Replace className="h-5 w-5"/>

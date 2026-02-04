@@ -3,6 +3,7 @@
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Image from 'next/image';
 import { useFirestore, useDoc, errorEmitter, FirestorePermissionError, useStorage } from '@/firebase';
 import { useSession as useCurrentUserSession } from '@/hooks/use-session';
 import { updateDoc, doc, writeBatch, DocumentReference } from 'firebase/firestore';
@@ -98,8 +99,7 @@ export default function UserDetailsPage() {
             });
             
             const fileExtension = 'jpeg';
-            const dateString = new Date().toISOString().split('T')[0];
-            const finalFileName = `${userId}_id_proof_${dateString}.${fileExtension}`;
+            const finalFileName = `id_proof.${fileExtension}`; // Consistent filename
             const filePath = `users/${userId}/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 
@@ -170,12 +170,11 @@ export default function UserDetailsPage() {
         setIsEditMode(false);
     } catch (serverError: any) {
         if (serverError.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: `users/${userId} or associated lookups`,
                 operation: 'update',
                 requestResourceData: updateData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
+            }));
         } else {
             toast({
                 title: 'Update Failed',
@@ -297,5 +296,3 @@ export default function UserDetailsPage() {
     </div>
   );
 }
-
-    
