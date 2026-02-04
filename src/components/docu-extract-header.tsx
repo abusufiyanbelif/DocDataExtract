@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect } from 'react';
@@ -61,8 +62,7 @@ export function DocuExtractHeader() {
                   <Image
                     src={brandingSettings.logoUrl}
                     alt="Company Logo"
-                    width={brandingSettings.logoWidth || 100}
-                    height={brandingSettings.logoHeight || 48}
+                    fill
                     className="object-contain"
                     unoptimized
                     crossOrigin="anonymous"

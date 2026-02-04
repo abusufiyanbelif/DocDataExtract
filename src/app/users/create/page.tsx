@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -98,7 +99,8 @@ export default function CreateUserPage() {
                 });
                 
                 const fileExtension = 'jpeg';
-                const finalFileName = `${newUid}_id_proof.${fileExtension}`;
+                const dateString = new Date().toISOString().split('T')[0];
+                const finalFileName = `${newUid}_id_proof_${dateString}.${fileExtension}`;
                 const filePath = `users/${newUid}/${finalFileName}`;
                 const fileRef = storageRef(storage, filePath);
 
@@ -193,7 +195,7 @@ export default function CreateUserPage() {
   if (isLoading) {
     return (
         <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
     );
   }

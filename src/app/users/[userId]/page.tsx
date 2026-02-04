@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -97,7 +98,8 @@ export default function UserDetailsPage() {
             });
             
             const fileExtension = 'jpeg';
-            const finalFileName = `${userId}_id_proof_${Date.now()}.${fileExtension}`;
+            const dateString = new Date().toISOString().split('T')[0];
+            const finalFileName = `${userId}_id_proof_${dateString}.${fileExtension}`;
             const filePath = `users/${userId}/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
 

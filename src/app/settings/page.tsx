@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -173,8 +174,8 @@ export default function SettingsPage() {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(logoFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
-                const timestamp = Date.now();
-                const filePath = `settings/logo_${timestamp}.jpeg`;
+                const dateString = new Date().toISOString().split('T')[0];
+                const filePath = `settings/logo_${dateString}.jpeg`;
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 logoUrl = await getDownloadURL(uploadResult.ref);
@@ -194,8 +195,8 @@ export default function SettingsPage() {
                 const resizedBlob = await new Promise<Blob>((resolve) => {
                     Resizer.imageFileResizer(qrCodeFile, 800, 800, 'JPEG', 75, 0, blob => resolve(blob as Blob), 'blob');
                 });
-                const timestamp = Date.now();
-                const filePath = `settings/payment_qr_${timestamp}.jpeg`;
+                const dateString = new Date().toISOString().split('T')[0];
+                const filePath = `settings/payment_qr_${dateString}.jpeg`;
                 const fileRef = storageRef(storage, filePath);
                 const uploadResult = await uploadBytes(fileRef, resizedBlob);
                 qrCodeUrl = await getDownloadURL(uploadResult.ref);
