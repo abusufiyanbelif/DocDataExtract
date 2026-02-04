@@ -49,6 +49,7 @@ export function DocuExtractHeader() {
   const userProfile = session.userProfile;
   
   const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
+  const proxiedLogoUrl = validLogoUrl ? `/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}` : null;
 
   return (
     <header className="bg-card border-b p-2 shadow-sm">
@@ -58,12 +59,11 @@ export function DocuExtractHeader() {
             {isLoading ? (
                 <Skeleton className="h-full w-full" />
             ) : (
-                validLogoUrl && (
+                proxiedLogoUrl && (
                   <img
-                    src={validLogoUrl}
+                    src={proxiedLogoUrl}
                     alt="Company Logo"
                     className="object-contain h-full w-full"
-                    crossOrigin="anonymous"
                   />
                 )
             )}

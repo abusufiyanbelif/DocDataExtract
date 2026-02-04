@@ -287,7 +287,6 @@ Your contribution, big or small, makes a huge difference.
         try {
             const canvas = await html2canvas(element, { 
                 scale: 2, 
-                useCORS: true,
                 backgroundColor: null,
             });
             
@@ -309,9 +308,9 @@ Your contribution, big or small, makes a huge difference.
                 // Add Header (Logo and Title)
                 if (brandingSettings?.logoUrl?.trim()) {
                     try {
+                        const proxiedLogoUrl = `/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl)}`;
                         const logoImg = new Image();
-                        logoImg.crossOrigin = 'anonymous';
-                        logoImg.src = brandingSettings.logoUrl;
+                        logoImg.src = proxiedLogoUrl;
                         await new Promise<void>((resolve, reject) => {
                             logoImg.onload = () => resolve();
                             logoImg.onerror = (err) => reject(err);
@@ -355,9 +354,9 @@ Your contribution, big or small, makes a huge difference.
 
                 if (paymentSettings?.qrCodeUrl?.trim()) {
                     try {
+                        const proxiedQrUrl = `/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}`;
                         const qrImg = new Image();
-                        qrImg.crossOrigin = 'anonymous';
-                        qrImg.src = paymentSettings.qrCodeUrl;
+                        qrImg.src = proxiedQrUrl;
                         await new Promise<void>((resolve, reject) => {
                             qrImg.onload = () => resolve();
                             qrImg.onerror = (err) => reject(err);
@@ -427,6 +426,7 @@ Your contribution, big or small, makes a huge difference.
     }
 
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
+    const proxiedLogoUrl = validLogoUrl ? `/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}` : null;
     
     return (
         <div className="min-h-screen text-foreground">
@@ -472,10 +472,9 @@ Your contribution, big or small, makes a huge difference.
                 </div>
 
                 <div className="relative space-y-6 p-4" ref={summaryRef}>
-                    {validLogoUrl && (
+                    {proxiedLogoUrl && (
                         <img
-                            src={validLogoUrl}
-                            crossOrigin="anonymous"
+                            src={proxiedLogoUrl}
                             alt="Watermark"
                             className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
                             style={{
