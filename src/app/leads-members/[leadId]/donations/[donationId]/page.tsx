@@ -142,8 +142,8 @@ export default function DonationDetailsPage() {
                 const FOOTER_HEIGHT = 220;
                 
                 const finalCanvas = document.createElement('canvas');
-                const contentWidth = Math.min(canvas.width, 1200);
-                const contentHeight = (canvas.height * contentWidth) / canvas.width;
+                const contentWidth = canvas.width;
+                const contentHeight = canvas.height;
 
                 finalCanvas.width = contentWidth + PADDING * 2;
                 finalCanvas.height = contentHeight + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING * 2;
@@ -167,7 +167,7 @@ export default function DonationDetailsPage() {
                 
                 ctx.fillStyle = 'rgb(10, 41, 19)';
                 ctx.font = 'bold 24px sans-serif';
-                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING + 140, PADDING + 70);
+                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING + (logoImg ? 140 : 0), PADDING + 70);
 
                 ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT, contentWidth, contentHeight);
                 
@@ -179,12 +179,12 @@ export default function DonationDetailsPage() {
                 ctx.fillStyle = 'rgb(10, 41, 19)';
                 ctx.font = 'bold 18px sans-serif';
                 ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
-                ctx.font = '14px sans-serif';
-                let textY = footerY + 50;
-                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 20; }
-                if (paymentSettings?.paymentMobileNumber) { ctx.fillText(`Phone: ${paymentSettings.paymentMobileNumber}`, PADDING, textY); textY += 20; }
-                if (paymentSettings?.contactEmail) { ctx.fillText(`Email: ${paymentSettings.contactEmail}`, PADDING, textY); textY += 20; }
-                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 20; }
+                ctx.font = '16px sans-serif';
+                let textY = footerY + 55;
+                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 25; }
+                if (paymentSettings?.paymentMobileNumber) { ctx.fillText(`Phone: ${paymentSettings.paymentMobileNumber}`, PADDING, textY); textY += 25; }
+                if (paymentSettings?.contactEmail) { ctx.fillText(`Email: ${paymentSettings.contactEmail}`, PADDING, textY); textY += 25; }
+                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 25; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
 
                 const link = document.createElement('a');
@@ -221,15 +221,22 @@ export default function DonationDetailsPage() {
 
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = pdf.getImageProperties(imgData);
-                const contentHeight = (imgProps.height * (pdfWidth - 30)) / imgProps.width;
 
-                pdf.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, contentHeight);
+                const footerHeight = 70; // approximate footer height in mm
+                const availableHeight = pageHeight - position - footerHeight;
+
+                let contentWidth = (imgProps.width * availableHeight) / imgProps.height;
+                let contentHeight = availableHeight;
+                
+                if (contentWidth > pdfWidth - 30) {
+                    contentWidth = pdfWidth - 30;
+                    contentHeight = (imgProps.height * contentWidth) / imgProps.width;
+                }
+                
+                const xOffset = (pdfWidth - contentWidth) / 2;
+                pdf.addImage(imgData, 'PNG', xOffset, position, contentWidth, contentHeight);
                 position += contentHeight + 10;
                 
-                if (position > pageHeight - 60) {
-                    pdf.addPage();
-                    position = 15;
-                }
                 pdf.setLineWidth(0.2);
                 pdf.line(15, position, pdfWidth - 15, position);
                 position += 8;
@@ -237,7 +244,7 @@ export default function DonationDetailsPage() {
                 pdf.setFontSize(12);
                 pdf.text('For Donations & Contact', 15, position);
                 let textY = position + 6;
-                pdf.setFontSize(9);
+                pdf.setFontSize(10);
 
                 if (qrImg && qrDataUrl) {
                     const qrSize = 60;
@@ -245,10 +252,10 @@ export default function DonationDetailsPage() {
                     pdf.addImage(qrDataUrl!, 'PNG', qrX, position, qrSize, qrSize);
                 }
                 
-                if (paymentSettings?.upiId) { pdf.text(`UPI: ${paymentSettings.upiId}`, 15, textY); textY += 5; }
-                if (paymentSettings?.paymentMobileNumber) { pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, textY); textY += 5; }
-                if (paymentSettings?.contactEmail) { pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, textY); textY += 5; }
-                if (paymentSettings?.website) { pdf.text(`Website: ${paymentSettings.website}`, 15, textY); textY += 5; }
+                if (paymentSettings?.upiId) { pdf.text(`UPI: ${paymentSettings.upiId}`, 15, textY); textY += 6; }
+                if (paymentSettings?.paymentMobileNumber) { pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, textY); textY += 6; }
+                if (paymentSettings?.contactEmail) { pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, textY); textY += 6; }
+                if (paymentSettings?.website) { pdf.text(`Website: ${paymentSettings.website}`, 15, textY); textY += 6; }
                 if (paymentSettings?.address) {
                     const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth / 2 - 30);
                     pdf.text(addressLines, 15, textY);

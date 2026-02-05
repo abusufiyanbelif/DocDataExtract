@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -16,8 +15,8 @@ interface DonationReceiptProps {
 
 const ReceiptRow = ({ label, value, isMono = false }: { label: string; value: React.ReactNode, isMono?: boolean }) => (
     <div className="flex justify-between items-start">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className={`text-sm font-medium text-right ${isMono ? 'font-mono' : ''}`}>{value}</p>
+        <p className="text-base text-muted-foreground">{label}</p>
+        <p className={`text-base font-medium text-right ${isMono ? 'font-mono' : ''}`}>{value}</p>
     </div>
 );
 
@@ -31,7 +30,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
 
     return (
         <div ref={ref} className="bg-background p-4 sm:p-8 rounded-lg">
-            <Card className="w-full max-w-2xl mx-auto shadow-none border-border relative overflow-hidden">
+            <Card className="w-full max-w-md mx-auto shadow-none border-border relative overflow-hidden">
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
                         <CardTitle className="text-2xl">Donation Receipt</CardTitle>
@@ -45,13 +44,13 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         </div>
                         <Separator />
                         <div className="space-y-3">
-                            <h3 className="font-semibold">Donor Details</h3>
+                            <h3 className="font-semibold text-lg">Donor Details</h3>
                             <ReceiptRow label="Name" value={donation.donorName} />
                             {donation.donorPhone && <ReceiptRow label="Phone" value={donation.donorPhone} isMono />}
                         </div>
                         <Separator />
                         <div className="space-y-3">
-                             <h3 className="font-semibold">Transaction Details</h3>
+                             <h3 className="font-semibold text-lg">Transaction Details</h3>
                             <ReceiptRow label="Receiver Name" value={donation.receiverName} />
                             <ReceiptRow label="Total Amount" value={`Rupee ${donation.amount.toFixed(2)}`} isMono />
                             <ReceiptRow label="Payment Type" value={<Badge variant="outline">{donation.donationType}</Badge>} />
@@ -59,8 +58,8 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         </div>
                         <Separator />
                         <div className="space-y-2">
-                            <h3 className="text-sm font-medium">Category Breakdown</h3>
-                            <Table>
+                            <h3 className="font-medium text-lg">Category Breakdown</h3>
+                            <Table className="text-base">
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Category</TableHead>
@@ -80,8 +79,8 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         {(donation.comments || donation.suggestions) && (
                             <>
                                 <Separator />
-                                <div className="space-y-3 text-sm">
-                                    <h3 className="font-semibold">Additional Notes</h3>
+                                <div className="space-y-3 text-base">
+                                    <h3 className="font-semibold text-lg">Additional Notes</h3>
                                     {donation.comments && <p><strong>Comments:</strong> {donation.comments}</p>}
                                     {donation.suggestions && <p><strong>Suggestions:</strong> {donation.suggestions}</p>}
                                 </div>
