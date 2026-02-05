@@ -182,16 +182,12 @@ export default function CampaignSummaryPage() {
         verifiedDonationsList.forEach(d => {
             if (d.typeSplit && d.typeSplit.length > 0) {
                 d.typeSplit.forEach(split => {
-                    const category = (split.category as any) === 'General' ? 'Sadqa' : split.category as DonationCategory;
-                    if (amountsByCategory.hasOwnProperty(category)) {
-                        amountsByCategory[category] += split.amount;
+                    if (donationCategories.includes(split.category)) {
+                        amountsByCategory[split.category as DonationCategory] += split.amount;
                     }
                 });
-            } else if (d.type) {
-                const category = d.type === 'General' ? 'Sadqa' : d.type;
-                if (amountsByCategory.hasOwnProperty(category)) {
-                    amountsByCategory[category as DonationCategory] += d.amount;
-                }
+            } else if (d.type && donationCategories.includes(d.type as DonationCategory)) {
+                amountsByCategory[d.type as DonationCategory] += d.amount;
             }
         });
 
@@ -635,16 +631,7 @@ Your contribution, big or small, makes a huge difference.
                     </ScrollArea>
                 </div>
 
-                <div className="relative space-y-6 p-4 bg-background" ref={summaryRef}>
-                    {validLogoUrl && (
-                        <img
-                            src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
-                            alt="Watermark"
-                            crossOrigin="anonymous"
-                            className="absolute inset-0 m-auto object-contain opacity-25 pointer-events-none"
-                            style={{aspectRatio: '1 / 1'}}
-                        />
-                    )}
+                <div className="space-y-6 p-4" ref={summaryRef}>
                     <Card>
                         <CardHeader>
                             <CardTitle>Campaign Details</CardTitle>
@@ -930,3 +917,4 @@ Your contribution, big or small, makes a huge difference.
     
 
     
+
