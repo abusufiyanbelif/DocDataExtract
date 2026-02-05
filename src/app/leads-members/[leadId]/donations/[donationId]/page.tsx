@@ -139,14 +139,14 @@ export default function DonationDetailsPage() {
 
             if (format === 'png') {
                 const PADDING = 40;
-                const HEADER_HEIGHT = 120;
-                const FOOTER_HEIGHT = 200;
+                const HEADER_HEIGHT = 100;
+                const FOOTER_HEIGHT = 180;
                 
                 const finalCanvas = document.createElement('canvas');
                 const contentWidth = canvas.width;
                 const contentHeight = canvas.height;
 
-                finalCanvas.width = contentWidth + PADDING * 2;
+                finalCanvas.width = 1240;
                 finalCanvas.height = contentHeight + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING * 2;
                 const ctx = finalCanvas.getContext('2d')!;
                 
@@ -161,31 +161,31 @@ export default function DonationDetailsPage() {
                     ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
                     ctx.globalAlpha = 1.0;
 
-                    const logoHeight = 100;
+                    const logoHeight = 80;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
                 }
                 
-                ctx.fillStyle = 'rgb(10, 41, 19)';
-                ctx.font = 'bold 28px sans-serif';
-                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING + (logoImg ? 120 : 0), PADDING + 60);
+                ctx.fillStyle = 'rgb(19, 106, 51)';
+                ctx.font = 'bold 22px sans-serif';
+                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING + (logoImg ? 90 : 0), PADDING + 50);
 
-                ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT, contentWidth, contentHeight);
+                ctx.drawImage(canvas, (finalCanvas.width - contentWidth) / 2, PADDING + HEADER_HEIGHT);
                 
                 const footerY = finalCanvas.height - FOOTER_HEIGHT - PADDING;
                 if (qrImg) {
-                    const qrSize = 180;
+                    const qrSize = 200;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
-                ctx.fillStyle = 'rgb(10, 41, 19)';
-                ctx.font = 'bold 20px sans-serif';
+                ctx.fillStyle = 'rgb(19, 106, 51)';
+                ctx.font = 'bold 18px sans-serif';
                 ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
-                ctx.font = '18px sans-serif';
-                let textY = footerY + 55;
-                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 28; }
-                if (paymentSettings?.paymentMobileNumber) { ctx.fillText(`Phone: ${paymentSettings.paymentMobileNumber}`, PADDING, textY); textY += 28; }
-                if (paymentSettings?.contactEmail) { ctx.fillText(`Email: ${paymentSettings.contactEmail}`, PADDING, textY); textY += 28; }
-                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 28; }
+                ctx.font = '16px sans-serif';
+                let textY = footerY + 50;
+                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 24; }
+                if (paymentSettings?.paymentMobileNumber) { ctx.fillText(`Phone: ${paymentSettings.paymentMobileNumber}`, PADDING, textY); textY += 24; }
+                if (paymentSettings?.contactEmail) { ctx.fillText(`Email: ${paymentSettings.contactEmail}`, PADDING, textY); textY += 24; }
+                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
 
                 const link = document.createElement('a');
@@ -199,26 +199,26 @@ export default function DonationDetailsPage() {
                 const pageCenter = pdfWidth / 2;
                 let position = 15;
 
-                pdf.setTextColor(10, 41, 19);
+                pdf.setTextColor(19, 106, 51);
 
                 // Header with Logo and Org Name
                 if (logoImg && logoDataUrl) {
-                    const logoHeight = 15;
+                    const logoHeight = 20;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
-                    pdf.setFontSize(18);
+                    pdf.setFontSize(14);
                     // Vertically center the text with the logo
                     const textY = position + (logoHeight / 2) + 3;
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
                     position += logoHeight + 10;
                 } else {
-                    pdf.setFontSize(18);
+                    pdf.setFontSize(14);
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', pageCenter, position, { align: 'center' });
                     position += 15;
                 }
                 
                 // Document Title
-                pdf.setFontSize(22).text('Donation Receipt', pageCenter, position, { align: 'center' });
+                pdf.setFontSize(16).text('Donation Receipt', pageCenter, position, { align: 'center' });
                 position += 15;
 
                 if (logoImg && logoDataUrl) {
@@ -236,29 +236,29 @@ export default function DonationDetailsPage() {
                 const footerHeight = 75;
                 const availableHeight = pageHeight - position - footerHeight;
 
-                let contentWidth = (imgProps.width * availableHeight) / imgProps.height;
-                let contentHeight = availableHeight;
+                let imgWidth = pdfWidth - 30;
+                let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
                 
-                if (contentWidth > pdfWidth - 30) {
-                    contentWidth = pdfWidth - 30;
-                    contentHeight = (imgProps.height * contentWidth) / imgProps.width;
+                if (imgHeight > availableHeight) {
+                    imgHeight = availableHeight;
+                    imgWidth = (imgProps.width * imgHeight) / imgProps.height;
                 }
                 
-                const xOffset = (pdfWidth - contentWidth) / 2;
-                pdf.addImage(imgData, 'PNG', xOffset, position, contentWidth, contentHeight);
+                const xOffset = (pdfWidth - imgWidth) / 2;
+                pdf.addImage(imgData, 'PNG', xOffset, position, imgWidth, imgHeight);
                 position = pageHeight - footerHeight;
                 
                 pdf.setLineWidth(0.2);
                 pdf.line(15, position, pdfWidth - 15, position);
                 position += 8;
                 
-                pdf.setFontSize(14);
+                pdf.setFontSize(12);
                 pdf.text('For Donations & Contact', 15, position);
                 let textY = position + 8;
-                pdf.setFontSize(11);
+                pdf.setFontSize(10);
 
                 if (qrImg && qrDataUrl) {
-                    const qrSize = 50;
+                    const qrSize = 40;
                     const qrX = pdfWidth - 15 - qrSize;
                     pdf.addImage(qrDataUrl!, 'PNG', qrX, position, qrSize, qrSize);
                 }

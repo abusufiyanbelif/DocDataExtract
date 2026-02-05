@@ -187,7 +187,10 @@ export default function CampaignSummaryPage() {
                     }
                 });
             } else if (d.type && donationCategories.includes(d.type as DonationCategory)) {
-                amountsByCategory[d.type as DonationCategory] += d.amount;
+                 const category = (d.type as any) === 'General' ? 'Sadqa' : d.type;
+                 amountsByCategory[category as DonationCategory] += d.amount;
+            } else if (d.typeSplit.length === 0) {
+                amountsByCategory['Sadqa'] += d.amount;
             }
         });
 
@@ -276,9 +279,9 @@ Join us for the *${campaign.name}* campaign as we work to provide essential aid 
 ${campaign.description || 'To support those in need.'} We aim to support *${summaryData.totalBeneficiaries} beneficiaries*.
 
 *Financial Update:*
-🎯 Target for Kits: Rupee ${summaryData.targetAmount.toLocaleString('en-IN')}
-✅ Collected (Verified): Rupee ${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
-⏳ Remaining: *Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*
+🎯 Target for Kits: ₹${summaryData.targetAmount.toLocaleString('en-IN')}
+✅ Collected (Verified): ₹${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
+⏳ Remaining: *₹${summaryData.remainingToCollect.toLocaleString('en-IN')}*
 
 Your contribution, big or small, makes a huge difference.
 
@@ -370,7 +373,7 @@ Your contribution, big or small, makes a huge difference.
                     headerTextX = PADDING + logoWidth + 20;
                 }
 
-                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.fillStyle = 'rgb(19, 106, 51)';
                 ctx.font = 'bold 28px sans-serif';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', headerTextX, (PADDING / 2) + 40);
@@ -386,7 +389,7 @@ Your contribution, big or small, makes a huge difference.
                     const qrSize = 180;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
-                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.fillStyle = 'rgb(19, 106, 51)';
                 ctx.font = 'bold 20px sans-serif';
                 ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
                 ctx.font = '18px sans-serif';
@@ -407,7 +410,7 @@ Your contribution, big or small, makes a huge difference.
                 const pageCenter = pdfWidth / 2;
                 let position = 15;
 
-                pdf.setTextColor(10, 41, 19);
+                pdf.setTextColor(19, 106, 51);
 
                 // Header with Logo and Org Name
                 if (logoImg && logoDataUrl) {
@@ -663,7 +666,7 @@ Your contribution, big or small, makes a huge difference.
                                             className="mt-1"
                                         />
                                     ) : (
-                                        <p className="mt-1 text-lg font-semibold">Rupee {(campaign.targetAmount || 0).toLocaleString('en-IN')}</p>
+                                        <p className="mt-1 text-lg font-semibold">₹{(campaign.targetAmount || 0).toLocaleString('en-IN')}</p>
                                     )}
                                 </div>
                                 <div className="space-y-1">
@@ -805,7 +808,7 @@ Your contribution, big or small, makes a huge difference.
                         <CardHeader>
                             <CardTitle>Funding Progress (for Kits)</CardTitle>
                             <CardDescription>
-                                Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
+                                ₹{summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of ₹{(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -842,7 +845,7 @@ Your contribution, big or small, makes a huge difference.
                                 <Target className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
@@ -851,7 +854,7 @@ Your contribution, big or small, makes a huge difference.
                                 <Hourglass className="h-4 w-4 text-secondary-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                     </div>
@@ -871,7 +874,7 @@ Your contribution, big or small, makes a huge difference.
                                         <Wallet className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                        <div className="text-2xl font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -890,7 +893,7 @@ Your contribution, big or small, makes a huge difference.
                                     return (
                                         <div key={item.name} className="flex justify-between w-full p-4 border rounded-lg flex-wrap gap-2 items-center">
                                             <span className="font-medium text-foreground">{item.name === 'General' ? 'General' : `${item.name} Members`}</span>
-                                            <span className="text-sm text-muted-foreground text-right">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Per Kit: Rupee {kitPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} | Total: Rupee {item.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                            <span className="text-sm text-muted-foreground text-right">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Per Kit: ₹{kitPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} | Total: ₹{item.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                                         </div>
                                     )
                                 })
@@ -917,4 +920,5 @@ Your contribution, big or small, makes a huge difference.
     
 
     
+
 
