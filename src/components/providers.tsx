@@ -20,7 +20,7 @@ function Watermark() {
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
 
     return (
-        <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none opacity-20">
+        <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none opacity-25">
             {validLogoUrl ? (
                 <img
                     src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}

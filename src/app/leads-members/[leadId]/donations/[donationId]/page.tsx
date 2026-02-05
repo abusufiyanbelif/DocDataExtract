@@ -157,7 +157,7 @@ export default function DonationDetailsPage() {
                     const wmScale = 0.8;
                     const wmWidth = finalCanvas.width * wmScale;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.15;
+                    ctx.globalAlpha = 0.25;
                     ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
                     ctx.globalAlpha = 1.0;
 
@@ -223,7 +223,7 @@ export default function DonationDetailsPage() {
 
                 if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.15 }));
+                    pdf.setGState(new pdf.GState({ opacity: 0.25 }));
                     const wmWidth = pdfWidth * 0.75;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
                     pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);

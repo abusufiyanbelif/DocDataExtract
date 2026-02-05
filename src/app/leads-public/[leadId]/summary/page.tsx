@@ -126,7 +126,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     const wmScale = 0.8;
                     const wmWidth = finalCanvas.width * wmScale;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.15;
+                    ctx.globalAlpha = 0.25;
                     ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
                     ctx.globalAlpha = 1.0;
                 }
@@ -184,6 +184,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
                     pdf.setFontSize(18);
+                    // Vertically center the text with the logo
                     const textY = position + (logoHeight / 2) + 3;
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
                     position += logoHeight + 10;
@@ -199,7 +200,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
 
                 if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.15 }));
+                    pdf.setGState(new pdf.GState({ opacity: 0.25 }));
                     const wmWidth = pdfWidth * 0.75;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
                     pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);

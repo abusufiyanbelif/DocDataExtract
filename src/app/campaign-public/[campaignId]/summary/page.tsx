@@ -265,7 +265,7 @@ Your contribution, big or small, makes a huge difference.
                     const wmScale = 0.8;
                     const wmWidth = finalCanvas.width * wmScale;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.15;
+                    ctx.globalAlpha = 0.25;
                     ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
                     ctx.globalAlpha = 1.0;
                 }
@@ -338,7 +338,7 @@ Your contribution, big or small, makes a huge difference.
 
                 if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.15 }));
+                    pdf.setGState(new pdf.GState({ opacity: 0.25 }));
                     const wmWidth = pdfWidth * 0.75;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
                     pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
@@ -473,7 +473,7 @@ Your contribution, big or small, makes a huge difference.
                                 src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
                                 alt="Watermark"
                                 crossOrigin="anonymous"
-                                className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
+                                className="absolute inset-0 m-auto object-contain opacity-25 pointer-events-none"
                                 style={{aspectRatio: '1 / 1'}}
                             />
                         )}
