@@ -585,7 +585,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                             className="mt-1"
                                         />
                                     ) : (
-                                        <p className="mt-1 text-lg font-semibold">Rupee {(lead.targetAmount || 0).toLocaleString('en-IN')}</p>
+                                        <p className="mt-1 text-lg font-semibold">₹{(lead.targetAmount || 0).toLocaleString('en-IN')}</p>
                                     )}
                                 </div>
                                 <div className="space-y-1">
@@ -739,7 +739,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                 <Hourglass className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                     </div>
@@ -759,7 +759,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                         <Wallet className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                        <div className="text-2xl font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -783,3 +783,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
 
     
 
+
+
+    

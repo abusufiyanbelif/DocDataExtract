@@ -274,8 +274,8 @@ export default function CampaignDetailsPage() {
                 const total = calculateTotal(items);
 
                 const headers = isGeneral
-                    ? ['#', 'Item Name', 'Quantity', 'Quantity Type', 'Price per Unit (Rupee)']
-                    : ['#', 'Item Name', 'Quantity', 'Type', 'Notes', 'Total Price (Rupee)'];
+                    ? ['#', 'Item Name', 'Quantity', 'Quantity Type', 'Price per Unit (₹)']
+                    : ['#', 'Item Name', 'Quantity', 'Type', 'Notes', 'Total Price (₹)'];
 
                 const body = items.map((item, index) => isGeneral ? [
                     index + 1, item.name, item.quantity, item.quantityType, item.price
@@ -370,15 +370,15 @@ export default function CampaignDetailsPage() {
                     : [['#', 'Item Name', 'Qty', 'Type', 'Notes', 'Total Price']];
 
                 const body: (string | number)[][] = items.map((item, index) => isGeneral ? [
-                    index + 1, item.name, item.quantity, item.quantityType || '', `Rupee ${(item.price || 0).toFixed(2)}`
+                    index + 1, item.name, item.quantity, item.quantityType || '', `₹${(item.price || 0).toFixed(2)}`
                 ] : [
-                    index + 1, item.name, item.quantity, item.quantityType || '', item.notes, `Rupee ${(item.price || 0).toFixed(2)}`
+                    index + 1, item.name, item.quantity, item.quantityType || '', item.notes, `₹${(item.price || 0).toFixed(2)}`
                 ]);
                 
                 if (!isGeneral) {
                     (body as any).push([
                         { content: 'Total', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
-                        { content: `Rupee ${total.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }
+                        { content: `₹${total.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' } }
                     ]);
                 }
                 
@@ -509,7 +509,7 @@ export default function CampaignDetailsPage() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
-            {!isGeneral && <h4 className="text-lg font-bold">Total: <span className="font-mono">Rupee {total.toFixed(2)}</span></h4>}
+            {!isGeneral && <h4 className="text-lg font-bold">Total: <span className="font-mono">₹{total.toFixed(2)}</span></h4>}
             {isGeneral && <div />}
             {canUpdate && editMode && (
               <div className="flex flex-wrap gap-2">
@@ -541,11 +541,11 @@ export default function CampaignDetailsPage() {
                         <TableHead className="min-w-[100px]">Quantity</TableHead>
                         <TableHead className="min-w-[150px]">Quantity Type</TableHead>
                         {isGeneral ? (
-                            <TableHead className="text-right min-w-[120px]">Price (Rupee)</TableHead>
+                            <TableHead className="text-right min-w-[120px]">Price (₹)</TableHead>
                         ) : (
                             <>
                                 <TableHead className="min-w-[180px]">Notes</TableHead>
-                                <TableHead className="text-right min-w-[150px]">Total Price (Rupee)</TableHead>
+                                <TableHead className="text-right min-w-[150px]">Total Price (₹)</TableHead>
                             </>
                         )}
                         {canUpdate && editMode && <TableHead className="w-[50px] text-center">Action</TableHead>}
@@ -953,7 +953,7 @@ export default function CampaignDetailsPage() {
                                         }}
                                     />
                                     <label htmlFor={`copy-${item.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                        {item.name} ({item.quantity} - Rupee {item.price})
+                                        {item.name} ({item.quantity} - ₹{item.price})
                                     </label>
                                 </div>
                             ))}
@@ -978,3 +978,5 @@ export default function CampaignDetailsPage() {
     </div>
   );
 }
+
+    

@@ -481,7 +481,7 @@ export default function BeneficiariesPage() {
             description += `${updatesCount} beneficiary kit amounts were updated. `;
         }
         if (campaignTargetUpdated) {
-            description += `Campaign target synced to Rupee ${totalRequiredAmount.toFixed(2)}.`;
+            description += `Campaign target synced to ₹${totalRequiredAmount.toFixed(2)}.`;
         }
         toast({ title: 'Sync Complete', description: description.trim(), variant: 'success' });
     } catch (serverError: any) {
@@ -683,7 +683,7 @@ export default function BeneficiariesPage() {
                 <div className="flex-1 space-y-1.5">
                     <CardTitle>Beneficiary List ({areBeneficiariesLoading ? '...' : filteredAndSortedBeneficiaries.length})</CardTitle>
                     <p className="text-muted-foreground">
-                        Total amount for filtered beneficiaries: <span className="font-bold text-foreground">Rupee {totalKitAmount.toFixed(2)}</span>
+                        Total amount for filtered beneficiaries: <span className="font-bold text-foreground">₹{totalKitAmount.toFixed(2)}</span>
                     </p>
                 </div>
                 {canCreate && (
@@ -843,7 +843,7 @@ export default function BeneficiariesPage() {
                             <TableHead>ID Number</TableHead>
                             <TableHead>ID Proof</TableHead>
                             <SortableHeader sortKey="referralBy">Referred By</SortableHeader>
-                            <SortableHeader sortKey="kitAmount" className="text-right">Kit Amount (Rupee)</SortableHeader>
+                            <SortableHeader sortKey="kitAmount" className="text-right">Kit Amount (₹)</SortableHeader>
                             <SortableHeader sortKey="status">Status</SortableHeader>
                         </TableRow>
                     </TableHeader>
@@ -923,7 +923,7 @@ export default function BeneficiariesPage() {
                                         {!beneficiary.idProofUrl && "N/A"}
                                     </TableCell>
                                     <TableCell>{beneficiary.referralBy}</TableCell>
-                                    <TableCell className="text-right font-medium">Rupee {(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-medium">₹{(beneficiary.kitAmount || 0).toFixed(2)}</TableCell>
                                     <TableCell>
                                         <Badge variant={
                                             beneficiary.status === 'Given' ? 'success' :
@@ -1037,5 +1037,7 @@ export default function BeneficiariesPage() {
     </div>
   );
 }
+
+    
 
     

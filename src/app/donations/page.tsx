@@ -364,7 +364,7 @@ export default function DonationsPage() {
               <div className="flex-1 space-y-1.5">
                 <CardTitle>All Donations ({filteredAndSortedDonations.length})</CardTitle>
                 <p className="text-muted-foreground">
-                    Total amount for filtered results: <span className="font-bold text-foreground">Rupee {totalDonationAmount.toFixed(2)}</span>
+                    Total amount for filtered results: <span className="font-bold text-foreground">₹{totalDonationAmount.toFixed(2)}</span>
                 </p>
               </div>
               {canCreate && (
@@ -431,7 +431,7 @@ export default function DonationsPage() {
                             <SortableHeader sortKey="receiverName">Receiver Name</SortableHeader>
                             <SortableHeader sortKey="donorPhone">Phone</SortableHeader>
                             <SortableHeader sortKey="referral">Referral</SortableHeader>
-                            <SortableHeader sortKey="amount" className="text-right">Amount (Rupee)</SortableHeader>
+                            <SortableHeader sortKey="amount" className="text-right">Amount (₹)</SortableHeader>
                             <TableHead>Category</TableHead>
                             <SortableHeader sortKey="donationType">Donation Type</SortableHeader>
                             <SortableHeader sortKey="transactionId">Transaction ID</SortableHeader>
@@ -482,7 +482,7 @@ export default function DonationsPage() {
                                 <TableCell>{donation.receiverName}</TableCell>
                                 <TableCell>{donation.donorPhone}</TableCell>
                                 <TableCell>{donation.referral}</TableCell>
-                                <TableCell className="text-right font-medium">Rupee {donation.amount.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-medium">₹{donation.amount.toFixed(2)}</TableCell>
                                 <TableCell>
                                     <div className="flex flex-wrap gap-1">
                                         {donation.typeSplit?.map(split => (
@@ -581,3 +581,5 @@ export default function DonationsPage() {
     </div>
   );
 }
+
+    
