@@ -91,10 +91,20 @@ const config = {
             height: '0',
           },
         },
+        'slide-in-from-top': {
+            '0%': { transform: 'translateY(-20%)', opacity: '0' },
+            '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        'slide-in-from-bottom': {
+            '0%': { transform: 'translateY(20%)', opacity: '0' },
+            '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'slide-in-from-top': 'slide-in-from-top 0.5s ease-out forwards',
+        'slide-in-from-bottom': 'slide-in-from-bottom 0.5s ease-out forwards',
       },
     },
   },

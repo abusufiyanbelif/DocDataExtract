@@ -69,7 +69,7 @@ export function DocuExtractHeader() {
   return (
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-3 w-fit group transition-transform duration-300 ease-in-out hover:scale-105">
+        <Link href="/" className="flex items-center gap-3 w-fit group transition-transform duration-300 ease-in-out hover:scale-105 animate-slide-in-from-top" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
           <div className="relative flex items-center justify-center" style={{ minHeight: '4.5rem' }}>
             {isLoading ? (
                 <Skeleton className="h-12 w-24" />
@@ -83,7 +83,7 @@ export function DocuExtractHeader() {
                 )
             )}
             </div>
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block animate-slide-in-from-top" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
             Baitulmal Samajik Sanstha Solapur
           </h1>
         </Link>
@@ -93,7 +93,7 @@ export function DocuExtractHeader() {
         ) : user && userProfile ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full transition-transform duration-200 ease-in-out hover:scale-110 active:scale-100">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full transition-transform duration-200 ease-in-out hover:scale-110 active:scale-100 animate-slide-in-from-top" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
                 <Avatar className="h-10 w-10">
                   <AvatarImage
                     src={user.photoURL || ''}

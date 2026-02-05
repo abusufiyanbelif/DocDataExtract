@@ -74,7 +74,7 @@ export function AppFooter() {
     <footer className="bg-card border-t mt-auto p-6 text-card-foreground">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
         {/* Org & Contact Info */}
-        <div className="flex flex-col items-center md:items-start gap-3">
+        <div className="flex flex-col items-center md:items-start gap-3 transition-transform duration-300 ease-in-out hover:scale-105 animate-slide-in-from-bottom" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
           {isLoading ? <Skeleton className="h-7 w-2/3" /> : <h3 className="font-semibold text-lg">{brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur'}</h3>}
           {isLoading ? <Skeleton className="h-4 w-full" /> : paymentSettings?.address && <p className="text-sm text-muted-foreground">{paymentSettings.address}</p>}
            <div className="text-sm text-muted-foreground space-y-1">
@@ -103,7 +103,7 @@ export function AppFooter() {
         </div>
 
         {/* Payment Info */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 transition-transform duration-300 ease-in-out hover:scale-105 animate-slide-in-from-bottom" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
             {isLoading ? <Skeleton className="h-7 w-1/2" /> : <h3 className="font-semibold text-lg">For Donations</h3>}
             {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.upiId && (
                 <div className="flex items-center gap-2 transition-all hover:text-primary">
@@ -130,7 +130,7 @@ export function AppFooter() {
         </div>
 
         {/* QR Code */}
-        <div className="flex justify-center md:justify-end">
+        <div className="flex justify-center md:justify-end animate-slide-in-from-bottom" style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}>
           {isLoading ? (
             <Skeleton className="h-32 w-32 rounded-lg" />
           ) : (
