@@ -16,7 +16,8 @@ import Link from 'next/link';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { useSession } from '@/hooks/use-session';
 import { Button } from '@/components/ui/button';
-import { get, hasCampaignPermission, hasLeadPermission } from '@/lib/modules';
+import { hasCampaignPermission, hasLeadPermission } from '@/lib/modules';
+import { get } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const dashboardCards = [
@@ -152,3 +153,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

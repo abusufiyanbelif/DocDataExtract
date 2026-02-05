@@ -4,14 +4,16 @@
 
 import React, { useMemo, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc, useCollection, useBranding, usePaymentSettings } from '@/firebase';
+import { useFirestore, useDoc, useCollection } from '@/firebase';
+import { useBranding } from '@/hooks/use-branding';
+import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { doc, collection, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-import type { Campaign, Beneficiary, Donation } from '@/lib/types';
+import type { Campaign, Beneficiary, Donation, DonationCategory } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -76,13 +78,23 @@ export default function PublicCampaignSummaryPage() {
         
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
-        const amountsByCategory = donationCategories.reduce((acc, cat) => {
-            acc[cat] = verifiedDonationsList
-                .flatMap(d => d.typeSplit || [])
-                .filter(split => split.category === cat)
-                .reduce((sum, split) => sum + split.amount, 0);
-            return acc;
-        }, {} as Record<typeof donationCategories[number], number>);
+        const amountsByCategory: Record<DonationCategory, number> = donationCategories.reduce((acc, cat) => ({...acc, [cat]: 0}), {} as Record<DonationCategory, number>);
+
+        verifiedDonationsList.forEach(d => {
+            if (d.typeSplit && d.typeSplit.length > 0) {
+                d.typeSplit.forEach(split => {
+                    const category = (split.category as any) === 'General' ? 'Sadqa' : split.category as DonationCategory;
+                    if (amountsByCategory.hasOwnProperty(category)) {
+                        amountsByCategory[category] += split.amount;
+                    }
+                });
+            } else if (d.type) {
+                const category = d.type === 'General' ? 'Sadqa' : d.type;
+                if (amountsByCategory.hasOwnProperty(category)) {
+                    amountsByCategory[category as DonationCategory] += d.amount;
+                }
+            }
+        });
 
         const verifiedNonZakatDonations = Object.entries(amountsByCategory)
             .filter(([category]) => category !== 'Zakat')
@@ -634,5 +646,7 @@ Your contribution, big or small, makes a huge difference.
 }
 
 
+
+    
 
     

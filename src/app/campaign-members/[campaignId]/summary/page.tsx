@@ -180,16 +180,19 @@ export default function CampaignSummaryPage() {
         const amountsByCategory: Record<DonationCategory, number> = donationCategories.reduce((acc, cat) => ({...acc, [cat]: 0}), {} as Record<DonationCategory, number>);
 
         verifiedDonationsList.forEach(d => {
-            const splits = d.typeSplit && d.typeSplit.length > 0
-                ? d.typeSplit
-                : (d.type ? [{ category: d.type as DonationCategory, amount: d.amount }] : []);
-            
-            splits.forEach(split => {
-                const category = (split.category as any) === 'General' ? 'Sadqa' : split.category;
+            if (d.typeSplit && d.typeSplit.length > 0) {
+                d.typeSplit.forEach(split => {
+                    const category = (split.category as any) === 'General' ? 'Sadqa' : split.category as DonationCategory;
+                    if (amountsByCategory.hasOwnProperty(category)) {
+                        amountsByCategory[category] += split.amount;
+                    }
+                });
+            } else if (d.type) {
+                const category = d.type === 'General' ? 'Sadqa' : d.type;
                 if (amountsByCategory.hasOwnProperty(category)) {
-                    amountsByCategory[category as DonationCategory] += split.amount;
+                    amountsByCategory[category as DonationCategory] += d.amount;
                 }
-            });
+            }
         });
 
         const verifiedNonZakatDonations = Object.entries(amountsByCategory)
@@ -923,5 +926,7 @@ Your contribution, big or small, makes a huge difference.
 }
 
 
+
+    
 
     

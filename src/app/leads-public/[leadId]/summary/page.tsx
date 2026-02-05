@@ -4,7 +4,9 @@
 
 import React, { useMemo, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc, useBranding, usePaymentSettings } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
+import { useBranding } from '@/hooks/use-branding';
+import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { doc, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import jsPDF from 'jspdf';
@@ -191,6 +193,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     position += 15;
                 }
                 
+                // Document Title
                 pdf.setFontSize(22).text(lead?.name || 'Lead Summary', pageCenter, position, { align: 'center' });
                 position += 15;
 
@@ -323,5 +326,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
         </div>
     );
 }
+
+    
 
     
