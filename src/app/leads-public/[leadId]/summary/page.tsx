@@ -18,6 +18,7 @@ import { ArrowLeft, Loader2, LogIn, Share2, Download } from 'lucide-react';
 import { AppFooter } from '@/components/app-footer';
 import { ShareDialog } from '@/components/share-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 export default function PublicLeadSummaryPage() {
@@ -66,56 +67,139 @@ We are currently assessing the needs for this initiative. Your support and feedb
         setIsShareDialogOpen(true);
     };
 
-    const handleDownload = async () => {
+    const handleDownload = async (format: 'png' | 'pdf') => {
         const element = summaryRef.current;
         if (!element) {
             toast({ title: 'Error', description: 'Cannot generate download, content is missing.', variant: 'destructive' });
             return;
         }
 
-        toast({ title: 'Generating PDF...', description: 'Please wait.' });
+        toast({ title: `Generating ${format.toUpperCase()}...`, description: 'Please wait.' });
 
         try {
             const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: null });
             
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            const pageCenter = pdfWidth / 2;
-            let position = 15;
-
-            pdf.setTextColor(10, 41, 19);
-
-            // Header with Logo and Org Name
-            if (brandingSettings?.logoUrl) {
-                const logoImg = await new Promise<HTMLImageElement>((resolve) => {
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    img.onload = () => resolve(img);
-                    img.src = `/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl!)}`;
-                });
-                const logoHeight = 15;
-                const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-                pdf.addImage(logoImg, 'PNG', 15, position, logoWidth, logoHeight);
-                pdf.setFontSize(18);
-                const textY = position + (logoHeight / 2) + 3;
-                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
-                position += logoHeight + 10;
-            } else {
-                pdf.setFontSize(18);
-                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', pageCenter, position, { align: 'center' });
-                position += 15;
-            }
+            const fetchAsDataURL = async (url: string | null): Promise<string | null> => {
+                if (!url) return null;
+                try {
+                    const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
+                    if (!response.ok) throw new Error(`Failed to fetch image: ${url}`);
+                    const blob = await response.blob();
+                    return new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error("Image fetch error:", error);
+                    return null;
+                }
+            };
             
-            // Document Title
-            pdf.setFontSize(22).text(lead?.name || 'Lead Summary', pageCenter, position, { align: 'center' });
-            position += 15;
+            const [logoDataUrl, qrDataUrl] = await Promise.all([
+                fetchAsDataURL(brandingSettings?.logoUrl || null),
+                fetchAsDataURL(paymentSettings?.qrCodeUrl || null)
+            ]);
 
-            const imgData = canvas.toDataURL('image/png');
-            const contentHeight = (canvas.height * (pdfWidth - 20)) / canvas.width;
-            pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, contentHeight);
+            const logoImg = logoDataUrl ? await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = logoDataUrl; }) : null;
+            const qrImg = qrDataUrl ? await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = qrDataUrl; }) : null;
+            
+            if (format === 'png') {
+                const PADDING = 40;
+                const HEADER_HEIGHT = 120;
+                const FOOTER_HEIGHT = 200;
+                
+                const contentCanvas = canvas;
 
-            pdf.save(`lead-summary-${leadId}.pdf`);
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = contentCanvas.width + PADDING * 2;
+                finalCanvas.height = contentCanvas.height + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING;
+                const ctx = finalCanvas.getContext('2d')!;
+                
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+                if (logoImg) {
+                    const wmScale = 0.8;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.05;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+                }
+
+                let headerTextX = PADDING;
+                if (logoImg) {
+                    const logoHeight = 80;
+                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+                    ctx.drawImage(logoImg, PADDING, PADDING / 2, logoWidth, logoHeight);
+                    headerTextX = PADDING + logoWidth + 20;
+                }
+                
+                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.font = 'bold 28px sans-serif';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', headerTextX, (PADDING / 2) + 40);
+
+                ctx.font = 'bold 24px sans-serif';
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillText(lead?.name || 'Lead Summary', PADDING, HEADER_HEIGHT);
+                
+                ctx.drawImage(contentCanvas, PADDING, HEADER_HEIGHT + (PADDING/2));
+                
+                const footerY = finalCanvas.height - FOOTER_HEIGHT;
+                if (qrImg) {
+                    const qrSize = 180;
+                    ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
+                }
+                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.font = 'bold 20px sans-serif';
+                ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
+                ctx.font = '18px sans-serif';
+                let textY = footerY + 55;
+                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 28; }
+                if (paymentSettings?.contactPhone) { ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, textY); textY += 28; }
+                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 28; }
+                if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
+
+                const link = document.createElement('a');
+                link.download = `lead-summary-${leadId}.png`;
+                link.href = finalCanvas.toDataURL('image/png');
+                link.click();
+            } else { // pdf
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const pageCenter = pdfWidth / 2;
+                let position = 15;
+
+                pdf.setTextColor(10, 41, 19);
+
+                // Header with Logo and Org Name
+                if (logoImg && logoDataUrl) {
+                    const logoHeight = 15;
+                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+                    pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
+                    pdf.setFontSize(18);
+                    const textY = position + (logoHeight / 2) + 3;
+                    pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
+                    position += logoHeight + 10;
+                } else {
+                    pdf.setFontSize(18);
+                    pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', pageCenter, position, { align: 'center' });
+                    position += 15;
+                }
+                
+                pdf.setFontSize(22).text(lead?.name || 'Lead Summary', pageCenter, position, { align: 'center' });
+                position += 15;
+
+                const imgData = canvas.toDataURL('image/png');
+                const contentHeight = (canvas.height * (pdfWidth - 20)) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, contentHeight);
+
+                pdf.save(`lead-summary-${leadId}.pdf`);
+            }
         } catch (error) {
             console.error("Download failed:", error);
             toast({ title: 'Download Failed', description: 'Could not generate the PDF.', variant: 'destructive' });
@@ -166,9 +250,18 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         <p className="text-muted-foreground">{lead.status}</p>
                     </div>
                     <div className="flex gap-2">
-                        <Button onClick={handleDownload} variant="outline">
-                            <Download className="mr-2 h-4 w-4" /> Download
-                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline">
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => handleDownload('png')}>Download as Image (PNG)</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         <Button onClick={handleShare} variant="outline">
                             <Share2 className="mr-2 h-4 w-4" /> Share
                         </Button>
@@ -221,3 +314,5 @@ We are currently assessing the needs for this initiative. Your support and feedb
         </div>
     );
 }
+
+    

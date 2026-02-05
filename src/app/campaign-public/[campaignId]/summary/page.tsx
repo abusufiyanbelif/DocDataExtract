@@ -307,50 +307,61 @@ Your contribution, big or small, makes a huge difference.
             
             if (format === 'png') {
                 const PADDING = 40;
-                const HEADER_HEIGHT = 100;
-                const FOOTER_HEIGHT = 150;
-                const A4_ASPECT_RATIO = 1.414;
+                const HEADER_HEIGHT = 120;
+                const FOOTER_HEIGHT = 200;
                 
-                const finalCanvas = document.createElement('canvas');
-                finalCanvas.width = canvas.width + PADDING * 2;
-                finalCanvas.height = Math.max(canvas.height + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING * 2, finalCanvas.width * A4_ASPECT_RATIO);
-                const ctx = finalCanvas.getContext('2d')!;
+                const contentCanvas = canvas;
 
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = contentCanvas.width + PADDING * 2;
+                finalCanvas.height = contentCanvas.height + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING;
+                const ctx = finalCanvas.getContext('2d')!;
+                
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
                 if (logoImg) {
-                    const wmScale = 0.7;
+                    const wmScale = 0.8;
                     const wmWidth = finalCanvas.width * wmScale;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
                     ctx.globalAlpha = 0.05;
                     ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
                     ctx.globalAlpha = 1.0;
-
-                    const logoHeight = 60;
-                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-                    ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
                 }
 
-                ctx.fillStyle = 'rgb(10, 41, 19)';
-                ctx.font = 'bold 32px sans-serif';
-                ctx.fillText(campaign?.name || 'Campaign Summary', PADDING + (logoImg ? 90 : 0), PADDING + 40);
+                let headerTextX = PADDING;
+                if (logoImg) {
+                    const logoHeight = 80;
+                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+                    ctx.drawImage(logoImg, PADDING, PADDING / 2, logoWidth, logoHeight);
+                    headerTextX = PADDING + logoWidth + 20;
+                }
                 
-                ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT);
+                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.font = 'bold 28px sans-serif';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', headerTextX, (PADDING / 2) + 40);
+
+                ctx.font = 'bold 24px sans-serif';
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillText(campaign?.name || 'Campaign Summary', PADDING, HEADER_HEIGHT);
+                
+                ctx.drawImage(contentCanvas, PADDING, HEADER_HEIGHT + (PADDING/2));
                 
                 const footerY = finalCanvas.height - FOOTER_HEIGHT;
-
                 if (qrImg) {
-                    const qrSize = 130;
+                    const qrSize = 180;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
-                ctx.font = 'bold 18px sans-serif';
-                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING, footerY + 20);
-                ctx.font = '14px sans-serif';
-                let textY = footerY + 45;
-                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 20; }
-                if (paymentSettings?.contactPhone) { ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, textY); textY += 20; }
-                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 20; }
+                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.font = 'bold 20px sans-serif';
+                ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
+                ctx.font = '18px sans-serif';
+                let textY = footerY + 55;
+                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 28; }
+                if (paymentSettings?.contactPhone) { ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, textY); textY += 28; }
+                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 28; }
+                if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
 
                 const link = document.createElement('a');
                 link.download = `campaign-summary-${campaignId}.png`;
@@ -777,3 +788,6 @@ Your contribution, big or small, makes a huge difference.
     );
 }
 
+
+
+    
