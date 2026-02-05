@@ -1,7 +1,7 @@
 
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useCollection, useFirestore } from '@/firebase';
 import type { Lead } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,7 @@ import { collection, query, where } from 'firebase/firestore';
 
 export default function PublicLeadPage() {
   const firestore = useFirestore();
+  const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -98,7 +100,7 @@ export default function PublicLeadPage() {
         {!isLoading && filteredLeads.length > 0 && (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredLeads.map(lead => (
-                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
+                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer" onClick={() => router.push(`/leads-public/${lead.id}/summary`)}>
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
                                 <CardTitle>{lead.name}</CardTitle>
@@ -115,12 +117,12 @@ export default function PublicLeadPage() {
                                 <Badge variant="outline">{lead.authenticityStatus}</Badge>
                                 <Badge variant="outline">{lead.publicVisibility}</Badge>
                             </div>
-                            <Button asChild className="mt-4 w-full">
-                                <Link href={`/leads-public/${lead.id}/summary`}>
-                                    View Details
-                                </Link>
-                            </Button>
                         </CardContent>
+                         <CardFooter>
+                            <Button className="w-full" tabIndex={-1}>
+                                View Details
+                            </Button>
+                        </CardFooter>
                     </Card>
                 ))}
             </div>
@@ -135,4 +137,3 @@ export default function PublicLeadPage() {
     </div>
   );
 }
-
