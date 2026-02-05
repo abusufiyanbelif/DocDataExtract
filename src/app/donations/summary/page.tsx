@@ -53,7 +53,6 @@ const donationTypeChartConfig = {
     Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
     Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
-    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
     'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
@@ -216,7 +215,7 @@ export default function DonationsSummaryPage() {
                             <CardTitle>Total Collections by Category</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {donationCategories.map(category => (
+                            {donationCategories.filter(c => c !== 'Loan').map(category => (
                                 <Card key={category}>
                                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                         <CardTitle className="text-sm font-medium">{category}</CardTitle>

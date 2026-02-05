@@ -14,6 +14,7 @@ import Link from 'next/link';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { PieChart, Pie, Cell } from 'recharts';
 
 import type { Lead, Beneficiary, Donation, DonationCategory } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
@@ -43,6 +44,23 @@ import { ShareDialog } from '@/components/share-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { donationCategories } from '@/lib/modules';
 import { Badge } from '@/components/ui/badge';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
+
+const donationTypeChartConfig = {
+    Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
+    Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
+    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
+    Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
+    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
+} satisfies ChartConfig;
+
 
 export default function LeadSummaryPage() {
     const params = useParams();
@@ -182,6 +200,13 @@ export default function LeadSummaryPage() {
         };
     }, [beneficiaries, donations, lead]);
     
+    const chartData = useMemo(() => {
+        if (!summaryData?.amountsByCategory) return [];
+        return Object.entries(summaryData.amountsByCategory)
+            .map(([name, value]) => ({ name, value }))
+            .filter(item => item.value > 0);
+    }, [summaryData]);
+    
     const isLoading = isLeadLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading || isBrandingLoading || isPaymentLoading;
     
     const handleShare = async () => {
@@ -292,7 +317,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     headerTextX = PADDING + logoWidth + 20;
                 }
                 
-                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.fillStyle = 'hsl(142 70% 25%)';
                 ctx.font = 'bold 28px sans-serif';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', headerTextX, (PADDING / 2) + 40);
@@ -308,7 +333,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     const qrSize = 180;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
-                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.fillStyle = 'hsl(142 70% 25%)';
                 ctx.font = 'bold 20px sans-serif';
                 ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
                 ctx.font = '18px sans-serif';
@@ -329,7 +354,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 const pageCenter = pdfWidth / 2;
                 let position = 15;
 
-                pdf.setTextColor(10, 41, 19);
+                pdf.setTextColor(19, 106, 51);
 
                 // Header with Logo and Org Name
                 if (logoImg && logoDataUrl) {
@@ -353,7 +378,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
 
                 if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.25 }));
+                    pdf.setGState(new pdf.GState({ opacity: 0.15 }));
                     const wmWidth = pdfWidth * 0.75;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
                     pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
@@ -767,6 +792,29 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     </Card>
                 </div>
 
+                {chartData.length > 0 && (
+                    <Card className="mt-6">
+                        <CardHeader>
+                            <CardTitle>Donation Breakdown</CardTitle>
+                            <CardDescription>Visual breakdown of verified donations by category.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={donationTypeChartConfig} className="mx-auto aspect-square h-[300px]">
+                                <PieChart>
+                                    <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+                                    <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={60}>
+                                        {chartData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.name in donationTypeChartConfig ? `var(--color-${(entry.name as string).replace(/\s+/g, '')})` : 'hsl(var(--muted))'} />
+                                        ))}
+                                    </Pie>
+                                    <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+                                </PieChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                )}
+
+
                 <ShareDialog 
                     open={isShareDialogOpen} 
                     onOpenChange={setIsShareDialogOpen} 
@@ -777,12 +825,3 @@ We are currently assessing the needs for this initiative. Your support and feedb
     );
 }
 
-
-
-    
-
-    
-
-
-
-    

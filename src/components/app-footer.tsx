@@ -15,10 +15,8 @@ export function AppFooter() {
   const { paymentSettings, isLoading: isPaymentLoading } = usePaymentSettings();
   const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
   const { toast } = useToast();
-  const pathname = usePathname();
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
 
-  const isSummaryPage = pathname.includes('/summary');
   const isLoading = isPaymentLoading || isBrandingLoading;
 
   const copyToClipboard = (text: string, type: string) => {
@@ -63,10 +61,6 @@ export function AppFooter() {
         });
     }
   };
-
-  if (isSummaryPage) {
-    return null;
-  }
   
   const hasPaymentInfo = paymentSettings?.upiId || paymentSettings?.paymentMobileNumber || validQrCodeUrl;
   const hasContactInfo = paymentSettings?.contactEmail || paymentSettings?.contactPhone || paymentSettings?.website;
