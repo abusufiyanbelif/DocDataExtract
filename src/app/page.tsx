@@ -113,7 +113,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {visibleCards.map((card) => (
                 <Link href={card.href} key={card.title} className="group">
-                    <Card className="h-full hover:shadow-lg hover:border-primary transition-all">
+                    <Card className="h-full hover:shadow-lg hover:border-primary transition-all duration-200 ease-in-out hover:scale-105 active:scale-95">
                     <CardHeader className="flex flex-row items-center gap-4 space-y-0">
                         {card.icon}
                         <div className="flex-1">

@@ -339,17 +339,17 @@ export default function LeadPage() {
                     const target = lead.targetAmount || 0;
                     const progress = target > 0 ? (collected / target) * 100 : 0;
                     return (
-                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
+                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer" onClick={() => router.push(`/leads-members/${lead.id}/summary`)}>
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
                                 <CardTitle className="w-full break-words">{lead.name}</CardTitle>
                                  <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                             <MoreHorizontal className="h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
+                                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                                         <DropdownMenuItem onClick={() => router.push(`/leads-members/${lead.id}/summary`)} className="cursor-pointer">
                                             <Edit className="mr-2 h-4 w-4" />
                                             View Details
