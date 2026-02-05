@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -16,7 +17,7 @@ interface DonationReceiptProps {
 const ReceiptRow = ({ label, value, isMono = false }: { label: string; value: React.ReactNode, isMono?: boolean }) => (
     <div className="flex justify-between items-baseline gap-4 py-1">
         <p className="text-sm text-muted-foreground whitespace-nowrap">{label}</p>
-        <p className={`text-lg font-semibold text-right ${isMono ? 'font-mono' : ''}`}>{value}</p>
+        <p className={`text-xl font-semibold text-right ${isMono ? 'font-mono' : ''}`}>{value}</p>
     </div>
 );
 
@@ -59,18 +60,18 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         <Separator />
                         <div className="space-y-2">
                             <h3 className="font-bold text-xl">Category Breakdown</h3>
-                            <Table className="text-base">
+                            <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Category</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
+                                        <TableHead className="text-sm">Category</TableHead>
+                                        <TableHead className="text-right text-sm">Amount</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {typeSplit.map((split) => (
                                         <TableRow key={split.category}>
-                                            <TableCell className="py-2 text-base">{split.category}</TableCell>
-                                            <TableCell className="py-2 text-right font-mono text-base">Rupee {split.amount.toFixed(2)}</TableCell>
+                                            <TableCell className="py-1">{split.category}</TableCell>
+                                            <TableCell className="py-1 text-right font-mono">Rupee {split.amount.toFixed(2)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -79,8 +80,8 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         {(donation.comments || donation.suggestions) && (
                             <>
                                 <Separator />
-                                <div className="space-y-3 text-base">
-                                    <h3 className="font-bold text-xl">Additional Notes</h3>
+                                <div className="space-y-3 text-sm">
+                                    <h3 className="font-bold text-lg">Additional Notes</h3>
                                     {donation.comments && <p><strong>Comments:</strong> {donation.comments}</p>}
                                     {donation.suggestions && <p><strong>Suggestions:</strong> {donation.suggestions}</p>}
                                 </div>
@@ -89,8 +90,8 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                          <Separator />
                          <p className="pt-2 text-center w-full text-xs text-muted-foreground">This is a computer-generated receipt and does not require a signature.</p>
                     </CardContent>
-                    <CardFooter className="flex-col items-center justify-center text-center p-6 bg-muted/50">
-                        <p className="font-semibold text-primary">JazakAllah Khair!</p>
+                    <CardFooter className="flex-col items-center justify-center text-center p-4 bg-muted/50">
+                        <p className="font-semibold text-primary text-lg">JazakAllah Khair!</p>
                         <p className="text-sm text-muted-foreground">May Allah accept your donation and bless you abundantly.</p>
                     </CardFooter>
                 </div>

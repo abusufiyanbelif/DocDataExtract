@@ -307,8 +307,8 @@ Your contribution, big or small, makes a huge difference.
             
             if (format === 'png') {
                 const PADDING = 40;
-                const HEADER_HEIGHT = 120;
-                const FOOTER_HEIGHT = 200;
+                const HEADER_HEIGHT = 100;
+                const FOOTER_HEIGHT = 180;
                 
                 const contentCanvas = canvas;
 
@@ -336,13 +336,13 @@ Your contribution, big or small, makes a huge difference.
                     ctx.drawImage(logoImg, PADDING, PADDING / 2, logoWidth, logoHeight);
                     headerTextX = PADDING + logoWidth + 20;
                 }
-                
+
                 ctx.fillStyle = 'rgb(10, 41, 19)';
-                ctx.font = 'bold 28px sans-serif';
+                ctx.font = 'bold 22px sans-serif';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', headerTextX, (PADDING / 2) + 40);
 
-                ctx.font = 'bold 24px sans-serif';
+                ctx.font = 'bold 20px sans-serif';
                 ctx.textBaseline = 'alphabetic';
                 ctx.fillText(campaign?.name || 'Campaign Summary', PADDING, HEADER_HEIGHT);
                 
@@ -350,17 +350,17 @@ Your contribution, big or small, makes a huge difference.
                 
                 const footerY = finalCanvas.height - FOOTER_HEIGHT;
                 if (qrImg) {
-                    const qrSize = 180;
+                    const qrSize = 200;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
                 ctx.fillStyle = 'rgb(10, 41, 19)';
-                ctx.font = 'bold 20px sans-serif';
+                ctx.font = 'bold 18px sans-serif';
                 ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
-                ctx.font = '18px sans-serif';
-                let textY = footerY + 55;
-                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 28; }
-                if (paymentSettings?.contactPhone) { ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, textY); textY += 28; }
-                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 28; }
+                ctx.font = '16px sans-serif';
+                let textY = footerY + 50;
+                if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 24; }
+                if (paymentSettings?.contactPhone) { ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, textY); textY += 24; }
+                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
 
                 const link = document.createElement('a');
@@ -376,24 +376,21 @@ Your contribution, big or small, makes a huge difference.
 
                 pdf.setTextColor(10, 41, 19);
 
-                // Header with Logo and Org Name
                 if (logoImg && logoDataUrl) {
                     const logoHeight = 15;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
-                    pdf.setFontSize(18);
-                    // Vertically center the text with the logo
+                    pdf.setFontSize(16);
                     const textY = position + (logoHeight / 2) + 3;
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
                     position += logoHeight + 10;
                 } else {
-                    pdf.setFontSize(18);
+                    pdf.setFontSize(16);
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', pageCenter, position, { align: 'center' });
                     position += 15;
                 }
                 
-                // Document Title
-                pdf.setFontSize(22).text(campaign?.name || 'Campaign Summary', pageCenter, position, { align: 'center' });
+                pdf.setFontSize(18).text(campaign?.name || 'Campaign Summary', pageCenter, position, { align: 'center' });
                 position += 15;
 
                 if (logoImg && logoDataUrl) {
@@ -406,20 +403,23 @@ Your contribution, big or small, makes a huge difference.
                 }
 
                 const imgData = canvas.toDataURL('image/png');
-                const contentHeight = (canvas.height * (pdfWidth - 30)) / canvas.width;
-                
-                if (position + contentHeight > pageHeight - 40) {
-                     pdf.addPage();
-                     position = 15;
-                }
+                const imgProps = pdf.getImageProperties(imgData);
 
-                pdf.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, contentHeight);
-                position += contentHeight + 10;
-                
-                if (position > pageHeight - 60) {
-                    pdf.addPage();
-                    position = 15;
+                const footerHeight = 60;
+                const availableHeight = pageHeight - position - footerHeight;
+
+                let imgWidth = pdfWidth - 30;
+                let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+                if (imgHeight > availableHeight) {
+                    imgHeight = availableHeight;
+                    imgWidth = (imgProps.width * imgHeight) / imgProps.height;
                 }
+                
+                const xOffset = (pdfWidth - imgWidth) / 2;
+                pdf.addImage(imgData, 'PNG', xOffset, position, imgWidth, imgHeight);
+                position = pageHeight - footerHeight;
+                
                 pdf.setLineWidth(0.2);
                 pdf.line(15, position, pdfWidth - 15, position);
                 position += 8;
@@ -430,7 +430,7 @@ Your contribution, big or small, makes a huge difference.
                 pdf.setFontSize(9);
                 
                 if (qrImg) {
-                    const qrSize = 30;
+                    const qrSize = 35;
                     const qrX = pdfWidth - 15 - qrSize;
                     pdf.addImage(qrDataUrl!, 'PNG', qrX, position - 2, qrSize, qrSize);
                 }
@@ -690,89 +690,6 @@ Your contribution, big or small, makes a huge difference.
                                 ) : (
                                     <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
                                 )}
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="grid gap-6 lg:grid-cols-2 p-4">
-                        <Card>
-                            <CardHeader>
-                                <div className="flex justify-between items-center">
-                                <CardTitle>{donationChartFilter} Donations by Category</CardTitle>
-                                    <Select value={donationChartFilter} onValueChange={(value: any) => setDonationChartFilter(value)}>
-                                        <SelectTrigger className="w-[140px]">
-                                            <SelectValue placeholder="Filter status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="All">All</SelectItem>
-                                            <SelectItem value="Verified">Verified</SelectItem>
-                                            <SelectItem value="Pending">Pending</SelectItem>
-                                            <SelectItem value="Canceled">Canceled</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <ChartContainer config={donationTypeChartConfig} className="h-[300px] w-full">
-                                    <BarChart data={summaryData?.donationChartData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
-                                        <CartesianGrid vertical={false} />
-                                        <XAxis
-                                            dataKey="name"
-                                            tickLine={false}
-                                            tickMargin={10}
-                                            axisLine={false}
-                                        />
-                                        <YAxis
-                                            tickFormatter={(value) => `Rupee ${Number(value).toLocaleString('en-IN')}`}
-                                        />
-                                        <ChartTooltip
-                                            cursor={false}
-                                            content={<ChartTooltipContent indicator="dot" />}
-                                        />
-                                        <Bar
-                                            dataKey="value"
-                                            radius={4}
-                                        >
-                                             {summaryData?.donationChartData && summaryData.donationChartData.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ChartContainer>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{donationChartFilter} Donations by Payment Type</CardTitle>
-                                <CardDescription>Count of donations per payment type.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[300px] flex items-center justify-center">
-                                <ChartContainer
-                                    config={donationPaymentTypeChartConfig}
-                                    className="mx-auto aspect-square h-full"
-                                >
-                                    <PieChart>
-                                        <ChartTooltip
-                                            content={<ChartTooltipContent nameKey="name" />}
-                                        />
-                                        <Pie
-                                            data={summaryData?.donationPaymentTypeChartData}
-                                            dataKey="value"
-                                            nameKey="name"
-                                            cx="50%"
-                                            cy="50%"
-                                            outerRadius={80}
-                                        >
-                                            {summaryData?.donationPaymentTypeChartData && summaryData.donationPaymentTypeChartData.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
-                                            ))}
-                                        </Pie>
-                                        <ChartLegend
-                                            content={<ChartLegendContent nameKey="name" />}
-                                        />
-                                    </PieChart>
-                                </ChartContainer>
                             </CardContent>
                         </Card>
                     </div>
