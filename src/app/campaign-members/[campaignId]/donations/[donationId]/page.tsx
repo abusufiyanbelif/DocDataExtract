@@ -111,13 +111,10 @@ export default function DonationDetailsPage() {
                 backgroundColor: '#FFFFFF'
             });
 
-            const logoUrl = brandingSettings?.logoUrl?.trim() ? `/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl)}` : null;
-            const qrUrl = paymentSettings?.qrCodeUrl?.trim() ? `/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}` : null;
-
-            const fetchAsDataURL = async (url: string | null): Promise<string | null> => {
+            const fetchAsDataURL = async (url: string | null | undefined): Promise<string | null> => {
                 if (!url) return null;
                 try {
-                    const response = await fetch(url);
+                    const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
                     if (!response.ok) throw new Error(`Failed to fetch image: ${url}`);
                     const blob = await response.blob();
                     return new Promise<string>((resolve, reject) => {
@@ -133,8 +130,8 @@ export default function DonationDetailsPage() {
             };
             
             const [logoDataUrl, qrDataUrl] = await Promise.all([
-                fetchAsDataURL(logoUrl),
-                fetchAsDataURL(qrUrl)
+                fetchAsDataURL(brandingSettings?.logoUrl),
+                fetchAsDataURL(paymentSettings?.qrCodeUrl)
             ]);
 
             const logoImg = logoDataUrl ? await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = logoDataUrl; }) : null;
@@ -142,8 +139,8 @@ export default function DonationDetailsPage() {
 
             if (format === 'png') {
                 const PADDING = 40;
-                const HEADER_HEIGHT = 120;
-                const FOOTER_HEIGHT = 160;
+                const HEADER_HEIGHT = 140;
+                const FOOTER_HEIGHT = 220;
                 
                 const finalCanvas = document.createElement('canvas');
                 const contentWidth = Math.min(canvas.width, 1200);
@@ -155,22 +152,29 @@ export default function DonationDetailsPage() {
                 
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-
+                
                 if (logoImg) {
-                    const logoHeight = brandingSettings?.logoHeight ? brandingSettings.logoHeight * 2 : 90;
+                    const wmScale = 0.8;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.05;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+
+                    const logoHeight = 120;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
                 }
                 
                 ctx.fillStyle = 'rgb(10, 41, 19)';
                 ctx.font = 'bold 24px sans-serif';
-                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING + 120, PADDING + 55);
-
+                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING + 140, PADDING + 70);
+                
                 ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT, contentWidth, contentHeight);
                 
                 const footerY = finalCanvas.height - FOOTER_HEIGHT - PADDING;
                 if (qrImg) {
-                    const qrSize = 160;
+                    const qrSize = 200;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
                 ctx.fillStyle = 'rgb(10, 41, 19)';
@@ -187,23 +191,34 @@ export default function DonationDetailsPage() {
                 link.download = `donation-receipt-${donationId}.png`;
                 link.href = finalCanvas.toDataURL('image/png');
                 link.click();
+
             } else { // PDF
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
                 let position = 15;
 
-                if (logoImg) {
-                    const logoHeight = brandingSettings?.logoHeight ? (brandingSettings.logoHeight / 2.5) : 30;
-                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-                    pdf.addImage(logoDataUrl!, 'PNG', 15, position, logoWidth, logoHeight);
-                }
-
                 pdf.setTextColor(10, 41, 19);
-                pdf.setFontSize(16);
-                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + 40, position + 15);
+
+                if (logoImg && logoDataUrl) {
+                    const logoHeight = 40;
+                    const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
+                    pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
+                    position += logoHeight + 5;
+                }
                 
-                position += 40;
+                pdf.setFontSize(16);
+                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15, position);
+                position += 15;
+
+                if (logoImg && logoDataUrl) {
+                    pdf.saveGraphicsState();
+                    pdf.setGState(new pdf.GState({ opacity: 0.05 }));
+                    const wmWidth = pdfWidth * 0.75;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
+                    pdf.restoreGraphicsState();
+                }
 
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = pdf.getImageProperties(imgData);
@@ -225,8 +240,8 @@ export default function DonationDetailsPage() {
                 let textY = position + 6;
                 pdf.setFontSize(9);
 
-                if (qrImg) {
-                    const qrSize = 45;
+                if (qrImg && qrDataUrl) {
+                    const qrSize = 60;
                     const qrX = pdfWidth - 15 - qrSize;
                     pdf.addImage(qrDataUrl!, 'PNG', qrX, position, qrSize, qrSize);
                 }
@@ -329,8 +344,6 @@ export default function DonationDetailsPage() {
                     ref={receiptRef}
                     donation={donation} 
                     campaign={campaign} 
-                    brandingSettings={brandingSettings} 
-                    paymentSettings={paymentSettings} 
                 />
                 
                 <ShareDialog 

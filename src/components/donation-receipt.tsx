@@ -2,18 +2,16 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import type { Donation, Campaign, Lead, BrandingSettings, PaymentSettings } from '@/lib/types';
+import type { Donation, Campaign, Lead } from '@/lib/types';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from './ui/table';
 
 interface DonationReceiptProps {
   donation: Donation;
   campaign: Campaign | Lead;
-  brandingSettings: BrandingSettings | null;
-  paymentSettings: PaymentSettings | null;
 }
 
 const ReceiptRow = ({ label, value, isMono = false }: { label: string; value: React.ReactNode, isMono?: boolean }) => (
@@ -24,9 +22,7 @@ const ReceiptRow = ({ label, value, isMono = false }: { label: string; value: Re
 );
 
 export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptProps>(
-  ({ donation, campaign, brandingSettings, paymentSettings }, ref) => {
-    
-    const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
+  ({ donation, campaign }, ref) => {
     
     const typeSplit = donation.typeSplit && donation.typeSplit.length > 0
       ? donation.typeSplit
@@ -36,14 +32,6 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
     return (
         <div ref={ref} className="bg-background p-4 sm:p-8 rounded-lg">
             <Card className="w-full max-w-2xl mx-auto shadow-none border-border relative overflow-hidden">
-                 {validLogoUrl && (
-                    <img
-                        src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
-                        alt="Watermark"
-                        crossOrigin="anonymous"
-                        className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
-                    />
-                )}
                 <div className="relative">
                     <CardHeader className="text-center space-y-4">
                         <CardTitle className="text-2xl">Donation Receipt</CardTitle>
