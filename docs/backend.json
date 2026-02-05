@@ -150,7 +150,8 @@
         "qrCodeUrl": { "type": "string", "format": "uri" },
         "upiId": { "type": "string" },
         "contactEmail": { "type": "string", "format": "email" },
-        "address": { "type": "string" }
+        "address": { "type": "string" },
+        "website": { "type": "string", "format": "uri" }
       }
     }
   },

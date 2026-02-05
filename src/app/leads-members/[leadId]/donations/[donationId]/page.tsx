@@ -107,7 +107,7 @@ export default function DonationDetailsPage() {
             const canvas = await html2canvas(element, { 
                 scale: 2, 
                 useCORS: true,
-                backgroundColor: '#FFFFFF'
+                backgroundColor: null,
             });
 
             const fetchAsDataURL = async (url: string | null | undefined): Promise<string | null> => {
@@ -184,6 +184,7 @@ export default function DonationDetailsPage() {
                 if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 20; }
                 if (paymentSettings?.paymentMobileNumber) { ctx.fillText(`Phone: ${paymentSettings.paymentMobileNumber}`, PADDING, textY); textY += 20; }
                 if (paymentSettings?.contactEmail) { ctx.fillText(`Email: ${paymentSettings.contactEmail}`, PADDING, textY); textY += 20; }
+                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 20; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
 
                 const link = document.createElement('a');
@@ -246,6 +247,8 @@ export default function DonationDetailsPage() {
                 
                 if (paymentSettings?.upiId) { pdf.text(`UPI: ${paymentSettings.upiId}`, 15, textY); textY += 5; }
                 if (paymentSettings?.paymentMobileNumber) { pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, textY); textY += 5; }
+                if (paymentSettings?.contactEmail) { pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, textY); textY += 5; }
+                if (paymentSettings?.website) { pdf.text(`Website: ${paymentSettings.website}`, 15, textY); textY += 5; }
                 if (paymentSettings?.address) {
                     const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth / 2 - 30);
                     pdf.text(addressLines, 15, textY);

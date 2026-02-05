@@ -2,7 +2,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Copy, Smartphone, QrCode, Mail, Phone, Download } from 'lucide-react';
+import { Copy, Smartphone, QrCode, Mail, Phone, Download, Globe } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
@@ -49,7 +49,7 @@ export function AppFooter() {
   }
   
   const hasPaymentInfo = paymentSettings?.upiId || paymentSettings?.paymentMobileNumber || validQrCodeUrl;
-  const hasContactInfo = paymentSettings?.contactEmail || paymentSettings?.contactPhone;
+  const hasContactInfo = paymentSettings?.contactEmail || paymentSettings?.contactPhone || paymentSettings?.website;
   const hasOrgInfo = paymentSettings?.regNo || paymentSettings?.pan || paymentSettings?.address;
 
   if (!isLoading && !hasPaymentInfo && !hasContactInfo && !hasOrgInfo) {
@@ -78,6 +78,12 @@ export function AppFooter() {
             <div className="flex items-center gap-2 text-sm">
               <Phone className="h-4 w-4" />
               <span>{paymentSettings.contactPhone}</span>
+            </div>
+          )}
+           {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.website && (
+            <div className="flex items-center gap-2 text-sm">
+              <Globe className="h-4 w-4" />
+              <a href={paymentSettings.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{paymentSettings.website}</a>
             </div>
           )}
         </div>

@@ -375,29 +375,30 @@ Your contribution, big or small, makes a huge difference.
             const canvas = await html2canvas(element, { 
                 scale: 2, 
                 useCORS: true,
-                backgroundColor: '#FFFFFF'
+                backgroundColor: null,
             });
-
-            // Common branding elements
-            const logoUrl = brandingSettings?.logoUrl?.trim() ? `/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl)}` : null;
-            const qrUrl = paymentSettings?.qrCodeUrl?.trim() ? `/api/image-proxy?url=${encodeURIComponent(paymentSettings.qrCodeUrl)}` : null;
 
             const fetchAsDataURL = async (url: string | null): Promise<string | null> => {
                 if (!url) return null;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Failed to fetch image: ${url}`);
-                const blob = await response.blob();
-                return new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
+                try {
+                    const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(url)}`);
+                    if (!response.ok) throw new Error(`Failed to fetch image: ${url}`);
+                    const blob = await response.blob();
+                    return new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result as string);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error("Image fetch error:", error);
+                    return null;
+                }
             };
-
+            
             const [logoDataUrl, qrDataUrl] = await Promise.all([
-                fetchAsDataURL(logoUrl),
-                fetchAsDataURL(qrUrl)
+                fetchAsDataURL(brandingSettings?.logoUrl || null),
+                fetchAsDataURL(paymentSettings?.qrCodeUrl || null)
             ]);
 
             const logoImg = logoDataUrl ? await new Promise<HTMLImageElement>(res => { const i = new Image(); i.onload = () => res(i); i.src = logoDataUrl; }) : null;
@@ -407,38 +408,48 @@ Your contribution, big or small, makes a huge difference.
                 const PADDING = 40;
                 const HEADER_HEIGHT = 100;
                 const FOOTER_HEIGHT = 150;
+                const A4_ASPECT_RATIO = 1.414;
                 
                 const finalCanvas = document.createElement('canvas');
                 finalCanvas.width = canvas.width + PADDING * 2;
-                finalCanvas.height = canvas.height + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING * 2;
+                finalCanvas.height = Math.max(canvas.height + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING * 2, finalCanvas.width * A4_ASPECT_RATIO);
                 const ctx = finalCanvas.getContext('2d')!;
 
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
                 if (logoImg) {
-                    const logoHeight = brandingSettings?.logoHeight ? brandingSettings.logoHeight * 1.5 : 60;
+                    const wmScale = 0.7;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.05;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+
+                    const logoHeight = 60;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
                 }
+
                 ctx.fillStyle = 'rgb(10, 41, 19)';
-                ctx.font = 'bold 24px sans-serif';
-                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING, PADDING + 85);
                 ctx.font = 'bold 32px sans-serif';
-                ctx.fillText(campaign?.name || 'Campaign Summary', PADDING + (logoImg ? (logoImg.width / logoImg.height) * 60 + 20 : 0), PADDING + 40);
+                ctx.fillText(campaign?.name || 'Campaign Summary', PADDING + (logoImg ? 90 : 0), PADDING + 40);
                 
                 ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT);
                 
+                const footerY = finalCanvas.height - FOOTER_HEIGHT;
+
                 if (qrImg) {
-                    const qrSize = paymentSettings?.qrWidth ? paymentSettings.qrWidth * 1.2 : 130;
-                    ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, finalCanvas.height - FOOTER_HEIGHT, qrSize, qrSize);
+                    const qrSize = 130;
+                    ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
                 ctx.font = 'bold 18px sans-serif';
-                ctx.fillText('For Donations & Contact', PADDING, finalCanvas.height - FOOTER_HEIGHT + 20);
+                ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING, footerY + 20);
                 ctx.font = '14px sans-serif';
-                let textY = finalCanvas.height - FOOTER_HEIGHT + 45;
+                let textY = footerY + 45;
                 if (paymentSettings?.upiId) { ctx.fillText(`UPI: ${paymentSettings.upiId}`, PADDING, textY); textY += 20; }
                 if (paymentSettings?.contactPhone) { ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, textY); textY += 20; }
+                if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 20; }
 
                 const link = document.createElement('a');
                 link.download = `campaign-summary-${campaignId}.png`;
@@ -450,33 +461,41 @@ Your contribution, big or small, makes a huge difference.
                 const pageHeight = pdf.internal.pageSize.getHeight();
                 let position = 15;
 
+                pdf.setTextColor(10, 41, 19);
+
                 if (logoImg) {
-                    const logoHeight = brandingSettings?.logoHeight ? brandingSettings.logoHeight / 2.5 : 20;
+                    const logoHeight = 20;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-                    pdf.addImage(logoDataUrl!, 'PNG', 15, position, logoWidth, logoHeight);
-                    position += logoHeight;
+                    pdf.addImage(logoDataUrl!, 'PNG', 15, position - 5, logoWidth, logoHeight);
+                    pdf.setFontSize(20).text(campaign?.name || 'Campaign Summary', 15 + logoWidth + 5, position + 5);
+                } else {
+                    pdf.setFontSize(20).text(campaign?.name || 'Campaign Summary', 15, position + 5);
                 }
                 
-                pdf.setTextColor(10, 41, 19);
-                pdf.setFontSize(14);
-                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15, position + 5);
-                pdf.setFontSize(20);
-                pdf.text(campaign?.name || 'Campaign Summary', 15, position + 15);
-                
+                pdf.setFontSize(14).text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15, position + 15);
                 position += 25;
 
-                const imgData = canvas.toDataURL('image/png');
-                const imgProps = pdf.getImageProperties(imgData);
-                const contentHeight = (imgProps.height * (pdfWidth - 30)) / imgProps.width;
-
-                if (position + contentHeight > pageHeight - 30) {
-                    pdf.addPage();
-                    position = 15;
+                if (logoImg) {
+                    pdf.saveGraphicsState();
+                    pdf.setGState(new pdf.GState({ opacity: 0.05 }));
+                    const wmWidth = pdfWidth * 0.75;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    pdf.addImage(logoDataUrl!, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
+                    pdf.restoreGraphicsState();
                 }
+
+                const imgData = canvas.toDataURL('image/png');
+                const contentHeight = (canvas.height * (pdfWidth - 30)) / canvas.width;
+                
+                if (position + contentHeight > pageHeight - 40) {
+                     pdf.addPage();
+                     position = 15;
+                }
+
                 pdf.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, contentHeight);
                 position += contentHeight + 10;
                 
-                if (position + 60 > pageHeight) {
+                if (position > pageHeight - 60) {
                     pdf.addPage();
                     position = 15;
                 }
@@ -486,24 +505,24 @@ Your contribution, big or small, makes a huge difference.
 
                 pdf.setFontSize(12);
                 pdf.text('For Donations & Contact', 15, position);
-                position += 6;
+                let textY = position + 6;
                 pdf.setFontSize(9);
                 
-                const qrSize = paymentSettings?.qrWidth ? paymentSettings.qrWidth/4 : 30;
-
                 if (qrImg) {
+                    const qrSize = 30;
                     const qrX = pdfWidth - 15 - qrSize;
                     pdf.addImage(qrDataUrl!, 'PNG', qrX, position - 2, qrSize, qrSize);
                 }
                 
-                if (paymentSettings?.upiId) { pdf.text(`UPI: ${paymentSettings.upiId}`, 15, position); position += 5; }
-                if (paymentSettings?.paymentMobileNumber) { pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, position); position += 5; }
-                if (paymentSettings?.contactEmail) { pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, position); position += 5; }
-                if (paymentSettings?.pan) { pdf.text(`PAN: ${paymentSettings.pan}`, 15, position); position += 5; }
-                if (paymentSettings?.regNo) { pdf.text(`Reg No: ${paymentSettings.regNo}`, 15, position); position += 5; }
+                if (paymentSettings?.upiId) { pdf.text(`UPI: ${paymentSettings.upiId}`, 15, textY); textY += 5; }
+                if (paymentSettings?.paymentMobileNumber) { pdf.text(`Phone: ${paymentSettings.paymentMobileNumber}`, 15, textY); textY += 5; }
+                if (paymentSettings?.contactEmail) { pdf.text(`Email: ${paymentSettings.contactEmail}`, 15, textY); textY += 5; }
+                if (paymentSettings?.website) { pdf.text(`Website: ${paymentSettings.website}`, 15, textY); textY += 5; }
+                if (paymentSettings?.pan) { pdf.text(`PAN: ${paymentSettings.pan}`, 15, textY); textY += 5; }
+                if (paymentSettings?.regNo) { pdf.text(`Reg No: ${paymentSettings.regNo}`, 15, textY); textY += 5; }
                 if (paymentSettings?.address) {
-                    const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth - qrSize - 30);
-                    pdf.text(addressLines, 15, position);
+                    const addressLines = pdf.splitTextToSize(paymentSettings.address, pdfWidth - 30 - 40);
+                    pdf.text(addressLines, 15, textY);
                 }
                 
                 pdf.save(`campaign-summary-${campaignId}.pdf`);
@@ -665,6 +684,7 @@ Your contribution, big or small, makes a huge difference.
                             alt="Watermark"
                             crossOrigin="anonymous"
                             className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
+                            style={{aspectRatio: '1 / 1'}}
                         />
                     )}
                     <Card>

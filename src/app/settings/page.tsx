@@ -36,6 +36,7 @@ interface FormDataType {
     regNo: string;
     pan: string;
     address: string;
+    website: string;
 }
 
 export default function SettingsPage() {
@@ -76,6 +77,7 @@ export default function SettingsPage() {
                 regNo: paymentSettings?.regNo || '',
                 pan: paymentSettings?.pan || '',
                 address: paymentSettings?.address || '',
+                website: paymentSettings?.website || '',
             });
         } else {
             setEditableData(null);
@@ -156,7 +158,8 @@ export default function SettingsPage() {
             const paymentData = {
                 qrCodeUrl: newQrCodeUrl, qrWidth: Number(editableData.qrWidth) || null, qrHeight: Number(editableData.qrHeight) || null,
                 upiId: editableData.upiId, paymentMobileNumber: editableData.paymentMobileNumber, contactEmail: editableData.contactEmail,
-                contactPhone: editableData.contactPhone, regNo: editableData.regNo, pan: editableData.pan, address: editableData.address
+                contactPhone: editableData.contactPhone, regNo: editableData.regNo, pan: editableData.pan, address: editableData.address,
+                website: editableData.website,
             };
             batch.set(doc(firestore, 'settings', 'payment'), paymentData, { merge: true });
 
@@ -206,6 +209,7 @@ export default function SettingsPage() {
         regNo: paymentSettings?.regNo || '',
         pan: paymentSettings?.pan || '',
         address: paymentSettings?.address || '',
+        website: paymentSettings?.website || '',
     };
 
     if (isLoading) {
@@ -408,6 +412,10 @@ export default function SettingsPage() {
                                  <div className="space-y-2">
                                     <Label htmlFor="contactPhone">Contact Phone</Label>
                                     <Input id="contactPhone" value={displayData.contactPhone || ''} onChange={(e) => handleFieldChange('contactPhone', e.target.value)} placeholder="e.g. 9876543210" disabled={isFormDisabled} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="website">Website URL</Label>
+                                    <Input id="website" value={displayData.website || ''} onChange={(e) => handleFieldChange('website', e.target.value)} placeholder="https://example.com" disabled={isFormDisabled} />
                                 </div>
                             </div>
                         </CardContent>

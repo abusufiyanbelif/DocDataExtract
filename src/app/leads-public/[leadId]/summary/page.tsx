@@ -76,16 +76,13 @@ We are currently assessing the needs for this initiative. Your support and feedb
         toast({ title: 'Generating PDF...', description: 'Please wait.' });
 
         try {
-            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#FFFFFF' });
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: null });
             const imgData = canvas.toDataURL('image/png');
             
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pageHeight = pdf.internal.pageSize.getHeight();
             
-            const imgProps = pdf.getImageProperties(imgData);
-            const contentHeight = (imgProps.height * (pdfWidth - 20)) / imgProps.width;
-
             pdf.setTextColor(10, 41, 19);
             
             let position = 15;
@@ -105,6 +102,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
             pdf.setFontSize(20).text(lead?.name || 'Lead Summary', 15, position);
             position += 10;
             
+            const contentHeight = (canvas.height * (pdfWidth - 20)) / canvas.width;
             pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, contentHeight);
 
             pdf.save(`lead-summary-${leadId}.pdf`);
