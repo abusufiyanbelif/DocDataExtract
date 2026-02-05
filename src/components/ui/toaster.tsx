@@ -11,7 +11,7 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/components/ui/toast"
-import { Button } from "./button"
+import { cn } from "@/lib/utils"
 
 export function Toaster() {
   const { toasts, toast: showToast } = useToast()
@@ -44,6 +44,8 @@ export function Toaster() {
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, ...props }) {
         const isConfirmationToast = props.duration && props.duration <= 3000;
+        
+        const showCustomButtons = !isConfirmationToast && ['default', 'success', 'destructive'].includes(props.variant || 'default');
 
         return (
           <Toast key={id} {...props}>
@@ -52,14 +54,16 @@ export function Toaster() {
               {description && (
                 <ToastDescription>{description}</ToastDescription>
               )}
-               {!isConfirmationToast ? (
+               {showCustomButtons ? (
                 <div className="mt-4 flex gap-2">
-                    {action}
-                    {props.variant === 'success' ? (
-                    <>
-                      <ToastAction
+                    <ToastAction
                         altText="Copy"
-                        className="border border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                        className={cn(
+                            "border",
+                            props.variant === 'success' && "border-success-foreground text-success-foreground hover:bg-success-foreground hover:text-success",
+                            props.variant === 'destructive' && "border-destructive-foreground text-destructive-foreground hover:bg-destructive-foreground hover:text-destructive",
+                            props.variant === 'default' && "border-primary text-primary hover:bg-primary hover:text-primary-foreground",
+                        )}
                         onClick={(e) => {
                           e.preventDefault();
                           handleCopy(title, description);
@@ -69,46 +73,19 @@ export function Toaster() {
                       </ToastAction>
                       <ToastAction
                         altText="OK"
-                        className="border-transparent bg-primary text-primary-foreground hover:bg-primary/90"
+                        className={cn(
+                            "border-transparent",
+                            props.variant === 'success' && "bg-success-foreground text-success hover:bg-success-foreground/90",
+                            props.variant === 'destructive' && "bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90",
+                            props.variant === 'default' && "bg-primary text-primary-foreground hover:bg-primary/90"
+                        )}
                       >
                         OK
                       </ToastAction>
-                    </>
-                  ) : props.variant === 'destructive' ? (
-                     <>
-                      <ToastAction
-                        altText="Copy"
-                        className="border border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleCopy(title, description);
-                        }}
-                      >
-                        Copy
-                      </ToastAction>
-                      <ToastAction
-                        altText="OK"
-                        className="border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        OK
-                      </ToastAction>
-                    </>
-                  ) : (
-                    <>
-                      <ToastAction altText="OK">OK</ToastAction>
-                      <ToastAction
-                        altText="Copy message"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleCopy(title, description);
-                        }}
-                      >
-                        Copy
-                      </ToastAction>
-                    </>
-                  )}
                 </div>
-              ) : (action)}
+              ) : (
+                action && <div className="mt-4 flex gap-2">{action}</div>
+              )}
             </div>
             <ToastClose />
           </Toast>
