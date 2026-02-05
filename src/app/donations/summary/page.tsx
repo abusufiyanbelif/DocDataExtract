@@ -105,28 +105,29 @@ export default function DonationsSummaryPage() {
 
     const summaryData = useMemo(() => {
         if (!donations) return null;
-
-        const totalAmount = donations.reduce((acc, d) => acc + d.amount, 0);
-        const verifiedAmount = donations.filter(d => d.status === 'Verified').reduce((acc, d) => acc + d.amount, 0);
-        const pendingAmount = donations.filter(d => d.status === 'Pending').reduce((acc, d) => acc + d.amount, 0);
-        const canceledAmount = donations.filter(d => d.status === 'Canceled').reduce((acc, d) => acc + d.amount, 0);
         
         const allocatedCount = donations.filter(d => d.campaignId).length;
         const unallocatedCount = donations.length - allocatedCount;
 
-        const donationTypeData = donations.reduce((acc, d) => {
+        const amountsByCategory: Record<DonationCategory, number> = donationCategories.reduce((acc, cat) => ({...acc, [cat]: 0}), {} as Record<DonationCategory, number>);
+        const amountsByStatus: Record<string, number> = { Verified: 0, Pending: 0, Canceled: 0 };
+        const countsByStatus: Record<string, number> = { Verified: 0, Pending: 0, Canceled: 0 };
+        
+        donations.forEach(d => {
+            amountsByStatus[d.status] = (amountsByStatus[d.status] || 0) + d.amount;
+            countsByStatus[d.status] = (countsByStatus[d.status] || 0) + 1;
+
             const splits = d.typeSplit && d.typeSplit.length > 0
                 ? d.typeSplit
-                : (d.type ? [{ category: d.type, amount: d.amount }] : []);
+                : (d.type ? [{ category: d.type as DonationCategory, amount: d.amount }] : []);
             
             splits.forEach(split => {
                 const category = (split.category as any) === 'General' ? 'Sadqa' : split.category;
-                if (donationCategories.includes(category as DonationCategory)) {
-                    acc[category] = (acc[category] || 0) + split.amount;
+                if (amountsByCategory.hasOwnProperty(category)) {
+                    amountsByCategory[category as DonationCategory] += split.amount;
                 }
             });
-            return acc;
-        }, {} as Record<string, number>);
+        });
 
         const paymentTypeData = donations.reduce((acc, d) => {
             const key = d.donationType?.replace(/\s+/g, '') || 'Other';
@@ -134,22 +135,14 @@ export default function DonationsSummaryPage() {
             return acc;
         }, {} as Record<string, number>);
         
-        const statusData = donations.reduce((acc, d) => {
-            acc[d.status] = (acc[d.status] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-
         return {
-            totalAmount,
-            verifiedAmount,
-            pendingAmount,
-            canceledAmount,
             allocatedCount,
             unallocatedCount,
             totalCount: donations.length,
-            donationTypeChartData: Object.entries(donationTypeData).map(([name, value]) => ({ name, value })),
+            amountsByCategory,
+            amountsByStatus,
+            countsByStatus,
             donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value })),
-            donationStatusChartData: Object.entries(statusData).map(([name, value]) => ({ name, value })),
         };
     }, [donations]);
     
@@ -218,25 +211,34 @@ export default function DonationsSummaryPage() {
                 </div>
                 
                 <div className="space-y-6">
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Donation Amount</CardTitle>
-                                <Wallet className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.totalAmount.toLocaleString('en-IN') ?? '0.00'}</div>
-                                <p className="text-xs text-muted-foreground">from {summaryData?.totalCount ?? 0} donations</p>
-                            </CardContent>
-                        </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Total Collections by Category</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {donationCategories.map(category => (
+                                <Card key={category}>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">{category}</CardTitle>
+                                        <Wallet className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </CardContent>
+                    </Card>
+
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Verified Donations</CardTitle>
                                 <CheckCircle className="h-4 w-4 text-success" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.verifiedAmount.toLocaleString('en-IN') ?? '0.00'}</div>
-                                <p className="text-xs text-muted-foreground">from {summaryData?.donationStatusChartData?.find(d => d.name === 'Verified')?.value || 0} donations</p>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Verified.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Verified ?? 0} donations</p>
                             </CardContent>
                         </Card>
                         <Card>
@@ -245,8 +247,8 @@ export default function DonationsSummaryPage() {
                                 <Hourglass className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingAmount.toLocaleString('en-IN') ?? '0.00'}</div>
-                                <p className="text-xs text-muted-foreground">from {summaryData?.donationStatusChartData?.find(d => d.name === 'Pending')?.value || 0} donations</p>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Pending.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Pending ?? 0} donations</p>
                             </CardContent>
                         </Card>
                          <Card>
@@ -255,110 +257,14 @@ export default function DonationsSummaryPage() {
                                 <XCircle className="h-4 w-4 text-destructive" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.canceledAmount.toLocaleString('en-IN') ?? '0.00'}</div>
-                                <p className="text-xs text-muted-foreground">from {summaryData?.donationStatusChartData?.find(d => d.name === 'Canceled')?.value || 0} donations</p>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Canceled.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Canceled ?? 0} donations</p>
                             </CardContent>
                         </Card>
                     </div>
 
-                    <div className="grid gap-6 lg:grid-cols-3">
-                         <Card className="lg:col-span-1">
-                            <CardHeader>
-                                <CardTitle>Donations by Status</CardTitle>
-                                <CardDescription>Count of donations per status.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[300px] flex items-center justify-center">
-                                <ChartContainer
-                                    config={donationStatusChartConfig}
-                                    className="mx-auto aspect-square h-full"
-                                >
-                                    <PieChart>
-                                        <ChartTooltip
-                                            content={<ChartTooltipContent nameKey="name" />}
-                                        />
-                                        <Pie
-                                            data={summaryData?.donationStatusChartData}
-                                            dataKey="value"
-                                            nameKey="name"
-                                            cx="50%"
-                                            cy="50%"
-                                            outerRadius={80}
-                                            labelLine={false}
-                                            label={({
-                                              cx,
-                                              cy,
-                                              midAngle,
-                                              innerRadius,
-                                              outerRadius,
-                                              value,
-                                              index,
-                                            }) => {
-                                              const RADIAN = Math.PI / 180;
-                                              const radius = 25 + innerRadius + (outerRadius - innerRadius);
-                                              const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                                              const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-                                              return (
-                                                <text
-                                                  x={x}
-                                                  y={y}
-                                                  fill="hsl(var(--foreground))"
-                                                  textAnchor={x > cx ? "start" : "end"}
-                                                  dominantBaseline="central"
-                                                  className="text-xs"
-                                                >
-                                                  {summaryData?.donationStatusChartData?.[index].name} ({value})
-                                                </text>
-                                              );
-                                            }}
-                                        >
-                                            {summaryData?.donationStatusChartData?.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name})`} />
-                                            ))}
-                                        </Pie>
-                                    </PieChart>
-                                </ChartContainer>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="lg:col-span-2">
-                             <CardHeader>
-                                <CardTitle>Donations by Category</CardTitle>
-                                <CardDescription>Total amount collected per donation category.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ChartContainer config={donationTypeChartConfig} className="h-[300px] w-full">
-                                    <BarChart data={summaryData?.donationTypeChartData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
-                                        <CartesianGrid vertical={false} />
-                                        <XAxis
-                                            dataKey="name"
-                                            tickLine={false}
-                                            tickMargin={10}
-                                            axisLine={false}
-                                        />
-                                        <YAxis
-                                            tickFormatter={(value) => `Rupee ${Number(value / 1000).toLocaleString()}k`}
-                                        />
-                                        <ChartTooltip
-                                            cursor={false}
-                                            content={<ChartTooltipContent indicator="dot" />}
-                                        />
-                                        <Bar
-                                            dataKey="value"
-                                            radius={4}
-                                        >
-                                             {summaryData?.donationTypeChartData?.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ChartContainer>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                     <div className="grid gap-6 lg:grid-cols-2">
-                          <Card>
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Donations by Payment Type</CardTitle>
                                 <CardDescription>Count of donations per payment method.</CardDescription>

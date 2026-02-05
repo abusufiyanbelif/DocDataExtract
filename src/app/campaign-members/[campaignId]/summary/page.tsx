@@ -207,23 +207,24 @@ export default function CampaignSummaryPage() {
 
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
-        let zakatCollected = 0;
-        let verifiedNonZakatDonations = 0;
+        const amountsByCategory: Record<DonationCategory, number> = donationCategories.reduce((acc, cat) => ({...acc, [cat]: 0}), {} as Record<DonationCategory, number>);
 
         verifiedDonationsList.forEach(d => {
             const splits = d.typeSplit && d.typeSplit.length > 0
-              ? d.typeSplit
-              : (d.type ? [{ category: d.type, amount: d.amount }] : []);
+                ? d.typeSplit
+                : (d.type ? [{ category: d.type as DonationCategory, amount: d.amount }] : []);
             
             splits.forEach(split => {
-                // Treat 'General' as a non-Zakat donation (effectively 'Sadqa' for this calculation)
-                if (split.category === 'Zakat') {
-                    zakatCollected += split.amount;
-                } else {
-                    verifiedNonZakatDonations += split.amount;
+                const category = (split.category as any) === 'General' ? 'Sadqa' : split.category;
+                if (amountsByCategory.hasOwnProperty(category)) {
+                    amountsByCategory[category as DonationCategory] += split.amount;
                 }
             });
         });
+
+        const verifiedNonZakatDonations = Object.entries(amountsByCategory)
+            .filter(([category]) => category !== 'Zakat')
+            .reduce((sum, [, amount]) => sum + amount, 0);
 
         const pendingDonations = donations
             .filter(d => d.status === 'Pending')
@@ -304,7 +305,6 @@ export default function CampaignSummaryPage() {
 
         return {
             verifiedNonZakatDonations,
-            zakatCollected,
             pendingDonations,
             totalKitAmountRequired,
             fundingProgress,
@@ -316,6 +316,7 @@ export default function CampaignSummaryPage() {
             totalBeneficiaries: beneficiaries.length,
             targetAmount: campaign.targetAmount || 0,
             remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
+            amountsByCategory,
         };
     }, [beneficiaries, donations, campaign, donationChartFilter]);
     
@@ -890,7 +891,7 @@ Your contribution, big or small, makes a huge difference.
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                          <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Total Kit Amount Required</CardTitle>
@@ -902,24 +903,6 @@ Your contribution, big or small, makes a huge difference.
                         </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Kit Funding (Verified)</CardTitle>
-                                <Gift className="h-4 w-4 text-primary" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Zakat Collected (Verified)</CardTitle>
-                                <Wallet className="h-4 w-4 text-primary" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.zakatCollected.toLocaleString('en-IN') ?? '0.00'}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
                                 <Hourglass className="h-4 w-4 text-secondary-foreground" />
                             </CardHeader>
@@ -927,27 +910,29 @@ Your contribution, big or small, makes a huge difference.
                                 <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Beneficiary Status</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold mb-2">{summaryData?.totalBeneficiaries ?? 0} Total</div>
-                                <div className="space-y-1 text-sm">
-                                    {summaryData?.beneficiaryStatusData && Object.entries(summaryData.beneficiaryStatusData).map(([name, value]) => (
-                                        <div key={name} className="flex justify-between items-center">
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: `var(--color-${name.replace(/\s+/g, '')})` }} />
-                                                <span>{name}</span>
-                                            </div>
-                                            <span className="font-medium text-foreground">{value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
                     </div>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Verified Donations by Category</CardTitle>
+                            <CardDescription>
+                                Total verified funds collected for this campaign, broken down by category.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {donationCategories.map(category => (
+                                <Card key={category}>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">{category}</CardTitle>
+                                        <Wallet className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </CardContent>
+                    </Card>
                     
                     <Card>
                         <CardHeader>
@@ -971,88 +956,6 @@ Your contribution, big or small, makes a huge difference.
                         </CardContent>
                     </Card>
 
-                    <div className="grid gap-6 lg:grid-cols-2">
-                        <Card>
-                            <CardHeader>
-                                <div className="flex justify-between items-center">
-                                <CardTitle>{donationChartFilter} Donations by Category</CardTitle>
-                                    <Select value={donationChartFilter} onValueChange={(value: any) => setDonationChartFilter(value)}>
-                                        <SelectTrigger className="w-[140px]">
-                                            <SelectValue placeholder="Filter status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="All">All</SelectItem>
-                                            <SelectItem value="Verified">Verified</SelectItem>
-                                            <SelectItem value="Pending">Pending</SelectItem>
-                                            <SelectItem value="Canceled">Canceled</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <ChartContainer config={donationTypeChartConfig} className="h-[300px] w-full">
-                                    <BarChart data={summaryData?.donationChartData} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
-                                        <CartesianGrid vertical={false} />
-                                        <XAxis
-                                            dataKey="name"
-                                            tickLine={false}
-                                            tickMargin={10}
-                                            axisLine={false}
-                                        />
-                                        <YAxis
-                                            tickFormatter={(value) => `Rupee ${Number(value).toLocaleString('en-IN')}`}
-                                        />
-                                        <ChartTooltip
-                                            cursor={false}
-                                            content={<ChartTooltipContent indicator="dot" />}
-                                        />
-                                        <Bar
-                                            dataKey="value"
-                                            radius={4}
-                                        >
-                                             {summaryData?.donationChartData && summaryData.donationChartData.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ChartContainer>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{donationChartFilter} Donations by Payment Type</CardTitle>
-                                <CardDescription>Count of donations per payment type.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[300px] flex items-center justify-center">
-                                <ChartContainer
-                                    config={donationPaymentTypeChartConfig}
-                                    className="mx-auto aspect-square h-full"
-                                >
-                                    <PieChart>
-                                        <ChartTooltip
-                                            content={<ChartTooltipContent nameKey="name" />}
-                                        />
-                                        <Pie
-                                            data={summaryData?.donationPaymentTypeChartData}
-                                            dataKey="value"
-                                            nameKey="name"
-                                            cx="50%"
-                                            cy="50%"
-                                            outerRadius={80}
-                                        >
-                                            {summaryData?.donationPaymentTypeChartData && summaryData.donationPaymentTypeChartData.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
-                                            ))}
-                                        </Pie>
-                                        <ChartLegend
-                                            content={<ChartLegendContent nameKey="name" />}
-                                        />
-                                    </PieChart>
-                                </ChartContainer>
-                            </CardContent>
-                        </Card>
-                    </div>
                 </div>
 
                 <ShareDialog 

@@ -15,26 +15,13 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-} from 'recharts';
-
-import type { Lead, Beneficiary, Donation } from '@/lib/types';
+import type { Lead, Beneficiary, Donation, DonationCategory } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, Edit, Save, Wallet, Share2, Hourglass, LogIn, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, Edit, Save, Wallet, Share2, Hourglass, LogIn, Download } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -48,49 +35,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-} from '@/components/ui/chart';
-import type { ChartConfig } from '@/components/ui/chart';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { get } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { ShareDialog } from '@/components/share-dialog';
-import { AppFooter } from '@/components/app-footer';
 import { Checkbox } from '@/components/ui/checkbox';
 import { donationCategories } from '@/lib/modules';
 import { Badge } from '@/components/ui/badge';
-
-
-const donationTypeChartConfig = {
-    Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
-    Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
-    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
-    Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
-    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
-    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
-} satisfies ChartConfig;
-
-const donationPaymentTypeChartConfig = {
-    Cash: { label: "Cash", color: "hsl(var(--chart-1))" },
-    OnlinePayment: { label: "Online Payment", color: "hsl(var(--chart-2))" },
-    Check: { label: "Check", color: "hsl(var(--chart-3))" },
-    Other: { label: "Other", color: "hsl(var(--chart-4))" },
-} satisfies ChartConfig;
 
 export default function LeadSummaryPage() {
     const params = useParams();
@@ -104,7 +56,6 @@ export default function LeadSummaryPage() {
     // State for edit mode and form fields
     const [editMode, setEditMode] = useState(false);
     const [editableLead, setEditableLead] = useState<Partial<Lead>>({});
-    const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('All');
     
     const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
     const [shareDialogData, setShareDialogData] = useState({ title: '', text: '', url: '' });
@@ -206,15 +157,17 @@ export default function LeadSummaryPage() {
 
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
-        let zakatCollected = 0;
-        let verifiedNonZakatDonations = 0;
+        const amountsByCategory: Record<DonationCategory, number> = donationCategories.reduce((acc, cat) => ({...acc, [cat]: 0}), {} as Record<DonationCategory, number>);
 
         verifiedDonationsList.forEach(d => {
-            (d.typeSplit || []).forEach(split => {
-                if (split.category === 'Zakat') {
-                    zakatCollected += split.amount;
-                } else {
-                    verifiedNonZakatDonations += split.amount;
+            const splits = d.typeSplit && d.typeSplit.length > 0
+                ? d.typeSplit
+                : (d.type ? [{ category: d.type as DonationCategory, amount: d.amount }] : []);
+
+            splits.forEach(split => {
+                const category = (split.category as any) === 'General' ? 'Sadqa' : split.category;
+                if (amountsByCategory.hasOwnProperty(category)) {
+                     amountsByCategory[category as DonationCategory] += split.amount;
                 }
             });
         });
@@ -223,88 +176,12 @@ export default function LeadSummaryPage() {
             .filter(d => d.status === 'Pending')
             .reduce((acc, d) => acc + d.amount, 0);
 
-        const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + (b.kitAmount || 0), 0);
-        
-        const fundingGoal = lead.targetAmount || 0;
-        const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
-        const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
-
-        const beneficiaryStatusData = beneficiaries.reduce((acc, b) => {
-            const status = b.status || 'Pending';
-            acc[status] = (acc[status] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-
-        const beneficiaryCategoryData = beneficiaries.reduce((acc, beneficiary) => {
-            const categoryKey = beneficiary.members && beneficiary.members > 0 ? `${beneficiary.members}` : 'General';
-            
-            if (!acc[categoryKey]) {
-                acc[categoryKey] = { count: 0, totalAmount: 0, beneficiaries: [] };
-            }
-            acc[categoryKey].count++;
-            acc[categoryKey].totalAmount += beneficiary.kitAmount || 0;
-            acc[categoryKey].beneficiaries.push(beneficiary);
-            
-            return acc;
-        }, {} as Record<string, { count: number; totalAmount: number, beneficiaries: Beneficiary[] }>);
-
-        const beneficiaryCategoryBreakdown = Object.entries(beneficiaryCategoryData).map(([name, data]) => ({
-            name,
-            ...data
-        })).sort((a, b) => {
-            if (a.name === 'General') return 1;
-            if (b.name === 'General') return -1;
-            const aNum = parseInt(a.name);
-            const bNum = parseInt(b.name);
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-                return bNum - aNum;
-            }
-            return a.name.localeCompare(b.name);
-        });
-
-        const { donationChartData, donationPaymentTypeChartData } = (() => {
-            let filteredDonations = donations;
-            if (donationChartFilter !== 'All') {
-                filteredDonations = donations.filter(d => d.status === donationChartFilter);
-            }
-            
-            const donationTypeData = filteredDonations.reduce((acc, d) => {
-                (d.typeSplit || []).forEach(split => {
-                    acc[split.category] = (acc[split.category] || 0) + split.amount;
-                });
-                return acc;
-            }, {} as Record<string, number>);
-                
-            const paymentTypeData = filteredDonations.reduce((acc, d) => {
-                if (d.donationType) {
-                    const key = d.donationType.replace(/\s+/g, '');
-                    acc[key] = (acc[key] || 0) + 1;
-                }
-                return acc;
-            }, {} as Record<string, number>);
-
-            return {
-                donationChartData: Object.entries(donationTypeData).map(([name, value]) => ({ name, value })),
-                donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value }))
-            };
-        })();
-
         return {
-            verifiedNonZakatDonations,
-            zakatCollected,
-            pendingDonations,
-            totalKitAmountRequired,
-            fundingProgress,
-            pendingProgress,
-            beneficiaryStatusData,
-            beneficiaryCategoryBreakdown,
-            donationChartData,
-            donationPaymentTypeChartData,
             totalBeneficiaries: beneficiaries.length,
-            targetAmount: lead.targetAmount || 0,
-            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
+            pendingDonations,
+            amountsByCategory,
         };
-    }, [beneficiaries, donations, lead, donationChartFilter]);
+    }, [beneficiaries, donations, lead]);
     
     const isLoading = isLeadLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading || isBrandingLoading || isPaymentLoading;
     
@@ -836,7 +713,48 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         </CardContent>
                     </Card>
 
-                    {/* Other summary cards and charts can go here */}
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                         <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
+                                <Hourglass className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Verified Donations by Category</CardTitle>
+                            <CardDescription>
+                                Total verified funds collected for this lead, broken down by category.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {donationCategories.map(category => (
+                                <Card key={category}>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">{category}</CardTitle>
+                                        <Wallet className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <ShareDialog 
