@@ -16,6 +16,7 @@ import { ref as storageRef, deleteObject } from 'firebase/storage';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,8 +71,26 @@ export default function CampaignPage() {
     if (!firestore) return null;
     return collection(firestore, 'campaigns');
   }, [firestore]);
-
   const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
+  
+  const donationsCollectionRef = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'donations');
+  }, [firestore]);
+  const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
+
+  const campaignCollectedAmounts = useMemo(() => {
+    if (!donations) return {};
+    return donations.reduce((acc, donation) => {
+        if (donation.campaignId && donation.status === 'Verified') {
+            const nonZakatAmount = (donation.typeSplit || [])
+                .filter(split => split.category !== 'Zakat')
+                .reduce((sum, split) => sum + split.amount, 0);
+            acc[donation.campaignId] = (acc[donation.campaignId] || 0) + nonZakatAmount;
+        }
+        return acc;
+    }, {} as Record<string, number>);
+  }, [donations]);
 
   const handleDeleteClick = (campaign: Campaign) => {
     if (!canDelete) return;
@@ -230,7 +249,7 @@ export default function CampaignPage() {
     return filteredAndSortedCampaigns.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredAndSortedCampaigns, currentPage, itemsPerPage]);
 
-  const isLoading = areCampaignsLoading || isProfileLoading || isDeleting;
+  const isLoading = areCampaignsLoading || isProfileLoading || isDeleting || areDonationsLoading;
   
   const campaignPerms = userProfile?.permissions?.campaigns;
   const canReadAnySubmodule = 
@@ -330,9 +349,13 @@ export default function CampaignPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {isLoading && (
-                    [...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
+                    [...Array(6)].map((_, i) => <Skeleton key={i} className="h-64 w-full" />)
                 )}
-                {!isLoading && paginatedCampaigns.map((campaign) => (
+                {!isLoading && paginatedCampaigns.map((campaign) => {
+                    const collected = campaignCollectedAmounts[campaign.id] || 0;
+                    const target = campaign.targetAmount || 0;
+                    const progress = target > 0 ? (collected / target) * 100 : 0;
+                    return (
                     <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
@@ -406,7 +429,22 @@ export default function CampaignPage() {
                             </div>
                             <CardDescription>{campaign.startDate} to {campaign.endDate}</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-grow space-y-2">
+                        <CardContent className="flex-grow space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm font-medium">
+                                    <span className="text-foreground">
+                                        Rupee {collected.toLocaleString('en-IN')}
+                                        <span className="text-muted-foreground"> raised</span>
+                                    </span>
+                                    {target > 0 && (
+                                        <span className="text-muted-foreground">
+                                            Goal: Rupee {target.toLocaleString('en-IN')}
+                                        </span>
+                                    )}
+                                </div>
+                                <Progress value={progress} className="h-2" />
+                                {target > 0 && <p className="text-xs text-muted-foreground text-right">{progress.toFixed(0)}% funded</p>}
+                            </div>
                              <div className="flex justify-between text-sm text-muted-foreground">
                                 <Badge variant="outline">{campaign.category}</Badge>
                                 <Badge variant={
@@ -414,7 +452,7 @@ export default function CampaignPage() {
                                     campaign.status === 'Completed' ? 'secondary' : 'outline'
                                 }>{campaign.status}</Badge>
                             </div>
-                            <div className="flex justify-between text-sm text-muted-foreground pt-2">
+                            <div className="flex justify-between text-sm text-muted-foreground">
                                 <Badge variant="outline">{campaign.authenticityStatus || 'N/A'}</Badge>
                                 <Badge variant="outline">{campaign.publicVisibility || 'N/A'}</Badge>
                             </div>
@@ -427,7 +465,7 @@ export default function CampaignPage() {
                             </Button>
                         </CardFooter>
                     </Card>
-                ))}
+                )})}
             </div>
              {!isLoading && filteredAndSortedCampaigns.length === 0 && (
                  <div className="text-center py-16">
