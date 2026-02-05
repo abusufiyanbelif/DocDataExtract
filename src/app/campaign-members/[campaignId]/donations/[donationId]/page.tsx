@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo, useState, useRef } from 'react';
@@ -196,19 +197,29 @@ export default function DonationDetailsPage() {
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
+                const pageCenter = pdfWidth / 2;
                 let position = 15;
 
                 pdf.setTextColor(10, 41, 19);
 
+                // Header with Logo and Org Name
                 if (logoImg && logoDataUrl) {
-                    const logoHeight = 30;
+                    const logoHeight = 15;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-                    pdf.addImage(logoDataUrl, 'PNG', 15, position - 5, logoWidth, logoHeight);
-                    position += logoHeight + 5;
+                    pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
+                    pdf.setFontSize(18);
+                    // Vertically center the text with the logo
+                    const textY = position + (logoHeight / 2) + 3;
+                    pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
+                    position += logoHeight + 10;
+                } else {
+                    pdf.setFontSize(18);
+                    pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', pageCenter, position, { align: 'center' });
+                    position += 15;
                 }
                 
-                pdf.setFontSize(20);
-                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15, position);
+                // Document Title
+                pdf.setFontSize(22).text('Donation Receipt', pageCenter, position, { align: 'center' });
                 position += 15;
 
                 if (logoImg && logoDataUrl) {
@@ -222,7 +233,7 @@ export default function DonationDetailsPage() {
 
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = pdf.getImageProperties(imgData);
-                
+
                 const footerHeight = 75;
                 const availableHeight = pageHeight - position - footerHeight;
 

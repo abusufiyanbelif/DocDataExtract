@@ -1,3 +1,4 @@
+
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -134,3 +135,4 @@ export default function PublicLeadPage() {
     </div>
   );
 }
+

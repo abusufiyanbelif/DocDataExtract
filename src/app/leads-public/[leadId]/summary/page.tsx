@@ -77,31 +77,41 @@ We are currently assessing the needs for this initiative. Your support and feedb
 
         try {
             const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: null });
-            const imgData = canvas.toDataURL('image/png');
             
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pageHeight = pdf.internal.pageSize.getHeight();
-            
-            pdf.setTextColor(10, 41, 19);
-            
+            const pageCenter = pdfWidth / 2;
             let position = 15;
-             if (brandingSettings?.logoUrl) {
+
+            pdf.setTextColor(10, 41, 19);
+
+            // Header with Logo and Org Name
+            if (brandingSettings?.logoUrl) {
                 const logoImg = await new Promise<HTMLImageElement>((resolve) => {
                     const img = new Image();
                     img.crossOrigin = 'anonymous';
                     img.onload = () => resolve(img);
                     img.src = `/api/image-proxy?url=${encodeURIComponent(brandingSettings.logoUrl!)}`;
                 });
-                const logoHeight = 20;
+                const logoHeight = 15;
                 const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-                pdf.addImage(logoImg, 'PNG', 15, position - 10, logoWidth, logoHeight);
-                position += logoHeight;
+                pdf.addImage(logoImg, 'PNG', 15, position, logoWidth, logoHeight);
+                pdf.setFontSize(18);
+                const textY = position + (logoHeight / 2) + 3;
+                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
+                position += logoHeight + 10;
+            } else {
+                pdf.setFontSize(18);
+                pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', pageCenter, position, { align: 'center' });
+                position += 15;
             }
-
-            pdf.setFontSize(20).text(lead?.name || 'Lead Summary', 15, position);
-            position += 10;
             
+            // Document Title
+            pdf.setFontSize(22).text(lead?.name || 'Lead Summary', pageCenter, position, { align: 'center' });
+            position += 15;
+
+            const imgData = canvas.toDataURL('image/png');
             const contentHeight = (canvas.height * (pdfWidth - 20)) / canvas.width;
             pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, contentHeight);
 

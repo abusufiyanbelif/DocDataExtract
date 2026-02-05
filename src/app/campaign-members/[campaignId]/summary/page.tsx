@@ -460,28 +460,37 @@ Your contribution, big or small, makes a huge difference.
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
+                const pageCenter = pdfWidth / 2;
                 let position = 15;
 
                 pdf.setTextColor(10, 41, 19);
 
-                if (logoImg) {
-                    const logoHeight = 20;
+                // Header with Logo and Org Name
+                if (logoImg && logoDataUrl) {
+                    const logoHeight = 15;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
-                    pdf.addImage(logoDataUrl!, 'PNG', 15, position - 5, logoWidth, logoHeight);
-                    pdf.setFontSize(20).text(campaign?.name || 'Campaign Summary', 15 + logoWidth + 5, position + 5);
+                    pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
+                    pdf.setFontSize(18);
+                    // Vertically center the text with the logo
+                    const textY = position + (logoHeight / 2) + 3;
+                    pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
+                    position += logoHeight + 10;
                 } else {
-                    pdf.setFontSize(20).text(campaign?.name || 'Campaign Summary', 15, position + 5);
+                    pdf.setFontSize(18);
+                    pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', pageCenter, position, { align: 'center' });
+                    position += 15;
                 }
                 
-                pdf.setFontSize(14).text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15, position + 15);
-                position += 25;
+                // Document Title
+                pdf.setFontSize(22).text(campaign?.name || 'Campaign Summary', pageCenter, position, { align: 'center' });
+                position += 15;
 
-                if (logoImg) {
+                if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
                     pdf.setGState(new pdf.GState({ opacity: 0.05 }));
                     const wmWidth = pdfWidth * 0.75;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    pdf.addImage(logoDataUrl!, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
+                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
                     pdf.restoreGraphicsState();
                 }
 
@@ -967,3 +976,4 @@ Your contribution, big or small, makes a huge difference.
         </div>
     );
 }
+
