@@ -89,19 +89,19 @@ export function AppFooter() {
             </div>
              <Separator className="my-2"/>
           {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.contactEmail && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm transition-all hover:text-primary hover:scale-105">
               <Mail className="h-4 w-4" />
               <span>{paymentSettings.contactEmail}</span>
             </div>
           )}
           {isLoading ? <Skeleton className="h-5 w-3/5" /> : paymentSettings?.contactPhone && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm transition-all hover:text-primary hover:scale-105">
               <Phone className="h-4 w-4" />
               <span>{paymentSettings.contactPhone}</span>
             </div>
           )}
            {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.website && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm transition-all hover:text-primary hover:scale-105">
               <Globe className="h-4 w-4" />
               <a href={paymentSettings.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{paymentSettings.website}</a>
             </div>
@@ -112,7 +112,7 @@ export function AppFooter() {
         <div className="flex flex-col items-center gap-3">
             {isLoading ? <Skeleton className="h-7 w-1/2" /> : <h3 className="font-semibold text-lg">For Donations</h3>}
             {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.upiId && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 transition-all hover:text-primary hover:scale-105">
                 <QrCode className="h-4 w-4" />
                 <a href={`upi://pay?pa=${paymentSettings.upiId}&pn=${encodeURIComponent(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}&cu=INR`} className="font-mono text-sm hover:underline">
                     {paymentSettings.upiId}
@@ -123,7 +123,7 @@ export function AppFooter() {
                 </div>
             )}
             {isLoading ? <Skeleton className="h-5 w-3/5" /> : paymentSettings?.paymentMobileNumber && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 transition-all hover:text-primary hover:scale-105">
                 <Smartphone className="h-4 w-4" />
                 <a href={`upi://pay?pa=${paymentSettings.paymentMobileNumber}&pn=${encodeURIComponent(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}&cu=INR`} className="font-mono text-sm hover:underline">
                     {paymentSettings.paymentMobileNumber}
@@ -143,7 +143,7 @@ export function AppFooter() {
             validQrCodeUrl && (
                  <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
                     <DialogTrigger asChild>
-                        <button className="cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
+                        <button className="cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
                             <img
                                 src={`/api/image-proxy?url=${encodeURIComponent(validQrCodeUrl)}`}
                                 alt="UPI QR Code"
