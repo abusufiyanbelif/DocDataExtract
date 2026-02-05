@@ -49,20 +49,36 @@ export function DocuExtractHeader() {
   const userProfile = session.userProfile;
   
   const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
+  const logoStyle: React.CSSProperties = {
+    objectFit: 'contain',
+    maxHeight: '3rem', // 48px
+  };
+
+  if (brandingSettings?.logoWidth) {
+    logoStyle.width = `${brandingSettings.logoWidth}px`;
+  } else {
+    logoStyle.width = 'auto';
+  }
+  if (brandingSettings?.logoHeight) {
+    logoStyle.height = `${brandingSettings.logoHeight}px`;
+  } else {
+    logoStyle.height = 'auto';
+  }
+
 
   return (
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="flex items-center gap-3 w-fit">
-          <div className="relative h-12 w-24 flex-shrink-0 flex items-center justify-center">
+          <div className="relative flex items-center justify-center" style={{ minHeight: '3rem' }}>
             {isLoading ? (
-                <Skeleton className="h-full w-full" />
+                <Skeleton className="h-12 w-24" />
             ) : (
                 validLogoUrl && (
                   <img
                     src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
                     alt="Company Logo"
-                    className="object-contain h-full w-full"
+                    style={logoStyle}
                   />
                 )
             )}
