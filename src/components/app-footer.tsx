@@ -29,19 +29,39 @@ export function AppFooter() {
   
   const validQrCodeUrl = paymentSettings?.qrCodeUrl?.trim() ? paymentSettings.qrCodeUrl : null;
   
-  const handleDownloadQr = () => {
+  const handleDownloadQr = async () => {
     if (!validQrCodeUrl) return;
-    const link = document.createElement('a');
-    link.href = validQrCodeUrl;
-    link.download = 'payment-qr-code.png'; // Or a more dynamic name
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
     toast({
-        title: "QR Code Downloading...",
-        description: "Your QR code image has started downloading.",
-        variant: "success"
+        title: "Preparing download...",
+        description: "Your QR code image is being prepared.",
     });
+    try {
+        const response = await fetch(`/api/image-proxy?url=${encodeURIComponent(validQrCodeUrl)}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch QR code');
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'payment-qr-code.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast({
+            title: "QR Code Downloading...",
+            description: "Your QR code image has started downloading.",
+            variant: "success"
+        });
+    } catch (error) {
+        console.error("QR Code download failed:", error);
+        toast({
+            title: "Download Failed",
+            description: "Could not download the QR code image.",
+            variant: "destructive"
+        });
+    }
   };
 
   if (isSummaryPage) {
