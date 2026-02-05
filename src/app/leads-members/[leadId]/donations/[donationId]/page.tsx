@@ -369,7 +369,7 @@ export default function DonationDetailsPage() {
                     onOpenChange={setIsShareDialogOpen} 
                     shareData={{
                         title: `Thank you for your donation!`,
-                        text: `JazakAllah Khair for your generous donation of Rupee ${donation.amount.toFixed(2)} towards the "${lead.name}" initiative. May Allah accept it and bless you abundantly.`,
+                        text: `JazakAllah Khair for your generous donation of ₹${donation.amount.toFixed(2)} towards the "${lead.name}" initiative. May Allah accept it and bless you abundantly.`,
                         url: `${window.location.origin}/leads-public/${leadId}/summary`
                     }} 
                 />

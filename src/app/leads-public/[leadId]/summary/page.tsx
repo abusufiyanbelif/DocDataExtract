@@ -297,7 +297,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">Target Amount</p>
-                                    <p className="mt-1 text-lg font-semibold">Rupee {(lead.targetAmount ?? 0).toLocaleString('en-IN')}</p>
+                                    <p className="mt-1 text-lg font-semibold">₹{(lead.targetAmount ?? 0).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">Category</p>
@@ -331,4 +331,3 @@ We are currently assessing the needs for this initiative. Your support and feedb
     
 
     
-

@@ -53,7 +53,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                         <div className="space-y-4">
                              <h3 className="font-bold text-xl">Transaction Details</h3>
                             <ReceiptRow label="Receiver Name" value={donation.receiverName} />
-                            <ReceiptRow label="Total Amount" value={`Rupee ${donation.amount.toFixed(2)}`} isMono />
+                            <ReceiptRow label="Total Amount" value={`₹${donation.amount.toFixed(2)}`} isMono />
                             <ReceiptRow label="Payment Type" value={<Badge variant="outline">{donation.donationType}</Badge>} />
                             {donation.transactionId && <ReceiptRow label="Transaction ID" value={donation.transactionId} isMono />}
                         </div>
@@ -71,7 +71,7 @@ export const DonationReceipt = React.forwardRef<HTMLDivElement, DonationReceiptP
                                     {typeSplit.map((split) => (
                                         <TableRow key={split.category}>
                                             <TableCell className="py-1">{split.category}</TableCell>
-                                            <TableCell className="py-1 text-right font-mono">Rupee {split.amount.toFixed(2)}</TableCell>
+                                            <TableCell className="py-1 text-right font-mono">₹{split.amount.toFixed(2)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

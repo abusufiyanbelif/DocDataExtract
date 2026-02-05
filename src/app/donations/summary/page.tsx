@@ -223,7 +223,7 @@ export default function DonationsSummaryPage() {
                                         <Wallet className="h-4 w-4 text-muted-foreground" />
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                        <div className="text-2xl font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -237,7 +237,7 @@ export default function DonationsSummaryPage() {
                                 <CheckCircle className="h-4 w-4 text-success" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Verified.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.amountsByStatus.Verified.toLocaleString('en-IN') ?? '0.00'}</div>
                                 <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Verified ?? 0} donations</p>
                             </CardContent>
                         </Card>
@@ -247,7 +247,7 @@ export default function DonationsSummaryPage() {
                                 <Hourglass className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Pending.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.amountsByStatus.Pending.toLocaleString('en-IN') ?? '0.00'}</div>
                                 <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Pending ?? 0} donations</p>
                             </CardContent>
                         </Card>
@@ -257,7 +257,7 @@ export default function DonationsSummaryPage() {
                                 <XCircle className="h-4 w-4 text-destructive" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Canceled.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">₹{summaryData?.amountsByStatus.Canceled.toLocaleString('en-IN') ?? '0.00'}</div>
                                 <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Canceled ?? 0} donations</p>
                             </CardContent>
                         </Card>

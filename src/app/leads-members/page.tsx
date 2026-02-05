@@ -419,12 +419,12 @@ export default function LeadPage() {
                              <div className="space-y-2">
                                 <div className="flex justify-between text-sm font-medium">
                                     <span className="text-foreground">
-                                        Rupee {collected.toLocaleString('en-IN')}
+                                        ₹{collected.toLocaleString('en-IN')}
                                         <span className="text-muted-foreground"> raised</span>
                                     </span>
                                     {target > 0 && (
                                         <span className="text-muted-foreground">
-                                            Goal: Rupee {target.toLocaleString('en-IN')}
+                                            Goal: ₹{target.toLocaleString('en-IN')}
                                         </span>
                                     )}
                                 </div>
