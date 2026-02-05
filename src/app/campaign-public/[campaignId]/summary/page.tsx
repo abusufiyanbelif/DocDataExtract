@@ -11,31 +11,12 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-} from 'recharts';
-
 import type { Campaign, Beneficiary, Donation } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass, Download, ChevronDown, ChevronUp } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,27 +40,9 @@ import {
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 import { ShareDialog } from '@/components/share-dialog';
 import { AppFooter } from '@/components/app-footer';
 import { donationCategories } from '@/lib/modules';
-
-
-const donationTypeChartConfig = {
-    Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
-    Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
-    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
-    Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
-    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
-    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
-} satisfies ChartConfig;
-
-const donationPaymentTypeChartConfig = {
-    Cash: { label: "Cash", color: "hsl(var(--chart-1))" },
-    OnlinePayment: { label: "Online Payment", color: "hsl(var(--chart-2))" },
-    Check: { label: "Check", color: "hsl(var(--chart-3))" },
-    Other: { label: "Other", color: "hsl(var(--chart-4))" },
-} satisfies ChartConfig;
 
 export default function PublicCampaignSummaryPage() {
     const params = useParams();
@@ -89,8 +52,6 @@ export default function PublicCampaignSummaryPage() {
     const { toast } = useToast();
     const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
     const { paymentSettings, isLoading: isPaymentLoading } = usePaymentSettings();
-
-    const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('All');
     
     const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
     const [shareDialogData, setShareDialogData] = useState({ title: '', text: '', url: '' });
@@ -115,15 +76,19 @@ export default function PublicCampaignSummaryPage() {
         
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
-        const zakatCollected = verifiedDonationsList
-            .flatMap(d => d.typeSplit && d.typeSplit.length > 0 ? d.typeSplit : (d.type ? [{ category: d.type, amount: d.amount }] : []))
-            .filter(split => split.category === 'Zakat')
-            .reduce((acc, split) => acc + split.amount, 0);
+        const amountsByCategory = donationCategories.reduce((acc, cat) => {
+            acc[cat] = verifiedDonationsList
+                .flatMap(d => d.typeSplit || [])
+                .filter(split => split.category === cat)
+                .reduce((sum, split) => sum + split.amount, 0);
+            return acc;
+        }, {} as Record<typeof donationCategories[number], number>);
 
-        const verifiedNonZakatDonations = verifiedDonationsList
-             .flatMap(d => d.typeSplit && d.typeSplit.length > 0 ? d.typeSplit : (d.type ? [{ category: d.type, amount: d.amount }] : []))
-            .filter(split => split.category !== 'Zakat')
-            .reduce((acc, split) => acc + split.amount, 0);
+        const verifiedNonZakatDonations = Object.entries(amountsByCategory)
+            .filter(([category]) => category !== 'Zakat')
+            .reduce((sum, [, amount]) => sum + amount, 0);
+        
+        const zakatCollected = amountsByCategory['Zakat'] || 0;
 
         const pendingDonations = donations
             .filter(d => d.status === 'Pending')
@@ -169,40 +134,6 @@ export default function PublicCampaignSummaryPage() {
             return a.name.localeCompare(b.name);
         });
 
-        const { donationChartData, donationPaymentTypeChartData } = (() => {
-            let filteredDonations = donations;
-            if (donationChartFilter !== 'All') {
-                filteredDonations = donations.filter(d => d.status === donationChartFilter);
-            }
-            
-            const donationTypeData = filteredDonations.reduce((acc, d) => {
-                const splits = d.typeSplit && d.typeSplit.length > 0
-                    ? d.typeSplit
-                    : (d.type ? [{ category: d.type, amount: d.amount }] : []);
-                
-                splits.forEach(split => {
-                    const category = split.category as any === 'General' ? 'Sadqa' : split.category;
-                    if (donationCategories.includes(category)) {
-                        acc[category] = (acc[category] || 0) + split.amount;
-                    }
-                });
-                return acc;
-            }, {} as Record<string, number>);
-                
-            const paymentTypeData = filteredDonations.reduce((acc, d) => {
-                if (d.donationType) {
-                    const key = d.donationType.replace(/\s+/g, '');
-                    acc[key] = (acc[key] || 0) + 1;
-                }
-                return acc;
-            }, {} as Record<string, number>);
-
-            return {
-                donationChartData: Object.entries(donationTypeData).map(([name, value]) => ({ name, value })),
-                donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value }))
-            };
-        })();
-
         return {
             verifiedNonZakatDonations,
             zakatCollected,
@@ -212,13 +143,11 @@ export default function PublicCampaignSummaryPage() {
             pendingProgress,
             beneficiaryStatusData,
             beneficiaryCategoryBreakdown,
-            donationChartData,
-            donationPaymentTypeChartData,
             totalBeneficiaries: beneficiaries.length,
             targetAmount: totalKitAmountRequired,
             remainingToCollect: Math.max(0, totalKitAmountRequired - verifiedNonZakatDonations),
         };
-    }, [beneficiaries, donations, campaign, donationChartFilter]);
+    }, [beneficiaries, donations, campaign]);
     
     const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isBrandingLoading || isPaymentLoading;
     
@@ -324,7 +253,7 @@ Your contribution, big or small, makes a huge difference.
                     const wmScale = 0.8;
                     const wmWidth = finalCanvas.width * wmScale;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.05;
+                    ctx.globalAlpha = 0.15;
                     ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
                     ctx.globalAlpha = 1.0;
                 }
@@ -376,6 +305,7 @@ Your contribution, big or small, makes a huge difference.
 
                 pdf.setTextColor(10, 41, 19);
 
+                // Header with Logo and Org Name
                 if (logoImg && logoDataUrl) {
                     const logoHeight = 15;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
@@ -390,12 +320,13 @@ Your contribution, big or small, makes a huge difference.
                     position += 15;
                 }
                 
+                // Document Title
                 pdf.setFontSize(18).text(campaign?.name || 'Campaign Summary', pageCenter, position, { align: 'center' });
                 position += 15;
 
                 if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.05 }));
+                    pdf.setGState(new pdf.GState({ opacity: 0.15 }));
                     const wmWidth = pdfWidth * 0.75;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
                     pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
@@ -403,23 +334,20 @@ Your contribution, big or small, makes a huge difference.
                 }
 
                 const imgData = canvas.toDataURL('image/png');
-                const imgProps = pdf.getImageProperties(imgData);
-
-                const footerHeight = 60;
-                const availableHeight = pageHeight - position - footerHeight;
-
-                let imgWidth = pdfWidth - 30;
-                let imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
-                if (imgHeight > availableHeight) {
-                    imgHeight = availableHeight;
-                    imgWidth = (imgProps.width * imgHeight) / imgProps.height;
+                const contentHeight = (canvas.height * (pdfWidth - 30)) / canvas.width;
+                
+                if (position + contentHeight > pageHeight - 40) {
+                     pdf.addPage();
+                     position = 15;
                 }
+
+                pdf.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, contentHeight);
+                position += contentHeight + 10;
                 
-                const xOffset = (pdfWidth - imgWidth) / 2;
-                pdf.addImage(imgData, 'PNG', xOffset, position, imgWidth, imgHeight);
-                position = pageHeight - footerHeight;
-                
+                if (position > pageHeight - 60) {
+                    pdf.addPage();
+                    position = 15;
+                }
                 pdf.setLineWidth(0.2);
                 pdf.line(15, position, pdfWidth - 15, position);
                 position += 8;
@@ -430,7 +358,7 @@ Your contribution, big or small, makes a huge difference.
                 pdf.setFontSize(9);
                 
                 if (qrImg) {
-                    const qrSize = 35;
+                    const qrSize = 30;
                     const qrX = pdfWidth - 15 - qrSize;
                     pdf.addImage(qrDataUrl!, 'PNG', qrX, position - 2, qrSize, qrSize);
                 }

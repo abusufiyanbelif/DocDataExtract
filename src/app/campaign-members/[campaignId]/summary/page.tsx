@@ -15,18 +15,6 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-} from 'recharts';
-
 import type { Campaign, Beneficiary, Donation, DonationCategory } from '@/lib/types';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
@@ -75,23 +63,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { donationCategories } from '@/lib/modules';
 import { Badge } from '@/components/ui/badge';
 
-
-const donationTypeChartConfig = {
-    Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
-    Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
-    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
-    Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
-    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
-    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
-} satisfies ChartConfig;
-
-const donationPaymentTypeChartConfig = {
-    Cash: { label: "Cash", color: "hsl(var(--chart-1))" },
-    OnlinePayment: { label: "Online Payment", color: "hsl(var(--chart-2))" },
-    Check: { label: "Check", color: "hsl(var(--chart-3))" },
-    Other: { label: "Other", color: "hsl(var(--chart-4))" },
-} satisfies ChartConfig;
-
 export default function CampaignSummaryPage() {
     const params = useParams();
     const campaignId = params.campaignId as string;
@@ -104,7 +75,6 @@ export default function CampaignSummaryPage() {
     // State for edit mode and form fields
     const [editMode, setEditMode] = useState(false);
     const [editableCampaign, setEditableCampaign] = useState<Partial<Campaign>>({});
-    const [donationChartFilter, setDonationChartFilter] = useState<'All' | 'Verified' | 'Pending' | 'Canceled'>('All');
     
     const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
     const [shareDialogData, setShareDialogData] = useState({ title: '', text: '', url: '' });
@@ -269,40 +239,6 @@ export default function CampaignSummaryPage() {
             return a.name.localeCompare(b.name);
         });
 
-        const { donationChartData, donationPaymentTypeChartData } = (() => {
-            let filteredDonations = donations;
-            if (donationChartFilter !== 'All') {
-                filteredDonations = donations.filter(d => d.status === donationChartFilter);
-            }
-            
-            const donationTypeData = filteredDonations.reduce((acc, d) => {
-                const splits = d.typeSplit && d.typeSplit.length > 0
-                  ? d.typeSplit
-                  : (d.type ? [{ category: d.type, amount: d.amount }] : []);
-                
-                splits.forEach(split => {
-                    const category = split.category as any === 'General' ? 'Sadqa' : split.category;
-                    if (donationCategories.includes(category)) {
-                        acc[category] = (acc[category] || 0) + split.amount;
-                    }
-                });
-                return acc;
-            }, {} as Record<string, number>);
-                
-            const paymentTypeData = filteredDonations.reduce((acc, d) => {
-                if (d.donationType) {
-                    const key = d.donationType.replace(/\s+/g, '');
-                    acc[key] = (acc[key] || 0) + 1;
-                }
-                return acc;
-            }, {} as Record<string, number>);
-
-            return {
-                donationChartData: Object.entries(donationTypeData).map(([name, value]) => ({ name, value })),
-                donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value }))
-            };
-        })();
-
         return {
             verifiedNonZakatDonations,
             pendingDonations,
@@ -311,14 +247,12 @@ export default function CampaignSummaryPage() {
             pendingProgress,
             beneficiaryStatusData,
             beneficiaryCategoryBreakdown,
-            donationChartData,
-            donationPaymentTypeChartData,
             totalBeneficiaries: beneficiaries.length,
             targetAmount: campaign.targetAmount || 0,
             remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
             amountsByCategory,
         };
-    }, [beneficiaries, donations, campaign, donationChartFilter]);
+    }, [beneficiaries, donations, campaign]);
     
     const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading || isBrandingLoading || isPaymentLoading;
     
@@ -424,7 +358,7 @@ Your contribution, big or small, makes a huge difference.
                     const wmScale = 0.8;
                     const wmWidth = finalCanvas.width * wmScale;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.05;
+                    ctx.globalAlpha = 0.15;
                     ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
                     ctx.globalAlpha = 1.0;
                 }
@@ -498,7 +432,7 @@ Your contribution, big or small, makes a huge difference.
 
                 if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.05 }));
+                    pdf.setGState(new pdf.GState({ opacity: 0.15 }));
                     const wmWidth = pdfWidth * 0.75;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
                     pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);

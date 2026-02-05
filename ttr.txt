@@ -1,0 +1,9 @@
+src/app/campaign-members/[campaignId]/summary/page.tsx(285,53): error TS2345: Argument of type '"Zakat" | "Sadqa" | "Interest" | "Lillah" | "Loan" | "Monthly Contribution" | "General"' is not assignable to parameter of type '"Zakat" | "Sadqa" | "Interest" | "Lillah" | "Loan" | "Monthly Contribution"'.
+  Type '"General"' is not assignable to type '"Zakat" | "Sadqa" | "Interest" | "Lillah" | "Loan" | "Monthly Contribution"'.
+src/app/campaign-public/[campaignId]/summary/page.tsx(7,47): error TS2305: Module '"@/firebase"' has no exported member 'useBranding'.
+src/app/campaign-public/[campaignId]/summary/page.tsx(7,60): error TS2305: Module '"@/firebase"' has no exported member 'usePaymentSettings'.
+src/app/campaign-public/[campaignId]/summary/page.tsx(185,53): error TS2345: Argument of type '"Zakat" | "Sadqa" | "Interest" | "Lillah" | "Loan" | "Monthly Contribution" | "General"' is not assignable to parameter of type '"Zakat" | "Sadqa" | "Interest" | "Lillah" | "Loan" | "Monthly Contribution"'.
+  Type '"General"' is not assignable to type '"Zakat" | "Sadqa" | "Interest" | "Lillah" | "Loan" | "Monthly Contribution"'.
+src/app/leads-public/[leadId]/summary/page.tsx(7,32): error TS2305: Module '"@/firebase"' has no exported member 'useBranding'.
+src/app/leads-public/[leadId]/summary/page.tsx(7,45): error TS2305: Module '"@/firebase"' has no exported member 'usePaymentSettings'.
+src/app/page.tsx(19,10): error TS2459: Module '"@/lib/modules"' declares 'get' locally, but it is not exported.
