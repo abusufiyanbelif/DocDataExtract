@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
-import type { Campaign, Donation } from '@/lib/types';
+import type { Campaign } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
-import type { Lead, Donation } from '@/lib/types';
+import type { Lead } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
