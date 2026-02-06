@@ -18,119 +18,20 @@ import { Button } from '@/components/ui/button';
 import { get } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const dashboardCards = [
-  {
-    title: 'User Management',
-    description: 'Add, edit, and manage user permissions.',
-    icon: <Users className="h-8 w-8 text-primary" />,
-    href: '/users',
-    permissionKey: 'users.read',
-  },
-  {
-    title: 'Campaigns',
-    description: 'Track and manage ration distribution campaigns.',
-    icon: <ClipboardList className="h-8 w-8 text-primary" />,
-    href: '/campaign-members',
-    permissionKey: 'campaigns.read',
-  },
-   {
-    title: 'Donations',
-    description: 'Manage all individual donations.',
-    icon: <Wallet className="h-8 w-8 text-primary" />,
-    href: '/donations',
-    permissionKey: 'donations.read',
-  },
-   {
-    title: 'Leads',
-    description: 'Manage and track potential new leads or initiatives.',
-    icon: <Lightbulb className="h-8 w-8 text-primary" />,
-    href: '/leads-members',
-    permissionKey: 'leads-members.read',
-  },
-  {
-    title: 'Extractor',
-    description: 'Scan docs to extract text and data.',
-    icon: <ScanSearch className="h-8 w-8 text-primary" />,
-    href: '/extractor',
-    permissionKey: 'extractor.read',
-  },
-  {
-    title: 'Story Creator',
-    description: 'Generate narratives from medical or educational documents.',
-    icon: <FileText className="h-8 w-8 text-primary" />,
-    href: '/story-creator',
-    permissionKey: 'storyCreator.read',
-  },
-   {
-    title: 'Settings',
-    description: 'Manage global application settings.',
-    icon: <Settings className="h-8 w-8 text-primary" />,
-    href: '/settings',
-    permissionKey: 'settings.read',
-  },
-  {
-    title: 'System Diagnostics',
-    description: 'Check the status of system connections.',
-    icon: <ShieldQuestion className="h-8 w-8 text-primary" />,
-    href: '/diagnostics',
-    permissionKey: 'diagnostics.read',
-  },
-];
-
-
 export default function Home() {
   const { userProfile, isLoading } = useSession();
 
-  const visibleCards = userProfile ? dashboardCards.filter(card => {
-    if (userProfile.role === 'Admin') return true;
-    
-    // For nested campaign/lead permissions, we check if they have READ access to ANY submodule.
-    // If they do, they should see the main card.
-    if (card.permissionKey === 'campaigns.read') {
-        const campaignPerms = get(userProfile.permissions, 'campaigns', {});
-        return Object.values(campaignPerms).some(perm => (perm as any)?.read);
-    }
-    if (card.permissionKey === 'leads-members.read') {
-        const leadPerms = get(userProfile.permissions, 'leads-members', {});
-        return Object.values(leadPerms).some(perm => (perm as any)?.read);
-    }
-    
-    return get(userProfile.permissions, card.permissionKey, false);
-  }) : [];
+  // This is now the public landing page. 
+  // The admin dashboard is at /dashboard
   
   return (
     <div className="min-h-screen text-foreground flex flex-col">
       <DocuExtractHeader />
       <main className="container mx-auto p-4 md:p-8 flex-grow">
         {isLoading ? (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-40" />
-                ))}
+             <div className="flex justify-center mt-10">
+                <Skeleton className="h-64 w-full max-w-2xl" />
             </div>
-        ) : userProfile ? (
-          <>
-            <h2 className="text-3xl font-bold tracking-tight mb-4">
-                Welcome back, {userProfile.name}!
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {visibleCards.map((card) => (
-                <Link href={card.href} key={card.title} className="group">
-                    <Card className="h-full hover:shadow-lg hover:border-primary transition-all">
-                    <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-                        {card.icon}
-                        <div className="flex-1">
-                        <CardTitle>{card.title}</CardTitle>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <CardDescription>{card.description}</CardDescription>
-                    </CardContent>
-                    </Card>
-                </Link>
-                ))}
-            </div>
-          </>
         ) : (
            <Card className="max-w-2xl mx-auto text-center mt-10">
                 <CardHeader>

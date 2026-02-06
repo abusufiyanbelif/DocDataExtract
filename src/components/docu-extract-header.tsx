@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { LogOut, User, LogIn, Settings } from 'lucide-react';
+import { LogOut, User, LogIn, Settings, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
@@ -49,11 +49,12 @@ export function DocuExtractHeader() {
   const userProfile = session.userProfile;
   
   const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
+  const homeHref = user ? '/dashboard' : '/';
 
   return (
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
-        <Link href="/" className="flex items-center gap-3 w-fit">
+        <Link href={homeHref} className="flex items-center gap-3 w-fit">
           <div className="relative h-12 w-24 flex-shrink-0 flex items-center justify-center">
             {isLoading ? (
                 <Skeleton className="h-full w-full" />
@@ -101,6 +102,12 @@ export function DocuExtractHeader() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+               <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href="/dashboard">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem asChild className="cursor-pointer">
                 <Link href="/profile">
                   <User className="mr-2 h-4 w-4" />

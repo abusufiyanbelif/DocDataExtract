@@ -36,9 +36,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       router.push('/login');
     }
 
-    // If we are on the login page and a user is already logged in, redirect to home.
+    // If we are on the login page and a user is already logged in, redirect to dashboard.
     if (isLoginPage && user) {
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [isLoading, user, isPublicRoute, isLoginPage, router, pathname]);
 
