@@ -13,7 +13,7 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-import type { Campaign, Beneficiary, Donation, DonationCategory } from '@/lib/types';
+import type { Campaign, Donation, DonationCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -61,19 +61,17 @@ export default function PublicCampaignSummaryPage() {
 
     // Data fetching
     const campaignDocRef = useMemo(() => (firestore && campaignId) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
-    const beneficiariesCollectionRef = useMemo(() => (firestore && campaignId) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId]);
     const donationsCollectionRef = useMemo(() => {
         if (!firestore || !campaignId) return null;
         return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
     }, [firestore, campaignId]);
 
     const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
-    const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
     const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
     
     // Memoized calculations
     const summaryData = useMemo(() => {
-        if (!beneficiaries || !donations || !campaign) return null;
+        if (!donations || !campaign) return null;
         
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
@@ -105,62 +103,22 @@ export default function PublicCampaignSummaryPage() {
             .filter(d => d.status === 'Pending')
             .reduce((acc, d) => acc + d.amount, 0);
 
-        const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + (b.kitAmount || 0), 0);
-        
-        const fundingGoal = totalKitAmountRequired;
+        const fundingGoal = campaign.targetAmount || 0;
         const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
         const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
-
-        const beneficiaryStatusData = beneficiaries.reduce((acc, b) => {
-            const status = b.status || 'Pending';
-            acc[status] = (acc[status] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-
-        const beneficiaryCategoryData = beneficiaries.reduce((acc, beneficiary) => {
-            const members = beneficiary.members;
-            const categoryKey = members && members > 0 ? `${members}` : 'General';
-            
-            if (!acc[categoryKey]) {
-                acc[categoryKey] = { count: 0, totalAmount: 0, beneficiaries: [] };
-            }
-            acc[categoryKey].count++;
-            acc[categoryKey].totalAmount += beneficiary.kitAmount || 0;
-            acc[categoryKey].beneficiaries.push(beneficiary);
-            
-            return acc;
-        }, {} as Record<string, { count: number; totalAmount: number; beneficiaries: Beneficiary[] }>);
-
-        const beneficiaryCategoryBreakdown = Object.entries(beneficiaryCategoryData).map(([name, data]) => ({
-            name,
-            ...data
-        })).sort((a, b) => {
-            if (a.name === 'General') return 1;
-            if (b.name === 'General') return -1;
-            const aNum = parseInt(a.name);
-            const bNum = parseInt(b.name);
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-                return bNum - aNum;
-            }
-            return a.name.localeCompare(b.name);
-        });
 
         return {
             verifiedNonZakatDonations,
             zakatCollected,
             pendingDonations,
-            totalKitAmountRequired,
             fundingProgress,
             pendingProgress,
-            beneficiaryStatusData,
-            beneficiaryCategoryBreakdown,
-            totalBeneficiaries: beneficiaries.length,
-            targetAmount: totalKitAmountRequired,
-            remainingToCollect: Math.max(0, totalKitAmountRequired - verifiedNonZakatDonations),
+            targetAmount: fundingGoal,
+            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
         };
-    }, [beneficiaries, donations, campaign]);
+    }, [donations, campaign]);
     
-    const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isBrandingLoading || isPaymentLoading;
+    const isLoading = isCampaignLoading || areDonationsLoading || isBrandingLoading || isPaymentLoading;
     
     const handleShare = async () => {
         if (!campaign || !summaryData) {
@@ -180,10 +138,10 @@ export default function PublicCampaignSummaryPage() {
 Join us for the *${campaign.name}* campaign as we work to provide essential aid to our community.
 
 *Our Goal:*
-${campaign.description || 'To support those in need.'} We aim to support *${summaryData.totalBeneficiaries} beneficiaries*.
+${campaign.description || 'To support those in need.'}
 
 *Financial Update:*
-🎯 Target for Kits: Rupee ${summaryData.targetAmount.toLocaleString('en-IN')}
+🎯 Target: Rupee ${summaryData.targetAmount.toLocaleString('en-IN')}
 ✅ Collected (Verified): Rupee ${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
 ⏳ Remaining: *Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*
 
@@ -479,8 +437,8 @@ Your contribution, big or small, makes a huge difference.
                             <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Target Amount (Calculated)</p>
-                                    <p className="mt-1 text-lg font-semibold">Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')}</p>
+                                    <p className="text-sm font-medium text-muted-foreground">Fundraising Goal</p>
+                                    <p className="mt-1 text-lg font-semibold">Rupee {(campaign.targetAmount ?? 0).toLocaleString('en-IN')}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm font-medium text-muted-foreground">Category</p>
@@ -500,7 +458,7 @@ Your contribution, big or small, makes a huge difference.
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Funding Progress (for Kits)</CardTitle>
+                            <CardTitle>Funding Progress</CardTitle>
                             <CardDescription>
                                 Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
                             </CardDescription>
@@ -535,16 +493,16 @@ Your contribution, big or small, makes a huge difference.
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Kit Amount Required</CardTitle>
+                                <CardTitle className="text-sm font-medium">Target Amount</CardTitle>
                                 <Target className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.targetAmount.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Kit Funding (Verified)</CardTitle>
+                                <CardTitle className="text-sm font-medium">Funds Collected (Verified)</CardTitle>
                                 <Gift className="h-4 w-4 text-primary" />
                             </CardHeader>
                             <CardContent>
@@ -560,72 +518,7 @@ Your contribution, big or small, makes a huge difference.
                                 <div className="text-2xl font-bold">Rupee {summaryData?.zakatCollected.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
-                                <Hourglass className="h-4 w-4 text-secondary-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Beneficiary Status</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold mb-2">{summaryData?.totalBeneficiaries ?? 0} Total</div>
-                                <div className="space-y-1 text-sm">
-                                    {summaryData?.beneficiaryStatusData && Object.entries(summaryData.beneficiaryStatusData).map(([name, value]) => (
-                                        <div key={name} className="flex justify-between items-center">
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: `var(--color-${name.replace(/\s+/g, '')})` }} />
-                                                <span>{name}</span>
-                                            </div>
-                                            <span className="font-medium text-foreground">{value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
                     </div>
-                    
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Beneficiaries by Category</CardTitle>
-                            <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Category</TableHead>
-                                            <TableHead className="text-center">Beneficiaries</TableHead>
-                                            <TableHead className="text-right">Kit Price (Rupee)</TableHead>
-                                            <TableHead className="text-right">Total Kit Amount (Rupee)</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {summaryData.beneficiaryCategoryBreakdown.map((item) => {
-                                            const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
-                                            return (
-                                                <TableRow key={item.name}>
-                                                    <TableCell className="font-medium">{item.name === 'General' ? 'General' : `${item.name} Members`}</TableCell>
-                                                    <TableCell className="text-center">{item.count}</TableCell>
-                                                    <TableCell className="text-right font-mono">{kitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                                    <TableCell className="text-right font-mono">{item.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
-                            )}
-                        </CardContent>
-                    </Card>
                 </div>
             </div>
 
@@ -644,3 +537,4 @@ Your contribution, big or small, makes a huge difference.
     
 
     
+
