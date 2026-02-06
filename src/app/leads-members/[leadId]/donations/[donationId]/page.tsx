@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo, useState, useRef } from 'react';
@@ -17,7 +16,6 @@ import { useToast } from '@/hooks/use-toast';
 
 import type { Donation, Lead, BrandingSettings, PaymentSettings } from '@/lib/types';
 
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { DonationReceipt } from '@/components/donation-receipt';
 import { DonationForm, type DonationFormData } from '@/components/donation-form';
 import { Button } from '@/components/ui/button';
@@ -285,131 +283,125 @@ export default function DonationDetailsPage() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <main className="flex items-center justify-center min-h-screen">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            </main>
         );
     }
     
     if (!donation || !lead) {
         return (
-            <div className="min-h-screen text-foreground">
-                <DocuExtractHeader />
-                <main className="container mx-auto p-4 md:p-8 text-center">
-                    <p className="text-lg text-muted-foreground">Donation or Lead not found.</p>
-                    <Button asChild className="mt-4">
-                        <Link href="/leads-members">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Leads
-                        </Link>
-                    </Button>
-                </main>
-            </div>
+            <main className="container mx-auto p-4 md:p-8 text-center">
+                <p className="text-lg text-muted-foreground">Donation or Lead not found.</p>
+                <Button asChild className="mt-4">
+                    <Link href="/leads-members">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Leads
+                    </Link>
+                </Button>
+            </main>
         );
     }
 
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href={`/leads-members/${leadId}/donations`}>
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Donations
-                        </Link>
-                    </Button>
-                    <div className="flex gap-2">
-                        {canUpdate && (
-                            <Button onClick={() => setIsFormOpen(true)}>
-                                <Edit className="mr-2 h-4 w-4" /> Edit
-                            </Button>
-                        )}
-                        <Button variant="outline" onClick={handleShare}>
-                            <Share2 className="mr-2 h-4 w-4" /> Share
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+                <Button variant="outline" asChild>
+                    <Link href={`/leads-members/${leadId}/donations`}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Donations
+                    </Link>
+                </Button>
+                <div className="flex gap-2">
+                    {canUpdate && (
+                        <Button onClick={() => setIsFormOpen(true)}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit
                         </Button>
-                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download Receipt
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => handleDownload('png')}>
-                                    <ImageIcon className="mr-2 h-4 w-4" />
-                                    As Image (PNG)
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownload('pdf')}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    As PDF
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
+                    )}
+                    <Button variant="outline" onClick={handleShare}>
+                        <Share2 className="mr-2 h-4 w-4" /> Share
+                    </Button>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                <Download className="mr-2 h-4 w-4" />
+                                Download Receipt
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleDownload('png')}>
+                                <ImageIcon className="mr-2 h-4 w-4" />
+                                As Image (PNG)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload('pdf')}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                As PDF
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
+            </div>
 
-                {!userProfile && (
-                     <Alert variant="destructive" className="mb-4">
-                        <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>You are not logged in</AlertTitle>
-                        <AlertDescription>
-                            You are viewing this as a public user. Some actions may be unavailable.
-                        </AlertDescription>
-                    </Alert>
-                )}
-                
-                <DonationReceipt 
-                    ref={receiptRef}
-                    donation={donation} 
-                    campaign={lead} 
-                />
-                 <ShareDialog 
-                    open={isShareDialogOpen} 
-                    onOpenChange={setIsShareDialogOpen} 
-                    shareData={{
-                        title: `Thank you for your donation!`,
-                        text: `JazakAllah Khair for your generous donation of Rupee ${donation.amount.toFixed(2)} towards the "${lead.name}" initiative. May Allah accept it and bless you abundantly.`,
-                        url: `${window.location.origin}/leads-public/${leadId}/summary`
-                    }} 
-                />
+            {!userProfile && (
+                 <Alert variant="destructive" className="mb-4">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>You are not logged in</AlertTitle>
+                    <AlertDescription>
+                        You are viewing this as a public user. Some actions may be unavailable.
+                    </AlertDescription>
+                </Alert>
+            )}
+            
+            <DonationReceipt 
+                ref={receiptRef}
+                donation={donation} 
+                campaign={lead} 
+            />
+             <ShareDialog 
+                open={isShareDialogOpen} 
+                onOpenChange={setIsShareDialogOpen} 
+                shareData={{
+                    title: `Thank you for your donation!`,
+                    text: `JazakAllah Khair for your generous donation of Rupee ${donation.amount.toFixed(2)} towards the "${lead.name}" initiative. May Allah accept it and bless you abundantly.`,
+                    url: `${window.location.origin}/leads-public/${leadId}/summary`
+                }} 
+            />
 
-                {(donation.comments || donation.suggestions) && (
-                    <Card className="mt-6">
-                        <CardHeader>
-                            <CardTitle>Additional Information</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {donation.comments && (
-                                <div className="space-y-1">
-                                    <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><MessageSquare/>Comments</h3>
-                                    <p className="pl-6">{donation.comments}</p>
-                                </div>
-                            )}
-                             {donation.suggestions && (
-                                <div className="space-y-1">
-                                    <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><StickyNote/>Suggestions</h3>
-                                    <p className="pl-6">{donation.suggestions}</p>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                )}
+            {(donation.comments || donation.suggestions) && (
+                <Card className="mt-6">
+                    <CardHeader>
+                        <CardTitle>Additional Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {donation.comments && (
+                            <div className="space-y-1">
+                                <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><MessageSquare/>Comments</h3>
+                                <p className="pl-6">{donation.comments}</p>
+                            </div>
+                        )}
+                         {donation.suggestions && (
+                            <div className="space-y-1">
+                                <h3 className="flex items-center gap-2 text-sm font-medium text-muted-foreground"><StickyNote/>Suggestions</h3>
+                                <p className="pl-6">{donation.suggestions}</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            )}
 
 
-                <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                    <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>Edit Donation</DialogTitle>
-                        </DialogHeader>
-                        <DonationForm
-                            donation={donation}
-                            onSubmit={handleFormSubmit}
-                            onCancel={() => setIsFormOpen(false)}
-                        />
-                    </DialogContent>
-                </Dialog>
-            </main>
-        </div>
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Edit Donation</DialogTitle>
+                    </DialogHeader>
+                    <DonationForm
+                        donation={donation}
+                        onSubmit={handleFormSubmit}
+                        onCancel={() => setIsFormOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
+        </main>
     );
 }

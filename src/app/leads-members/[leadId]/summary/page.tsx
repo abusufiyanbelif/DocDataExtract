@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -16,7 +15,6 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 import type { Lead, Beneficiary, Donation, DonationCategory } from '@/lib/types';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -423,396 +421,390 @@ We are currently assessing the needs for this initiative. Your support and feedb
     
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <main className="flex items-center justify-center min-h-screen">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            </main>
         );
     }
 
     if (!lead) {
         return (
-            <div className="min-h-screen text-foreground">
-                <DocuExtractHeader />
-                <main className="container mx-auto p-4 md:p-8 text-center">
-                    <p className="text-lg text-muted-foreground">Lead not found.</p>
-                    <Button asChild className="mt-4">
-                        <Link href="/leads-members">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Leads
-                        </Link>
-                    </Button>
-                </main>
-            </div>
+            <main className="container mx-auto p-4 md:p-8 text-center">
+                <p className="text-lg text-muted-foreground">Lead not found.</p>
+                <Button asChild className="mt-4">
+                    <Link href="/leads-members">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Leads
+                    </Link>
+                </Button>
+            </main>
         );
     }
     
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
 
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/leads-members">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Leads
-                        </Link>
-                    </Button>
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/leads-members">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Leads
+                    </Link>
+                </Button>
+            </div>
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+                 <div className="space-y-1">
+                    {editMode ? (
+                       <Input
+                            id="name"
+                            value={editableLead.name || ''}
+                            onChange={(e) => setEditableLead(p => ({...p, name: e.target.value}))}
+                            className="text-3xl font-bold h-auto p-0 border-0 shadow-none focus-visible:ring-0"
+                        />
+                    ) : (
+                        <h1 className="text-3xl font-bold">{lead.name}</h1>
+                    )}
+                    {editMode ? (
+                         <Select
+                            value={editableLead.status}
+                            onValueChange={(value) => setEditableLead(p => ({...p, status: value as any}))}
+                        >
+                            <SelectTrigger className="w-fit border-0 shadow-none focus:ring-0 p-0 h-auto text-muted-foreground [&>svg]:ml-1">
+                                <SelectValue placeholder="Select a status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Upcoming">Upcoming</SelectItem>
+                                <SelectItem value="Active">Active</SelectItem>
+                                <SelectItem value="Completed">Completed</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    ): (
+                        <p className="text-muted-foreground">{lead.status}</p>
+                    )}
                 </div>
-                <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                     <div className="space-y-1">
-                        {editMode ? (
-                           <Input
-                                id="name"
-                                value={editableLead.name || ''}
-                                onChange={(e) => setEditableLead(p => ({...p, name: e.target.value}))}
-                                className="text-3xl font-bold h-auto p-0 border-0 shadow-none focus-visible:ring-0"
-                            />
-                        ) : (
-                            <h1 className="text-3xl font-bold">{lead.name}</h1>
-                        )}
-                        {editMode ? (
-                             <Select
-                                value={editableLead.status}
-                                onValueChange={(value) => setEditableLead(p => ({...p, status: value as any}))}
-                            >
-                                <SelectTrigger className="w-fit border-0 shadow-none focus:ring-0 p-0 h-auto text-muted-foreground [&>svg]:ml-1">
-                                    <SelectValue placeholder="Select a status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Upcoming">Upcoming</SelectItem>
-                                    <SelectItem value="Active">Active</SelectItem>
-                                    <SelectItem value="Completed">Completed</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        ): (
-                            <p className="text-muted-foreground">{lead.status}</p>
-                        )}
-                    </div>
-                    <div className="flex gap-2">
-                        {!editMode && (
-                            <>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline">
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onClick={() => handleDownload('png')}>Download as Image (PNG)</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                <Button onClick={handleShare} variant="outline">
-                                    <Share2 className="mr-2 h-4 w-4" />
-                                    Share
-                                </Button>
-                            </>
-                        )}
-                        {canUpdate && userProfile && (
-                            !editMode ? (
-                                <Button onClick={handleEditClick}>
-                                    <Edit className="mr-2 h-4 w-4" /> Edit Summary
-                                </Button>
-                            ) : (
-                                <div className="flex gap-2">
-                                    <Button variant="outline" onClick={handleCancel}>Cancel</Button>
-                                    <Button onClick={handleSave}>
-                                        <Save className="mr-2 h-4 w-4" /> Save
+                <div className="flex gap-2">
+                    {!editMode && (
+                        <>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download
                                     </Button>
-                                </div>
-                            )
-                        )}
-                        {!isProfileLoading && !userProfile && (
-                            <Button asChild>
-                                <Link href="/login">
-                                    <LogIn className="mr-2 h-4 w-4" />
-                                    Organization members login
-                                </Link>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem onClick={() => handleDownload('png')}>Download as Image (PNG)</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button onClick={handleShare} variant="outline">
+                                <Share2 className="mr-2 h-4 w-4" />
+                                Share
                             </Button>
+                        </>
+                    )}
+                    {canUpdate && userProfile && (
+                        !editMode ? (
+                            <Button onClick={handleEditClick}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit Summary
+                            </Button>
+                        ) : (
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+                                <Button onClick={handleSave}>
+                                    <Save className="mr-2 h-4 w-4" /> Save
+                                </Button>
+                            </div>
+                        )
+                    )}
+                    {!isProfileLoading && !userProfile && (
+                        <Button asChild>
+                            <Link href="/login">
+                                <LogIn className="mr-2 h-4 w-4" />
+                                Organization members login
+                            </Link>
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            <div className="border-b mb-4">
+                <ScrollArea className="w-full whitespace-nowrap">
+                    <div className="flex w-max space-x-4">
+                        {userProfile && canReadSummary && (
+                          <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none" data-active="true">
+                              <Link href={`/leads-members/${leadId}/summary`}>Summary</Link>
+                          </Button>
+                        )}
+                        {userProfile && (
+                          <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none">
+                              <Link href={`/leads-members/${leadId}`}>Item List</Link>
+                          </Button>
+                        )}
+                        {userProfile && canReadBeneficiaries && (
+                          <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none">
+                              <Link href={`/leads-members/${leadId}/beneficiaries`}>Beneficiary List</Link>
+                          </Button>
+                        )}
+                        {userProfile && canReadDonations && (
+                          <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none">
+                              <Link href={`/leads-members/${leadId}/donations`}>Donations</Link>
+                          </Button>
                         )}
                     </div>
-                </div>
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+            </div>
 
-                <div className="border-b mb-4">
-                    <ScrollArea className="w-full whitespace-nowrap">
-                        <div className="flex w-max space-x-4">
-                            {userProfile && canReadSummary && (
-                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none" data-active="true">
-                                  <Link href={`/leads-members/${leadId}/summary`}>Summary</Link>
-                              </Button>
-                            )}
-                            {userProfile && (
-                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none">
-                                  <Link href={`/leads-members/${leadId}`}>Item List</Link>
-                              </Button>
-                            )}
-                            {userProfile && canReadBeneficiaries && (
-                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none">
-                                  <Link href={`/leads-members/${leadId}/beneficiaries`}>Beneficiary List</Link>
-                              </Button>
-                            )}
-                            {userProfile && canReadDonations && (
-                              <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none">
-                                  <Link href={`/leads-members/${leadId}/donations`}>Donations</Link>
-                              </Button>
+            <div className="relative space-y-6 p-4 bg-background" ref={summaryRef}>
+                {validLogoUrl && (
+                    <img
+                        src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
+                        alt="Watermark"
+                        crossOrigin="anonymous"
+                        className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
+                        style={{aspectRatio: '1 / 1'}}
+                    />
+                )}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Lead Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div>
+                            <Label htmlFor="description" className="text-sm font-medium text-muted-foreground">Description</Label>
+                            {editMode && canUpdate ? (
+                                <Textarea
+                                    id="description"
+                                    value={editableLead.description}
+                                    onChange={(e) => setEditableLead(p => ({...p, description: e.target.value}))}
+                                    className="mt-1"
+                                    rows={4}
+                                />
+                            ) : (
+                                <p className="mt-1 text-sm">{lead.description || 'No description provided.'}</p>
                             )}
                         </div>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </div>
-
-                <div className="relative space-y-6 p-4 bg-background" ref={summaryRef}>
-                    {validLogoUrl && (
-                        <img
-                            src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
-                            alt="Watermark"
-                            crossOrigin="anonymous"
-                            className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
-                            style={{aspectRatio: '1 / 1'}}
-                        />
-                    )}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Lead Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <Label htmlFor="description" className="text-sm font-medium text-muted-foreground">Description</Label>
+                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="space-y-1">
+                                <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Fundraising Goal (Target)</Label>
                                 {editMode && canUpdate ? (
-                                    <Textarea
-                                        id="description"
-                                        value={editableLead.description}
-                                        onChange={(e) => setEditableLead(p => ({...p, description: e.target.value}))}
+                                    <Input
+                                        id="targetAmount"
+                                        type="number"
+                                        value={editableLead.targetAmount}
+                                        onChange={(e) => setEditableLead(p => ({...p, targetAmount: Number(e.target.value) || 0}))}
                                         className="mt-1"
-                                        rows={4}
                                     />
                                 ) : (
-                                    <p className="mt-1 text-sm">{lead.description || 'No description provided.'}</p>
+                                    <p className="mt-1 text-lg font-semibold">Rupee {(lead.targetAmount || 0).toLocaleString('en-IN')}</p>
                                 )}
                             </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div className="space-y-1">
-                                    <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Fundraising Goal (Target)</Label>
-                                    {editMode && canUpdate ? (
-                                        <Input
-                                            id="targetAmount"
-                                            type="number"
-                                            value={editableLead.targetAmount}
-                                            onChange={(e) => setEditableLead(p => ({...p, targetAmount: Number(e.target.value) || 0}))}
-                                            className="mt-1"
-                                        />
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">Rupee {(lead.targetAmount || 0).toLocaleString('en-IN')}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="category" className="text-sm font-medium text-muted-foreground">Category</Label>
-                                    {editMode && canUpdate ? (
-                                        <Select
-                                            value={editableLead.category}
-                                            onValueChange={(value) => setEditableLead(p => ({...p, category: value as any}))}
-                                        >
-                                            <SelectTrigger id="category" className="mt-1">
-                                                <SelectValue placeholder="Select a category" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Ration">Ration</SelectItem>
-                                                <SelectItem value="Relief">Relief</SelectItem>
-                                                <SelectItem value="General">General</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.category}</p>
-                                    )}
-                                </div>
-                                 <div className="space-y-1">
-                                    <Label htmlFor="startDate" className="text-sm font-medium text-muted-foreground">Start Date</Label>
-                                    {editMode && canUpdate ? (
-                                        <Input
-                                            id="startDate"
-                                            type="date"
-                                            value={editableLead.startDate}
-                                            onChange={(e) => setEditableLead(p => ({...p, startDate: e.target.value}))}
-                                            className="mt-1"
-                                        />
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.startDate}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="endDate" className="text-sm font-medium text-muted-foreground">End Date</Label>
-                                    {editMode && canUpdate ? (
-                                        <Input
-                                            id="endDate"
-                                            type="date"
-                                            value={editableLead.endDate}
-                                            onChange={(e) => setEditableLead(p => ({...p, endDate: e.target.value}))}
-                                            className="mt-1"
-                                        />
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.endDate}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="authenticityStatus" className="text-sm font-medium text-muted-foreground">Authenticity Status</Label>
-                                    {editMode && canUpdate ? (
-                                        <Select
-                                            value={editableLead.authenticityStatus}
-                                            onValueChange={(value) => setEditableLead(p => ({...p, authenticityStatus: value as any}))}
-                                        >
-                                            <SelectTrigger id="authenticityStatus" className="mt-1">
-                                                <SelectValue placeholder="Select a status" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Pending Verification">Pending Verification</SelectItem>
-                                                <SelectItem value="Verified">Verified</SelectItem>
-                                                <SelectItem value="On Hold">On Hold</SelectItem>
-                                                <SelectItem value="Rejected">Rejected</SelectItem>
-                                                <SelectItem value="Need More Details">Need More Details</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.authenticityStatus || 'N/A'}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="publicVisibility" className="text-sm font-medium text-muted-foreground">Public Visibility</Label>
-                                    {editMode && canUpdate ? (
-                                        <Select
-                                            value={editableLead.publicVisibility}
-                                            onValueChange={(value) => setEditableLead(p => ({...p, publicVisibility: value as any}))}
-                                        >
-                                            <SelectTrigger id="publicVisibility" className="mt-1">
-                                                <SelectValue placeholder="Select visibility" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Hold">Hold (Private)</SelectItem>
-                                                <SelectItem value="Ready to Publish">Ready to Publish</SelectItem>
-                                                <SelectItem value="Published">Published</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.publicVisibility || 'N/A'}</p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="space-y-2 pt-4">
-                                <Label className="text-sm font-medium text-muted-foreground">Allowed Donation Types</Label>
+                            <div className="space-y-1">
+                                <Label htmlFor="category" className="text-sm font-medium text-muted-foreground">Category</Label>
                                 {editMode && canUpdate ? (
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 border rounded-md">
-                                    <div className="flex items-center space-x-2">
-                                        <Checkbox 
-                                            id="select-all"
-                                            checked={editableLead.allowedDonationTypes?.length === donationCategories.length}
-                                            onCheckedChange={(checked) => {
-                                                setEditableLead(p => ({...p, allowedDonationTypes: checked ? [...donationCategories] : []}));
-                                            }}
-                                        />
-                                        <Label htmlFor="select-all" className="font-bold">Any</Label>
-                                    </div>
-                                    {donationCategories.map(type => (
-                                        <div key={type} className="flex items-center space-x-2">
-                                        <Checkbox 
-                                            id={`type-${type}`}
-                                            checked={editableLead.allowedDonationTypes?.includes(type)}
-                                            onCheckedChange={(checked) => {
-                                            const currentTypes = editableLead.allowedDonationTypes || [];
-                                            const newTypes = checked ? [...currentTypes, type] : currentTypes.filter(t => t !== type);
-                                            setEditableLead(p => ({...p, allowedDonationTypes: newTypes}));
-                                            }}
-                                        />
-                                        <Label htmlFor={`type-${type}`}>{type}</Label>
-                                        </div>
-                                    ))}
-                                    </div>
+                                    <Select
+                                        value={editableLead.category}
+                                        onValueChange={(value) => setEditableLead(p => ({...p, category: value as any}))}
+                                    >
+                                        <SelectTrigger id="category" className="mt-1">
+                                            <SelectValue placeholder="Select a category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Ration">Ration</SelectItem>
+                                            <SelectItem value="Relief">Relief</SelectItem>
+                                            <SelectItem value="General">General</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 ) : (
-                                    <div className="flex flex-wrap gap-2">
-                                        {(lead.allowedDonationTypes && lead.allowedDonationTypes.length > 0) ? (
-                                            lead.allowedDonationTypes.map(type => (
-                                                <Badge key={type} variant="secondary">{type}</Badge>
-                                            ))
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground">Not specified.</p>
-                                        )}
-                                    </div>
+                                    <p className="mt-1 text-lg font-semibold">{lead.category}</p>
                                 )}
                             </div>
-                        </CardContent>
-                    </Card>
+                             <div className="space-y-1">
+                                <Label htmlFor="startDate" className="text-sm font-medium text-muted-foreground">Start Date</Label>
+                                {editMode && canUpdate ? (
+                                    <Input
+                                        id="startDate"
+                                        type="date"
+                                        value={editableLead.startDate}
+                                        onChange={(e) => setEditableLead(p => ({...p, startDate: e.target.value}))}
+                                        className="mt-1"
+                                    />
+                                ) : (
+                                    <p className="mt-1 text-lg font-semibold">{lead.startDate}</p>
+                                )}
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="endDate" className="text-sm font-medium text-muted-foreground">End Date</Label>
+                                {editMode && canUpdate ? (
+                                    <Input
+                                        id="endDate"
+                                        type="date"
+                                        value={editableLead.endDate}
+                                        onChange={(e) => setEditableLead(p => ({...p, endDate: e.target.value}))}
+                                        className="mt-1"
+                                    />
+                                ) : (
+                                    <p className="mt-1 text-lg font-semibold">{lead.endDate}</p>
+                                )}
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="authenticityStatus" className="text-sm font-medium text-muted-foreground">Authenticity Status</Label>
+                                {editMode && canUpdate ? (
+                                    <Select
+                                        value={editableLead.authenticityStatus}
+                                        onValueChange={(value) => setEditableLead(p => ({...p, authenticityStatus: value as any}))}
+                                    >
+                                        <SelectTrigger id="authenticityStatus" className="mt-1">
+                                            <SelectValue placeholder="Select a status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Pending Verification">Pending Verification</SelectItem>
+                                            <SelectItem value="Verified">Verified</SelectItem>
+                                            <SelectItem value="On Hold">On Hold</SelectItem>
+                                            <SelectItem value="Rejected">Rejected</SelectItem>
+                                            <SelectItem value="Need More Details">Need More Details</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <p className="mt-1 text-lg font-semibold">{lead.authenticityStatus || 'N/A'}</p>
+                                )}
+                            </div>
+                            <div className="space-y-1">
+                                <Label htmlFor="publicVisibility" className="text-sm font-medium text-muted-foreground">Public Visibility</Label>
+                                {editMode && canUpdate ? (
+                                    <Select
+                                        value={editableLead.publicVisibility}
+                                        onValueChange={(value) => setEditableLead(p => ({...p, publicVisibility: value as any}))}
+                                    >
+                                        <SelectTrigger id="publicVisibility" className="mt-1">
+                                            <SelectValue placeholder="Select visibility" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Hold">Hold (Private)</SelectItem>
+                                            <SelectItem value="Ready to Publish">Ready to Publish</SelectItem>
+                                            <SelectItem value="Published">Published</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <p className="mt-1 text-lg font-semibold">{lead.publicVisibility || 'N/A'}</p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="space-y-2 pt-4">
+                            <Label className="text-sm font-medium text-muted-foreground">Allowed Donation Types</Label>
+                            {editMode && canUpdate ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 border rounded-md">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox 
+                                        id="select-all"
+                                        checked={editableLead.allowedDonationTypes?.length === donationCategories.length}
+                                        onCheckedChange={(checked) => {
+                                            setEditableLead(p => ({...p, allowedDonationTypes: checked ? [...donationCategories] : []}));
+                                        }}
+                                    />
+                                    <Label htmlFor="select-all" className="font-bold">Any</Label>
+                                </div>
+                                {donationCategories.map(type => (
+                                    <div key={type} className="flex items-center space-x-2">
+                                    <Checkbox 
+                                        id={`type-${type}`}
+                                        checked={editableLead.allowedDonationTypes?.includes(type)}
+                                        onCheckedChange={(checked) => {
+                                        const currentTypes = editableLead.allowedDonationTypes || [];
+                                        const newTypes = checked ? [...currentTypes, type] : currentTypes.filter(t => t !== type);
+                                        setEditableLead(p => ({...p, allowedDonationTypes: newTypes}));
+                                        }}
+                                    />
+                                    <Label htmlFor={`type-${type}`}>{type}</Label>
+                                    </div>
+                                ))}
+                                </div>
+                            ) : (
+                                <div className="flex flex-wrap gap-2">
+                                    {(lead.allowedDonationTypes && lead.allowedDonationTypes.length > 0) ? (
+                                        lead.allowedDonationTypes.map(type => (
+                                            <Badge key={type} variant="secondary">{type}</Badge>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">Not specified.</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
 
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
-                                <Hourglass className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                      <Card>
-                        <CardHeader>
-                            <CardTitle>Verified Donations by Category</CardTitle>
-                            <CardDescription>
-                                Total verified funds collected for this lead, broken down by category.
-                            </CardDescription>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
-                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {donationCategories.map(category => (
-                                <Card key={category}>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">{category}</CardTitle>
-                                        <Wallet className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                        <CardContent>
+                            <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
                         </CardContent>
                     </Card>
-                    
                     <Card>
-                        <CardHeader>
-                            <CardTitle>Donations by Payment Type</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
-                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                            {summaryData?.donationPaymentTypeData && Object.entries(summaryData.donationPaymentTypeData).map(([name, value]) => (
-                                <Card key={name}>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">{name}</CardTitle>
-                                        <Wallet className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">{value}</div>
-                                        <p className="text-xs text-muted-foreground">{value === 1 ? 'Donation' : 'Donations'}</p>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                        <CardContent>
+                            <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
                         </CardContent>
                     </Card>
                 </div>
 
-                <ShareDialog 
-                    open={isShareDialogOpen} 
-                    onOpenChange={setIsShareDialogOpen} 
-                    shareData={shareDialogData} 
-                />
-            </main>
-        </div>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Verified Donations by Category</CardTitle>
+                        <CardDescription>
+                            Total verified funds collected for this lead, broken down by category.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {donationCategories.map(category => (
+                            <Card key={category}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{category}</CardTitle>
+                                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </CardContent>
+                </Card>
+                
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Donations by Payment Type</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {summaryData?.donationPaymentTypeData && Object.entries(summaryData.donationPaymentTypeData).map(([name, value]) => (
+                            <Card key={name}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{name}</CardTitle>
+                                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{value}</div>
+                                    <p className="text-xs text-muted-foreground">{value === 1 ? 'Donation' : 'Donations'}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+
+            <ShareDialog 
+                open={isShareDialogOpen} 
+                onOpenChange={setIsShareDialogOpen} 
+                shareData={shareDialogData} 
+            />
+        </main>
     );
 }

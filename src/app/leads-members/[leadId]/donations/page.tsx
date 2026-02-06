@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -11,7 +10,6 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, 
 import type { Donation, Lead } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from '@/hooks/use-session';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -347,15 +345,14 @@ export default function DonationsPage() {
 
   if (isLoading) {
     return (
-        <div className="flex items-center justify-center min-h-screen">
+        <main className="flex items-center justify-center min-h-screen">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        </main>
     );
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
+    <>
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
             <Button variant="outline" asChild>
@@ -615,6 +612,6 @@ export default function DonationsPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

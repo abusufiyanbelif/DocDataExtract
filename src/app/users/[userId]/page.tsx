@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -11,7 +10,6 @@ import type { UserProfile } from '@/lib/types';
 import { createAdminPermissions } from '@/lib/modules';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
@@ -195,104 +193,95 @@ export default function UserDetailsPage() {
 
   if (isLoading) {
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Skeleton className="h-10 w-32" />
-                </div>
-                <Card className="max-w-4xl mx-auto">
-                    <CardHeader>
-                        <Skeleton className="h-8 w-48" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-6 pt-4">
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-40 w-full" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Skeleton className="h-10 w-32" />
+            </div>
+            <Card className="max-w-4xl mx-auto">
+                <CardHeader>
+                    <Skeleton className="h-8 w-48" />
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-6 pt-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-40 w-full" />
+                    </div>
+                </CardContent>
+            </Card>
+        </main>
     )
   }
 
   if (!user) {
      return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/users">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Users
-                        </Link>
-                    </Button>
-                </div>
-                 <Card className="max-w-4xl mx-auto">
-                    <CardHeader>
-                        <CardTitle>User Not Found</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p>The user you are trying to edit does not exist.</p>
-                    </CardContent>
-                </Card>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/users">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Users
+                    </Link>
+                </Button>
+            </div>
+             <Card className="max-w-4xl mx-auto">
+                <CardHeader>
+                    <CardTitle>User Not Found</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>The user you are trying to edit does not exist.</p>
+                </CardContent>
+            </Card>
+        </main>
      )
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="mb-4">
-          <Button variant="outline" asChild>
-            <Link href="/users">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Users
-            </Link>
-          </Button>
-        </div>
+    <main className="container mx-auto p-4 md:p-8">
+      <div className="mb-4">
+        <Button variant="outline" asChild>
+          <Link href="/users">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Users
+          </Link>
+        </Button>
+      </div>
 
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <CardTitle>User: {user.name}</CardTitle>
-                    <CardDescription>View user details or switch to edit mode.</CardDescription>
-                </div>
-                {canUpdate && !isEditMode && (
-                    <Button onClick={() => setIsEditMode(true)}>
-                        <Edit className="mr-2 h-4 w-4" /> Edit
-                    </Button>
-                )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!canUpdate && (
-                <Alert>
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Read-Only</AlertTitle>
-                    <AlertDescription>
-                        You have permission to view this user, but not to edit.
-                    </AlertDescription>
-                </Alert>
-            )}
-            <UserForm
-                user={user}
-                onSubmit={handleSave}
-                onCancel={handleCancel}
-                isSubmitting={isSubmitting}
-                isLoading={isUserLoading}
-                isReadOnly={!isEditMode || !canUpdate}
-            />
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                  <CardTitle>User: {user.name}</CardTitle>
+                  <CardDescription>View user details or switch to edit mode.</CardDescription>
+              </div>
+              {canUpdate && !isEditMode && (
+                  <Button onClick={() => setIsEditMode(true)}>
+                      <Edit className="mr-2 h-4 w-4" /> Edit
+                  </Button>
+              )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {!canUpdate && (
+              <Alert>
+                  <ShieldAlert className="h-4 w-4" />
+                  <AlertTitle>Read-Only</AlertTitle>
+                  <AlertDescription>
+                      You have permission to view this user, but not to edit.
+                  </AlertDescription>
+              </Alert>
+          )}
+          <UserForm
+              user={user}
+              onSubmit={handleSave}
+              onCancel={handleCancel}
+              isSubmitting={isSubmitting}
+              isLoading={isUserLoading}
+              isReadOnly={!isEditMode || !canUpdate}
+          />
+        </CardContent>
+      </Card>
+    </main>
   );
 }

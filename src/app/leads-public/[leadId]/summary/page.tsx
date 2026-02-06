@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
@@ -13,7 +12,6 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 import type { Lead } from '@/lib/types';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, Loader2, LogIn, Share2, Download } from 'lucide-react';
@@ -221,112 +219,102 @@ We are currently assessing the needs for this initiative. Your support and feedb
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <main className="flex items-center justify-center min-h-screen">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            </main>
         );
     }
 
     if (!lead || lead.authenticityStatus !== 'Verified' || lead.publicVisibility !== 'Published') {
         return (
-            <div className="min-h-screen text-foreground">
-                <DocuExtractHeader />
-                <main className="container mx-auto p-4 md:p-8 text-center">
-                    <p className="text-lg text-muted-foreground">This lead could not be found or is not publicly available.</p>
-                    <Button asChild className="mt-4">
-                        <Link href="/leads-public">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Public Leads
-                        </Link>
-                    </Button>
-                </main>
-            </div>
+            <main className="container mx-auto p-4 md:p-8 text-center">
+                <p className="text-lg text-muted-foreground">This lead could not be found or is not publicly available.</p>
+                <Button asChild className="mt-4">
+                    <Link href="/leads-public">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Public Leads
+                    </Link>
+                </Button>
+            </main>
         );
     }
     
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                 <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/leads-public">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Public Leads
+        <main className="container mx-auto p-4 md:p-8">
+             <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/leads-public">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Public Leads
+                    </Link>
+                </Button>
+            </div>
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+                 <div className="space-y-1">
+                    <h1 className="text-3xl font-bold">{lead.name}</h1>
+                    <p className="text-muted-foreground">{lead.status}</p>
+                </div>
+                <div className="flex gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                <Download className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleDownload('png')}>Download as Image (PNG)</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button onClick={handleShare} variant="outline">
+                        <Share2 className="mr-2 h-4 w-4" /> Share
+                    </Button>
+                    <Button asChild>
+                        <Link href="/login">
+                            <LogIn className="mr-2 h-4 w-4" />
+                            Organization members login
                         </Link>
                     </Button>
                 </div>
-                <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                     <div className="space-y-1">
-                        <h1 className="text-3xl font-bold">{lead.name}</h1>
-                        <p className="text-muted-foreground">{lead.status}</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => handleDownload('png')}>Download as Image (PNG)</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button onClick={handleShare} variant="outline">
-                            <Share2 className="mr-2 h-4 w-4" /> Share
-                        </Button>
-                        <Button asChild>
-                            <Link href="/login">
-                                <LogIn className="mr-2 h-4 w-4" />
-                                Organization members login
-                            </Link>
-                        </Button>
-                    </div>
-                </div>
+            </div>
 
-                <div className="space-y-6 bg-background p-4" ref={summaryRef}>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Lead Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <p className="mt-1 text-sm">{lead.description || 'No description provided.'}</p>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Target Amount</p>
-                                    <p className="mt-1 text-lg font-semibold">Rupee {(lead.targetAmount ?? 0).toLocaleString('en-IN')}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Category</p>
-                                    <p className="mt-1 text-lg font-semibold">{lead.category}</p>
-                                </div>
-                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Start Date</p>
-                                    <p className="mt-1 text-lg font-semibold">{lead.startDate}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">End Date</p>
-                                    <p className="mt-1 text-lg font-semibold">{lead.endDate}</p>
-                                </div>
+            <div className="space-y-6 bg-background p-4" ref={summaryRef}>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Lead Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="mt-1 text-sm">{lead.description || 'No description provided.'}</p>
+                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Target Amount</p>
+                                <p className="mt-1 text-lg font-semibold">Rupee {(lead.targetAmount ?? 0).toLocaleString('en-IN')}</p>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
-                 <ShareDialog 
-                    open={isShareDialogOpen} 
-                    onOpenChange={setIsShareDialogOpen} 
-                    shareData={shareDialogData} 
-                />
-                 <div className="mt-8">
-                    <AppFooter />
-                 </div>
-            </main>
-        </div>
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Category</p>
+                                <p className="mt-1 text-lg font-semibold">{lead.category}</p>
+                            </div>
+                             <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">Start Date</p>
+                                <p className="mt-1 text-lg font-semibold">{lead.startDate}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-sm font-medium text-muted-foreground">End Date</p>
+                                <p className="mt-1 text-lg font-semibold">{lead.endDate}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+             <ShareDialog 
+                open={isShareDialogOpen} 
+                onOpenChange={setIsShareDialogOpen} 
+                shareData={shareDialogData} 
+            />
+             <div className="mt-8">
+                <AppFooter />
+             </div>
+        </main>
     );
 }
-
-    
-
-    
