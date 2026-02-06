@@ -44,13 +44,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-} from '@/components/ui/chart';
-import type { ChartConfig } from '@/components/ui/chart';
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { get } from '@/lib/utils';
@@ -172,7 +170,7 @@ export default function CampaignSummaryPage() {
 
     // Memoized calculations
     const summaryData = useMemo(() => {
-        if (!donations || !campaign) return null;
+        if (!donations || !campaign || !beneficiaries) return null;
 
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
@@ -205,6 +203,19 @@ export default function CampaignSummaryPage() {
         const fundingGoal = campaign.targetAmount || 0;
         const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
         const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
+        
+        const beneficiariesByCategory = beneficiaries.reduce((acc, ben) => {
+            const key = ben.members || 0;
+            if (!acc[key]) {
+                acc[key] = { beneficiaries: [], totalAmount: 0 };
+            }
+            acc[key].beneficiaries.push(ben);
+            acc[key].totalAmount += ben.kitAmount || 0;
+            return acc;
+        }, {} as Record<number, { beneficiaries: Beneficiary[], totalAmount: number }>);
+
+        const sortedBeneficiaryCategories = Object.keys(beneficiariesByCategory).map(Number).sort((a, b) => b - a);
+
 
         return {
             verifiedNonZakatDonations,
@@ -214,10 +225,12 @@ export default function CampaignSummaryPage() {
             targetAmount: campaign.targetAmount || 0,
             remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
             amountsByCategory,
+            beneficiariesByCategory,
+            sortedBeneficiaryCategories,
         };
-    }, [donations, campaign]);
+    }, [donations, campaign, beneficiaries]);
     
-    const isLoading = isCampaignLoading || areDonationsLoading || isProfileLoading || isBrandingLoading || isPaymentLoading;
+    const isLoading = isCampaignLoading || areDonationsLoading || areBeneficiariesLoading || isProfileLoading || isBrandingLoading || isPaymentLoading;
     
     const handleShare = async () => {
         if (!campaign || !summaryData) {
@@ -802,6 +815,56 @@ Your contribution, big or small, makes a huge difference.
                         </div>
                     </CardContent>
                 </Card>
+
+                {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Beneficiaries by Category</CardTitle>
+                            <CardDescription>
+                                Breakdown of beneficiary counts and total kit amounts per member category.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Accordion type="single" collapsible className="w-full">
+                                {summaryData.sortedBeneficiaryCategories.map(memberCount => {
+                                    const group = summaryData.beneficiariesByCategory[memberCount];
+                                    const count = group.beneficiaries.length;
+                                    const totalAmount = group.totalAmount;
+                                    return (
+                                        <AccordionItem key={memberCount} value={`item-${memberCount}`}>
+                                            <AccordionTrigger>
+                                                <div className="flex justify-between w-full pr-4">
+                                                    <span>{memberCount} Members</span>
+                                                    <span className="text-muted-foreground">{count} beneficiar{count > 1 ? 'ies' : 'y'} | Total: Rupee {totalAmount.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Name</TableHead>
+                                                            <TableHead>Phone</TableHead>
+                                                            <TableHead className="text-right">Kit Amount</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {group.beneficiaries.map(ben => (
+                                                            <TableRow key={ben.id}>
+                                                                <TableCell>{ben.name}</TableCell>
+                                                                <TableCell>{ben.phone}</TableCell>
+                                                                <TableCell className="text-right">Rupee {(ben.kitAmount || 0).toFixed(2)}</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    )
+                                })}
+                            </Accordion>
+                        </CardContent>
+                    </Card>
+                )}
 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                      <Card>
