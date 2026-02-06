@@ -849,47 +849,33 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         <CardHeader>
                             <CardTitle>Beneficiaries by Category</CardTitle>
                             <CardDescription>
-                                Breakdown of beneficiary counts and total kit amounts per member category.
+                                Summary of beneficiaries grouped by family size.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Accordion type="single" collapsible className="w-full">
-                                {summaryData.sortedBeneficiaryCategories.map(memberCount => {
-                                    const group = summaryData.beneficiariesByCategory[memberCount];
-                                    const count = group.beneficiaries.length;
-                                    const totalAmount = group.totalAmount;
-                                    return (
-                                        <AccordionItem key={memberCount} value={`item-${memberCount}`}>
-                                            <AccordionTrigger>
-                                                <div className="flex justify-between w-full pr-4">
-                                                    <span>{memberCount} Members</span>
-                                                    <span className="text-muted-foreground">{count} beneficiar{count > 1 ? 'ies' : 'y'} | Total: Rupee {totalAmount.toLocaleString('en-IN')}</span>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead>Name</TableHead>
-                                                            <TableHead>Phone</TableHead>
-                                                            <TableHead className="text-right">Kit Amount</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {group.beneficiaries.map(ben => (
-                                                            <TableRow key={ben.id}>
-                                                                <TableCell>{ben.name}</TableCell>
-                                                                <TableCell>{ben.phone}</TableCell>
-                                                                <TableCell className="text-right">Rupee {(ben.kitAmount || 0).toFixed(2)}</TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    )
-                                })}
-                            </Accordion>
+                           <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Category Name</TableHead>
+                                        <TableHead className="text-center">Total Beneficiaries</TableHead>
+                                        <TableHead className="text-right">Kit Amount (per kit)</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {summaryData.sortedBeneficiaryCategories.map(memberCount => {
+                                        const group = summaryData.beneficiariesByCategory[memberCount];
+                                        const count = group.beneficiaries.length;
+                                        const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
+                                        return (
+                                            <TableRow key={memberCount}>
+                                                <TableCell className="font-medium">{memberCount} Members</TableCell>
+                                                <TableCell className="text-center">{count}</TableCell>
+                                                <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
                         </CardContent>
                     </Card>
                 )}

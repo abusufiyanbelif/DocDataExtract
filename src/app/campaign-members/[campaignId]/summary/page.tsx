@@ -860,16 +860,27 @@ Your contribution, big or small, makes a huge difference.
                         </div>
                     </CardContent>
                 </Card>
-                
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
-                        <Hourglass className="h-4 w-4 text-secondary-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                    </CardContent>
-                </Card>
+
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
+                            <Hourglass className="h-4 w-4 text-secondary-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{areBeneficiariesLoading ? '...' : (beneficiaries?.length ?? 0)}</div>
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <Card>
                     <CardHeader>
@@ -936,65 +947,40 @@ Your contribution, big or small, makes a huge difference.
 
 
                 {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
-                     <Card>
+                    <Card>
                         <CardHeader>
                             <CardTitle>Beneficiaries by Category</CardTitle>
                             <CardDescription>
-                                Breakdown of beneficiary counts and total kit amounts per member category.
+                                Summary of beneficiaries grouped by family size.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Accordion type="single" collapsible className="w-full">
-                                {summaryData.sortedBeneficiaryCategories.map(memberCount => {
-                                    const group = summaryData.beneficiariesByCategory[memberCount];
-                                    const count = group.beneficiaries.length;
-                                    const totalAmount = group.totalAmount;
-                                    return (
-                                        <AccordionItem key={memberCount} value={`item-${memberCount}`}>
-                                            <AccordionTrigger>
-                                                <div className="flex justify-between w-full pr-4">
-                                                    <span>{memberCount} Members</span>
-                                                    <span className="text-muted-foreground">{count} beneficiar{count > 1 ? 'ies' : 'y'} | Total: Rupee {totalAmount.toLocaleString('en-IN')}</span>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead className="w-[80px]">#</TableHead>
-                                                            <TableHead className="text-right">Kit Amount</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {group.beneficiaries.map((ben, index) => (
-                                                            <TableRow key={ben.id}>
-                                                                <TableCell>{index + 1}</TableCell>
-                                                                <TableCell className="text-right">Rupee {(ben.kitAmount || 0).toFixed(2)}</TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    )
-                                })}
-                            </Accordion>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Category Name</TableHead>
+                                        <TableHead className="text-center">Total Beneficiaries</TableHead>
+                                        <TableHead className="text-right">Kit Amount (per kit)</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {summaryData.sortedBeneficiaryCategories.map(memberCount => {
+                                        const group = summaryData.beneficiariesByCategory[memberCount];
+                                        const count = group.beneficiaries.length;
+                                        const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
+                                        return (
+                                            <TableRow key={memberCount}>
+                                                <TableCell className="font-medium">{memberCount} Members</TableCell>
+                                                <TableCell className="text-center">{count}</TableCell>
+                                                <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
                         </CardContent>
                     </Card>
                 )}
-
-                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{areBeneficiariesLoading ? '...' : (beneficiaries?.length ?? 0)}</div>
-                        </CardContent>
-                    </Card>
-                </div>
-
             </div>
 
             <ShareDialog 
