@@ -10,7 +10,6 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, writeBa
 import type { Beneficiary, Campaign, RationItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from '@/hooks/use-session';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -590,52 +589,45 @@ export default function BeneficiariesPage() {
 
   if (isLoading && !campaign) {
     return (
-        <div className="min-h-screen text-foreground">
-             <DocuExtractHeader />
-             <main className="container mx-auto p-4 md:p-8">
-                 <div className="mb-4">
-                    <Skeleton className="h-10 w-44" />
-                </div>
-                <Skeleton className="h-9 w-64 mb-4" />
-                 <div className="flex w-max space-x-4 border-b mb-4">
-                    <Skeleton className="h-10 w-24" />
-                    <Skeleton className="h-10 w-32" />
-                    <Skeleton className="h-10 w-36" />
-                </div>
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-5 w-1/3" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-64 w-full" />
-                    </CardContent>
-                </Card>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8">
+             <div className="mb-4">
+                <Skeleton className="h-10 w-44" />
+            </div>
+            <Skeleton className="h-9 w-64 mb-4" />
+             <div className="flex w-max space-x-4 border-b mb-4">
+                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 w-36" />
+            </div>
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-5 w-1/3" />
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-64 w-full" />
+                </CardContent>
+            </Card>
+        </main>
     );
   }
   
   if (!campaign) {
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8 text-center">
-                <p className="text-lg text-muted-foreground">Campaign not found.</p>
-                <Button asChild className="mt-4">
-                    <Link href="/campaign-members">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Campaigns
-                    </Link>
-                </Button>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8 text-center">
+            <p className="text-lg text-muted-foreground">Campaign not found.</p>
+            <Button asChild className="mt-4">
+                <Link href="/campaign-members">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Campaigns
+                </Link>
+            </Button>
+        </main>
     );
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
+    <>
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
             <Button variant="outline" asChild>
@@ -1033,8 +1025,7 @@ export default function BeneficiariesPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
-
-    </div>
+    </>
   );
 }
 

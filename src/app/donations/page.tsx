@@ -10,7 +10,6 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, setDoc 
 import type { Donation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from '@/hooks/use-session';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -308,32 +307,28 @@ export default function DonationsPage() {
   
   if (isLoading && !donations) {
     return (
-        <div className="flex items-center justify-center min-h-screen">
+        <main className="container mx-auto p-4 md:p-8">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        </main>
     );
   }
 
   if (!canRead) {
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <Alert variant="destructive">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Access Denied</AlertTitle>
-                    <AlertDescription>
-                        You do not have permission to view this page.
-                    </AlertDescription>
-                </Alert>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8">
+            <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertTitle>Access Denied</AlertTitle>
+                <AlertDescription>
+                    You do not have permission to view this page.
+                </AlertDescription>
+            </Alert>
+        </main>
     );
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
+    <>
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
             <Button variant="outline" asChild>
@@ -578,6 +573,6 @@ export default function DonationsPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

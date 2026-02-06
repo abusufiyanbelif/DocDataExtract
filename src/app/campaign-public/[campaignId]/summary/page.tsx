@@ -14,7 +14,6 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 import type { Campaign, Beneficiary, Donation, DonationCategory } from '@/lib/types';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -398,254 +397,249 @@ Your contribution, big or small, makes a huge difference.
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <main className="container mx-auto p-4 md:p-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            </main>
         );
     }
 
     if (!campaign || campaign.authenticityStatus !== 'Verified' || campaign.publicVisibility !== 'Published') {
         return (
-            <div className="min-h-screen text-foreground">
-                <DocuExtractHeader />
-                <main className="container mx-auto p-4 md:p-8 text-center">
-                    <p className="text-lg text-muted-foreground">This campaign could not be found or is not publicly available.</p>
-                    <Button asChild className="mt-4">
-                        <Link href="/campaign-public">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Public Campaigns
-                        </Link>
-                    </Button>
-                </main>
-            </div>
+            <main className="container mx-auto p-4 md:p-8 text-center">
+                <p className="text-lg text-muted-foreground">This campaign could not be found or is not publicly available.</p>
+                <Button asChild className="mt-4">
+                    <Link href="/campaign-public">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Public Campaigns
+                    </Link>
+                </Button>
+            </main>
         );
     }
 
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
     
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                 <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/campaign-public">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Campaigns
+        <main className="container mx-auto p-4 md:p-8">
+             <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/campaign-public">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Campaigns
+                    </Link>
+                </Button>
+            </div>
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+                 <div className="space-y-1">
+                    <h1 className="text-3xl font-bold">{campaign.name}</h1>
+                    <p className="text-muted-foreground">{campaign.status}</p>
+                </div>
+                 <div className="flex gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                <Download className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleDownload('png')}>Download as Image (PNG)</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button onClick={handleShare} variant="outline">
+                        <Share2 className="mr-2 h-4 w-4" />
+                        Share
+                    </Button>
+                    <Button asChild>
+                        <Link href="/login">
+                            <LogIn className="mr-2 h-4 w-4" />
+                            Organization members login
                         </Link>
                     </Button>
                 </div>
-                <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                     <div className="space-y-1">
-                        <h1 className="text-3xl font-bold">{campaign.name}</h1>
-                        <p className="text-muted-foreground">{campaign.status}</p>
-                    </div>
-                     <div className="flex gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => handleDownload('png')}>Download as Image (PNG)</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownload('pdf')}>Download as PDF</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button onClick={handleShare} variant="outline">
-                            <Share2 className="mr-2 h-4 w-4" />
-                            Share
-                        </Button>
-                        <Button asChild>
-                            <Link href="/login">
-                                <LogIn className="mr-2 h-4 w-4" />
-                                Organization members login
-                            </Link>
-                        </Button>
-                    </div>
-                </div>
+            </div>
 
-                <div className="space-y-6">
-                    <div className="relative space-y-6 p-4 bg-background" ref={summaryRef}>
-                        {validLogoUrl && (
-                            <img
-                                src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
-                                alt="Watermark"
-                                crossOrigin="anonymous"
-                                className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
-                                style={{aspectRatio: '1 / 1'}}
-                            />
-                        )}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Campaign Details</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-muted-foreground">Target Amount (Calculated)</p>
-                                        <p className="mt-1 text-lg font-semibold">Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-muted-foreground">Category</p>
-                                        <p className="mt-1 text-lg font-semibold">{campaign.category}</p>
-                                    </div>
-                                     <div className="space-y-1">
-                                        <p className="text-sm font-medium text-muted-foreground">Start Date</p>
-                                        <p className="mt-1 text-lg font-semibold">{campaign.startDate}</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-medium text-muted-foreground">End Date</p>
-                                        <p className="mt-1 text-lg font-semibold">{campaign.endDate}</p>
-                                    </div>
+            <div className="space-y-6">
+                <div className="relative space-y-6 p-4 bg-background" ref={summaryRef}>
+                    {validLogoUrl && (
+                        <img
+                            src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
+                            alt="Watermark"
+                            crossOrigin="anonymous"
+                            className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
+                            style={{aspectRatio: '1 / 1'}}
+                        />
+                    )}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Campaign Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <p className="mt-1 text-sm">{campaign.description || 'No description provided.'}</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Target Amount (Calculated)</p>
+                                    <p className="mt-1 text-lg font-semibold">Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')}</p>
                                 </div>
-                            </CardContent>
-                        </Card>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Category</p>
+                                    <p className="mt-1 text-lg font-semibold">{campaign.category}</p>
+                                </div>
+                                 <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">Start Date</p>
+                                    <p className="mt-1 text-lg font-semibold">{campaign.startDate}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium text-muted-foreground">End Date</p>
+                                    <p className="mt-1 text-lg font-semibold">{campaign.endDate}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
 
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Funding Progress (for Kits)</CardTitle>
+                            <CardDescription>
+                                Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
+                                <div 
+                                    className="h-full bg-primary transition-all"
+                                    style={{ width: `${summaryData?.fundingProgress || 0}%` }}
+                                ></div>
+                                <div 
+                                    className="absolute top-0 h-full bg-secondary transition-all"
+                                    style={{ 
+                                        left: `${summaryData?.fundingProgress || 0}%`, 
+                                        width: `${summaryData?.pendingProgress || 0}%`
+                                    }}
+                                ></div>
+                            </div>
+                            <div className="mt-2 flex justify-between text-sm text-muted-foreground">
+                                <div className="flex items-center">
+                                    <span className="h-2 w-2 rounded-full bg-primary mr-2"></span>
+                                    Verified
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="h-2 w-2 rounded-full bg-secondary mr-2"></span>
+                                    Pending Verification
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Funding Progress (for Kits)</CardTitle>
-                                <CardDescription>
-                                    Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
-                                </CardDescription>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Kit Amount Required</CardTitle>
+                                <Target className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
-                                    <div 
-                                        className="h-full bg-primary transition-all"
-                                        style={{ width: `${summaryData?.fundingProgress || 0}%` }}
-                                    ></div>
-                                    <div 
-                                        className="absolute top-0 h-full bg-secondary transition-all"
-                                        style={{ 
-                                            left: `${summaryData?.fundingProgress || 0}%`, 
-                                            width: `${summaryData?.pendingProgress || 0}%`
-                                        }}
-                                    ></div>
-                                </div>
-                                <div className="mt-2 flex justify-between text-sm text-muted-foreground">
-                                    <div className="flex items-center">
-                                        <span className="h-2 w-2 rounded-full bg-primary mr-2"></span>
-                                        Verified
-                                    </div>
-                                    <div className="flex items-center">
-                                        <span className="h-2 w-2 rounded-full bg-secondary mr-2"></span>
-                                        Pending Verification
-                                    </div>
-                                </div>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
                             </CardContent>
                         </Card>
-
-                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Kit Amount Required</CardTitle>
-                                    <Target className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Kit Funding (Verified)</CardTitle>
-                                    <Gift className="h-4 w-4 text-primary" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Zakat Collected (Verified)</CardTitle>
-                                    <Wallet className="h-4 w-4 text-primary" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">Rupee {summaryData?.zakatCollected.toLocaleString('en-IN') ?? '0.00'}</div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
-                                    <Hourglass className="h-4 w-4 text-secondary-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Beneficiary Status</CardTitle>
-                                    <Users className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold mb-2">{summaryData?.totalBeneficiaries ?? 0} Total</div>
-                                    <div className="space-y-1 text-sm">
-                                        {summaryData?.beneficiaryStatusData && Object.entries(summaryData.beneficiaryStatusData).map(([name, value]) => (
-                                            <div key={name} className="flex justify-between items-center">
-                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: `var(--color-${name.replace(/\s+/g, '')})` }} />
-                                                    <span>{name}</span>
-                                                </div>
-                                                <span className="font-medium text-foreground">{value}</span>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Kit Funding (Verified)</CardTitle>
+                                <Gift className="h-4 w-4 text-primary" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Zakat Collected (Verified)</CardTitle>
+                                <Wallet className="h-4 w-4 text-primary" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.zakatCollected.toLocaleString('en-IN') ?? '0.00'}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
+                                <Hourglass className="h-4 w-4 text-secondary-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Beneficiary Status</CardTitle>
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold mb-2">{summaryData?.totalBeneficiaries ?? 0} Total</div>
+                                <div className="space-y-1 text-sm">
+                                    {summaryData?.beneficiaryStatusData && Object.entries(summaryData.beneficiaryStatusData).map(([name, value]) => (
+                                        <div key={name} className="flex justify-between items-center">
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: `var(--color-${name.replace(/\s+/g, '')})` }} />
+                                                <span>{name}</span>
                                             </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                        
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Beneficiaries by Category</CardTitle>
-                                <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Category</TableHead>
-                                                <TableHead className="text-center">Beneficiaries</TableHead>
-                                                <TableHead className="text-right">Kit Price (Rupee)</TableHead>
-                                                <TableHead className="text-right">Total Kit Amount (Rupee)</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {summaryData.beneficiaryCategoryBreakdown.map((item) => {
-                                                const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
-                                                return (
-                                                    <TableRow key={item.name}>
-                                                        <TableCell className="font-medium">{item.name === 'General' ? 'General' : `${item.name} Members`}</TableCell>
-                                                        <TableCell className="text-center">{item.count}</TableCell>
-                                                        <TableCell className="text-right font-mono">{kitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                                        <TableCell className="text-right font-mono">{item.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                                                    </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
-                                )}
+                                            <span className="font-medium text-foreground">{value}</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Beneficiaries by Category</CardTitle>
+                            <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Category</TableHead>
+                                            <TableHead className="text-center">Beneficiaries</TableHead>
+                                            <TableHead className="text-right">Kit Price (Rupee)</TableHead>
+                                            <TableHead className="text-right">Total Kit Amount (Rupee)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {summaryData.beneficiaryCategoryBreakdown.map((item) => {
+                                            const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
+                                            return (
+                                                <TableRow key={item.name}>
+                                                    <TableCell className="font-medium">{item.name === 'General' ? 'General' : `${item.name} Members`}</TableCell>
+                                                    <TableCell className="text-center">{item.count}</TableCell>
+                                                    <TableCell className="text-right font-mono">{kitPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                                    <TableCell className="text-right font-mono">{item.totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
+            </div>
 
-                <ShareDialog 
-                    open={isShareDialogOpen} 
-                    onOpenChange={setIsShareDialogOpen} 
-                    shareData={shareDialogData} 
-                />
-            </main>
-        </div>
+            <ShareDialog 
+                open={isShareDialogOpen} 
+                onOpenChange={setIsShareDialogOpen} 
+                shareData={shareDialogData} 
+            />
+            <div className="mt-8">
+                <AppFooter />
+            </div>
+        </main>
     );
 }
-
-
 
     
 

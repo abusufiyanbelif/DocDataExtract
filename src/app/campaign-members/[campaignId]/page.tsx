@@ -10,7 +10,6 @@ import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
 import { doc, updateDoc, DocumentReference } from 'firebase/firestore';
 import type { Campaign, RationItem } from '@/lib/types';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -608,64 +607,57 @@ export default function CampaignDetailsPage() {
   
   if (isLoading || !editableCampaign) {
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Skeleton className="h-10 w-44" />
-                </div>
-                <Skeleton className="h-9 w-64 mb-4" />
-                <div className="flex flex-wrap gap-2 border-b mb-4">
-                    <Skeleton className="h-10 w-24" />
-                    <Skeleton className="h-10 w-32" />
-                    <Skeleton className="h-10 w-36" />
-                    <Skeleton className="h-10 w-28" />
-                </div>
-                <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-start flex-wrap gap-4">
-                            <div>
-                                <Skeleton className="h-8 w-48 mb-4" />
-                                <div className="space-y-3">
-                                    <Skeleton className="h-6 w-96" />
-                                    <Skeleton className="h-6 w-80" />
-                                </div>
-                            </div>
-                            <div className="flex gap-2">
-                                <Skeleton className="h-10 w-32" />
-                                <Skeleton className="h-10 w-32" />
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Skeleton className="h-10 w-44" />
+            </div>
+            <Skeleton className="h-9 w-64 mb-4" />
+            <div className="flex flex-wrap gap-2 border-b mb-4">
+                <Skeleton className="h-10 w-24" />
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 w-36" />
+                <Skeleton className="h-10 w-28" />
+            </div>
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-start flex-wrap gap-4">
+                        <div>
+                            <Skeleton className="h-8 w-48 mb-4" />
+                            <div className="space-y-3">
+                                <Skeleton className="h-6 w-96" />
+                                <Skeleton className="h-6 w-80" />
                             </div>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-64 w-full" />
-                    </CardContent>
-                </Card>
-            </main>
-        </div>
+                        <div className="flex gap-2">
+                            <Skeleton className="h-10 w-32" />
+                            <Skeleton className="h-10 w-32" />
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-64 w-full" />
+                </CardContent>
+            </Card>
+        </main>
     );
   }
 
   if (!campaign) {
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8 text-center">
-                <p className="text-lg text-muted-foreground">Campaign not found.</p>
-                <Button asChild className="mt-4">
-                    <Link href="/campaign-members">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Campaigns
-                    </Link>
-                </Button>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8 text-center">
+            <p className="text-lg text-muted-foreground">Campaign not found.</p>
+            <Button asChild className="mt-4">
+                <Link href="/campaign-members">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Campaigns
+                </Link>
+            </Button>
+        </main>
     );
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
+    <>
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
             <Button variant="outline" asChild>
@@ -975,6 +967,6 @@ export default function CampaignDetailsPage() {
             )}
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

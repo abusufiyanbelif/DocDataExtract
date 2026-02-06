@@ -6,7 +6,6 @@ import { useFirestore, errorEmitter, FirestorePermissionError, useCollection } f
 import { useSession } from '@/hooks/use-session';
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -130,40 +129,36 @@ export default function CreateCampaignPage() {
 
   if (isProfileLoading || areCampaignsLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <main className="container mx-auto p-4 md:p-8">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      </main>
     );
   }
 
   if (!canCreate) {
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/campaign-members">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Campaigns
-                        </Link>
-                    </Button>
-                </div>
-                <Alert variant="destructive">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Access Denied</AlertTitle>
-                    <AlertDescription>
-                    You do not have the required permissions to create a new campaign.
-                    </AlertDescription>
-                </Alert>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/campaign-members">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Campaigns
+                    </Link>
+                </Button>
+            </div>
+            <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertTitle>Access Denied</AlertTitle>
+                <AlertDescription>
+                You do not have the required permissions to create a new campaign.
+                </AlertDescription>
+            </Alert>
+        </main>
     )
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
+    <>
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
           <Button variant="outline" asChild>
@@ -359,6 +354,6 @@ export default function CreateCampaignPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }

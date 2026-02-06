@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useSession } from '@/hooks/use-session';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -134,89 +133,86 @@ export default function ProfilePage() {
 
     if (isLoading) {
         return (
-             <div className="flex items-center justify-center min-h-screen">
+             <main className="container mx-auto p-4 md:p-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            </main>
         )
     }
 
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Home
-                        </Link>
-                    </Button>
-                </div>
-                <Card className="max-w-2xl mx-auto">
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle>My Profile</CardTitle>
-                                <CardDescription>This is your personal information as it appears in the system.</CardDescription>
-                            </div>
-                             {!isEditMode ? (
-                                <Button onClick={handleEdit}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                             ) : (
-                                <div className="flex gap-2">
-                                    <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
-                                    <Button onClick={handleSave} disabled={isSubmitting || !isDirty}>
-                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                        Save
-                                    </Button>
-                                </div>
-                             )}
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Home
+                    </Link>
+                </Button>
+            </div>
+            <Card className="max-w-2xl mx-auto">
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle>My Profile</CardTitle>
+                            <CardDescription>This is your personal information as it appears in the system.</CardDescription>
                         </div>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {userProfile ? (
-                            <>
-                                <ProfileDetail icon={<User />} label="Full Name" value={userProfile.name} isEditing={isEditMode}>
-                                    <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSubmitting}/>
-                                </ProfileDetail>
-                                <ProfileDetail icon={<Mail />} label="Email Address" value={userProfile.email} />
-                                <ProfileDetail icon={<LogIn />} label="Login ID" value={userProfile.loginId} />
-                                <ProfileDetail icon={<Phone />} label="Phone Number" value={userProfile.phone} isEditing={isEditMode}>
-                                     <Input value={phone} onChange={(e) => setPhone(e.target.value)} disabled={isSubmitting}/>
-                                </ProfileDetail>
-                                <ProfileDetail icon={<KeyRound />} label="User Key (System ID)" value={userProfile.userKey} />
-                                
-                                <ProfileDetail 
-                                    icon={<Shield />} 
-                                    label="Role" 
-                                    value={<Badge variant={userProfile.role === 'Admin' ? 'destructive' : 'secondary'}>{userProfile.role}</Badge>} 
-                                />
-                                
-                                <ProfileDetail 
-                                    icon={userProfile.status === 'Active' ? <CheckCircle className="text-success" /> : <XCircle className="text-destructive" />} 
-                                    label="Status" 
-                                    value={<Badge variant={userProfile.status === 'Active' ? 'default' : 'outline'}>{userProfile.status}</Badge>} 
-                                />
+                         {!isEditMode ? (
+                            <Button onClick={handleEdit}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                         ) : (
+                            <div className="flex gap-2">
+                                <Button variant="ghost" onClick={handleCancel} disabled={isSubmitting}>Cancel</Button>
+                                <Button onClick={handleSave} disabled={isSubmitting || !isDirty}>
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                    Save
+                                </Button>
+                            </div>
+                         )}
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {userProfile ? (
+                        <>
+                            <ProfileDetail icon={<User />} label="Full Name" value={userProfile.name} isEditing={isEditMode}>
+                                <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSubmitting}/>
+                            </ProfileDetail>
+                            <ProfileDetail icon={<Mail />} label="Email Address" value={userProfile.email} />
+                            <ProfileDetail icon={<LogIn />} label="Login ID" value={userProfile.loginId} />
+                            <ProfileDetail icon={<Phone />} label="Phone Number" value={userProfile.phone} isEditing={isEditMode}>
+                                 <Input value={phone} onChange={(e) => setPhone(e.target.value)} disabled={isSubmitting}/>
+                            </ProfileDetail>
+                            <ProfileDetail icon={<KeyRound />} label="User Key (System ID)" value={userProfile.userKey} />
+                            
+                            <ProfileDetail 
+                                icon={<Shield />} 
+                                label="Role" 
+                                value={<Badge variant={userProfile.role === 'Admin' ? 'destructive' : 'secondary'}>{userProfile.role}</Badge>} 
+                            />
+                            
+                            <ProfileDetail 
+                                icon={userProfile.status === 'Active' ? <CheckCircle className="text-success" /> : <XCircle className="text-destructive" />} 
+                                label="Status" 
+                                value={<Badge variant={userProfile.status === 'Active' ? 'default' : 'outline'}>{userProfile.status}</Badge>} 
+                            />
 
-                                {userProfile.idProofUrl && (
-                                    <ProfileDetail 
-                                        icon={<FileText />} 
-                                        label="ID Proof" 
-                                        value={
-                                            <Button variant="outline" size="sm" onClick={() => handleViewImage(userProfile.idProofUrl!)}>
-                                                <Eye className="mr-2 h-4 w-4" /> View Document
-                                            </Button>
-                                        } 
-                                    />
-                                )}
-                                {userProfile.idProofType && <ProfileDetail icon={<BadgeInfo />} label="ID Type" value={userProfile.idProofType} />}
-                                {userProfile.idNumber && <ProfileDetail icon={<Hash />} label="ID Number" value={userProfile.idNumber} />}
-                            </>
-                        ) : (
-                             <p className="text-center text-muted-foreground">Could not load user profile.</p>
-                        )}
-                    </CardContent>
-                </Card>
-            </main>
+                            {userProfile.idProofUrl && (
+                                <ProfileDetail 
+                                    icon={<FileText />} 
+                                    label="ID Proof" 
+                                    value={
+                                        <Button variant="outline" size="sm" onClick={() => handleViewImage(userProfile.idProofUrl!)}>
+                                            <Eye className="mr-2 h-4 w-4" /> View Document
+                                        </Button>
+                                    } 
+                                />
+                            )}
+                            {userProfile.idProofType && <ProfileDetail icon={<BadgeInfo />} label="ID Type" value={userProfile.idProofType} />}
+                            {userProfile.idNumber && <ProfileDetail icon={<Hash />} label="ID Number" value={userProfile.idNumber} />}
+                        </>
+                    ) : (
+                         <p className="text-center text-muted-foreground">Could not load user profile.</p>
+                    )}
+                </CardContent>
+            </Card>
 
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
                 <DialogContent className="max-w-3xl">
@@ -241,6 +237,6 @@ export default function ProfilePage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </main>
     );
 }

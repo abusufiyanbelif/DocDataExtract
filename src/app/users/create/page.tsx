@@ -12,7 +12,6 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { firebaseConfig } from '@/firebase/config';
 import { modules, createAdminPermissions } from '@/lib/modules';
 
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -194,65 +193,59 @@ export default function CreateUserPage() {
   
   if (isLoading) {
     return (
-        <div className="flex items-center justify-center min-h-screen">
+        <main className="container mx-auto p-4 md:p-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        </main>
     );
   }
 
   if (!canCreate) {
       return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/users">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Users
-                        </Link>
-                    </Button>
-                </div>
-                <Alert variant="destructive">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Access Denied</AlertTitle>
-                    <AlertDescription>
-                        You do not have the required permissions to create a new user.
-                    </AlertDescription>
-                </Alert>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/users">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Users
+                    </Link>
+                </Button>
+            </div>
+            <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertTitle>Access Denied</AlertTitle>
+                <AlertDescription>
+                    You do not have the required permissions to create a new user.
+                </AlertDescription>
+            </Alert>
+        </main>
     )
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="mb-4">
-          <Button variant="outline" asChild>
-            <Link href="/users">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Users
-            </Link>
-          </Button>
-        </div>
+    <main className="container mx-auto p-4 md:p-8">
+      <div className="mb-4">
+        <Button variant="outline" asChild>
+          <Link href="/users">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Users
+          </Link>
+        </Button>
+      </div>
 
-        <Card className="max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle>Create New User</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UserForm
-                onSubmit={handleSave}
-                onCancel={handleCancel}
-                isSubmitting={isSubmitting}
-                isLoading={isLoading}
-                isReadOnly={false}
-            />
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle>Create New User</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UserForm
+              onSubmit={handleSave}
+              onCancel={handleCancel}
+              isSubmitting={isSubmitting}
+              isLoading={isLoading}
+              isReadOnly={false}
+          />
+        </CardContent>
+      </Card>
+    </main>
   );
 }

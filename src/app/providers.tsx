@@ -10,6 +10,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { useBranding } from '@/hooks/use-branding';
 import { TempLogo } from '@/components/temp-logo';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
+import { usePathname } from 'next/navigation';
+
 
 function Watermark() {
     const { brandingSettings, isLoading } = useBranding();
@@ -37,6 +39,25 @@ function Watermark() {
     );
 }
 
+function MainLayout({ children }: { children: ReactNode }) {
+    const pathname = usePathname();
+    const noHeaderFooterRoutes = ['/login'];
+
+    if (noHeaderFooterRoutes.includes(pathname)) {
+        return <>{children}</>;
+    }
+
+    return (
+      <div className="relative z-10 flex flex-col min-h-screen">
+          <DocuExtractHeader />
+          <div className="flex-grow">
+              {children}
+          </div>
+          <AppFooter />
+      </div>
+    );
+}
+
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -45,13 +66,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <FirebaseContentWrapper>
           <div className="app-root relative">
             <Watermark />
-            <div className="relative z-10 flex flex-col min-h-screen">
-                <DocuExtractHeader />
-                <div className="flex-grow">
-                    {children}
-                </div>
-                <AppFooter />
-            </div>
+            <MainLayout>{children}</MainLayout>
           </div>
           <Toaster />
         </FirebaseContentWrapper>

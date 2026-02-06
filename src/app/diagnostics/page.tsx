@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useCallback, useMemo } from 'react';
 import { useAuth, useStorage, useFirestore } from '@/firebase';
@@ -5,7 +6,6 @@ import { useSession } from '@/hooks/use-session';
 import { firebaseConfig } from '@/firebase/config';
 import { collection, query, limit, getDocs, doc, where, getDoc } from 'firebase/firestore';
 import { ref as storageRef, getMetadata } from 'firebase/storage';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, CheckCircle2, XCircle, Loader2, PlayCircle, ExternalLink, BrainCircuit, Database, FileCog, KeyRound, DatabaseZap, FolderKanban } from 'lucide-react';
@@ -298,71 +298,68 @@ export default function DiagnosticsPage() {
     };
 
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Home
-                        </Link>
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Home
+                    </Link>
+                </Button>
+            </div>
+            <Card className="max-w-4xl mx-auto">
+                <CardHeader>
+                    <CardTitle>System Diagnostics</CardTitle>
+                    <p className="text-muted-foreground">Run tests to check the connectivity and configuration of required application resources.</p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <Button onClick={runAllChecks} disabled={isAllRunning}>
+                        {isAllRunning ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <PlayCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Run All Tests
                     </Button>
-                </div>
-                <Card className="max-w-4xl mx-auto">
-                    <CardHeader>
-                        <CardTitle>System Diagnostics</CardTitle>
-                        <p className="text-muted-foreground">Run tests to check the connectivity and configuration of required application resources.</p>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <Button onClick={runAllChecks} disabled={isAllRunning}>
-                            {isAllRunning ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <PlayCircle className="mr-2 h-4 w-4" />
-                            )}
-                            Run All Tests
-                        </Button>
-                        
-                        <div className="space-y-4">
-                            {diagnosticChecks.map((check) => {
-                                const result = checkResults[check.id];
-                                const isLoading = result?.status === 'running';
-                                return (
-                                    <div key={check.id} className="flex items-start gap-4 p-4 border rounded-lg">
-                                        <div className="mt-1">{check.icon}</div>
-                                        <div className="flex-1 space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <h3 className="font-semibold">{check.name}</h3>
-                                                    <p className="text-sm text-muted-foreground">{check.description}</p>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    {result && getStatusIcon(result.status)}
-                                                    <Button 
-                                                        size="sm" 
-                                                        variant="outline"
-                                                        onClick={() => runSingleCheck(check)}
-                                                        disabled={isAllRunning || isLoading}
-                                                    >
-                                                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                                        Run Test
-                                                    </Button>
-                                                </div>
+                    
+                    <div className="space-y-4">
+                        {diagnosticChecks.map((check) => {
+                            const result = checkResults[check.id];
+                            const isLoading = result?.status === 'running';
+                            return (
+                                <div key={check.id} className="flex items-start gap-4 p-4 border rounded-lg">
+                                    <div className="mt-1">{check.icon}</div>
+                                    <div className="flex-1 space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <h3 className="font-semibold">{check.name}</h3>
+                                                <p className="text-sm text-muted-foreground">{check.description}</p>
                                             </div>
-                                            {result && result.status !== 'pending' && result.status !== 'running' && (
-                                                <div className="text-sm text-muted-foreground pt-2 border-t">
-                                                    <strong className="text-foreground">Result:</strong> {result.details}
-                                                </div>
-                                            )}
+                                            <div className="flex items-center gap-4">
+                                                {result && getStatusIcon(result.status)}
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="outline"
+                                                    onClick={() => runSingleCheck(check)}
+                                                    disabled={isAllRunning || isLoading}
+                                                >
+                                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                    Run Test
+                                                </Button>
+                                            </div>
                                         </div>
+                                        {result && result.status !== 'pending' && result.status !== 'running' && (
+                                            <div className="text-sm text-muted-foreground pt-2 border-t">
+                                                <strong className="text-foreground">Result:</strong> {result.details}
+                                            </div>
+                                        )}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </CardContent>
-                </Card>
-            </main>
-        </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </CardContent>
+            </Card>
+        </main>
     );
 }

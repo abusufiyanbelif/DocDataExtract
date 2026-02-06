@@ -23,7 +23,6 @@ import {
 
 import type { Donation, DonationCategory } from '@/lib/types';
 import { donationCategories } from '@/lib/modules';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, Loader2, Wallet, CheckCircle, Hourglass, XCircle, Link as LinkIcon, Link2Off, Download, DatabaseZap } from 'lucide-react';
@@ -150,178 +149,172 @@ export default function DonationsSummaryPage() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <main className="container mx-auto p-4 md:p-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
+            </main>
         );
     }
     
      if (!canRead) {
         return (
-            <div className="min-h-screen text-foreground">
-                <DocuExtractHeader />
-                <main className="container mx-auto p-4 md:p-8">
-                    <Alert variant="destructive">
-                        <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>Access Denied</AlertTitle>
-                        <AlertDescription>
-                            You do not have permission to view this page.
-                        </AlertDescription>
-                    </Alert>
-                </main>
-            </div>
+            <main className="container mx-auto p-4 md:p-8">
+                <Alert variant="destructive">
+                    <ShieldAlert className="h-4 w-4" />
+                    <AlertTitle>Access Denied</AlertTitle>
+                    <AlertDescription>
+                        You do not have permission to view this page.
+                    </AlertDescription>
+                </Alert>
+            </main>
         );
     }
     
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Home
-                        </Link>
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Home
+                    </Link>
+                </Button>
+            </div>
+
+            <div className="flex items-center justify-between mb-4">
+                <h1 className="text-3xl font-bold">Donations Summary</h1>
+                {canUpdate && (
+                    <Button onClick={handleSync} disabled={isSyncing}>
+                        {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DatabaseZap className="mr-2 h-4 w-4" />}
+                        Sync Donation Data
                     </Button>
-                </div>
+                )}
+            </div>
 
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-3xl font-bold">Donations Summary</h1>
-                    {canUpdate && (
-                        <Button onClick={handleSync} disabled={isSyncing}>
-                            {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DatabaseZap className="mr-2 h-4 w-4" />}
-                            Sync Donation Data
+            <div className="border-b mb-4">
+                <ScrollArea className="w-full whitespace-nowrap">
+                    <div className="flex w-max space-x-4">
+                        <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
+                            <Link href="/donations">All Donations</Link>
                         </Button>
-                    )}
-                </div>
+                        <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
+                            <Link href="/donations/summary">Summary</Link>
+                        </Button>
+                    </div>
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+            </div>
+            
+            <div className="space-y-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Total Collections by Category</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {donationCategories.map(category => (
+                            <Card key={category}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{category}</CardTitle>
+                                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </CardContent>
+                </Card>
 
-                <div className="border-b mb-4">
-                    <ScrollArea className="w-full whitespace-nowrap">
-                        <div className="flex w-max space-x-4">
-                            <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none">
-                                <Link href="/donations">All Donations</Link>
-                            </Button>
-                            <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
-                                <Link href="/donations/summary">Summary</Link>
-                            </Button>
-                        </div>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </div>
-                
-                <div className="space-y-6">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Total Collections by Category</CardTitle>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Verified Donations</CardTitle>
+                            <CheckCircle className="h-4 w-4 text-success" />
                         </CardHeader>
-                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {donationCategories.map(category => (
-                                <Card key={category}>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">{category}</CardTitle>
-                                        <Wallet className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                        <CardContent>
+                            <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Verified.toLocaleString('en-IN') ?? '0.00'}</div>
+                            <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Verified ?? 0} donations</p>
                         </CardContent>
                     </Card>
-
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Verified Donations</CardTitle>
-                                <CheckCircle className="h-4 w-4 text-success" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Verified.toLocaleString('en-IN') ?? '0.00'}</div>
-                                <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Verified ?? 0} donations</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
-                                <Hourglass className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Pending.toLocaleString('en-IN') ?? '0.00'}</div>
-                                <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Pending ?? 0} donations</p>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Canceled Donations</CardTitle>
-                                <XCircle className="h-4 w-4 text-destructive" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Canceled.toLocaleString('en-IN') ?? '0.00'}</div>
-                                <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Canceled ?? 0} donations</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="grid gap-6 lg:grid-cols-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Donations by Payment Type</CardTitle>
-                                <CardDescription>Count of donations per payment method.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[300px] flex items-center justify-center">
-                                <ChartContainer config={donationPaymentTypeChartConfig} className="h-[300px] w-full">
-                                    <BarChart data={summaryData?.donationPaymentTypeChartData} layout="vertical" margin={{ left: 20 }}>
-                                        <CartesianGrid horizontal={false} />
-                                        <YAxis
-                                            dataKey="name"
-                                            type="category"
-                                            tickLine={false}
-                                            tickMargin={10}
-                                            axisLine={false}
-                                        />
-                                        <XAxis type="number" hide />
-                                        <ChartTooltip
-                                            cursor={false}
-                                            content={<ChartTooltipContent indicator="dot" />}
-                                        />
-                                        <Bar
-                                            dataKey="value"
-                                            radius={4}
-                                            layout="vertical"
-                                        >
-                                             {summaryData?.donationPaymentTypeChartData?.map((entry) => (
-                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ChartContainer>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Allocation Status</CardTitle>
-                                <CardDescription>Number of donations linked to a campaign vs. unlinked.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex flex-col items-center justify-center h-[300px] gap-4">
-                                <div className="flex items-center gap-4 text-lg">
-                                    <div className="flex items-center gap-2">
-                                        <LinkIcon className="h-5 w-5 text-primary"/>
-                                        <span className="font-bold text-2xl">{summaryData?.allocatedCount}</span>
-                                        <span>Allocated</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Link2Off className="h-5 w-5 text-muted-foreground"/>
-                                        <span className="font-bold text-2xl">{summaryData?.unallocatedCount}</span>
-                                        <span>Unallocated</span>
-                                    </div>
-                                </div>
-                                <p className="text-sm text-muted-foreground text-center">Unallocated donations can be linked to any campaign from the main "All Donations" table.</p>
-                            </CardContent>
-                        </Card>
-                     </div>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Pending.toLocaleString('en-IN') ?? '0.00'}</div>
+                            <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Pending ?? 0} donations</p>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Canceled Donations</CardTitle>
+                            <XCircle className="h-4 w-4 text-destructive" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">Rupee {summaryData?.amountsByStatus.Canceled.toLocaleString('en-IN') ?? '0.00'}</div>
+                            <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Canceled ?? 0} donations</p>
+                        </CardContent>
+                    </Card>
                 </div>
-            </main>
-        </div>
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Donations by Payment Type</CardTitle>
+                            <CardDescription>Count of donations per payment method.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[300px] flex items-center justify-center">
+                            <ChartContainer config={donationPaymentTypeChartConfig} className="h-[300px] w-full">
+                                <BarChart data={summaryData?.donationPaymentTypeChartData} layout="vertical" margin={{ left: 20 }}>
+                                    <CartesianGrid horizontal={false} />
+                                    <YAxis
+                                        dataKey="name"
+                                        type="category"
+                                        tickLine={false}
+                                        tickMargin={10}
+                                        axisLine={false}
+                                    />
+                                    <XAxis type="number" hide />
+                                    <ChartTooltip
+                                        cursor={false}
+                                        content={<ChartTooltipContent indicator="dot" />}
+                                    />
+                                    <Bar
+                                        dataKey="value"
+                                        radius={4}
+                                        layout="vertical"
+                                    >
+                                         {summaryData?.donationPaymentTypeChartData?.map((entry) => (
+                                            <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Allocation Status</CardTitle>
+                            <CardDescription>Number of donations linked to a campaign vs. unlinked.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-col items-center justify-center h-[300px] gap-4">
+                            <div className="flex items-center gap-4 text-lg">
+                                <div className="flex items-center gap-2">
+                                    <LinkIcon className="h-5 w-5 text-primary"/>
+                                    <span className="font-bold text-2xl">{summaryData?.allocatedCount}</span>
+                                    <span>Allocated</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Link2Off className="h-5 w-5 text-muted-foreground"/>
+                                    <span className="font-bold text-2xl">{summaryData?.unallocatedCount}</span>
+                                    <span>Unallocated</span>
+                                </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground text-center">Unallocated donations can be linked to any campaign from the main "All Donations" table.</p>
+                        </CardContent>
+                    </Card>
+                 </div>
+            </div>
+        </main>
     );
 }
