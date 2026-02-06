@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
@@ -14,7 +15,7 @@ import 'jspdf-autotable';
 
 import type { Campaign } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, LogIn, Share2, Download } from 'lucide-react';
 import {
   DropdownMenu,

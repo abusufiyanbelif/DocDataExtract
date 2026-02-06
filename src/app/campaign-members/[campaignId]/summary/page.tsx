@@ -885,28 +885,57 @@ Your contribution, big or small, makes a huge difference.
                     </CardContent>
                 </Card>
                 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Beneficiaries by Category</CardTitle>
-                        <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                        {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
-                            summaryData.beneficiaryCategoryBreakdown.map((item) => {
-                                const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
-                                return (
-                                    <div key={item.name} className="flex justify-between w-full p-4 border rounded-lg flex-wrap gap-2 items-center">
-                                        <span className="font-medium text-foreground">{item.name === 'General' ? 'General' : `${item.name} Members`}</span>
-                                        <span className="text-sm text-muted-foreground text-right">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Per Kit: Rupee {kitPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} | Total: Rupee {item.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                                    </div>
-                                )
-                            })
-                        ) : (
-                            <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
-                        )}
-                    </CardContent>
-                </Card>
-
+                <div className="grid gap-6 sm:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Beneficiaries by Category</CardTitle>
+                            <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
+                                summaryData.beneficiaryCategoryBreakdown.map((item) => {
+                                    const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
+                                    return (
+                                        <div key={item.name} className="flex justify-between w-full p-4 border rounded-lg flex-wrap gap-2 items-center">
+                                            <span className="font-medium text-foreground">{item.name === 'General' ? 'General' : `${item.name} Members`}</span>
+                                            <span className="text-sm text-muted-foreground text-right">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Per Kit: Rupee {kitPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} | Total: Rupee {item.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                        </div>
+                                    )
+                                })
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Beneficiary Status</CardTitle>
+                            <CardDescription>Current status of all beneficiaries in this campaign.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {summaryData?.beneficiaryStatusData && Object.keys(summaryData.beneficiaryStatusData).length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Count</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {Object.entries(summaryData.beneficiaryStatusData).map(([status, count]) => (
+                                            <TableRow key={status}>
+                                                <TableCell className="font-medium">{status}</TableCell>
+                                                <TableCell className="text-right">{count}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No beneficiary status to display.</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
             <ShareDialog 
@@ -917,9 +946,3 @@ Your contribution, big or small, makes a huge difference.
         </main>
     );
 }
-
-
-
-    
-
-    
