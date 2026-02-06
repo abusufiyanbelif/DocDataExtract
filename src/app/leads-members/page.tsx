@@ -43,7 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { CopyLeadDialog } from '@/components/copy-lead-dialog';
 import { copyLeadAction } from './actions';
-import { hasLeadPermission } from '@/lib/modules';
+import { get } from '@/lib/utils';
 
 
 export default function LeadPage() {
@@ -94,10 +94,11 @@ export default function LeadPage() {
     }, {} as Record<string, number>);
   }, [donations]);
   
-  const canViewLeads = hasLeadPermission(userProfile, 'create') || hasLeadPermission(userProfile, 'update') || hasLeadPermission(userProfile, 'delete') || hasLeadPermission(userProfile, 'read_any_sub');
-  const canCreate = hasLeadPermission(userProfile, 'create');
-  const canUpdate = hasLeadPermission(userProfile, 'update');
-  const canDelete = hasLeadPermission(userProfile, 'delete');
+  const canCreate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.create', false);
+  const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.update', false);
+  const canDelete = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.delete', false);
+  const canViewLeads = userProfile?.role === 'Admin' || canCreate || canUpdate || canDelete || Object.values(get(userProfile, 'permissions.leads-members', {})).some((perm: any) => perm?.read);
+
 
   const handleDeleteClick = (lead: Lead) => {
     if (!canDelete) return;

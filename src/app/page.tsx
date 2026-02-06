@@ -1,5 +1,4 @@
 
-
 'use client';
 import {
   Users,
@@ -16,7 +15,6 @@ import Link from 'next/link';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { useSession } from '@/hooks/use-session';
 import { Button } from '@/components/ui/button';
-import { hasCampaignPermission, hasLeadPermission } from '@/lib/modules';
 import { get } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -33,7 +31,7 @@ const dashboardCards = [
     description: 'Track and manage ration distribution campaigns.',
     icon: <ClipboardList className="h-8 w-8 text-primary" />,
     href: '/campaign-members',
-    permissionKey: 'campaigns',
+    permissionKey: 'campaigns.read',
   },
    {
     title: 'Donations',
@@ -47,7 +45,7 @@ const dashboardCards = [
     description: 'Manage and track potential new leads or initiatives.',
     icon: <Lightbulb className="h-8 w-8 text-primary" />,
     href: '/leads-members',
-    permissionKey: 'leads-members',
+    permissionKey: 'leads-members.read',
   },
   {
     title: 'Extractor',
@@ -85,14 +83,19 @@ export default function Home() {
 
   const visibleCards = userProfile ? dashboardCards.filter(card => {
     if (userProfile.role === 'Admin') return true;
-    const permissionKey = card.permissionKey;
-    if (permissionKey === 'campaigns') {
-        return hasCampaignPermission(userProfile, 'create') || hasCampaignPermission(userProfile, 'update') || hasCampaignPermission(userProfile, 'delete') || hasCampaignPermission(userProfile, 'read_any_sub');
+    
+    // For nested campaign/lead permissions, we check if they have READ access to ANY submodule.
+    // If they do, they should see the main card.
+    if (card.permissionKey === 'campaigns.read') {
+        const campaignPerms = get(userProfile.permissions, 'campaigns', {});
+        return Object.values(campaignPerms).some(perm => (perm as any)?.read);
     }
-    if (permissionKey === 'leads-members') {
-         return hasLeadPermission(userProfile, 'create') || hasLeadPermission(userProfile, 'update') || hasLeadPermission(userProfile, 'delete') || hasLeadPermission(userProfile, 'read_any_sub');
+    if (card.permissionKey === 'leads-members.read') {
+        const leadPerms = get(userProfile.permissions, 'leads-members', {});
+        return Object.values(leadPerms).some(perm => (perm as any)?.read);
     }
-    return get(userProfile.permissions, permissionKey, false);
+    
+    return get(userProfile.permissions, card.permissionKey, false);
   }) : [];
   
   return (
@@ -153,5 +156,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

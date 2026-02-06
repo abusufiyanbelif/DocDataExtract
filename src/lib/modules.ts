@@ -1,5 +1,5 @@
 
-import { get } from "./utils";
+import { get, set } from "./utils";
 
 export const crudPermissions = ['create', 'read', 'update', 'delete'] as const;
 export const readUpdatePermissions = ['read', 'update'] as const;
@@ -29,14 +29,14 @@ export const modules = [
   {
     id: 'campaigns',
     name: 'Campaigns',
-    permissions: ['create', 'update', 'delete'] as const,
+    permissions: ['create', 'read', 'update', 'delete'] as const,
     subModules: campaignSubModules,
   },
   { id: 'donations', name: 'Donations', permissions: crudPermissions },
   {
     id: 'leads-members',
     name: 'Leads',
-    permissions: ['create', 'update', 'delete'] as const,
+    permissions: ['create', 'read', 'update', 'delete'] as const,
     subModules: leadSubModules,
   },
   { id: 'extractor', name: 'Extractor', permissions: simpleReadPermission },
@@ -55,7 +55,7 @@ type SubModulePermissions<T extends Readonly<any[]>> = {
 };
 
 type CampaignPermissions = Partial<Record<Permission, boolean>> & SubModulePermissions<typeof campaignSubModules>;
-type LeadPermissions = Partial<Record<"create" | "update" | "delete", boolean>> & SubModulePermissions<typeof leadSubModules>;
+type LeadPermissions = Partial<Record<"create" | "read" | "update" | "delete", boolean>> & SubModulePermissions<typeof leadSubModules>;
 
 
 export type UserPermissions = Partial<
@@ -67,51 +67,21 @@ export type UserPermissions = Partial<
 
 
 export function createAdminPermissions(): UserPermissions {
-  const allPermissions: any = {};
+  const allPermissions: UserPermissions = {};
   for (const mod of modules) {
-    allPermissions[mod.id] = {};
+    const modId = mod.id;
+    allPermissions[modId] = {};
     for (const perm of mod.permissions) {
-      allPermissions[mod.id][perm] = true;
-    }
-    // Manually add the read permission for campaigns for Admins, as it's not in the main list
-    if (mod.id === 'campaigns') {
-        allPermissions[mod.id].read = true;
-    }
-     if (mod.id === 'leads-members') {
-        allPermissions[mod.id].read = true;
+      set(allPermissions, `${modId}.${perm}`, true);
     }
     if ('subModules' in mod && mod.subModules) {
       for (const subMod of mod.subModules) {
-        allPermissions[mod.id][subMod.id] = {};
-        for (const perm of subMod.permissions) {
-          allPermissions[mod.id][subMod.id][perm] = true;
+        allPermissions[modId]![subMod.id] = {};
+        for (const subPerm of subMod.permissions) {
+          set(allPermissions, `${modId}.${subMod.id}.${subPerm}`, true);
         }
       }
     }
   }
   return allPermissions;
-}
-
-export function hasCampaignPermission(userProfile: any, permission: 'create' | 'update' | 'delete' | 'read_any_sub') {
-    if (!userProfile) return false;
-    if (userProfile.role === 'Admin') return true;
-
-    const campaignPerms = get(userProfile, 'permissions.campaigns', {});
-
-    if (permission === 'read_any_sub') {
-        return !!(campaignPerms.summary?.read || campaignPerms.ration?.read || campaignPerms.beneficiaries?.read || campaignPerms.donations?.read);
-    }
-    return !!campaignPerms[permission];
-}
-
-export function hasLeadPermission(userProfile: any, permission: 'create' | 'update' | 'delete' | 'read_any_sub') {
-    if (!userProfile) return false;
-    if (userProfile.role === 'Admin') return true;
-
-    const leadPerms = get(userProfile, 'permissions.leads-members', {});
-    
-    if (permission === 'read_any_sub') {
-        return !!(leadPerms.summary?.read || leadPerms.beneficiaries?.read || leadPerms.donations?.read);
-    }
-    return !!leadPerms[permission];
 }

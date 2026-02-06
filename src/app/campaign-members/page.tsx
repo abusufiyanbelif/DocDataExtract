@@ -43,6 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { CopyCampaignDialog } from '@/components/copy-campaign-dialog';
 import { copyCampaignAction } from './actions';
+import { get } from '@/lib/utils';
 
 
 export default function CampaignPage() {
@@ -91,6 +92,11 @@ export default function CampaignPage() {
         return acc;
     }, {} as Record<string, number>);
   }, [donations]);
+  
+  const canCreate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.create', false);
+  const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.update', false);
+  const canDelete = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.delete', false);
+  const canViewCampaigns = userProfile?.role === 'Admin' || canCreate || canUpdate || canDelete || Object.values(get(userProfile, 'permissions.campaigns', {})).some((perm: any) => perm?.read);
 
   const handleDeleteClick = (campaign: Campaign) => {
     if (!canDelete) return;
@@ -250,18 +256,6 @@ export default function CampaignPage() {
   }, [filteredAndSortedCampaigns, currentPage, itemsPerPage]);
 
   const isLoading = areCampaignsLoading || isProfileLoading || isDeleting || areDonationsLoading;
-  
-  const campaignPerms = userProfile?.permissions?.campaigns;
-  const canReadAnySubmodule = 
-    !!campaignPerms?.summary?.read ||
-    !!campaignPerms?.ration?.read ||
-    !!campaignPerms?.beneficiaries?.read ||
-    !!campaignPerms?.donations?.read;
-  const canViewCampaigns = userProfile?.role === 'Admin' || !!campaignPerms?.create || !!campaignPerms?.update || !!campaignPerms?.delete || canReadAnySubmodule;
-  const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.create;
-  const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.update;
-  const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.delete;
-  
   
   if (!isLoading && userProfile && !canViewCampaigns) {
     return (
