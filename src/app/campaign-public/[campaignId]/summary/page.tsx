@@ -122,13 +122,8 @@ export default function PublicCampaignSummaryPage() {
             .filter(([category]) => category !== 'Zakat')
             .reduce((sum, [, amount]) => sum + amount, 0);
 
-        const pendingDonations = donations
-            .filter(d => d.status === 'Pending')
-            .reduce((acc, d) => acc + d.amount, 0);
-
         const fundingGoal = campaign.targetAmount || 0;
         const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
-        const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
         
         const beneficiariesByCategory = beneficiaries.reduce((acc, ben) => {
             const key = ben.members || 0;
@@ -144,9 +139,7 @@ export default function PublicCampaignSummaryPage() {
 
         return {
             verifiedNonZakatDonations,
-            pendingDonations,
             fundingProgress,
-            pendingProgress,
             targetAmount: campaign.targetAmount || 0,
             remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
             amountsByCategory,
@@ -508,34 +501,13 @@ Your contribution, big or small, makes a huge difference.
                                     className="h-full bg-primary transition-all"
                                     style={{ width: `${summaryData?.fundingProgress || 0}%` }}
                                 ></div>
-                                <div 
-                                    className="absolute top-0 h-full bg-yellow-400/50 transition-all"
-                                    style={{ 
-                                        left: `${summaryData?.fundingProgress || 0}%`, 
-                                        width: `${summaryData?.pendingProgress || 0}%`
-                                    }}
-                                ></div>
                             </div>
                              <div className="mt-2 flex justify-between text-sm text-muted-foreground">
                                 <div className="flex items-center gap-2">
                                     <span className="h-2 w-2 rounded-full bg-primary"></span>
                                     <span>Verified</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="h-2 w-2 rounded-full bg-yellow-400/50"></span>
-                                    <span>Pending</span>
-                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
-                            <Hourglass className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
                         </CardContent>
                     </Card>
 
