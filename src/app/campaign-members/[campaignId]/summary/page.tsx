@@ -885,7 +885,7 @@ Your contribution, big or small, makes a huge difference.
                     </CardContent>
                 </Card>
                 
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div className="grid gap-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Beneficiaries by Category</CardTitle>
@@ -907,34 +907,6 @@ Your contribution, big or small, makes a huge difference.
                             )}
                         </CardContent>
                     </Card>
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Beneficiary Status</CardTitle>
-                            <CardDescription>Current status of all beneficiaries in this campaign.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {summaryData?.beneficiaryStatusData && Object.keys(summaryData.beneficiaryStatusData).length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Count</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {Object.entries(summaryData.beneficiaryStatusData).map(([status, count]) => (
-                                            <TableRow key={status}>
-                                                <TableCell className="font-medium">{status}</TableCell>
-                                                <TableCell className="text-right">{count}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center py-4">No beneficiary status to display.</p>
-                            )}
-                        </CardContent>
-                    </Card>
                 </div>
             </div>
 
@@ -945,4 +917,5 @@ Your contribution, big or small, makes a huge difference.
             />
         </main>
     );
-}
+
+    
