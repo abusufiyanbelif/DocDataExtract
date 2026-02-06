@@ -49,7 +49,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const donationCategoryChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
-    Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
+    Sadaqah: { label: "Sadaqah", color: "hsl(var(--chart-2))" },
     Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
     Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
@@ -121,7 +121,7 @@ export default function DonationsSummaryPage() {
                 : (d.type ? [{ category: d.type as DonationCategory, amount: d.amount }] : []);
             
             splits.forEach(split => {
-                const category = (split.category as any) === 'General' ? 'Sadqa' : split.category;
+                const category = (split.category as any) === 'General' || (split.category as any) === 'Sadqa' ? 'Sadaqah' : split.category;
                 if (amountsByCategory.hasOwnProperty(category)) {
                     amountsByCategory[category as DonationCategory] += split.amount;
                 }

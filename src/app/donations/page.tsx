@@ -394,10 +394,11 @@ export default function DonationsPage() {
                     <SelectContent>
                         <SelectItem value="All">All Categories</SelectItem>
                         <SelectItem value="Zakat">Zakat</SelectItem>
-                        <SelectItem value="Sadqa">Sadqa</SelectItem>
+                        <SelectItem value="Sadaqah">Sadaqah</SelectItem>
                         <SelectItem value="Interest">Interest</SelectItem>
                         <SelectItem value="Lillah">Lillah</SelectItem>
-                        <SelectItem value="General">General</SelectItem>
+                        <SelectItem value="Loan">Loan</SelectItem>
+                        <SelectItem value="Monthly Contribution">Monthly Contribution</SelectItem>
                     </SelectContent>
                 </Select>
                 <Select value={donationTypeFilter} onValueChange={setDonationTypeFilter}>

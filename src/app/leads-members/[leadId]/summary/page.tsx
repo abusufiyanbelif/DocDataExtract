@@ -75,7 +75,7 @@ import type { ChartConfig } from '@/components/ui/chart';
 
 const donationCategoryChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
-    Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
+    Sadaqah: { label: "Sadaqah", color: "hsl(var(--chart-2))" },
     Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
     Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
@@ -207,13 +207,13 @@ export default function LeadSummaryPage() {
         verifiedDonationsList.forEach(d => {
             if (d.typeSplit && d.typeSplit.length > 0) {
                 d.typeSplit.forEach(split => {
-                    const category = (split.category as any) === 'General' ? 'Sadqa' : split.category as DonationCategory;
+                    const category = (split.category as any) === 'General' || (split.category as any) === 'Sadqa' ? 'Sadaqah' : split.category as DonationCategory;
                     if (amountsByCategory.hasOwnProperty(category)) {
                         amountsByCategory[category] += split.amount;
                     }
                 });
             } else if (d.type) {
-                const category = d.type === 'General' ? 'Sadqa' : d.type;
+                const category = d.type === 'General' || (d.type as any) === 'Sadqa' ? 'Sadaqah' : d.type;
                 if (amountsByCategory.hasOwnProperty(category)) {
                     amountsByCategory[category as DonationCategory] += d.amount;
                 }

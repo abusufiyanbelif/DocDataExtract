@@ -386,7 +386,7 @@ export default function DonationsPage() {
                       </Button>
                     )}
                     {canReadDonations && (
-                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
                           <Link href={`/campaign-members/${campaignId}/donations`}>Donations</Link>
                       </Button>
                     )}
@@ -436,10 +436,11 @@ export default function DonationsPage() {
                     <SelectContent>
                         <SelectItem value="All">All Categories</SelectItem>
                         <SelectItem value="Zakat">Zakat</SelectItem>
-                        <SelectItem value="Sadqa">Sadqa</SelectItem>
+                        <SelectItem value="Sadaqah">Sadaqah</SelectItem>
                         <SelectItem value="Interest">Interest</SelectItem>
                         <SelectItem value="Lillah">Lillah</SelectItem>
-                        <SelectItem value="General">General</SelectItem>
+                        <SelectItem value="Loan">Loan</SelectItem>
+                        <SelectItem value="Monthly Contribution">Monthly Contribution</SelectItem>
                     </SelectContent>
                 </Select>
                 <Select value={donationTypeFilter} onValueChange={setDonationTypeFilter}>

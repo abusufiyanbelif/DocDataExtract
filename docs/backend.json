@@ -47,7 +47,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["Zakat", "Sadqa", "Interest", "Lillah", "Loan", "Monthly Contribution"]
+            "enum": ["Zakat", "Sadaqah", "Interest", "Lillah", "Loan", "Monthly Contribution"]
           },
           "description": "A list of donation categories accepted for this campaign."
         }
@@ -74,7 +74,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["Zakat", "Sadqa", "Interest", "Lillah", "Loan", "Monthly Contribution"]
+            "enum": ["Zakat", "Sadaqah", "Interest", "Lillah", "Loan", "Monthly Contribution"]
           },
           "description": "A list of donation categories accepted for this lead."
         }
@@ -114,7 +114,7 @@
             "properties": {
               "category": {
                 "type": "string",
-                "enum": ["Zakat", "Sadqa", "Interest", "Lillah", "Loan", "Monthly Contribution"]
+                "enum": ["Zakat", "Sadaqah", "Interest", "Lillah", "Loan", "Monthly Contribution"]
               },
               "amount": {
                 "type": "number"

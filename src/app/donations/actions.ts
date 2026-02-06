@@ -1,3 +1,4 @@
+
 'use server';
 
 import { adminDb } from '@/lib/firebase-admin-sdk';
@@ -25,29 +26,39 @@ export async function syncDonationsAction(): Promise<{ success: boolean; message
 
         for (const doc of snapshot.docs) {
             const donation = doc.data() as Donation;
-            
-            // Sync if typeSplit is missing/empty.
-            // This will migrate documents with the old `type` field and also
-            // set a default for documents that have neither.
-            if (!donation.typeSplit || donation.typeSplit.length === 0) {
-                let category: DonationCategory = 'Sadqa'; // Default to Sadqa
+            let needsUpdate = false;
+            let newTypeSplit = donation.typeSplit;
 
-                // If legacy `type` field exists, use it for migration.
+            // Logic to migrate from old 'type' field to 'typeSplit'
+            if (!donation.typeSplit || donation.typeSplit.length === 0) {
+                let category: DonationCategory = 'Sadaqah'; // Default to Sadaqah
+
                 if (donation.type) {
-                    if (donation.type === 'General') {
-                        category = 'Sadqa';
+                    if (donation.type === 'General' || (donation.type as any) === 'Sadqa') {
+                        category = 'Sadaqah';
                     } else if (donationCategories.includes(donation.type as DonationCategory)) {
                         category = donation.type as DonationCategory;
                     }
-                    // Any other legacy `type` value will fall through and use the 'Sadqa' default.
                 }
                 
-                const newTypeSplit = [{
+                newTypeSplit = [{
                     category: category,
                     amount: donation.amount
                 }];
+                needsUpdate = true;
+            } 
+            // Logic to update existing 'Sadqa' entries in typeSplit
+            else if (donation.typeSplit.some(s => (s.category as any) === 'Sadqa')) {
+                 newTypeSplit = donation.typeSplit.map(split => {
+                    if ((split.category as any) === 'Sadqa') {
+                        return { ...split, category: 'Sadaqah' };
+                    }
+                    return split;
+                });
+                needsUpdate = true;
+            }
 
-                // Update the document in the batch
+            if (needsUpdate) {
                 batch.update(doc.ref, { typeSplit: newTypeSplit });
                 updatedCount++;
             }

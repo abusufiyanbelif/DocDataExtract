@@ -103,7 +103,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
       comments: donation?.comments || '',
       suggestions: donation?.suggestions || '',
       isSplit: donation?.typeSplit ? donation.typeSplit.length > 1 : false,
-      typeSplit: donation?.typeSplit && donation.typeSplit.length > 0 ? donation.typeSplit : [{ category: 'Sadqa', amount: donation?.amount || 0 }],
+      typeSplit: donation?.typeSplit && donation.typeSplit.length > 0 ? donation.typeSplit : [{ category: 'Sadaqah', amount: donation?.amount || 0 }],
     },
   });
 
@@ -122,7 +122,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
   useEffect(() => {
     if (!isSplit) {
       const currentSplits = getValues('typeSplit');
-      const firstCategory = currentSplits.length > 0 ? currentSplits[0].category : 'Sadqa';
+      const firstCategory = currentSplits.length > 0 ? currentSplits[0].category : 'Sadaqah';
       replace([{ category: firstCategory, amount: totalAmount }]);
     } else {
         const currentSplits = getValues('typeSplit');
@@ -369,7 +369,7 @@ export function DonationForm({ donation, onSubmit, onCancel }: DonationFormProps
                         </Button>
                     </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ category: 'Sadqa', amount: 0 })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ category: 'Sadaqah', amount: 0 })}>
                     <Plus className="mr-2 h-4 w-4"/> Add Category
                 </Button>
                  <FormMessage>{form.formState.errors.typeSplit?.root?.message}</FormMessage>
