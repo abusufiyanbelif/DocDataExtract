@@ -6,7 +6,6 @@ import { useFirestore, useCollection, errorEmitter, FirestorePermissionError } f
 import { useSession } from '@/hooks/use-session';
 import { doc, updateDoc, collection } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
@@ -226,218 +225,209 @@ export default function UsersPage() {
   
   if (isLoading) {
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <Card>
-                    <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-40 w-full" />
-                    </CardContent>
-                </Card>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8">
+            <Card>
+                <CardHeader><Skeleton className="h-8 w-48" /></CardHeader>
+                <CardContent>
+                    <Skeleton className="h-40 w-full" />
+                </CardContent>
+            </Card>
+        </main>
     )
   }
   
   if (userProfile?.role !== 'Admin' && !userProfile?.permissions?.users?.read) {
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Home
-                        </Link>
-                    </Button>
-                </div>
-                <Alert variant="destructive">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Access Denied</AlertTitle>
-                    <AlertDescription>
-                    You do not have the required permissions to manage users.
-                    </AlertDescription>
-                </Alert>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Home
+                    </Link>
+                </Button>
+            </div>
+            <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertTitle>Access Denied</AlertTitle>
+                <AlertDescription>
+                You do not have the required permissions to manage users.
+                </AlertDescription>
+            </Alert>
+        </main>
     )
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="mb-4">
-            <Button variant="outline" asChild>
-                <Link href="/">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Home
-                </Link>
-            </Button>
-        </div>
+    <main className="container mx-auto p-4 md:p-8">
+      <div className="mb-4">
+          <Button variant="outline" asChild>
+              <Link href="/">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Home
+              </Link>
+          </Button>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
-              <div className="flex-1 space-y-2">
-                  <CardTitle>User Management ({filteredAndSortedUsers.length})</CardTitle>
-                  <div className="flex flex-wrap items-center gap-2">
-                      <Input 
-                          placeholder="Search name, email, phone..."
-                          value={searchTerm}
-                          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                          className="max-w-sm"
-                      />
-                      <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1); }}>
-                          <SelectTrigger className="w-auto md:w-[150px]">
-                              <SelectValue placeholder="Filter by status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="All">All Statuses</SelectItem>
-                              <SelectItem value="Active">Active</SelectItem>
-                              <SelectItem value="Inactive">Inactive</SelectItem>
-                          </SelectContent>
-                      </Select>
-                      <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}>
-                          <SelectTrigger className="w-auto md:w-[150px]">
-                              <SelectValue placeholder="Filter by role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="All">All Roles</SelectItem>
-                              <SelectItem value="Admin">Admin</SelectItem>
-                              <SelectItem value="User">User</SelectItem>
-                          </SelectContent>
-                      </Select>
-                  </div>
-              </div>
-              <div className="flex items-center gap-2">
-                  {userProfile?.role === 'Admin' && (
-                       <Button variant="outline" asChild>
-                          <Link href="/seed">
-                              <Database className="mr-2 h-4 w-4" />
-                              Database
-                          </Link>
-                      </Button>
-                  )}
-                  {canCreate && (
-                      <Button onClick={handleAdd} disabled={areUsersLoading}>
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add User
-                      </Button>
-                  )}
-              </div>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
+            <div className="flex-1 space-y-2">
+                <CardTitle>User Management ({filteredAndSortedUsers.length})</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Input 
+                        placeholder="Search name, email, phone..."
+                        value={searchTerm}
+                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                        className="max-w-sm"
+                    />
+                    <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1); }}>
+                        <SelectTrigger className="w-auto md:w-[150px]">
+                            <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Statuses</SelectItem>
+                            <SelectItem value="Active">Active</SelectItem>
+                            <SelectItem value="Inactive">Inactive</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}>
+                        <SelectTrigger className="w-auto md:w-[150px]">
+                            <SelectValue placeholder="Filter by role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Roles</SelectItem>
+                            <SelectItem value="Admin">Admin</SelectItem>
+                            <SelectItem value="User">User</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="w-full overflow-x-auto">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="bg-muted/50">
-                            <SortableHeader sortKey="srNo">#</SortableHeader>
-                            <SortableHeader sortKey="name">Name</SortableHeader>
-                            <SortableHeader sortKey="email">Email</SortableHeader>
-                            <SortableHeader sortKey="phone">Phone</SortableHeader>
-                            <SortableHeader sortKey="loginId">Login ID</SortableHeader>
-                            <SortableHeader sortKey="userKey">User Key</SortableHeader>
-                            <SortableHeader sortKey="role">Role</SortableHeader>
-                            <SortableHeader sortKey="status">Status</SortableHeader>
-                             {(canUpdate || canDelete) && <TableHead className="w-[100px] text-right">Actions</TableHead>}
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            [...Array(5)].map((_, i) => (
-                                <TableRow key={`skeleton-${i}`}>
-                                    <TableCell><Skeleton className="h-5 w-5" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-32" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
-                                    {(canUpdate || canDelete) && <TableCell><Skeleton className="h-5 w-10 ml-auto" /></TableCell>}
-                                </TableRow>
-                            ))
-                        ) : paginatedUsers.length > 0 ? (
-                            paginatedUsers.map((user, index) => (
-                            <TableRow key={user.id} onClick={() => handleEdit(user)} className="cursor-pointer">
-                                <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
-                                <TableCell className="font-medium">{user.name}</TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>{user.phone}</TableCell>
-                                <TableCell>{user.loginId}</TableCell>
-                                <TableCell>{user.userKey}</TableCell>
-                                <TableCell>
-                                <Badge variant={user.role === 'Admin' ? 'destructive' : 'secondary'}>{user.role}</Badge>
-                                </TableCell>
-                                <TableCell>
-                                <Badge variant={user.status === 'Active' ? 'default' : 'outline'}>{user.status}</Badge>
-                                </TableCell>
-                                {(canUpdate || canDelete) && (
-                                <TableCell className="text-right">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                            <Button variant="ghost" size="icon">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            {canUpdate && (
-                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(user)}}>
-                                                    <Edit className="mr-2 h-4 w-4" />
-                                                    View / Edit
-                                                </DropdownMenuItem>
-                                            )}
-                                            {canUpdate && canDelete && <DropdownMenuSeparator />}
-                                            {canUpdate && user.status === 'Active' ? (
-                                                <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleToggleStatus(user)}} disabled={user.userKey === 'admin' || user.id === userProfile?.id}>
-                                                    <UserX className="mr-2 h-4 w-4" />
-                                                    Deactivate
-                                                </DropdownMenuItem>
-                                            ) : canUpdate ? (
-                                                <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleToggleStatus(user)}}>
-                                                    <UserCheck className="mr-2 h-4 w-4" />
-                                                    Activate
-                                                </DropdownMenuItem>
-                                            ) : null}
-                                            {canDelete && (
-                                                <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleDeleteClick(user.id)}} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
-                                )}
-                            </TableRow>
-                        ))
-                        ) : (
-                        <TableRow>
-                            <TableCell colSpan={canUpdate || canDelete ? 9 : 8} className="text-center h-24 text-muted-foreground">
-                                No users found matching your criteria.
-                            </TableCell>
-                        </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
-          </CardContent>
-          <CardFooter className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-                Showing {paginatedUsers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredAndSortedUsers.length)} of {filteredAndSortedUsers.length} users
-            </p>
             <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
-                <span className="text-sm">{currentPage} / {totalPages}</span>
-                <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+                {userProfile?.role === 'Admin' && (
+                      <Button variant="outline" asChild>
+                        <Link href="/seed">
+                            <Database className="mr-2 h-4 w-4" />
+                            Database
+                        </Link>
+                    </Button>
+                )}
+                {canCreate && (
+                    <Button onClick={handleAdd} disabled={areUsersLoading}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add User
+                    </Button>
+                )}
             </div>
-          </CardFooter>
-        </Card>
-      </main>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full overflow-x-auto">
+              <Table>
+                  <TableHeader>
+                      <TableRow className="bg-muted/50">
+                          <SortableHeader sortKey="srNo">#</SortableHeader>
+                          <SortableHeader sortKey="name">Name</SortableHeader>
+                          <SortableHeader sortKey="email">Email</SortableHeader>
+                          <SortableHeader sortKey="phone">Phone</SortableHeader>
+                          <SortableHeader sortKey="loginId">Login ID</SortableHeader>
+                          <SortableHeader sortKey="userKey">User Key</SortableHeader>
+                          <SortableHeader sortKey="role">Role</SortableHeader>
+                          <SortableHeader sortKey="status">Status</SortableHeader>
+                            {(canUpdate || canDelete) && <TableHead className="w-[100px] text-right">Actions</TableHead>}
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {isLoading ? (
+                          [...Array(5)].map((_, i) => (
+                              <TableRow key={`skeleton-${i}`}>
+                                  <TableCell><Skeleton className="h-5 w-5" /></TableCell>
+                                  <TableCell><Skeleton className="h-5 w-32" /></TableCell>
+                                  <TableCell><Skeleton className="h-5 w-40" /></TableCell>
+                                  <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                  <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                                  <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                                  {(canUpdate || canDelete) && <TableCell><Skeleton className="h-5 w-10 ml-auto" /></TableCell>}
+                              </TableRow>
+                          ))
+                      ) : paginatedUsers.length > 0 ? (
+                          paginatedUsers.map((user, index) => (
+                          <TableRow key={user.id} onClick={() => handleEdit(user)} className="cursor-pointer">
+                              <TableCell>{(currentPage - 1) * itemsPerPage + index + 1}</TableCell>
+                              <TableCell className="font-medium">{user.name}</TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>{user.phone}</TableCell>
+                              <TableCell>{user.loginId}</TableCell>
+                              <TableCell>{user.userKey}</TableCell>
+                              <TableCell>
+                              <Badge variant={user.role === 'Admin' ? 'destructive' : 'secondary'}>{user.role}</Badge>
+                              </TableCell>
+                              <TableCell>
+                              <Badge variant={user.status === 'Active' ? 'default' : 'outline'}>{user.status}</Badge>
+                              </TableCell>
+                              {(canUpdate || canDelete) && (
+                              <TableCell className="text-right">
+                                  <DropdownMenu>
+                                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                          <Button variant="ghost" size="icon">
+                                              <MoreHorizontal className="h-4 w-4" />
+                                          </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                          {canUpdate && (
+                                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(user)}}>
+                                                  <Edit className="mr-2 h-4 w-4" />
+                                                  View / Edit
+                                              </DropdownMenuItem>
+                                          )}
+                                          {canUpdate && canDelete && <DropdownMenuSeparator />}
+                                          {canUpdate && user.status === 'Active' ? (
+                                              <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleToggleStatus(user)}} disabled={user.userKey === 'admin' || user.id === userProfile?.id}>
+                                                  <UserX className="mr-2 h-4 w-4" />
+                                                  Deactivate
+                                              </DropdownMenuItem>
+                                          ) : canUpdate ? (
+                                              <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleToggleStatus(user)}}>
+                                                  <UserCheck className="mr-2 h-4 w-4" />
+                                                  Activate
+                                              </DropdownMenuItem>
+                                          ) : null}
+                                          {canDelete && (
+                                              <DropdownMenuItem onClick={(e) => {e.stopPropagation(); handleDeleteClick(user.id)}} disabled={user.userKey === 'admin' || user.id === userProfile?.id} className="text-destructive focus:bg-destructive/20 focus:text-destructive">
+                                                  <Trash2 className="mr-2 h-4 w-4" />
+                                                  Delete
+                                              </DropdownMenuItem>
+                                          )}
+                                      </DropdownMenuContent>
+                                  </DropdownMenu>
+                              </TableCell>
+                              )}
+                          </TableRow>
+                      ))
+                      ) : (
+                      <TableRow>
+                          <TableCell colSpan={canUpdate || canDelete ? 9 : 8} className="text-center h-24 text-muted-foreground">
+                              No users found matching your criteria.
+                          </TableCell>
+                      </TableRow>
+                      )}
+                  </TableBody>
+              </Table>
+          </div>
+        </CardContent>
+        <CardFooter className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+              Showing {paginatedUsers.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredAndSortedUsers.length)} of {filteredAndSortedUsers.length} users
+          </p>
+          <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
+              <span className="text-sm">{currentPage} / {totalPages}</span>
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+          </div>
+        </CardFooter>
+      </Card>
       
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
@@ -457,6 +447,6 @@ export default function UsersPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </main>
   );
 }

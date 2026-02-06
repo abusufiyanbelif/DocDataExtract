@@ -9,6 +9,7 @@ import { AppFooter } from '@/components/app-footer';
 import { Toaster } from '@/components/ui/toaster';
 import { useBranding } from '@/hooks/use-branding';
 import { TempLogo } from '@/components/temp-logo';
+import { DocuExtractHeader } from '@/components/docu-extract-header';
 
 function Watermark() {
     const { brandingSettings, isLoading } = useBranding();
@@ -45,6 +46,7 @@ export function Providers({ children }: { children: ReactNode }) {
           <div className="app-root relative">
             <Watermark />
             <div className="relative z-10 flex flex-col min-h-screen">
+                <DocuExtractHeader />
                 <div className="flex-grow">
                     {children}
                 </div>

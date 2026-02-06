@@ -1,6 +1,5 @@
 
 'use client';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -259,237 +258,231 @@ export default function CampaignPage() {
   
   if (!isLoading && userProfile && !canViewCampaigns) {
     return (
-        <div className="min-h-screen text-foreground">
-            <DocuExtractHeader />
-            <main className="container mx-auto p-4 md:p-8">
-                <div className="mb-4">
-                    <Button variant="outline" asChild>
-                        <Link href="/">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Home
-                        </Link>
-                    </Button>
-                </div>
-                <Alert variant="destructive">
-                    <ShieldAlert className="h-4 w-4" />
-                    <AlertTitle>Access Denied</AlertTitle>
-                    <AlertDescription>
-                    You do not have the required permissions to view campaigns.
-                    </AlertDescription>
-                </Alert>
-            </main>
-        </div>
+        <main className="container mx-auto p-4 md:p-8">
+            <div className="mb-4">
+                <Button variant="outline" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Home
+                    </Link>
+                </Button>
+            </div>
+            <Alert variant="destructive">
+                <ShieldAlert className="h-4 w-4" />
+                <AlertTitle>Access Denied</AlertTitle>
+                <AlertDescription>
+                You do not have the required permissions to view campaigns.
+                </AlertDescription>
+            </Alert>
+        </main>
     )
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
-      <main className="container mx-auto p-4 md:p-8">
-        <div className="mb-4">
-          <Button variant="outline" asChild>
-            <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
-            </Link>
-          </Button>
-        </div>
-        <Card>
-          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-             <div className="flex-1 space-y-2">
-                <CardTitle>Campaigns ({filteredAndSortedCampaigns.length})</CardTitle>
-                 <div className="flex flex-wrap items-center gap-2">
-                    <Input 
-                        placeholder="Search by name..."
-                        value={searchTerm}
-                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                        className="max-w-sm"
-                        disabled={isLoading}
-                    />
-                     <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} disabled={isLoading}>
-                        <SelectTrigger className="w-auto md:w-[180px]">
-                            <SelectValue placeholder="Filter by status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="All">All Statuses</SelectItem>
-                            <SelectItem value="Active">Active</SelectItem>
-                            <SelectItem value="Upcoming">Upcoming</SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
-                        </SelectContent>
-                    </Select>
-                     <Select value={categoryFilter} onValueChange={(value) => { setCategoryFilter(value); setCurrentPage(1); }} disabled={isLoading}>
-                        <SelectTrigger className="w-auto md:w-[180px]">
-                            <SelectValue placeholder="Filter by category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="All">All Categories</SelectItem>
-                            <SelectItem value="Ration">Ration</SelectItem>
-                            <SelectItem value="Relief">Relief</SelectItem>
-                            <SelectItem value="General">General</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-            {isLoading && <Skeleton className="h-10 w-44" />}
-            {!isLoading && canCreate && (
-              <Button asChild>
-                <Link href="/campaign-members/create">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Campaign
-                </Link>
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {isLoading && (
-                    [...Array(6)].map((_, i) => <Skeleton key={i} className="h-64 w-full" />)
-                )}
-                {!isLoading && paginatedCampaigns.map((campaign) => {
-                    const collected = campaignCollectedAmounts[campaign.id] || 0;
-                    const target = campaign.targetAmount || 0;
-                    const progress = target > 0 ? (collected / target) * 100 : 0;
-                    return (
-                    <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                            <div className="flex justify-between items-start gap-2">
-                                <CardTitle className="w-full break-words">{campaign.name}</CardTitle>
-                                 <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => router.push(`/campaign-members/${campaign.id}/summary`)} className="cursor-pointer">
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            View Details
-                                        </DropdownMenuItem>
-                                        {canUpdate && <DropdownMenuSeparator />}
-                                        {canUpdate && (
-                                            <>
-                                                <DropdownMenuSub>
-                                                    <DropdownMenuSubTrigger><span>Change Status</span></DropdownMenuSubTrigger>
-                                                    <DropdownMenuSubContent>
-                                                        <DropdownMenuRadioGroup value={campaign.status} onValueChange={(value) => handleStatusUpdate(campaign, 'status', value)}>
-                                                            <DropdownMenuRadioItem value="Upcoming">Upcoming</DropdownMenuRadioItem>
-                                                            <DropdownMenuRadioItem value="Active">Active</DropdownMenuRadioItem>
-                                                            <DropdownMenuRadioItem value="Completed">Completed</DropdownMenuRadioItem>
-                                                        </DropdownMenuRadioGroup>
-                                                    </DropdownMenuSubContent>
-                                                </DropdownMenuSub>
-                                                <DropdownMenuSub>
-                                                    <DropdownMenuSubTrigger><span>Verification</span></DropdownMenuSubTrigger>
-                                                    <DropdownMenuSubContent>
-                                                        <DropdownMenuRadioGroup value={campaign.authenticityStatus} onValueChange={(value) => handleStatusUpdate(campaign, 'authenticityStatus', value as string)}>
-                                                            <DropdownMenuRadioItem value="Pending Verification">Pending Verification</DropdownMenuRadioItem>
-                                                            <DropdownMenuRadioItem value="Verified">Verified</DropdownMenuRadioItem>
-                                                            <DropdownMenuRadioItem value="On Hold">On Hold</DropdownMenuRadioItem>
-                                                            <DropdownMenuRadioItem value="Rejected">Rejected</DropdownMenuRadioItem>
-                                                            <DropdownMenuRadioItem value="Need More Details">Need More Details</DropdownMenuRadioItem>
-                                                        </DropdownMenuRadioGroup>
-                                                    </DropdownMenuSubContent>
-                                                </DropdownMenuSub>
-                                                <DropdownMenuSub>
-                                                    <DropdownMenuSubTrigger><span>Publication</span></DropdownMenuSubTrigger>
-                                                    <DropdownMenuSubContent>
-                                                        <DropdownMenuRadioGroup value={campaign.publicVisibility} onValueChange={(value) => handleStatusUpdate(campaign, 'publicVisibility', value as string)}>
-                                                            <DropdownMenuRadioItem value="Hold">Hold (Private)</DropdownMenuRadioItem>
-                                                            <DropdownMenuRadioItem value="Ready to Publish">Ready to Publish</DropdownMenuRadioItem>
-                                                            <DropdownMenuRadioItem value="Published">Published</DropdownMenuRadioItem>
-                                                        </DropdownMenuRadioGroup>
-                                                    </DropdownMenuSubContent>
-                                                </DropdownMenuSub>
-                                            </>
-                                        )}
-                                        <DropdownMenuSeparator />
-                                        {canCreate && (
-                                            <DropdownMenuItem onClick={() => handleCopyClick(campaign)} className="cursor-pointer">
-                                                <Copy className="mr-2 h-4 w-4" />
-                                                Copy
-                                            </DropdownMenuItem>
-                                        )}
-                                        {canDelete && (
-                                            <>
-                                                {canCreate && <DropdownMenuSeparator />}
-                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(campaign); }} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                            <CardDescription>{campaign.startDate} to {campaign.endDate}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-grow space-y-4">
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm font-medium">
-                                    <span className="text-foreground">
-                                        Rupee {collected.toLocaleString('en-IN')}
-                                        <span className="text-muted-foreground"> raised</span>
-                                    </span>
-                                    {target > 0 && (
-                                        <span className="text-muted-foreground">
-                                            Goal: Rupee {target.toLocaleString('en-IN')}
-                                        </span>
-                                    )}
-                                </div>
-                                <Progress value={progress} className="h-2" />
-                                {target > 0 && <p className="text-xs text-muted-foreground text-right">{progress.toFixed(0)}% funded</p>}
-                            </div>
-                             <div className="flex justify-between text-sm text-muted-foreground">
-                                <Badge variant="outline">{campaign.category}</Badge>
-                                <Badge variant={
-                                    campaign.status === 'Active' ? 'success' :
-                                    campaign.status === 'Completed' ? 'secondary' : 'outline'
-                                }>{campaign.status}</Badge>
-                            </div>
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                                <Badge variant="outline">{campaign.authenticityStatus || 'N/A'}</Badge>
-                                <Badge variant="outline">{campaign.publicVisibility || 'N/A'}</Badge>
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button asChild className="w-full">
-                                <Link href={`/campaign-members/${campaign.id}/summary`}>
-                                    View Details
-                                </Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                )})}
-            </div>
-             {!isLoading && filteredAndSortedCampaigns.length === 0 && (
-                 <div className="text-center py-16">
-                    <p className="text-muted-foreground">No campaigns found matching your criteria.</p>
-                    {canCreate && campaigns?.length === 0 && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                            <Link href="/campaign-members/create" className="text-primary underline">
-                                Create one now
-                            </Link>
-                        </p>
-                    )}
-                </div>
-            )}
-          </CardContent>
-           {totalPages > 1 && (
-            <CardFooter className="flex items-center justify-between pt-6">
-                <p className="text-sm text-muted-foreground">
-                    Showing {paginatedCampaigns.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredAndSortedCampaigns.length)} of {filteredAndSortedCampaigns.length} campaigns
-                </p>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
-                    <span className="text-sm">{currentPage} / {totalPages}</span>
-                    <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
-                </div>
-            </CardFooter>
+    <main className="container mx-auto p-4 md:p-8">
+      <div className="mb-4">
+        <Button variant="outline" asChild>
+          <Link href="/">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
+      </div>
+      <Card>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1 space-y-2">
+              <CardTitle>Campaigns ({filteredAndSortedCampaigns.length})</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input 
+                      placeholder="Search by name..."
+                      value={searchTerm}
+                      onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                      className="max-w-sm"
+                      disabled={isLoading}
+                  />
+                    <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setCurrentPage(1); }} disabled={isLoading}>
+                      <SelectTrigger className="w-auto md:w-[180px]">
+                          <SelectValue placeholder="Filter by status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="All">All Statuses</SelectItem>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="Upcoming">Upcoming</SelectItem>
+                          <SelectItem value="Completed">Completed</SelectItem>
+                      </SelectContent>
+                  </Select>
+                    <Select value={categoryFilter} onValueChange={(value) => { setCategoryFilter(value); setCurrentPage(1); }} disabled={isLoading}>
+                      <SelectTrigger className="w-auto md:w-[180px]">
+                          <SelectValue placeholder="Filter by category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="All">All Categories</SelectItem>
+                          <SelectItem value="Ration">Ration</SelectItem>
+                          <SelectItem value="Relief">Relief</SelectItem>
+                          <SelectItem value="General">General</SelectItem>
+                      </SelectContent>
+                  </Select>
+              </div>
+          </div>
+          {isLoading && <Skeleton className="h-10 w-44" />}
+          {!isLoading && canCreate && (
+            <Button asChild>
+              <Link href="/campaign-members/create">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Campaign
+              </Link>
+            </Button>
           )}
-        </Card>
-      </main>
-
-       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {isLoading && (
+                  [...Array(6)].map((_, i) => <Skeleton key={i} className="h-64 w-full" />)
+              )}
+              {!isLoading && paginatedCampaigns.map((campaign) => {
+                  const collected = campaignCollectedAmounts[campaign.id] || 0;
+                  const target = campaign.targetAmount || 0;
+                  const progress = target > 0 ? (collected / target) * 100 : 0;
+                  return (
+                  <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                          <div className="flex justify-between items-start gap-2">
+                              <CardTitle className="w-full break-words">{campaign.name}</CardTitle>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => router.push(`/campaign-members/${campaign.id}/summary`)} className="cursor-pointer">
+                                          <Edit className="mr-2 h-4 w-4" />
+                                          View Details
+                                      </DropdownMenuItem>
+                                      {canUpdate && <DropdownMenuSeparator />}
+                                      {canUpdate && (
+                                          <>
+                                              <DropdownMenuSub>
+                                                  <DropdownMenuSubTrigger><span>Change Status</span></DropdownMenuSubTrigger>
+                                                  <DropdownMenuSubContent>
+                                                      <DropdownMenuRadioGroup value={campaign.status} onValueChange={(value) => handleStatusUpdate(campaign, 'status', value)}>
+                                                          <DropdownMenuRadioItem value="Upcoming">Upcoming</DropdownMenuRadioItem>
+                                                          <DropdownMenuRadioItem value="Active">Active</DropdownMenuRadioItem>
+                                                          <DropdownMenuRadioItem value="Completed">Completed</DropdownMenuRadioItem>
+                                                      </DropdownMenuRadioGroup>
+                                                  </DropdownMenuSubContent>
+                                              </DropdownMenuSub>
+                                              <DropdownMenuSub>
+                                                  <DropdownMenuSubTrigger><span>Verification</span></DropdownMenuSubTrigger>
+                                                  <DropdownMenuSubContent>
+                                                      <DropdownMenuRadioGroup value={campaign.authenticityStatus} onValueChange={(value) => handleStatusUpdate(campaign, 'authenticityStatus', value as string)}>
+                                                          <DropdownMenuRadioItem value="Pending Verification">Pending Verification</DropdownMenuRadioItem>
+                                                          <DropdownMenuRadioItem value="Verified">Verified</DropdownMenuRadioItem>
+                                                          <DropdownMenuRadioItem value="On Hold">On Hold</DropdownMenuRadioItem>
+                                                          <DropdownMenuRadioItem value="Rejected">Rejected</DropdownMenuRadioItem>
+                                                          <DropdownMenuRadioItem value="Need More Details">Need More Details</DropdownMenuRadioItem>
+                                                      </DropdownMenuRadioGroup>
+                                                  </DropdownMenuSubContent>
+                                              </DropdownMenuSub>
+                                              <DropdownMenuSub>
+                                                  <DropdownMenuSubTrigger><span>Publication</span></DropdownMenuSubTrigger>
+                                                  <DropdownMenuSubContent>
+                                                      <DropdownMenuRadioGroup value={campaign.publicVisibility} onValueChange={(value) => handleStatusUpdate(campaign, 'publicVisibility', value as string)}>
+                                                          <DropdownMenuRadioItem value="Hold">Hold (Private)</DropdownMenuRadioItem>
+                                                          <DropdownMenuRadioItem value="Ready to Publish">Ready to Publish</DropdownMenuRadioItem>
+                                                          <DropdownMenuRadioItem value="Published">Published</DropdownMenuRadioItem>
+                                                      </DropdownMenuRadioGroup>
+                                                  </DropdownMenuSubContent>
+                                              </DropdownMenuSub>
+                                          </>
+                                      )}
+                                      <DropdownMenuSeparator />
+                                      {canCreate && (
+                                          <DropdownMenuItem onClick={() => handleCopyClick(campaign)} className="cursor-pointer">
+                                              <Copy className="mr-2 h-4 w-4" />
+                                              Copy
+                                          </DropdownMenuItem>
+                                      )}
+                                      {canDelete && (
+                                          <>
+                                              {canCreate && <DropdownMenuSeparator />}
+                                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDeleteClick(campaign); }} className="text-destructive focus:bg-destructive/20 focus:text-destructive cursor-pointer">
+                                                  <Trash2 className="mr-2 h-4 w-4" />
+                                                  Delete
+                                              </DropdownMenuItem>
+                                          </>
+                                      )}
+                                  </DropdownMenuContent>
+                              </DropdownMenu>
+                          </div>
+                          <CardDescription>{campaign.startDate} to {campaign.endDate}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-grow space-y-4">
+                          <div className="space-y-2">
+                              <div className="flex justify-between text-sm font-medium">
+                                  <span className="text-foreground">
+                                      Rupee {collected.toLocaleString('en-IN')}
+                                      <span className="text-muted-foreground"> raised</span>
+                                  </span>
+                                  {target > 0 && (
+                                      <span className="text-muted-foreground">
+                                          Goal: Rupee {target.toLocaleString('en-IN')}
+                                      </span>
+                                  )}
+                              </div>
+                              <Progress value={progress} className="h-2" />
+                              {target > 0 && <p className="text-xs text-muted-foreground text-right">{progress.toFixed(0)}% funded</p>}
+                          </div>
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                              <Badge variant="outline">{campaign.category}</Badge>
+                              <Badge variant={
+                                  campaign.status === 'Active' ? 'success' :
+                                  campaign.status === 'Completed' ? 'secondary' : 'outline'
+                              }>{campaign.status}</Badge>
+                          </div>
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                              <Badge variant="outline">{campaign.authenticityStatus || 'N/A'}</Badge>
+                              <Badge variant="outline">{campaign.publicVisibility || 'N/A'}</Badge>
+                          </div>
+                      </CardContent>
+                      <CardFooter>
+                          <Button asChild className="w-full">
+                              <Link href={`/campaign-members/${campaign.id}/summary`}>
+                                  View Details
+                              </Link>
+                          </Button>
+                      </CardFooter>
+                  </Card>
+              )})}
+          </div>
+            {!isLoading && filteredAndSortedCampaigns.length === 0 && (
+                <div className="text-center py-16">
+                  <p className="text-muted-foreground">No campaigns found matching your criteria.</p>
+                  {canCreate && campaigns?.length === 0 && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                          <Link href="/campaign-members/create" className="text-primary underline">
+                              Create one now
+                          </Link>
+                      </p>
+                  )}
+              </div>
+          )}
+        </CardContent>
+          {totalPages > 1 && (
+          <CardFooter className="flex items-center justify-between pt-6">
+              <p className="text-sm text-muted-foreground">
+                  Showing {paginatedCampaigns.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} to {Math.min(currentPage * itemsPerPage, filteredAndSortedCampaigns.length)} of {filteredAndSortedCampaigns.length} campaigns
+              </p>
+              <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</Button>
+                  <span className="text-sm">{currentPage} / {totalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+              </div>
+          </CardFooter>
+        )}
+      </Card>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -514,7 +507,6 @@ export default function CampaignPage() {
             campaign={campaignToCopy}
             onCopyConfirm={handleCopyConfirm}
         />
-
-    </div>
+    </main>
   );
 }
