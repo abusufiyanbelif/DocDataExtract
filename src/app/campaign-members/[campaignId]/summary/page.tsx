@@ -172,7 +172,7 @@ export default function CampaignSummaryPage() {
 
     // Memoized calculations
     const summaryData = useMemo(() => {
-        if (!beneficiaries || !donations || !campaign) return null;
+        if (!donations || !campaign) return null;
 
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
@@ -202,61 +202,22 @@ export default function CampaignSummaryPage() {
             .filter(d => d.status === 'Pending')
             .reduce((acc, d) => acc + d.amount, 0);
 
-        const totalKitAmountRequired = beneficiaries.reduce((sum, b) => sum + (b.kitAmount || 0), 0);
-        
         const fundingGoal = campaign.targetAmount || 0;
         const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
         const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
 
-        const beneficiaryStatusData = beneficiaries.reduce((acc, b) => {
-            const status = b.status || 'Pending';
-            acc[status] = (acc[status] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-
-        const beneficiaryCategoryData = beneficiaries.reduce((acc, beneficiary) => {
-            const categoryKey = beneficiary.members && beneficiary.members > 0 ? `${beneficiary.members}` : 'General';
-            
-            if (!acc[categoryKey]) {
-                acc[categoryKey] = { count: 0, totalAmount: 0, beneficiaries: [] };
-            }
-            acc[categoryKey].count++;
-            acc[categoryKey].totalAmount += beneficiary.kitAmount || 0;
-            acc[categoryKey].beneficiaries.push(beneficiary);
-            
-            return acc;
-        }, {} as Record<string, { count: number; totalAmount: number, beneficiaries: Beneficiary[] }>);
-
-        const beneficiaryCategoryBreakdown = Object.entries(beneficiaryCategoryData).map(([name, data]) => ({
-            name,
-            ...data
-        })).sort((a, b) => {
-            if (a.name === 'General') return 1;
-            if (b.name === 'General') return -1;
-            const aNum = parseInt(a.name);
-            const bNum = parseInt(b.name);
-            if (!isNaN(aNum) && !isNaN(bNum)) {
-                return bNum - aNum;
-            }
-            return a.name.localeCompare(b.name);
-        });
-
         return {
             verifiedNonZakatDonations,
             pendingDonations,
-            totalKitAmountRequired,
             fundingProgress,
             pendingProgress,
-            beneficiaryStatusData,
-            beneficiaryCategoryBreakdown,
-            totalBeneficiaries: beneficiaries.length,
             targetAmount: campaign.targetAmount || 0,
             remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
             amountsByCategory,
         };
-    }, [beneficiaries, donations, campaign]);
+    }, [donations, campaign]);
     
-    const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isProfileLoading || isBrandingLoading || isPaymentLoading;
+    const isLoading = isCampaignLoading || areDonationsLoading || isProfileLoading || isBrandingLoading || isPaymentLoading;
     
     const handleShare = async () => {
         if (!campaign || !summaryData) {
@@ -276,7 +237,7 @@ export default function CampaignSummaryPage() {
 Join us for the *${campaign.name}* campaign as we work to provide essential aid to our community.
 
 *Our Goal:*
-${campaign.description || 'To support those in need.'} We aim to support *${summaryData.totalBeneficiaries} beneficiaries*.
+${campaign.description || 'To support those in need.'}
 
 *Financial Update:*
 🎯 Target for Kits: Rupee ${summaryData.targetAmount.toLocaleString('en-IN')}
@@ -845,11 +806,11 @@ Your contribution, big or small, makes a huge difference.
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                      <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Kit Amount Required</CardTitle>
-                            <Target className="h-4 w-4 text-muted-foreground" />
+                            <CardTitle className="text-sm font-medium">Beneficiaries</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">Rupee {summaryData?.totalKitAmountRequired.toLocaleString('en-IN') ?? '0.00'}</div>
+                            <div className="text-2xl font-bold">{areBeneficiariesLoading ? '...' : (beneficiaries?.length ?? 0)}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -884,30 +845,6 @@ Your contribution, big or small, makes a huge difference.
                         ))}
                     </CardContent>
                 </Card>
-                
-                <div className="grid gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Beneficiaries by Category</CardTitle>
-                            <CardDescription>Breakdown of beneficiary counts and total kit amounts per member category.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            {summaryData?.beneficiaryCategoryBreakdown && summaryData.beneficiaryCategoryBreakdown.length > 0 ? (
-                                summaryData.beneficiaryCategoryBreakdown.map((item) => {
-                                    const kitPrice = item.count > 0 ? item.totalAmount / item.count : 0;
-                                    return (
-                                        <div key={item.name} className="flex justify-between w-full p-4 border rounded-lg flex-wrap gap-2 items-center">
-                                            <span className="font-medium text-foreground">{item.name === 'General' ? 'General' : `${item.name} Members`}</span>
-                                            <span className="text-sm text-muted-foreground text-right">{item.count} {item.count === 1 ? 'beneficiary' : 'beneficiaries'} | Per Kit: Rupee {kitPrice.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})} | Total: Rupee {item.totalAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                                        </div>
-                                    )
-                                })
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center py-4">No beneficiaries to display.</p>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
             </div>
 
             <ShareDialog 
@@ -917,5 +854,4 @@ Your contribution, big or small, makes a huge difference.
             />
         </main>
     );
-
-    
+}
