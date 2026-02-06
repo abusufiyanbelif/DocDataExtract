@@ -861,6 +861,38 @@ Your contribution, big or small, makes a huge difference.
                     </CardContent>
                 </Card>
                 
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
+                        <Hourglass className="h-4 w-4 text-secondary-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Verified Donations by Category</CardTitle>
+                        <CardDescription>
+                            Total verified funds collected for this campaign, broken down by category.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {donationCategories.map(category => (
+                            <Card key={category}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{category}</CardTitle>
+                                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </CardContent>
+                </Card>
+
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card>
                         <CardHeader>
@@ -929,16 +961,14 @@ Your contribution, big or small, makes a huge difference.
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
-                                                            <TableHead>Name</TableHead>
-                                                            <TableHead>Phone</TableHead>
+                                                            <TableHead className="w-[80px]">#</TableHead>
                                                             <TableHead className="text-right">Kit Amount</TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
-                                                        {group.beneficiaries.map(ben => (
+                                                        {group.beneficiaries.map((ben, index) => (
                                                             <TableRow key={ben.id}>
-                                                                <TableCell>{ben.name}</TableCell>
-                                                                <TableCell>{ben.phone}</TableCell>
+                                                                <TableCell>{index + 1}</TableCell>
                                                                 <TableCell className="text-right">Rupee {(ben.kitAmount || 0).toFixed(2)}</TableCell>
                                                             </TableRow>
                                                         ))}
@@ -953,7 +983,7 @@ Your contribution, big or small, makes a huge difference.
                     </Card>
                 )}
 
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                      <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
@@ -963,38 +993,8 @@ Your contribution, big or small, makes a huge difference.
                             <div className="text-2xl font-bold">{areBeneficiariesLoading ? '...' : (beneficiaries?.length ?? 0)}</div>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
-                            <Hourglass className="h-4 w-4 text-secondary-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                        </CardContent>
-                    </Card>
                 </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Verified Donations by Category</CardTitle>
-                        <CardDescription>
-                            Total verified funds collected for this campaign, broken down by category.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {donationCategories.map(category => (
-                            <Card key={category}>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">{category}</CardTitle>
-                                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </CardContent>
-                </Card>
             </div>
 
             <ShareDialog 
