@@ -179,10 +179,17 @@ export default function LeadSummaryPage() {
             .filter(d => d.status === 'Pending')
             .reduce((acc, d) => acc + d.amount, 0);
 
+        const donationPaymentTypeData = donations.reduce((acc, d) => {
+            const key = d.donationType || 'Other';
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
         return {
             totalBeneficiaries: beneficiaries.length,
             pendingDonations,
             amountsByCategory,
+            donationPaymentTypeData,
         };
     }, [beneficiaries, donations, lead]);
     
@@ -778,6 +785,26 @@ We are currently assessing the needs for this initiative. Your support and feedb
                             ))}
                         </CardContent>
                     </Card>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Donations by Payment Type</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            {summaryData?.donationPaymentTypeData && Object.entries(summaryData.donationPaymentTypeData).map(([name, value]) => (
+                                <Card key={name}>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">{name}</CardTitle>
+                                        <Wallet className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">{value}</div>
+                                        <p className="text-xs text-muted-foreground">{value === 1 ? 'Donation' : 'Donations'}</p>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <ShareDialog 
@@ -789,9 +816,3 @@ We are currently assessing the needs for this initiative. Your support and feedb
         </div>
     );
 }
-
-
-
-    
-
-    

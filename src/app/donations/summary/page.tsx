@@ -25,7 +25,7 @@ import type { Donation, DonationCategory } from '@/lib/types';
 import { donationCategories } from '@/lib/modules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Loader2, Wallet, CheckCircle, Hourglass, XCircle, Link as LinkIcon, Link2Off, Download, DatabaseZap } from 'lucide-react';
+import { ArrowLeft, Loader2, Wallet, CheckCircle, Hourglass, XCircle, Link as LinkIcon, Link2Off, Download, DatabaseZap, DollarSign } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -314,6 +314,27 @@ export default function DonationsSummaryPage() {
                         </CardContent>
                     </Card>
                  </div>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Donations by Payment Type</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {summaryData?.donationPaymentTypeChartData.map((item) => (
+                            <Card key={item.name}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{item.name}</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{item.value}</div>
+                                    <p className="text-xs text-muted-foreground">
+                                        {item.value === 1 ? 'Donation' : 'Donations'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </CardContent>
+                </Card>
             </div>
         </main>
     );

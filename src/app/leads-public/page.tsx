@@ -6,14 +6,14 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore } from '@/firebase';
-import type { Lead } from '@/lib/types';
+import type { Lead, Donation } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { collection, query, where } from 'firebase/firestore';
-
+import { Progress } from '@/components/ui/progress';
 
 export default function PublicLeadPage() {
   const firestore = useFirestore();
@@ -30,7 +30,24 @@ export default function PublicLeadPage() {
     );
   }, [firestore]);
 
-  const { data: leads, isLoading } = useCollection<Lead>(leadsCollectionRef);
+  const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsCollectionRef);
+  
+  const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(
+    firestore ? collection(firestore, 'donations') : null
+  );
+
+  const leadCollectedAmounts = useMemo(() => {
+    if (!donations) return {};
+    return donations.reduce((acc, donation) => {
+        if (donation.campaignId && donation.status === 'Verified') {
+            const nonZakatAmount = (donation.typeSplit || [])
+                .filter(split => split.category !== 'Zakat')
+                .reduce((sum, split) => sum + split.amount, 0);
+            acc[donation.campaignId] = (acc[donation.campaignId] || 0) + nonZakatAmount;
+        }
+        return acc;
+    }, {} as Record<string, number>);
+  }, [donations]);
 
   const filteredLeads = useMemo(() => {
     if (!leads) return [];
@@ -41,6 +58,8 @@ export default function PublicLeadPage() {
     ).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
   }, [leads, searchTerm, statusFilter, categoryFilter]);
   
+  const isLoading = areLeadsLoading || areDonationsLoading;
+
   return (
     <div className="min-h-screen text-foreground">
       <DocuExtractHeader />
@@ -97,32 +116,52 @@ export default function PublicLeadPage() {
         
         {!isLoading && filteredLeads.length > 0 && (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredLeads.map(lead => (
-                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
-                        <CardHeader>
-                            <div className="flex justify-between items-start gap-2">
-                                <CardTitle>{lead.name}</CardTitle>
-                                <Badge variant={
-                                    lead.status === 'Active' ? 'success' :
-                                    lead.status === 'Completed' ? 'secondary' : 'outline'
-                                }>{lead.status}</Badge>
-                            </div>
-                            <CardDescription>{lead.startDate} to {lead.endDate}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex flex-col flex-grow">
-                            <p className="text-sm text-muted-foreground line-clamp-3 flex-grow">{lead.description || "No description provided."}</p>
-                             <div className="flex justify-between text-sm text-muted-foreground pt-2">
-                                <Badge variant="outline">{lead.authenticityStatus}</Badge>
-                                <Badge variant="outline">{lead.publicVisibility}</Badge>
-                            </div>
-                            <Button asChild className="mt-4 w-full">
-                                <Link href={`/leads-public/${lead.id}/summary`}>
-                                    View Details
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                ))}
+                {filteredLeads.map(lead => {
+                    const collected = leadCollectedAmounts[lead.id] || 0;
+                    const target = lead.targetAmount || 0;
+                    const progress = target > 0 ? (collected / target) * 100 : 0;
+                    return (
+                        <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-shadow">
+                            <CardHeader>
+                                <div className="flex justify-between items-start gap-2">
+                                    <CardTitle>{lead.name}</CardTitle>
+                                    <Badge variant={
+                                        lead.status === 'Active' ? 'success' :
+                                        lead.status === 'Completed' ? 'secondary' : 'outline'
+                                    }>{lead.status}</Badge>
+                                </div>
+                                <CardDescription>{lead.startDate} to {lead.endDate}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-col flex-grow space-y-4">
+                                <p className="text-sm text-muted-foreground line-clamp-3 flex-grow">{lead.description || "No description provided."}</p>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm font-medium">
+                                        <span className="text-foreground">
+                                            Rupee {collected.toLocaleString('en-IN')}
+                                            <span className="text-muted-foreground"> raised</span>
+                                        </span>
+                                        {target > 0 && (
+                                            <span className="text-muted-foreground">
+                                                Goal: Rupee {target.toLocaleString('en-IN')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <Progress value={progress} className="h-2" />
+                                    {target > 0 && <p className="text-xs text-muted-foreground text-right">{progress.toFixed(0)}% funded</p>}
+                                </div>
+                                <div className="flex justify-between text-sm text-muted-foreground pt-2">
+                                    <Badge variant="outline">{lead.authenticityStatus}</Badge>
+                                    <Badge variant="outline">{lead.publicVisibility}</Badge>
+                                </div>
+                                <Button asChild className="mt-4 w-full">
+                                    <Link href={`/leads-public/${lead.id}/summary`}>
+                                        View Details
+                                    </Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </div>
         )}
         
@@ -135,4 +174,3 @@ export default function PublicLeadPage() {
     </div>
   );
 }
-
