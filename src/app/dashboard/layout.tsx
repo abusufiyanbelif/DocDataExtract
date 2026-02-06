@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
-  description: 'Main dashboard for the application.',
+  description: 'Application dashboard.',
 };
 
 export default function DashboardLayout({

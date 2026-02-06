@@ -30,6 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isLoading) {
       return; // Wait for the auth state to be confirmed
     }
+    
+    if (user && pathname === '/') {
+        router.push('/dashboard');
+        return;
+    }
 
     // If we are not on a public route and there is no user, redirect to login.
     if (!isPublicRoute && !user) {
@@ -38,8 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   }, [isLoading, user, isPublicRoute, isLoginPage, router, pathname]);
 
-  // Show the loader only if we are still verifying the auth state on a private page.
-  const showLoader = isLoading && !isPublicRoute;
+  // Show the loader only if we are still verifying the auth state on a private page or during the initial redirect.
+  const showLoader = isLoading && (!isPublicRoute || (user && pathname === '/'));
   
   if (showLoader) {
     return <AuthLoader />;
