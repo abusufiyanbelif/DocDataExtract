@@ -57,19 +57,12 @@ import {
   TableRow,
   TableFooter,
 } from "@/components/ui/table"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { get } from '@/lib/utils';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { ShareDialog } from '@/components/share-dialog';
-import { AppFooter } from '@/components/app-footer';
 import { Checkbox } from '@/components/ui/checkbox';
 import { donationCategories } from '@/lib/modules';
 import { Badge } from '@/components/ui/badge';
@@ -906,48 +899,6 @@ Your contribution, big or small, makes a huge difference.
                     </CardContent>
                 </Card>
 
-                <div className="grid gap-6 lg:grid-cols-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Donations by Category</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
-                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                                    <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Bar dataKey="value" radius={4}>
-                                        {Object.entries(summaryData?.amountsByCategory || {}).map(([name]) => (
-                                            <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Donations by Payment Type</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                             <ChartContainer config={donationPaymentTypeChartConfig} className="h-[250px] w-full">
-                                <PieChart>
-                                    <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                                    <Pie data={summaryData?.donationPaymentTypeChartData} dataKey="value" nameKey="name" innerRadius={50} strokeWidth={5}>
-                                        {summaryData?.donationPaymentTypeChartData?.map((entry) => (
-                                            <Cell key={entry.name} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
-                                        ))}
-                                    </Pie>
-                                    <ChartLegend content={<ChartLegendContent />} />
-                                </PieChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-                </div>
-
-
                 {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
                     <Card>
                         <CardHeader>
@@ -990,6 +941,47 @@ Your contribution, big or small, makes a huge difference.
                         </CardContent>
                     </Card>
                 )}
+
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Donations by Category</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
+                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                                    <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="value" radius={4}>
+                                        {Object.entries(summaryData?.amountsByCategory || {}).map(([name]) => (
+                                            <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Donations by Payment Type</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <ChartContainer config={donationPaymentTypeChartConfig} className="h-[250px] w-full">
+                                <PieChart>
+                                    <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                                    <Pie data={summaryData?.donationPaymentTypeChartData} dataKey="value" nameKey="name" innerRadius={50} strokeWidth={5}>
+                                        {summaryData?.donationPaymentTypeChartData?.map((entry) => (
+                                            <Cell key={entry.name} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Pie>
+                                    <ChartLegend content={<ChartLegendContent />} />
+                                </PieChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
             <ShareDialog 
