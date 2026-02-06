@@ -3,19 +3,33 @@
 
 import React, { useMemo, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc } from '@/firebase';
+import { useFirestore, useDoc, useCollection } from '@/firebase';
 import { useBranding } from '@/hooks/use-branding';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
-import { doc, DocumentReference } from 'firebase/firestore';
+import { doc, collection, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
-import type { Campaign } from '@/lib/types';
+import type { Campaign, Beneficiary, Donation, DonationCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, LogIn, Share2, Download } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, Loader2, LogIn, Share2, Download, Hourglass, Wallet, Users } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +39,34 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { ShareDialog } from '@/components/share-dialog';
 import { AppFooter } from '@/components/app-footer';
-import { ArrowLeft } from 'lucide-react';
+import { donationCategories } from '@/lib/modules';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableFooter,
+} from "@/components/ui/table"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
+
+const donationCategoryChartConfig = {
+    Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
+    Sadaqah: { label: "Sadaqah", color: "hsl(var(--chart-2))" },
+    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
+    Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
+    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
+    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
+} satisfies ChartConfig;
+
 
 export default function PublicCampaignSummaryPage() {
     const params = useParams();
@@ -43,13 +84,82 @@ export default function PublicCampaignSummaryPage() {
 
     // Data fetching
     const campaignDocRef = useMemo(() => (firestore && campaignId) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
+    const beneficiariesCollectionRef = useMemo(() => (firestore && campaignId) ? collection(firestore, `campaigns/${campaignId}/beneficiaries`) : null, [firestore, campaignId]);
+    const donationsCollectionRef = useMemo(() => {
+        if (!firestore || !campaignId) return null;
+        return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
+    }, [firestore, campaignId]);
 
     const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
+    const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
+    const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
     
-    const isLoading = isCampaignLoading || isBrandingLoading || isPaymentLoading;
+    // Memoized calculations
+    const summaryData = useMemo(() => {
+        if (!donations || !campaign || !beneficiaries) return null;
+
+        const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
+    
+        const amountsByCategory: Record<DonationCategory, number> = donationCategories.reduce((acc, cat) => ({...acc, [cat]: 0}), {} as Record<DonationCategory, number>);
+
+        verifiedDonationsList.forEach(d => {
+            if (d.typeSplit && d.typeSplit.length > 0) {
+                d.typeSplit.forEach(split => {
+                    const category = (split.category as any) === 'General' || (split.category as any) === 'Sadqa' ? 'Sadaqah' : split.category as DonationCategory;
+                    if (amountsByCategory.hasOwnProperty(category)) {
+                        amountsByCategory[category] += split.amount;
+                    }
+                });
+            } else if (d.type) {
+                const category = d.type === 'General' || (d.type as any) === 'Sadqa' ? 'Sadaqah' : d.type;
+                if (amountsByCategory.hasOwnProperty(category)) {
+                    amountsByCategory[category as DonationCategory] += d.amount;
+                }
+            }
+        });
+
+        const verifiedNonZakatDonations = Object.entries(amountsByCategory)
+            .filter(([category]) => category !== 'Zakat')
+            .reduce((sum, [, amount]) => sum + amount, 0);
+
+        const pendingDonations = donations
+            .filter(d => d.status === 'Pending')
+            .reduce((acc, d) => acc + d.amount, 0);
+
+        const fundingGoal = campaign.targetAmount || 0;
+        const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
+        const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
+        
+        const beneficiariesByCategory = beneficiaries.reduce((acc, ben) => {
+            const key = ben.members || 0;
+            if (!acc[key]) {
+                acc[key] = { beneficiaries: [], totalAmount: 0 };
+            }
+            acc[key].beneficiaries.push(ben);
+            acc[key].totalAmount += ben.kitAmount || 0;
+            return acc;
+        }, {} as Record<number, { beneficiaries: Beneficiary[], totalAmount: number }>);
+
+        const sortedBeneficiaryCategories = Object.keys(beneficiariesByCategory).map(Number).sort((a, b) => b - a);
+
+        return {
+            verifiedNonZakatDonations,
+            pendingDonations,
+            fundingProgress,
+            pendingProgress,
+            targetAmount: campaign.targetAmount || 0,
+            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
+            amountsByCategory,
+            totalBeneficiaries: beneficiaries.length,
+            beneficiariesByCategory,
+            sortedBeneficiaryCategories,
+        };
+    }, [donations, campaign, beneficiaries]);
+
+    const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isBrandingLoading || isPaymentLoading;
     
     const handleShare = async () => {
-        if (!campaign) {
+        if (!campaign || !summaryData) {
             toast({
                 title: 'Error',
                 description: 'Cannot share, summary data is not available.',
@@ -67,6 +177,11 @@ Join us for the *${campaign.name}* campaign as we work to provide essential aid 
 
 *Our Goal:*
 ${campaign.description || 'To support those in need.'}
+
+*Financial Update:*
+🎯 Target for Kits: Rupee ${summaryData.targetAmount.toLocaleString('en-IN')}
+✅ Collected (Verified): Rupee ${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
+⏳ Remaining: *Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*
 
 Your contribution, big or small, makes a huge difference.
 
@@ -377,6 +492,132 @@ Your contribution, big or small, makes a huge difference.
                                     <p className="mt-1 text-lg font-semibold">{campaign.endDate}</p>
                                 </div>
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Funding Progress (for Kits)</CardTitle>
+                            <CardDescription>
+                                Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
+                                <div 
+                                    className="h-full bg-primary transition-all"
+                                    style={{ width: `${summaryData?.fundingProgress || 0}%` }}
+                                ></div>
+                                <div 
+                                    className="absolute top-0 h-full bg-yellow-400/50 transition-all"
+                                    style={{ 
+                                        left: `${summaryData?.fundingProgress || 0}%`, 
+                                        width: `${summaryData?.pendingProgress || 0}%`
+                                    }}
+                                ></div>
+                            </div>
+                             <div className="mt-2 flex justify-between text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-primary"></span>
+                                    <span>Verified</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-yellow-400/50"></span>
+                                    <span>Pending</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Verified Donations by Category</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {donationCategories.map(category => (
+                                <Card key={category} className="shadow-none border-0">
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 pb-0">
+                                        <CardTitle className="text-xs font-medium">{category}</CardTitle>
+                                        <Wallet className="h-3 w-3 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent className="p-2 pt-1">
+                                        <div className="text-lg font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </CardContent>
+                    </Card>
+
+                    {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Beneficiaries by Category</CardTitle>
+                                <CardDescription>
+                                    Summary of beneficiaries grouped by family size.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Category Name</TableHead>
+                                            <TableHead className="text-center">Total Beneficiaries</TableHead>
+                                            <TableHead className="text-right">Kit Amount (per kit)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {summaryData.sortedBeneficiaryCategories.map(memberCount => {
+                                            const group = summaryData.beneficiariesByCategory[memberCount];
+                                            const count = group.beneficiaries.length;
+                                            const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
+                                            return (
+                                                <TableRow key={memberCount}>
+                                                    <TableCell className="font-medium">{memberCount} Members</TableCell>
+                                                    <TableCell className="text-center">{count}</TableCell>
+                                                    <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                    <TableFooter>
+                                        <TableRow>
+                                            <TableCell className="font-bold">Total</TableCell>
+                                            <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
+                                            <TableCell></TableCell>
+                                        </TableRow>
+                                    </TableFooter>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    )}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Donations by Category</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
+                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                                    <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="value" radius={4}>
+                                        {Object.entries(summaryData?.amountsByCategory || {}).map(([name]) => (
+                                            <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
                         </CardContent>
                     </Card>
                 </div>

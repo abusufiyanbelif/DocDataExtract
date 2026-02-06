@@ -9,19 +9,16 @@
  * 1. Publicly Readable Data:
  *    - `settings` and published `campaigns`/`leads` are publicly readable. This allows
  *      for public-facing pages to be rendered without requiring user login.
- *    - Individual `donations` are readable with a direct link (for receipts).
+ *    - To support rich public summary pages, `donations` and the `beneficiaries`
+ *      of public campaigns are also listable by anyone.
  *
- * 2. Authenticated Writes & Lists:
+ * 2. Authenticated Writes:
  *    - ALL write operations (create, update, delete) on ANY collection require the
  *      user to be signed in.
- *    - Listing multiple documents (e.g., all donations for a summary) is restricted
- *      to authenticated users to protect private information.
  *
  * 3. Role-Based Access:
  *    - Administrative actions (like managing users or lookups) are protected by the
  *      `isUserAdmin()` function, which checks for an 'Admin' role.
- *    - Most write access for authenticated non-admins is handled by the application's
- *      UI. The rules provide a baseline "must be signed in" check.
  *
  * 4. User-Private Data:
  *    - A user's own profile document at `/users/{userId}` is readable only by that user
@@ -67,13 +64,11 @@ service cloud.firestore {
     
     /**
      * @description Individual donation records.
-     * @allow (get) Publicly readable for individual receipts.
-     * @allow (list) Only signed-in users can list donations for summaries.
+     * @allow (get, list) Publicly readable for receipts and summary pages.
      * @allow (write) Only authenticated users can manage donations.
      */
     match /donations/{donationId} {
-      allow get: if true;
-      allow list: if isSignedIn();
+      allow read: if true;
       allow write: if isSignedIn();
     }
 
@@ -89,10 +84,12 @@ service cloud.firestore {
       allow write: if isSignedIn();
 
       /**
-       * @description Beneficiaries are considered internal data.
+       * @description Beneficiaries of a campaign.
        */
       match /beneficiaries/{beneficiaryId} {
-          allow read, write: if isSignedIn();
+          // Public can read beneficiaries of a public campaign, writes are protected.
+          allow read: if get(/databases/$(database)/documents/campaigns/$(campaignId)).data.publicVisibility == 'Published' || isSignedIn();
+          allow write: if isSignedIn();
       }
     }
     
@@ -106,7 +103,7 @@ service cloud.firestore {
       allow write: if isSignedIn();
       
       /**
-       * @description Beneficiaries are considered internal data.
+       * @description Beneficiaries are considered internal data for leads.
        */
       match /beneficiaries/{beneficiaryId} {
         allow read, write: if isSignedIn();
