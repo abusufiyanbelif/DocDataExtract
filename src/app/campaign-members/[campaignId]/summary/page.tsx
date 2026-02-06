@@ -55,6 +55,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from "@/components/ui/table"
 import {
   Accordion,
@@ -269,6 +270,7 @@ export default function CampaignSummaryPage() {
             targetAmount: campaign.targetAmount || 0,
             remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
             amountsByCategory,
+            totalBeneficiaries: beneficiaries.length,
             beneficiariesByCategory,
             sortedBeneficiaryCategories,
             donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value })),
@@ -826,7 +828,7 @@ Your contribution, big or small, makes a huge difference.
                         </div>
                     </CardContent>
                 </Card>
-
+                
                 <Card>
                     <CardHeader>
                         <CardTitle>Funding Progress (for Kits)</CardTitle>
@@ -841,31 +843,31 @@ Your contribution, big or small, makes a huge difference.
                                 style={{ width: `${summaryData?.fundingProgress || 0}%` }}
                             ></div>
                             <div 
-                                className="absolute top-0 h-full bg-secondary transition-all"
+                                className="absolute top-0 h-full bg-yellow-400/50 transition-all"
                                 style={{ 
                                     left: `${summaryData?.fundingProgress || 0}%`, 
                                     width: `${summaryData?.pendingProgress || 0}%`
                                 }}
                             ></div>
                         </div>
-                        <div className="mt-2 flex justify-between text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                                <span className="h-2 w-2 rounded-full bg-primary mr-2"></span>
-                                Verified
+                         <div className="mt-2 flex justify-between text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-primary"></span>
+                                <span>Verified</span>
                             </div>
-                            <div className="flex items-center">
-                                <span className="h-2 w-2 rounded-full bg-secondary mr-2"></span>
-                                Pending Verification
+                            <div className="flex items-center gap-2">
+                                <span className="h-2 w-2 rounded-full bg-yellow-400/50"></span>
+                                <span>Pending</span>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
-
+                
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
-                            <Hourglass className="h-4 w-4 text-secondary-foreground" />
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
@@ -881,8 +883,8 @@ Your contribution, big or small, makes a huge difference.
                         </CardContent>
                     </Card>
                 </div>
-
-                <Card>
+                
+                 <Card>
                     <CardHeader>
                         <CardTitle>Verified Donations by Category</CardTitle>
                         <CardDescription>
@@ -977,6 +979,13 @@ Your contribution, big or small, makes a huge difference.
                                         )
                                     })}
                                 </TableBody>
+                                <TableFooter>
+                                    <TableRow>
+                                        <TableCell className="font-bold">Total</TableCell>
+                                        <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
+                                        <TableCell></TableCell>
+                                    </TableRow>
+                                </TableFooter>
                             </Table>
                         </CardContent>
                     </Card>

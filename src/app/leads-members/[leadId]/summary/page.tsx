@@ -60,6 +60,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
+    TableFooter,
 } from "@/components/ui/table"
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
@@ -487,7 +488,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
     
     if (isLoading) {
         return (
-            <main className="flex items-center justify-center min-h-screen">
+            <main className="container mx-auto p-4 md:p-8">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </main>
         );
@@ -875,6 +876,13 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                         )
                                     })}
                                 </TableBody>
+                                <TableFooter>
+                                    <TableRow>
+                                        <TableCell className="font-bold">Total</TableCell>
+                                        <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
+                                        <TableCell></TableCell>
+                                    </TableRow>
+                                </TableFooter>
                             </Table>
                         </CardContent>
                     </Card>
