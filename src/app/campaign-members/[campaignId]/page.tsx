@@ -175,34 +175,62 @@ export default function CampaignDetailsPage() {
   ) => {
     if (!editableCampaign) return;
     
-    const newRationLists = { ...editableCampaign.rationLists };
-
-    const updatedItems = newRationLists[memberCount].map(item => {
+    let newRationLists = JSON.parse(JSON.stringify(editableCampaign.rationLists));
+    const isGeneral = getCategoryLabel(memberCount) === 'General Item List';
+    let changedItemName: string | null = null;
+    
+    // Update the specific item that was changed
+    const updatedItems = newRationLists[memberCount].map((item: RationItem) => {
         if (item.id !== itemId) return item;
 
         const newItem = { ...item, [field]: value };
-
-        const isGeneral = getCategoryLabel(memberCount) === 'General Item List';
-        if (isGeneral) {
-            return newItem;
-        }
         
-        const itemNameLower = String(newItem.name || '').trim().toLowerCase();
-        const masterItem = masterPriceList[itemNameLower];
+        if (isGeneral) {
+            changedItemName = String(newItem.name || '').trim().toLowerCase();
+        } else {
+            const itemNameLower = String(newItem.name || '').trim().toLowerCase();
+            const masterItem = masterPriceList[itemNameLower];
 
-        if (masterItem) {
-            newItem.quantityType = masterItem.quantityType;
-            const newPrice = masterItem.price * (Number(newItem.quantity) || 0);
-            newItem.price = parseFloat(newPrice.toFixed(2));
-        } else if (field === 'name') {
-            // Only reset if the name itself changes and no match is found
-            newItem.quantityType = '';
-            newItem.price = 0;
+            if (masterItem) {
+                newItem.quantityType = masterItem.quantityType;
+                const newPrice = masterItem.price * (Number(newItem.quantity) || 0);
+                newItem.price = parseFloat(newPrice.toFixed(2));
+            } else if (field === 'name') {
+                newItem.quantityType = '';
+                newItem.price = 0;
+            }
         }
         return newItem;
     });
-
     newRationLists[memberCount] = updatedItems;
+
+    // If a general list item's name or price changed, propagate to other lists
+    if (isGeneral && changedItemName) {
+        const changedItem = updatedItems.find((item: RationItem) => item.id === itemId);
+        if (changedItem) {
+             const quantity = Number(changedItem.quantity) || 0;
+             const price = Number(changedItem.price) || 0;
+             const newMasterPrice = quantity > 0 ? price / quantity : price;
+             const newMasterType = changedItem.quantityType || '';
+
+            Object.keys(newRationLists).forEach(cat => {
+                if (getCategoryLabel(cat) !== 'General Item List') {
+                newRationLists[cat] = newRationLists[cat].map((item: RationItem) => {
+                    if (item.name.trim().toLowerCase() === changedItemName) {
+                    const newPrice = newMasterPrice * (Number(item.quantity) || 0);
+                    return {
+                        ...item,
+                        quantityType: newMasterType,
+                        price: parseFloat(newPrice.toFixed(2)),
+                    };
+                    }
+                    return item;
+                });
+                }
+            });
+        }
+    }
+
     handleFieldChange('rationLists', newRationLists);
   };
 
@@ -540,7 +568,7 @@ export default function CampaignDetailsPage() {
                         <TableHead className="min-w-[100px]">Quantity</TableHead>
                         <TableHead className="min-w-[150px]">Quantity Type</TableHead>
                         {isGeneral ? (
-                            <TableHead className="text-right min-w-[120px]">Price (Rupee)</TableHead>
+                            <TableHead className="text-right min-w-[120px]">Price per Unit (Rupee)</TableHead>
                         ) : (
                             <>
                                 <TableHead className="min-w-[180px]">Notes</TableHead>
@@ -680,7 +708,7 @@ export default function CampaignDetailsPage() {
                       </Button>
                     )}
                     {canReadRation && (
-                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
                           <Link href={`/campaign-members/${campaignId}`}>{editableCampaign.category === 'Ration' ? 'Ration Details' : 'Item List'}</Link>
                       </Button>
                     )}
@@ -970,3 +998,4 @@ export default function CampaignDetailsPage() {
     </>
   );
 }
+
