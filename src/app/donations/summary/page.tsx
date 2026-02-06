@@ -47,7 +47,7 @@ import { ShieldAlert } from 'lucide-react';
 import { syncDonationsAction } from '../actions';
 import { useToast } from '@/hooks/use-toast';
 
-const donationTypeChartConfig = {
+const donationCategoryChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
     Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
     Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
@@ -58,7 +58,7 @@ const donationTypeChartConfig = {
 
 const donationPaymentTypeChartConfig = {
     Cash: { label: "Cash", color: "hsl(var(--chart-1))" },
-    OnlinePayment: { label: "Online Payment", color: "hsl(var(--chart-2))" },
+    'Online Payment': { label: "Online Payment", color: "hsl(var(--chart-2))" },
     Check: { label: "Check", color: "hsl(var(--chart-3))" },
     Other: { label: "Other", color: "hsl(var(--chart-4))" },
 } satisfies ChartConfig;
@@ -129,7 +129,7 @@ export default function DonationsSummaryPage() {
         });
 
         const paymentTypeData = donations.reduce((acc, d) => {
-            const key = d.donationType?.replace(/\s+/g, '') || 'Other';
+            const key = d.donationType || 'Other';
             acc[key] = (acc[key] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
@@ -205,6 +205,47 @@ export default function DonationsSummaryPage() {
             </div>
             
             <div className="space-y-6">
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>All Donations by Category</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
+                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                                    <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="value" radius={4}>
+                                        {Object.entries(summaryData?.amountsByCategory || {}).map(([name]) => (
+                                            <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>All Donations by Payment Type</CardTitle>
+                            <CardDescription>Count of donations per payment type.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <ChartContainer config={donationPaymentTypeChartConfig} className="h-[250px] w-full">
+                                <PieChart>
+                                    <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                                    <Pie data={summaryData?.donationPaymentTypeChartData} dataKey="value" nameKey="name" innerRadius={50} strokeWidth={5}>
+                                        {summaryData?.donationPaymentTypeChartData?.map((entry) => (
+                                            <Cell key={entry.name} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Pie>
+                                    <ChartLegend content={<ChartLegendContent />} />
+                                </PieChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </div>
                  <Card>
                     <CardHeader>
                         <CardTitle>Total Collections by Category</CardTitle>
@@ -256,85 +297,29 @@ export default function DonationsSummaryPage() {
                         </CardContent>
                     </Card>
                 </div>
-
-                <div className="grid gap-6 lg:grid-cols-2">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Donations by Payment Type</CardTitle>
-                            <CardDescription>Count of donations per payment method.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="h-[300px] flex items-center justify-center">
-                            <ChartContainer config={donationPaymentTypeChartConfig} className="h-[300px] w-full">
-                                <BarChart data={summaryData?.donationPaymentTypeChartData} layout="vertical" margin={{ left: 20 }}>
-                                    <CartesianGrid horizontal={false} />
-                                    <YAxis
-                                        dataKey="name"
-                                        type="category"
-                                        tickLine={false}
-                                        tickMargin={10}
-                                        axisLine={false}
-                                    />
-                                    <XAxis type="number" hide />
-                                    <ChartTooltip
-                                        cursor={false}
-                                        content={<ChartTooltipContent indicator="dot" />}
-                                    />
-                                    <Bar
-                                        dataKey="value"
-                                        radius={4}
-                                        layout="vertical"
-                                    >
-                                         {summaryData?.donationPaymentTypeChartData?.map((entry) => (
-                                            <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Allocation Status</CardTitle>
-                            <CardDescription>Number of donations linked to a campaign vs. unlinked.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex flex-col items-center justify-center h-[300px] gap-4">
-                            <div className="flex items-center gap-4 text-lg">
-                                <div className="flex items-center gap-2">
-                                    <LinkIcon className="h-5 w-5 text-primary"/>
-                                    <span className="font-bold text-2xl">{summaryData?.allocatedCount}</span>
-                                    <span>Allocated</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Link2Off className="h-5 w-5 text-muted-foreground"/>
-                                    <span className="font-bold text-2xl">{summaryData?.unallocatedCount}</span>
-                                    <span>Unallocated</span>
-                                </div>
-                            </div>
-                            <p className="text-sm text-muted-foreground text-center">Unallocated donations can be linked to any campaign from the main "All Donations" table.</p>
-                        </CardContent>
-                    </Card>
-                 </div>
+                
                  <Card>
                     <CardHeader>
-                        <CardTitle>Donations by Payment Type</CardTitle>
+                        <CardTitle>Allocation Status</CardTitle>
+                        <CardDescription>Number of donations linked to a campaign vs. unlinked.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        {summaryData?.donationPaymentTypeChartData.map((item) => (
-                            <Card key={item.name}>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">{item.name}</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{item.value}</div>
-                                    <p className="text-xs text-muted-foreground">
-                                        {item.value === 1 ? 'Donation' : 'Donations'}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        ))}
+                    <CardContent className="flex flex-col items-center justify-center h-[300px] gap-4">
+                        <div className="flex items-center gap-4 text-lg">
+                            <div className="flex items-center gap-2">
+                                <LinkIcon className="h-5 w-5 text-primary"/>
+                                <span className="font-bold text-2xl">{summaryData?.allocatedCount}</span>
+                                <span>Allocated</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Link2Off className="h-5 w-5 text-muted-foreground"/>
+                                <span className="font-bold text-2xl">{summaryData?.unallocatedCount}</span>
+                                <span>Unallocated</span>
+                            </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground text-center">Unallocated donations can be linked to any campaign from the main "All Donations" table.</p>
                     </CardContent>
                 </Card>
+                 
             </div>
         </main>
     );

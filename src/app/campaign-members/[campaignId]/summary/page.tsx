@@ -14,6 +14,19 @@ import Link from 'next/link';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 import type { Campaign, Beneficiary, Donation, DonationCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -59,6 +72,32 @@ import { AppFooter } from '@/components/app-footer';
 import { Checkbox } from '@/components/ui/checkbox';
 import { donationCategories } from '@/lib/modules';
 import { Badge } from '@/components/ui/badge';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
+
+
+const donationCategoryChartConfig = {
+    Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
+    Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
+    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
+    Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
+    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
+    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
+} satisfies ChartConfig;
+
+const donationPaymentTypeChartConfig = {
+    Cash: { label: "Cash", color: "hsl(var(--chart-1))" },
+    'Online Payment': { label: "Online Payment", color: "hsl(var(--chart-2))" },
+    Check: { label: "Check", color: "hsl(var(--chart-3))" },
+    Other: { label: "Other", color: "hsl(var(--chart-4))" },
+} satisfies ChartConfig;
+
 
 export default function CampaignSummaryPage() {
     const params = useParams();
@@ -216,6 +255,11 @@ export default function CampaignSummaryPage() {
 
         const sortedBeneficiaryCategories = Object.keys(beneficiariesByCategory).map(Number).sort((a, b) => b - a);
 
+        const paymentTypeData = donations.reduce((acc, d) => {
+            const key = d.donationType || 'Other';
+            acc[key] = (acc[key] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
 
         return {
             verifiedNonZakatDonations,
@@ -227,6 +271,7 @@ export default function CampaignSummaryPage() {
             amountsByCategory,
             beneficiariesByCategory,
             sortedBeneficiaryCategories,
+            donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value })),
         };
     }, [donations, campaign, beneficiaries]);
     
@@ -815,6 +860,48 @@ Your contribution, big or small, makes a huge difference.
                         </div>
                     </CardContent>
                 </Card>
+                
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Donations by Category</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
+                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                                    <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="value" radius={4}>
+                                        {Object.entries(summaryData?.amountsByCategory || {}).map(([name]) => (
+                                            <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Donations by Payment Type</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <ChartContainer config={donationPaymentTypeChartConfig} className="h-[250px] w-full">
+                                <PieChart>
+                                    <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                                    <Pie data={summaryData?.donationPaymentTypeChartData} dataKey="value" nameKey="name" innerRadius={50} strokeWidth={5}>
+                                        {summaryData?.donationPaymentTypeChartData?.map((entry) => (
+                                            <Cell key={entry.name} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Pie>
+                                    <ChartLegend content={<ChartLegendContent />} />
+                                </PieChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+
 
                 {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
                      <Card>
@@ -869,7 +956,7 @@ Your contribution, big or small, makes a huge difference.
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                      <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Beneficiaries</CardTitle>
+                            <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
