@@ -1,49 +1,31 @@
 
-
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc, useCollection } from '@/firebase';
+import { useFirestore, useDoc } from '@/firebase';
 import { useBranding } from '@/hooks/use-branding';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
-import { doc, collection, query, where, DocumentReference } from 'firebase/firestore';
+import { doc, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-import type { Campaign, Donation, DonationCategory } from '@/lib/types';
+import type { Campaign } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Loader2, Target, Users, Gift, LogIn, Wallet, Share2, Hourglass, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, LogIn, Share2, Download } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-} from '@/components/ui/chart';
-import type { ChartConfig } from '@/components/ui/chart';
 import { useToast } from '@/hooks/use-toast';
 import { ShareDialog } from '@/components/share-dialog';
 import { AppFooter } from '@/components/app-footer';
-import { donationCategories } from '@/lib/modules';
+import { ArrowLeft } from 'lucide-react';
 
 export default function PublicCampaignSummaryPage() {
     const params = useParams();
@@ -61,67 +43,13 @@ export default function PublicCampaignSummaryPage() {
 
     // Data fetching
     const campaignDocRef = useMemo(() => (firestore && campaignId) ? doc(firestore, 'campaigns', campaignId) as DocumentReference<Campaign> : null, [firestore, campaignId]);
-    const donationsCollectionRef = useMemo(() => {
-        if (!firestore || !campaignId) return null;
-        return query(collection(firestore, 'donations'), where('campaignId', '==', campaignId));
-    }, [firestore, campaignId]);
 
     const { data: campaign, isLoading: isCampaignLoading } = useDoc<Campaign>(campaignDocRef);
-    const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
     
-    // Memoized calculations
-    const summaryData = useMemo(() => {
-        if (!donations || !campaign) return null;
-        
-        const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
-    
-        const amountsByCategory: Record<DonationCategory, number> = donationCategories.reduce((acc, cat) => ({...acc, [cat]: 0}), {} as Record<DonationCategory, number>);
-
-        verifiedDonationsList.forEach(d => {
-            if (d.typeSplit && d.typeSplit.length > 0) {
-                d.typeSplit.forEach(split => {
-                    const category = (split.category as any) === 'General' ? 'Sadqa' : split.category as DonationCategory;
-                    if (amountsByCategory.hasOwnProperty(category)) {
-                        amountsByCategory[category] += split.amount;
-                    }
-                });
-            } else if (d.type) {
-                const category = d.type === 'General' ? 'Sadqa' : d.type;
-                if (amountsByCategory.hasOwnProperty(category)) {
-                    amountsByCategory[category as DonationCategory] += d.amount;
-                }
-            }
-        });
-
-        const verifiedNonZakatDonations = Object.entries(amountsByCategory)
-            .filter(([category]) => category !== 'Zakat')
-            .reduce((sum, [, amount]) => sum + amount, 0);
-        
-        const zakatCollected = amountsByCategory['Zakat'] || 0;
-
-        const pendingDonations = donations
-            .filter(d => d.status === 'Pending')
-            .reduce((acc, d) => acc + d.amount, 0);
-
-        const fundingGoal = campaign.targetAmount || 0;
-        const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
-        const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
-
-        return {
-            verifiedNonZakatDonations,
-            zakatCollected,
-            pendingDonations,
-            fundingProgress,
-            pendingProgress,
-            targetAmount: fundingGoal,
-            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
-        };
-    }, [donations, campaign]);
-    
-    const isLoading = isCampaignLoading || areDonationsLoading || isBrandingLoading || isPaymentLoading;
+    const isLoading = isCampaignLoading || isBrandingLoading || isPaymentLoading;
     
     const handleShare = async () => {
-        if (!campaign || !summaryData) {
+        if (!campaign) {
             toast({
                 title: 'Error',
                 description: 'Cannot share, summary data is not available.',
@@ -139,11 +67,6 @@ Join us for the *${campaign.name}* campaign as we work to provide essential aid 
 
 *Our Goal:*
 ${campaign.description || 'To support those in need.'}
-
-*Financial Update:*
-🎯 Target: Rupee ${summaryData.targetAmount.toLocaleString('en-IN')}
-✅ Collected (Verified): Rupee ${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
-⏳ Remaining: *Rupee ${summaryData.remainingToCollect.toLocaleString('en-IN')}*
 
 Your contribution, big or small, makes a huge difference.
 
@@ -374,7 +297,7 @@ Your contribution, big or small, makes a huge difference.
             </main>
         );
     }
-
+    
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
     
     return (
@@ -455,70 +378,6 @@ Your contribution, big or small, makes a huge difference.
                             </div>
                         </CardContent>
                     </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Funding Progress</CardTitle>
-                            <CardDescription>
-                                Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
-                                <div 
-                                    className="h-full bg-primary transition-all"
-                                    style={{ width: `${summaryData?.fundingProgress || 0}%` }}
-                                ></div>
-                                <div 
-                                    className="absolute top-0 h-full bg-secondary transition-all"
-                                    style={{ 
-                                        left: `${summaryData?.fundingProgress || 0}%`, 
-                                        width: `${summaryData?.pendingProgress || 0}%`
-                                    }}
-                                ></div>
-                            </div>
-                            <div className="mt-2 flex justify-between text-sm text-muted-foreground">
-                                <div className="flex items-center">
-                                    <span className="h-2 w-2 rounded-full bg-primary mr-2"></span>
-                                    Verified
-                                </div>
-                                <div className="flex items-center">
-                                    <span className="h-2 w-2 rounded-full bg-secondary mr-2"></span>
-                                    Pending Verification
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Target Amount</CardTitle>
-                                <Target className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.targetAmount.toLocaleString('en-IN') ?? '0.00'}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Funds Collected (Verified)</CardTitle>
-                                <Gift className="h-4 w-4 text-primary" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Zakat Collected (Verified)</CardTitle>
-                                <Wallet className="h-4 w-4 text-primary" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">Rupee {summaryData?.zakatCollected.toLocaleString('en-IN') ?? '0.00'}</div>
-                            </CardContent>
-                        </Card>
-                    </div>
                 </div>
             </div>
 
@@ -533,8 +392,3 @@ Your contribution, big or small, makes a huge difference.
         </main>
     );
 }
-
-    
-
-    
-
