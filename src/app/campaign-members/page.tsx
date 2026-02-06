@@ -75,7 +75,8 @@ export default function CampaignPage() {
   
   const donationsCollectionRef = useMemo(() => {
     if (!firestore) return null;
-    return collection(firestore, 'donations');
+    // Only fetch verified donations to calculate collected amounts
+    return query(collection(firestore, 'donations'), where('status', '==', 'Verified'));
   }, [firestore]);
   const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
 

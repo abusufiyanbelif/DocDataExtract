@@ -7,32 +7,26 @@
  * This ruleset employs a mixed-privacy model designed for security and functionality.
  *
  * 1. Publicly Readable Data:
- *    - `settings`, `donations`, and published `campaigns`/`leads` are publicly readable.
- *    - This allows for public-facing pages (like campaign summaries) to be rendered
- *      without requiring user login.
- *    - `list` operations on `campaigns` and `leads` are public, but the client-side
- *      queries are responsible for filtering based on public flags.
+ *    - `settings` and published `campaigns`/`leads` are publicly readable. This allows
+ *      for public-facing pages to be rendered without requiring user login.
+ *    - Individual `donations` are readable with a direct link (for receipts).
  *
- * 2. Authenticated Writes:
+ * 2. Authenticated Writes & Lists:
  *    - ALL write operations (create, update, delete) on ANY collection require the
- *      user to be signed in. There are no public write rules.
+ *      user to be signed in.
+ *    - Listing multiple documents (e.g., all donations for a summary) is restricted
+ *      to authenticated users to protect private information.
  *
  * 3. Role-Based Access:
  *    - Administrative actions (like managing users or lookups) are protected by the
- *      `isUserAdmin()` function, which checks for an 'Admin' role in the user's
- *      profile document in Firestore.
+ *      `isUserAdmin()` function, which checks for an 'Admin' role.
  *    - Most write access for authenticated non-admins is handled by the application's
- *      UI, which hides/shows controls based on the user's specific permissions object.
- *      The rules provide a baseline "must be signed in" check.
+ *      UI. The rules provide a baseline "must be signed in" check.
  *
  * 4. User-Private Data:
  *    - A user's own profile document at `/users/{userId}` is readable only by that user
  *      or an admin.
  *    - Listing all users is restricted to admins to prevent user enumeration.
- *
- * 5. Data Integrity:
- *    - Key identifiers (`id` fields, `userId` fields) are immutable on update to
- *      prevent documents from being moved or reassigned.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -73,11 +67,13 @@ service cloud.firestore {
     
     /**
      * @description Individual donation records.
-     * @allow (read) Publicly readable for aggregation on campaign summaries.
+     * @allow (get) Publicly readable for individual receipts.
+     * @allow (list) Only signed-in users can list donations for summaries.
      * @allow (write) Only authenticated users can manage donations.
      */
     match /donations/{donationId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isSignedIn();
       allow write: if isSignedIn();
     }
 
