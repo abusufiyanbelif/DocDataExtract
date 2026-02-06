@@ -1,7 +1,7 @@
 
 'use client';
 import { DocuExtractHeader } from '@/components/docu-extract-header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -149,16 +149,14 @@ export default function PublicLeadPage() {
                                     <Progress value={progress} className="h-2" />
                                     {target > 0 && <p className="text-xs text-muted-foreground text-right">{progress.toFixed(0)}% funded</p>}
                                 </div>
-                                <div className="flex justify-between text-sm text-muted-foreground pt-2">
-                                    <Badge variant="outline">{lead.authenticityStatus}</Badge>
-                                    <Badge variant="outline">{lead.publicVisibility}</Badge>
-                                </div>
-                                <Button asChild className="mt-4 w-full">
+                            </CardContent>
+                            <CardFooter>
+                                <Button asChild className="w-full">
                                     <Link href={`/leads-public/${lead.id}/summary`}>
                                         View Details
                                     </Link>
                                 </Button>
-                            </CardContent>
+                            </CardFooter>
                         </Card>
                     );
                 })}

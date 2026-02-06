@@ -97,7 +97,7 @@ export default function LeadPage() {
   const canCreate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.create', false);
   const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.update', false);
   const canDelete = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.delete', false);
-  const canViewLeads = userProfile?.role === 'Admin' || canCreate || canUpdate || canDelete || Object.values(get(userProfile, 'permissions.leads-members', {})).some((perm: any) => perm?.read);
+  const canViewLeads = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members', false);
 
 
   const handleDeleteClick = (lead: Lead) => {
@@ -417,7 +417,7 @@ export default function LeadPage() {
                             <CardDescription>{lead.startDate} to {lead.endDate}</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-grow space-y-4">
-                             <div className="space-y-2">
+                            <div className="space-y-2">
                                 <div className="flex justify-between text-sm font-medium">
                                     <span className="text-foreground">
                                         Rupee {collected.toLocaleString('en-IN')}

@@ -31,12 +31,12 @@ export default function DashboardPage() {
   
   const canViewCampaigns = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.campaigns', false);
   const canViewLeads = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members', false);
-  const canViewDonations = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.donations.read', false);
-  const canViewExtractor = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.extractor.read', false);
-  const canViewStoryCreator = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.storyCreator.read', false);
-  const canViewUsers = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.users.read', false);
-  const canViewSettings = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.settings.read', false);
-  const canViewDiagnostics = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.diagnostics.read', false);
+  const canViewDonations = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.donations', false);
+  const canViewExtractor = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.extractor', false);
+  const canViewStoryCreator = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.storyCreator', false);
+  const canViewUsers = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.users', false);
+  const canViewSettings = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.settings', false);
+  const canViewDiagnostics = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.diagnostics', false);
 
   return (
     <main className="container mx-auto p-4 md:p-8">
