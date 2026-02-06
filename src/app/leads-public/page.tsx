@@ -31,22 +31,23 @@ export default function PublicLeadPage() {
 
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsCollectionRef);
   
-  const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(
-    firestore ? collection(firestore, 'donations') : null
-  );
+  // Temporarily disable donation fetching to isolate the issue
+  // const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(
+  //   firestore ? collection(firestore, 'donations') : null
+  // );
 
-  const leadCollectedAmounts = useMemo(() => {
-    if (!donations) return {};
-    return donations.reduce((acc, donation) => {
-        if (donation.campaignId && donation.status === 'Verified') {
-            const nonZakatAmount = (donation.typeSplit || [])
-                .filter(split => split.category !== 'Zakat')
-                .reduce((sum, split) => sum + split.amount, 0);
-            acc[donation.campaignId] = (acc[donation.campaignId] || 0) + nonZakatAmount;
-        }
-        return acc;
-    }, {} as Record<string, number>);
-  }, [donations]);
+  // const leadCollectedAmounts = useMemo(() => {
+  //   if (!donations) return {};
+  //   return donations.reduce((acc, donation) => {
+  //       if (donation.campaignId && donation.status === 'Verified') {
+  //           const nonZakatAmount = (donation.typeSplit || [])
+  //               .filter(split => split.category !== 'Zakat')
+  //               .reduce((sum, split) => sum + split.amount, 0);
+  //           acc[donation.campaignId] = (acc[donation.campaignId] || 0) + nonZakatAmount;
+  //       }
+  //       return acc;
+  //   }, {} as Record<string, number>);
+  // }, [donations]);
 
   const filteredLeads = useMemo(() => {
     if (!leads) return [];
@@ -57,7 +58,7 @@ export default function PublicLeadPage() {
     ).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
   }, [leads, searchTerm, statusFilter, categoryFilter]);
   
-  const isLoading = areLeadsLoading || areDonationsLoading;
+  const isLoading = areLeadsLoading; // || areDonationsLoading;
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -114,7 +115,7 @@ export default function PublicLeadPage() {
       {!isLoading && filteredLeads.length > 0 && (
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredLeads.map(lead => {
-                  const collected = leadCollectedAmounts[lead.id] || 0;
+                  const collected = 0; // leadCollectedAmounts[lead.id] || 0;
                   const target = lead.targetAmount || 0;
                   const progress = target > 0 ? (collected / target) * 100 : 0;
                   return (

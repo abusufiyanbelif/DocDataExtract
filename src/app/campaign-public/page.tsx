@@ -32,22 +32,23 @@ export default function PublicCampaignPage() {
 
   const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
   
-  const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(
-    firestore ? collection(firestore, 'donations') : null
-  );
+  // Temporarily disable donation fetching to isolate the issue
+  // const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(
+  //   firestore ? collection(firestore, 'donations') : null
+  // );
 
-  const campaignCollectedAmounts = useMemo(() => {
-    if (!donations) return {};
-    return donations.reduce((acc, donation) => {
-        if (donation.campaignId && donation.status === 'Verified') {
-            const nonZakatAmount = (donation.typeSplit || [])
-                .filter(split => split.category !== 'Zakat')
-                .reduce((sum, split) => sum + split.amount, 0);
-            acc[donation.campaignId] = (acc[donation.campaignId] || 0) + nonZakatAmount;
-        }
-        return acc;
-    }, {} as Record<string, number>);
-  }, [donations]);
+  // const campaignCollectedAmounts = useMemo(() => {
+  //   if (!donations) return {};
+  //   return donations.reduce((acc, donation) => {
+  //       if (donation.campaignId && donation.status === 'Verified') {
+  //           const nonZakatAmount = (donation.typeSplit || [])
+  //               .filter(split => split.category !== 'Zakat')
+  //               .reduce((sum, split) => sum + split.amount, 0);
+  //           acc[donation.campaignId] = (acc[donation.campaignId] || 0) + nonZakatAmount;
+  //       }
+  //       return acc;
+  //   }, {} as Record<string, number>);
+  // }, [donations]);
 
   const filteredCampaigns = useMemo(() => {
     if (!campaigns) return [];
@@ -58,7 +59,7 @@ export default function PublicCampaignPage() {
     ).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
   }, [campaigns, searchTerm, statusFilter, categoryFilter]);
   
-  const isLoading = areCampaignsLoading || areDonationsLoading;
+  const isLoading = areCampaignsLoading; // || areDonationsLoading;
 
   return (
     <main className="container mx-auto p-4 md:p-8">
@@ -115,7 +116,7 @@ export default function PublicCampaignPage() {
       {!isLoading && filteredCampaigns.length > 0 && (
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCampaigns.map(campaign => {
-                  const collected = campaignCollectedAmounts[campaign.id] || 0;
+                  const collected = 0; // campaignCollectedAmounts[campaign.id] || 0;
                   const target = campaign.targetAmount || 0;
                   const progress = target > 0 ? (collected / target) * 100 : 0;
                   return (
