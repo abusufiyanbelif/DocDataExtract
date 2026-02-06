@@ -43,8 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   }, [isLoading, user, isPublicRoute, isLoginPage, router, pathname]);
 
-  // Show the loader only if we are still verifying the auth state on a private page or during the initial redirect.
-  const showLoader = isLoading && (!isPublicRoute || (user && pathname === '/'));
+  // Show a loader in two scenarios:
+  // 1. On initial load of a private page while auth state is being determined.
+  // 2. After logout on a private page, to prevent a flash of empty content while redirecting to login.
+  const showLoader = (isLoading && !isPublicRoute) || (!isLoading && !user && !isPublicRoute);
   
   if (showLoader) {
     return <AuthLoader />;
