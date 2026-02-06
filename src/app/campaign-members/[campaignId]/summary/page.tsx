@@ -88,7 +88,7 @@ const donationCategoryChartConfig = {
 const donationPaymentTypeChartConfig = {
     Cash: { label: "Cash", color: "hsl(var(--chart-1))" },
     'Online Payment': { label: "Online Payment", color: "hsl(var(--chart-2))" },
-    Check: { label: "Check", color: "hsl(var(--chart-3))" },
+    Check: { label: "Check", color: "hsl(var(--chart-5))" },
     Other: { label: "Other", color: "hsl(var(--chart-4))" },
 } satisfies ChartConfig;
 
@@ -431,19 +431,19 @@ Your contribution, big or small, makes a huge difference.
                     const logoHeight = 15;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
-                    pdf.setFontSize(18);
+                    pdf.setFontSize(16);
                     // Vertically center the text with the logo
                     const textY = position + (logoHeight / 2) + 3;
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
                     position += logoHeight + 10;
                 } else {
-                    pdf.setFontSize(18);
+                    pdf.setFontSize(16);
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', pageCenter, position, { align: 'center' });
                     position += 15;
                 }
                 
                 // Document Title
-                pdf.setFontSize(22).text(campaign?.name || 'Campaign Summary', pageCenter, position, { align: 'center' });
+                pdf.setFontSize(18).text(campaign?.name || 'Campaign Summary', pageCenter, position, { align: 'center' });
                 position += 15;
 
                 if (logoImg && logoDataUrl) {
@@ -855,7 +855,7 @@ Your contribution, big or small, makes a huge difference.
                         </div>
                     </CardContent>
                 </Card>
-                
+
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -867,39 +867,26 @@ Your contribution, big or small, makes a huge difference.
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
+                        <CardHeader>
+                            <CardTitle>Verified Donations by Category</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{areBeneficiariesLoading ? '...' : (beneficiaries?.length ?? 0)}</div>
+                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {donationCategories.map(category => (
+                                <Card key={category} className="shadow-none border-0">
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 pb-0">
+                                        <CardTitle className="text-xs font-medium">{category}</CardTitle>
+                                        <Wallet className="h-3 w-3 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent className="p-2 pt-1">
+                                        <div className="text-lg font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                    </CardContent>
+                                </Card>
+                            ))}
                         </CardContent>
                     </Card>
                 </div>
                 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Verified Donations by Category</CardTitle>
-                        <CardDescription>
-                            Total verified funds collected for this campaign, broken down by category.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {donationCategories.map(category => (
-                            <Card key={category}>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">{category}</CardTitle>
-                                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </CardContent>
-                </Card>
-
-                {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                 {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Beneficiaries by Category</CardTitle>

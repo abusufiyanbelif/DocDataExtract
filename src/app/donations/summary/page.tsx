@@ -59,7 +59,7 @@ const donationCategoryChartConfig = {
 const donationPaymentTypeChartConfig = {
     Cash: { label: "Cash", color: "hsl(var(--chart-1))" },
     'Online Payment': { label: "Online Payment", color: "hsl(var(--chart-2))" },
-    Check: { label: "Check", color: "hsl(var(--chart-3))" },
+    Check: { label: "Check", color: "hsl(var(--chart-5))" },
     Other: { label: "Other", color: "hsl(var(--chart-4))" },
 } satisfies ChartConfig;
 
