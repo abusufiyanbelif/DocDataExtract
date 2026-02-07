@@ -149,7 +149,12 @@ export function DocuExtractHeader() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          null
+          <Button asChild variant="outline">
+            <Link href="/login">
+              <LogIn className="mr-2 h-4 w-4" />
+              Organization members login
+            </Link>
+          </Button>
         )}
       </div>
     </header>
