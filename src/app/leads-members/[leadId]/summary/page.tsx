@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -246,8 +244,10 @@ export default function LeadSummaryPage() {
         const zakatTotal = amountsByCategory['Zakat'] || 0;
         const loanTotal = amountsByCategory['Loan'] || 0;
         const interestTotal = amountsByCategory['Interest'] || 0;
-        const otherTotal = (amountsByCategory['Sadaqah'] || 0) + (amountsByCategory['Lillah'] || 0) + (amountsByCategory['Monthly Contribution'] || 0);
-        const grandTotal = zakatTotal + loanTotal + interestTotal + otherTotal;
+        const sadaqahTotal = amountsByCategory['Sadaqah'] || 0;
+        const lillahTotal = amountsByCategory['Lillah'] || 0;
+        const monthlyContributionTotal = amountsByCategory['Monthly Contribution'] || 0;
+        const grandTotal = zakatTotal + loanTotal + interestTotal + sadaqahTotal + lillahTotal + monthlyContributionTotal;
 
         return {
             totalBeneficiaries: beneficiaries.length,
@@ -260,7 +260,9 @@ export default function LeadSummaryPage() {
                 zakat: zakatTotal,
                 loan: loanTotal,
                 interest: interestTotal,
-                other: otherTotal,
+                sadaqah: sadaqahTotal,
+                lillah: lillahTotal,
+                monthlyContribution: monthlyContributionTotal,
                 grandTotal: grandTotal,
             }
         };
@@ -841,16 +843,24 @@ We are currently assessing the needs for this initiative. Your support and feedb
                             <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
                         </div>
                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Sadaqah</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.sadaqah.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Lillah</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.lillah.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Monthly Contribution</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.monthlyContribution.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Interest (for disposal)</span>
                             <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
                         </div>
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
                             <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Other Donations</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.other.toLocaleString('en-IN') ?? '0.00'}</span>
                         </div>
                         <Separator />
                         <div className="flex justify-between items-center text-lg">

@@ -324,15 +324,17 @@ export default function DonationsPage() {
     return sortableItems;
   }, [donations, searchTerm, statusFilter, typeFilter, donationTypeFilter, sortConfig]);
 
-  const { zakatTotal, loanTotal, interestTotal, otherTotal, grandTotal } = useMemo(() => {
+  const { zakatTotal, loanTotal, interestTotal, sadaqahTotal, lillahTotal, monthlyContributionTotal, grandTotal } = useMemo(() => {
     if (!filteredAndSortedDonations) {
-        return { zakatTotal: 0, loanTotal: 0, interestTotal: 0, otherTotal: 0, grandTotal: 0 };
+        return { zakatTotal: 0, loanTotal: 0, interestTotal: 0, sadaqahTotal: 0, lillahTotal: 0, monthlyContributionTotal: 0, grandTotal: 0 };
     }
 
     let zakat = 0;
     let loan = 0;
     let interest = 0;
-    let other = 0;
+    let sadaqah = 0;
+    let lillah = 0;
+    let monthlyContribution = 0;
 
     for (const d of filteredAndSortedDonations) {
         if (d.typeSplit && d.typeSplit.length > 0) {
@@ -347,20 +349,29 @@ export default function DonationsPage() {
                     case 'Interest':
                         interest += split.amount;
                         break;
-                    default:
-                        other += split.amount;
+                    case 'Sadaqah':
+                        sadaqah += split.amount;
+                        break;
+                    case 'Lillah':
+                        lillah += split.amount;
+                        break;
+                    case 'Monthly Contribution':
+                        monthlyContribution += split.amount;
                         break;
                 }
             }
         }
     }
+    const grandTotal = zakat + loan + interest + sadaqah + lillah + monthlyContribution;
 
     return {
         zakatTotal: zakat,
         loanTotal: loan,
         interestTotal: interest,
-        otherTotal: other,
-        grandTotal: zakat + loan + interest + other,
+        sadaqahTotal: sadaqah,
+        lillahTotal: lillah,
+        monthlyContributionTotal: monthlyContribution,
+        grandTotal: grandTotal,
     };
 }, [filteredAndSortedDonations]);
 
@@ -440,7 +451,7 @@ export default function DonationsPage() {
                   </Button>
               )}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
                 <Card>
                     <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Grand Total</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
                     <CardContent className="p-2"><div className="text-2xl font-bold">₹{grandTotal.toLocaleString('en-IN')}</div></CardContent>
@@ -458,8 +469,16 @@ export default function DonationsPage() {
                     <CardContent className="p-2"><div className="text-2xl font-bold">₹{loanTotal.toLocaleString('en-IN')}</div></CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Other</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
-                    <CardContent className="p-2"><div className="text-2xl font-bold">₹{otherTotal.toLocaleString('en-IN')}</div></CardContent>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Sadaqah</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">₹{sadaqahTotal.toLocaleString('en-IN')}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Lillah</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">₹{lillahTotal.toLocaleString('en-IN')}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Monthly Contribution</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">₹{monthlyContributionTotal.toLocaleString('en-IN')}</div></CardContent>
                 </Card>
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-4">
