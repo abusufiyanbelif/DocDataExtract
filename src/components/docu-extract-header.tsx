@@ -85,7 +85,7 @@ export function DocuExtractHeader() {
                 )
             )}
             </div>
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block animate-fade-in-zoom" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground animate-fade-in-zoom" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
             {isBrandingLoading ? <Skeleton className="h-8 w-80" /> : (brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}
           </h1>
         </Link>
@@ -153,8 +153,9 @@ export function DocuExtractHeader() {
           pathname !== '/login' && (
             <Button asChild variant="outline">
                 <Link href="/login">
-                <LogIn className="mr-2 h-4 w-4" />
-                Organization members login
+                    <LogIn className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Organization members login</span>
+                    <span className="sm:hidden">Login</span>
                 </Link>
             </Button>
           )
