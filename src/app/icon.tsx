@@ -3,6 +3,11 @@ import { ImageResponse } from 'next/server'
 // Route segment config
 export const runtime = 'edge'
 
+// Image metadata
+export const size = {
+  width: 32,
+  height: 32,
+}
 export const contentType = 'image/png'
 
 // Image generation
@@ -11,7 +16,7 @@ export default function Icon() {
     (
       <div
         style={{
-          fontSize: 20,
+          fontSize: 24,
           background: 'hsl(var(--primary))',
           width: '100%',
           height: '100%',
@@ -19,15 +24,12 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           color: 'hsl(var(--primary-foreground))',
+          borderRadius: '6px',
           fontWeight: 'bold',
         }}
       >
         B
       </div>
-    ),
-    {
-      width: 32,
-      height: 32,
-    }
+    )
   )
 }
