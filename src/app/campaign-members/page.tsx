@@ -43,7 +43,6 @@ import { Badge } from '@/components/ui/badge';
 import { CopyCampaignDialog } from '@/components/copy-campaign-dialog';
 import { copyCampaignAction } from './actions';
 import { get } from '@/lib/utils';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 
 
 export default function CampaignPage() {
@@ -281,8 +280,7 @@ export default function CampaignPage() {
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
+    <>
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
           <Button variant="outline" asChild>
@@ -512,6 +510,6 @@ export default function CampaignPage() {
             campaign={campaignToCopy}
             onCopyConfirm={handleCopyConfirm}
         />
-    </div>
+    </>
   );
 }

@@ -43,7 +43,6 @@ import { Badge } from '@/components/ui/badge';
 import { CopyLeadDialog } from '@/components/copy-lead-dialog';
 import { copyLeadAction } from './actions';
 import { get } from '@/lib/utils';
-import { DocuExtractHeader } from '@/components/docu-extract-header';
 
 
 export default function LeadPage() {
@@ -271,8 +270,7 @@ export default function LeadPage() {
   }
 
   return (
-    <div className="min-h-screen text-foreground">
-      <DocuExtractHeader />
+    <>
       <main className="container mx-auto p-4 md:p-8">
         <div className="mb-4">
           <Button variant="outline" asChild>
@@ -506,6 +504,6 @@ export default function LeadPage() {
         />
 
     </main>
-    </div>
+    </>
   );
 }
