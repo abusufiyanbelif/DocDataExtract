@@ -6,6 +6,7 @@ import { useSession } from '@/hooks/use-session';
 import { Users, FolderKanban, ScanSearch, Settings, MessageSquare, Lightbulb, Database, FlaskConical, LifeBuoy } from 'lucide-react';
 import { get } from '@/lib/utils';
 import React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function DashboardCard({ title, description, href, icon: Icon, isVisible, animationDelay }: { title: string, description: string, href: string, icon: React.ComponentType<{ className?: string }>, isVisible: boolean, animationDelay: string }) {
   if (!isVisible) {
@@ -30,7 +31,7 @@ function DashboardCard({ title, description, href, icon: Icon, isVisible, animat
 }
 
 export default function DashboardPage() {
-  const { userProfile } = useSession();
+  const { userProfile, isLoading } = useSession();
   
   const canViewCampaigns = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.campaigns', false);
   const canViewLeads = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members', false);
@@ -58,16 +59,26 @@ export default function DashboardPage() {
     <main className="container mx-auto p-4 md:p-8">
       <div className="space-y-4">
         <h1 className="text-3xl font-bold animate-fade-in-zoom" style={{ animationDelay: '300ms' }}>Dashboard</h1>
-        <p className="text-muted-foreground animate-fade-in-zoom" style={{ animationDelay: '400ms' }}>Welcome back, {userProfile?.name}. Here's an overview of your application modules.</p>
+        <p className="text-muted-foreground animate-fade-in-zoom" style={{ animationDelay: '400ms' }}>
+            {isLoading ? <Skeleton className="h-5 w-48" /> : `Welcome back, ${userProfile?.name}. Here's an overview of your application modules.`}
+        </p>
+        {isLoading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {[...Array(8)].map((_, i) => (
+                    <Skeleton key={i} className="h-28 rounded-lg" />
+                ))}
+            </div>
+        ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visibleCards.map((card, index) => (
               <DashboardCard
                 key={card.title}
                 {...card}
-                animationDelay={`${500 + index * 100}ms`}
+                animationDelay={`${100 + index * 100}ms`}
               />
             ))}
-        </div>
+          </div>
+        )}
       </div>
     </main>
   );
