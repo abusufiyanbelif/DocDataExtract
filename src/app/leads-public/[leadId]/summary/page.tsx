@@ -363,7 +363,7 @@ Your support and feedback are valuable.
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="space-y-1">
                                 <p className="text-sm font-medium text-muted-foreground">Target Amount</p>
-                                <p className="mt-1 text-lg font-semibold">Rupee {(lead.targetAmount ?? 0).toLocaleString('en-IN')}</p>
+                                <p className="mt-1 text-lg font-semibold">₹{(lead.targetAmount ?? 0).toLocaleString('en-IN')}</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-sm font-medium text-muted-foreground">Category</p>
@@ -384,7 +384,7 @@ Your support and feedback are valuable.
                     <CardHeader>
                         <CardTitle>Funding Progress</CardTitle>
                         <CardDescription>
-                            Rupee {fundingData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of Rupee {(fundingData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
+                            ₹{fundingData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of ₹{(fundingData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -405,7 +405,7 @@ Your support and feedback are valuable.
                                     tickMargin={10}
                                     axisLine={false}
                                 />
-                                <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
+                                <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Bar dataKey="value" radius={4}>
                                     {Object.entries(fundingData?.amountsByCategory || {}).map(([name,]) => (

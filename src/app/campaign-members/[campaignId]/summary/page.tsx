@@ -692,7 +692,7 @@ Your contribution, big or small, makes a huge difference.
                                         className="mt-1"
                                     />
                                 ) : (
-                                    <p className="mt-1 text-lg font-semibold">Rupee {(campaign.targetAmount || 0).toLocaleString('en-IN')}</p>
+                                    <p className="mt-1 text-lg font-semibold">₹{(campaign.targetAmount || 0).toLocaleString('en-IN')}</p>
                                 )}
                             </div>
                             <div className="space-y-1">
@@ -787,7 +787,7 @@ Your contribution, big or small, makes a huge difference.
                             </div>
                         </div>
                         <div className="space-y-2 pt-4">
-                            <Label className="text-sm font-medium text-muted-foreground">Allowed Donation Types</Label>
+                            <Label className="text-sm font-medium text-muted-foreground">Allowed Donation Types for Goal</Label>
                             {editMode && canUpdate ? (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 border rounded-md">
                                 <div className="flex items-center space-x-2">
@@ -834,13 +834,13 @@ Your contribution, big or small, makes a huge difference.
                     <CardHeader>
                         <CardTitle>Funding Progress</CardTitle>
                         <CardDescription>
-                            Rupee {summaryData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded.
+                            ₹{summaryData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of ₹{(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Progress value={summaryData?.fundingProgress || 0} />
                          <div className="mt-2 text-xs text-muted-foreground">
-                            {summaryData && summaryData.pendingDonations > 0 && <span>(+ Rupee {summaryData.pendingDonations.toLocaleString('en-IN')} pending verification)</span>}
+                            {summaryData && summaryData.pendingDonations > 0 && <span>(+ ₹{summaryData.pendingDonations.toLocaleString('en-IN')} pending verification)</span>}
                         </div>
                     </CardContent>
                 </Card>
@@ -884,32 +884,32 @@ Your contribution, big or small, makes a huge difference.
                         <CardContent className="space-y-4">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Zakat</span>
-                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
+                                <span className="font-semibold">₹{summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Sadaqah</span>
-                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.sadaqah.toLocaleString('en-IN') ?? '0.00'}</span>
+                                <span className="font-semibold">₹{summaryData?.fundTotals?.sadaqah.toLocaleString('en-IN') ?? '0.00'}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Lillah</span>
-                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.lillah.toLocaleString('en-IN') ?? '0.00'}</span>
+                                <span className="font-semibold">₹{summaryData?.fundTotals?.lillah.toLocaleString('en-IN') ?? '0.00'}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Monthly Contribution</span>
-                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.monthlyContribution.toLocaleString('en-IN') ?? '0.00'}</span>
+                                <span className="font-semibold">₹{summaryData?.fundTotals?.monthlyContribution.toLocaleString('en-IN') ?? '0.00'}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Interest (for disposal)</span>
-                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
+                                <span className="font-semibold">₹{summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
-                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
+                                <span className="font-semibold">₹{summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
                             </div>
                             <Separator />
                             <div className="flex justify-between items-center text-lg">
                                 <span className="font-semibold">Grand Total</span>
-                                <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
+                                <span className="font-bold text-primary">₹{summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -940,7 +940,7 @@ Your contribution, big or small, makes a huge difference.
                                                 <TableRow key={memberCount}>
                                                     <TableCell className="font-medium">{memberCount} Members</TableCell>
                                                     <TableCell className="text-center">{count}</TableCell>
-                                                    <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
+                                                    <TableCell className="text-right font-mono">₹{kitAmount.toFixed(2)}</TableCell>
                                                 </TableRow>
                                             )
                                         })}
@@ -973,7 +973,7 @@ Your contribution, big or small, makes a huge difference.
                                         tickMargin={10}
                                         axisLine={false}
                                     />
-                                    <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
+                                    <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Bar dataKey="value" radius={4}>
                                         {Object.entries(summaryData?.amountsByCategory || {}).map(([name,]) => (

@@ -320,7 +320,6 @@ Your contribution, big or small, makes a huge difference.
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
                     pdf.setFontSize(18);
-                    // Vertically center the text with the logo
                     const textY = position + (logoHeight / 2) + 3;
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
                     position += logoHeight + 10;
@@ -459,7 +458,7 @@ Your contribution, big or small, makes a huge difference.
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div className="space-y-1">
                                 <p className="text-sm font-medium text-muted-foreground">Fundraising Goal</p>
-                                <p className="mt-1 text-lg font-semibold">Rupee {(campaign.targetAmount ?? 0).toLocaleString('en-IN')}</p>
+                                <p className="mt-1 text-lg font-semibold">₹{(campaign.targetAmount ?? 0).toLocaleString('en-IN')}</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-sm font-medium text-muted-foreground">Category</p>
@@ -481,7 +480,7 @@ Your contribution, big or small, makes a huge difference.
                     <CardHeader>
                         <CardTitle>Funding Progress (for Kits)</CardTitle>
                         <CardDescription>
-                            Rupee {fundingData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of Rupee {(fundingData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
+                            ₹{fundingData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of ₹{(fundingData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -534,7 +533,7 @@ Your contribution, big or small, makes a huge difference.
                                         tickMargin={10}
                                         axisLine={false}
                                     />
-                                    <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
+                                    <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Bar dataKey="value" radius={4}>
                                         {Object.entries(fundingData?.amountsByCategory || {}).map(([name,]) => (
@@ -572,7 +571,7 @@ Your contribution, big or small, makes a huge difference.
                                                 <TableRow key={memberCount}>
                                                     <TableCell className="font-medium">{memberCount} Members</TableCell>
                                                     <TableCell className="text-center">{count}</TableCell>
-                                                    <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
+                                                    <TableCell className="text-right font-mono">₹{kitAmount.toFixed(2)}</TableCell>
                                                 </TableRow>
                                             )
                                         })}
