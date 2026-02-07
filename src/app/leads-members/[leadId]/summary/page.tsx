@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -825,86 +826,89 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         </CardContent>
                     </Card>
                 </div>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Fund Totals by Type</CardTitle>
-                        <CardDescription>A breakdown of funds collected for this lead by their purpose.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Zakat</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Sadaqah</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.sadaqah.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Lillah</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.lillah.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Monthly Contribution</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.monthlyContribution.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Interest (for disposal)</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between items-center text-lg">
-                            <span className="font-semibold">Grand Total</span>
-                            <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
-                     <Card>
+                
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card>
                         <CardHeader>
-                            <CardTitle>Beneficiaries by Category</CardTitle>
-                            <CardDescription>
-                                Summary of beneficiaries grouped by family size.
-                            </CardDescription>
+                            <CardTitle>Fund Totals by Type</CardTitle>
+                            <CardDescription>A breakdown of funds collected for this lead by their purpose.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                           <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Category Name</TableHead>
-                                        <TableHead className="text-center">Total Beneficiaries</TableHead>
-                                        <TableHead className="text-right">Kit Amount (per kit)</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {summaryData.sortedBeneficiaryCategories.map(memberCount => {
-                                        const group = summaryData.beneficiariesByCategory[memberCount];
-                                        const count = group.beneficiaries.length;
-                                        const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
-                                        return (
-                                            <TableRow key={memberCount}>
-                                                <TableCell className="font-medium">{memberCount} Members</TableCell>
-                                                <TableCell className="text-center">{count}</TableCell>
-                                                <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                                <TableFooter>
-                                    <TableRow>
-                                        <TableCell className="font-bold">Total</TableCell>
-                                        <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
-                                        <TableCell></TableCell>
-                                    </TableRow>
-                                </TableFooter>
-                            </Table>
+                        <CardContent className="space-y-4">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Zakat</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Sadaqah</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.sadaqah.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Lillah</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.lillah.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Monthly Contribution</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.monthlyContribution.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Interest (for disposal)</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between items-center text-lg">
+                                <span className="font-semibold">Grand Total</span>
+                                <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
                         </CardContent>
                     </Card>
-                )}
+
+                    {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Beneficiaries by Category</CardTitle>
+                                <CardDescription>
+                                    Summary of beneficiaries grouped by family size.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                            <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Category Name</TableHead>
+                                            <TableHead className="text-center">Total Beneficiaries</TableHead>
+                                            <TableHead className="text-right">Kit Amount (per kit)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {summaryData.sortedBeneficiaryCategories.map(memberCount => {
+                                            const group = summaryData.beneficiariesByCategory[memberCount];
+                                            const count = group.beneficiaries.length;
+                                            const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
+                                            return (
+                                                <TableRow key={memberCount}>
+                                                    <TableCell className="font-medium">{memberCount} Members</TableCell>
+                                                    <TableCell className="text-center">{count}</TableCell>
+                                                    <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                    <TableFooter>
+                                        <TableRow>
+                                            <TableCell className="font-bold">Total</TableCell>
+                                            <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
+                                            <TableCell></TableCell>
+                                        </TableRow>
+                                    </TableFooter>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
 
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card>

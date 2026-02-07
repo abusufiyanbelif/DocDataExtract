@@ -840,131 +840,135 @@ Your contribution, big or small, makes a huge difference.
                     </CardContent>
                 </Card>
 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>All Donations by Category</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
-                            <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis
-                                    dataKey="name"
-                                    tickLine={false}
-                                    tickMargin={10}
-                                    axisLine={false}
-                                />
-                                <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
-                                <ChartTooltip content={<ChartTooltipContent />} />
-                                <Bar dataKey="value" radius={4}>
-                                    {Object.keys(summaryData?.amountsByCategory || {}).map((name) => (
-                                        <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Fund Totals by Type</CardTitle>
-                        <CardDescription>A breakdown of funds collected for this campaign by their purpose.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Zakat</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Sadaqah</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.sadaqah.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Lillah</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.lillah.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Monthly Contribution</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.monthlyContribution.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Interest (for disposal)</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between items-center text-lg">
-                            <span className="font-semibold">Grand Total</span>
-                            <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                    </CardContent>
-                </Card>
-                
-                {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                <div className="grid gap-6 lg:grid-cols-2">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Beneficiaries by Category</CardTitle>
-                            <CardDescription>
-                                Summary of beneficiaries grouped by family size.
-                            </CardDescription>
+                            <CardTitle>Fund Totals by Type</CardTitle>
+                            <CardDescription>A breakdown of funds collected for this campaign by their purpose.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Category Name</TableHead>
-                                        <TableHead className="text-center">Total Beneficiaries</TableHead>
-                                        <TableHead className="text-right">Kit Amount (per kit)</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {summaryData.sortedBeneficiaryCategories.map(memberCount => {
-                                        const group = summaryData.beneficiariesByCategory[memberCount];
-                                        const count = group.beneficiaries.length;
-                                        const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
-                                        return (
-                                            <TableRow key={memberCount}>
-                                                <TableCell className="font-medium">{memberCount} Members</TableCell>
-                                                <TableCell className="text-center">{count}</TableCell>
-                                                <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                                <TableFooter>
-                                    <TableRow>
-                                        <TableCell className="font-bold">Total</TableCell>
-                                        <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
-                                        <TableCell></TableCell>
-                                    </TableRow>
-                                </TableFooter>
-                            </Table>
+                        <CardContent className="space-y-4">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Zakat</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Sadaqah</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.sadaqah.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Lillah</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.lillah.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Monthly Contribution</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.monthlyContribution.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Interest (for disposal)</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between items-center text-lg">
+                                <span className="font-semibold">Grand Total</span>
+                                <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
                         </CardContent>
                     </Card>
-                )}
+                
+                    {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Beneficiaries by Category</CardTitle>
+                                <CardDescription>
+                                    Summary of beneficiaries grouped by family size.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Category Name</TableHead>
+                                            <TableHead className="text-center">Total Beneficiaries</TableHead>
+                                            <TableHead className="text-right">Kit Amount (per kit)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {summaryData.sortedBeneficiaryCategories.map(memberCount => {
+                                            const group = summaryData.beneficiariesByCategory[memberCount];
+                                            const count = group.beneficiaries.length;
+                                            const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
+                                            return (
+                                                <TableRow key={memberCount}>
+                                                    <TableCell className="font-medium">{memberCount} Members</TableCell>
+                                                    <TableCell className="text-center">{count}</TableCell>
+                                                    <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                    <TableFooter>
+                                        <TableRow>
+                                            <TableCell className="font-bold">Total</TableCell>
+                                            <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
+                                            <TableCell></TableCell>
+                                        </TableRow>
+                                    </TableFooter>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Donations by Payment Type</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <ChartContainer config={donationPaymentTypeChartConfig} className="h-[250px] w-full">
-                            <PieChart>
-                                <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
-                                <Pie data={summaryData?.donationPaymentTypeChartData} dataKey="value" nameKey="name" innerRadius={50} strokeWidth={5}>
-                                    {summaryData?.donationPaymentTypeChartData?.map((entry) => (
-                                        <Cell key={entry.name} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
-                                    ))}
-                                </Pie>
-                                <ChartLegend content={<ChartLegendContent />} />
-                            </PieChart>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>All Donations by Category</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
+                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        tickLine={false}
+                                        tickMargin={10}
+                                        axisLine={false}
+                                    />
+                                    <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="value" radius={4}>
+                                        {Object.keys(summaryData?.amountsByCategory || {}).map((name) => (
+                                            <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Donations by Payment Type</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={donationPaymentTypeChartConfig} className="h-[250px] w-full">
+                                <PieChart>
+                                    <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                                    <Pie data={summaryData?.donationPaymentTypeChartData} dataKey="value" nameKey="name" innerRadius={50} strokeWidth={5}>
+                                        {summaryData?.donationPaymentTypeChartData?.map((entry) => (
+                                            <Cell key={entry.name} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Pie>
+                                    <ChartLegend content={<ChartLegendContent />} />
+                                </PieChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
             <ShareDialog 

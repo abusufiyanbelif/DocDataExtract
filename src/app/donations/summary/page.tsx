@@ -223,43 +223,68 @@ export default function DonationsSummaryPage() {
             </div>
             
             <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Fund Totals by Type</CardTitle>
-                        <CardDescription>A breakdown of all collected funds by their designated purpose.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Zakat</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Sadaqah</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.sadaqah.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Lillah</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.lillah.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Monthly Contribution</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.monthlyContribution.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Interest (for disposal)</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
-                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between items-center text-lg">
-                            <span className="font-semibold">Grand Total</span>
-                            <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="grid gap-6 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Fund Totals by Type</CardTitle>
+                            <CardDescription>A breakdown of all collected funds by their designated purpose.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Zakat</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Sadaqah</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.sadaqah.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Lillah</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.lillah.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Monthly Contribution</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.monthlyContribution.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Interest (for disposal)</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
+                                <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between items-center text-lg">
+                                <span className="font-semibold">Grand Total</span>
+                                <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Allocation Status</CardTitle>
+                            <CardDescription>Number of donations linked to a campaign vs. unlinked.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-col items-center justify-center h-[300px] gap-4">
+                            <div className="flex items-center gap-4 text-lg">
+                                <div className="flex items-center gap-2">
+                                    <LinkIcon className="h-5 w-5 text-primary"/>
+                                    <span className="font-bold text-2xl">{summaryData?.allocatedCount}</span>
+                                    <span>Allocated</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Link2Off className="h-5 w-5 text-muted-foreground"/>
+                                    <span className="font-bold text-2xl">{summaryData?.unallocatedCount}</span>
+                                    <span>Unallocated</span>
+                                </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground text-center">Unallocated donations can be linked to any campaign from the main "All Donations" table.</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card>
                         <CardHeader>
@@ -339,28 +364,6 @@ export default function DonationsSummaryPage() {
                         </CardContent>
                     </Card>
                 </div>
-                
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Allocation Status</CardTitle>
-                        <CardDescription>Number of donations linked to a campaign vs. unlinked.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-center justify-center h-[300px] gap-4">
-                        <div className="flex items-center gap-4 text-lg">
-                            <div className="flex items-center gap-2">
-                                <LinkIcon className="h-5 w-5 text-primary"/>
-                                <span className="font-bold text-2xl">{summaryData?.allocatedCount}</span>
-                                <span>Allocated</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Link2Off className="h-5 w-5 text-muted-foreground"/>
-                                <span className="font-bold text-2xl">{summaryData?.unallocatedCount}</span>
-                                <span>Unallocated</span>
-                            </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground text-center">Unallocated donations can be linked to any campaign from the main "All Donations" table.</p>
-                    </CardContent>
-                </Card>
                  
             </div>
         </main>

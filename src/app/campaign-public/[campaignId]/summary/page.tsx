@@ -494,75 +494,77 @@ Your contribution, big or small, makes a huge difference.
                             </div>
                         </CardContent>
                     </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>All Donations by Category</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
-                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis
-                                        dataKey="name"
-                                        tickLine={false}
-                                        tickMargin={10}
-                                        axisLine={false}
-                                    />
-                                    <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Bar dataKey="value" radius={4}>
-                                        {Object.keys(summaryData?.amountsByCategory || {}).map((name) => (
-                                            <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-
-                    {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                    
+                    <div className="grid gap-6 lg:grid-cols-2">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Beneficiaries by Category</CardTitle>
-                                <CardDescription>
-                                    Summary of beneficiaries grouped by family size.
-                                </CardDescription>
+                                <CardTitle>All Donations by Category</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Category Name</TableHead>
-                                            <TableHead className="text-center">Total Beneficiaries</TableHead>
-                                            <TableHead className="text-right">Kit Amount (per kit)</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {summaryData.sortedBeneficiaryCategories.map(memberCount => {
-                                            const group = summaryData.beneficiariesByCategory[memberCount];
-                                            const count = group.beneficiaries.length;
-                                            const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
-                                            return (
-                                                <TableRow key={memberCount}>
-                                                    <TableCell className="font-medium">{memberCount} Members</TableCell>
-                                                    <TableCell className="text-center">{count}</TableCell>
-                                                    <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
-                                                </TableRow>
-                                            )
-                                        })}
-                                    </TableBody>
-                                    <TableFooter>
-                                        <TableRow>
-                                            <TableCell className="font-bold">Total</TableCell>
-                                            <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
-                                            <TableCell></TableCell>
-                                        </TableRow>
-                                    </TableFooter>
-                                </Table>
+                                <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
+                                    <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
+                                        <CartesianGrid vertical={false} />
+                                        <XAxis
+                                            dataKey="name"
+                                            tickLine={false}
+                                            tickMargin={10}
+                                            axisLine={false}
+                                        />
+                                        <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
+                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <Bar dataKey="value" radius={4}>
+                                            {Object.keys(summaryData?.amountsByCategory || {}).map((name) => (
+                                                <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ChartContainer>
                             </CardContent>
                         </Card>
-                    )}
+
+                        {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Beneficiaries by Category</CardTitle>
+                                    <CardDescription>
+                                        Summary of beneficiaries grouped by family size.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Category Name</TableHead>
+                                                <TableHead className="text-center">Total Beneficiaries</TableHead>
+                                                <TableHead className="text-right">Kit Amount (per kit)</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {summaryData.sortedBeneficiaryCategories.map(memberCount => {
+                                                const group = summaryData.beneficiariesByCategory[memberCount];
+                                                const count = group.beneficiaries.length;
+                                                const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
+                                                return (
+                                                    <TableRow key={memberCount}>
+                                                        <TableCell className="font-medium">{memberCount} Members</TableCell>
+                                                        <TableCell className="text-center">{count}</TableCell>
+                                                        <TableCell className="text-right font-mono">Rupee {kitAmount.toFixed(2)}</TableCell>
+                                                    </TableRow>
+                                                )
+                                            })}
+                                        </TableBody>
+                                        <TableFooter>
+                                            <TableRow>
+                                                <TableCell className="font-bold">Total</TableCell>
+                                                <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
+                                                <TableCell></TableCell>
+                                            </TableRow>
+                                        </TableFooter>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
                 </div>
             </div>
 
