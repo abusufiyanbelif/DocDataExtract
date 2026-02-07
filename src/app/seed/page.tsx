@@ -18,7 +18,7 @@ export default function SeedPage() {
               </Link>
           </Button>
       </div>
-      <Card className="max-w-4xl mx-auto">
+      <Card className="max-w-4xl mx-auto animate-fade-in-zoom">
         <CardHeader>
           <CardTitle>Database Management via Command Line</CardTitle>
           <CardDescription>

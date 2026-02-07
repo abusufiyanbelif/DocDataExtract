@@ -307,7 +307,7 @@ export default function DiagnosticsPage() {
                     </Link>
                 </Button>
             </div>
-            <Card className="max-w-4xl mx-auto">
+            <Card className="max-w-4xl mx-auto animate-fade-in-zoom">
                 <CardHeader>
                     <CardTitle>System Diagnostics</CardTitle>
                     <p className="text-muted-foreground">Run tests to check the connectivity and configuration of required application resources.</p>

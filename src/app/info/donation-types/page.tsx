@@ -59,7 +59,7 @@ export default function DonationInfoPage() {
         </Button>
       </div>
 
-      <Card className="max-w-4xl mx-auto">
+      <Card className="max-w-4xl mx-auto animate-fade-in-zoom">
         <CardHeader>
           <CardTitle className="text-3xl">Understanding Donation Types in Islam</CardTitle>
           <CardDescription>

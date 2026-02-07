@@ -33,10 +33,10 @@ export default function StoryCreatorPage() {
           </TabsList>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
-        <TabsContent value="medical" className="mt-6">
+        <TabsContent value="medical" className="mt-6 animate-fade-in-zoom">
           <MedicalExtractor enableStoryCreator={true} />
         </TabsContent>
-         <TabsContent value="education" className="mt-6">
+         <TabsContent value="education" className="mt-6 animate-fade-in-zoom">
           <EducationExtractor enableStoryCreator={true} />
          </TabsContent>
       </Tabs>

@@ -149,7 +149,7 @@ export default function ProfilePage() {
                     </Link>
                 </Button>
             </div>
-            <Card className="max-w-2xl mx-auto">
+            <Card className="max-w-2xl mx-auto animate-fade-in-zoom">
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>

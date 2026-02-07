@@ -222,7 +222,7 @@ export default function DonationsSummaryPage() {
                 </ScrollArea>
             </div>
             
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fade-in-zoom">
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card>
                         <CardHeader>

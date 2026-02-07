@@ -54,22 +54,22 @@ export default function ExtractorPage() {
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
         
-        <TabsContent value="text" className="mt-6">
+        <TabsContent value="text" className="mt-6 animate-fade-in-zoom">
           <TextExtractor />
         </TabsContent>
-        <TabsContent value="identity" className="mt-6">
+        <TabsContent value="identity" className="mt-6 animate-fade-in-zoom">
           <IdentityExtractor />
         </TabsContent>
-        <TabsContent value="billing" className="mt-6">
+        <TabsContent value="billing" className="mt-6 animate-fade-in-zoom">
           <BillingExtractor />
         </TabsContent>
-        <TabsContent value="medical" className="mt-6">
+        <TabsContent value="medical" className="mt-6 animate-fade-in-zoom">
           <MedicalExtractor />
         </TabsContent>
-        <TabsContent value="education" className="mt-6">
+        <TabsContent value="education" className="mt-6 animate-fade-in-zoom">
           <EducationExtractor />
         </TabsContent>
-        <TabsContent value="dynamic" className="mt-6">
+        <TabsContent value="dynamic" className="mt-6 animate-fade-in-zoom">
           <DynamicExtractor />
         </TabsContent>
       </Tabs>

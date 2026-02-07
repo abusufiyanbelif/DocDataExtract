@@ -637,7 +637,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 </ScrollArea>
             </div>
 
-            <div className="space-y-6 p-4 bg-background" ref={summaryRef}>
+            <div className="space-y-6 p-4 bg-background animate-fade-in-zoom" ref={summaryRef}>
                 <Card>
                     <CardHeader>
                         <CardTitle>Lead Details</CardTitle>

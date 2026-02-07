@@ -273,7 +273,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid gap-8 md:grid-cols-2">
-                <Card>
+                <Card className="animate-fade-in-zoom" style={{ animationDelay: '400ms'}}>
                     <CardHeader>
                         <CardTitle>Branding Settings</CardTitle>
                         <CardDescription>Manage the application logo and watermark.</CardDescription>
@@ -326,7 +326,7 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="animate-fade-in-zoom" style={{ animationDelay: '500ms'}}>
                     <CardHeader>
                         <CardTitle>Organization, Payment &amp; Contact Settings</CardTitle>
                         <CardDescription>Configure QR code, UPI, and contact details for receipts and the footer.</CardDescription>

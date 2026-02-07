@@ -399,17 +399,11 @@ export default function DonationsPage() {
             </ScrollArea>
         </div>
         
-        <Card>
+        <Card className="animate-fade-in-zoom">
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
               <div className="flex-1 space-y-1.5">
                 <CardTitle>All Donations ({filteredAndSortedDonations.length})</CardTitle>
-<<<<<<< HEAD
-=======
-                <p className="text-muted-foreground">
-                    Total amount for filtered results: <span className="font-bold text-foreground">₹{totalDonationAmount.toFixed(2)}</span>
-                </p>
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
               </div>
               {canCreate && (
                   <Button onClick={handleAdd}>
@@ -656,5 +650,3 @@ export default function DonationsPage() {
     </>
   );
 }
-
-    
