@@ -27,8 +27,10 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Campaign } from '@/lib/types';
-
+import type { Campaign, DonationCategory } from '@/lib/types';
+import { donationCategories } from '@/lib/modules';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 const campaignSchema = z.object({
   name: z.string().min(3, 'Campaign name must be at least 3 characters.'),
@@ -39,6 +41,7 @@ const campaignSchema = z.object({
   startDate: z.string().min(1, 'Start date is required.'),
   endDate: z.string().min(1, 'End date is required.'),
   targetAmount: z.coerce.number().min(0, 'Target amount must be a positive number.').optional(),
+  allowedDonationTypes: z.array(z.string()).optional(),
 }).refine(data => new Date(data.startDate) <= new Date(data.endDate), {
     message: "End date cannot be before the start date.",
     path: ["endDate"],
@@ -75,6 +78,7 @@ export default function CreateCampaignPage() {
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
       targetAmount: 0,
+      allowedDonationTypes: [...donationCategories],
     },
   });
 
@@ -224,6 +228,68 @@ export default function CreateCampaignPage() {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="allowedDonationTypes"
+                  render={() => (
+                    <FormItem>
+                      <div className="mb-4">
+                        <FormLabel className="text-base">Donation Types for Fundraising</FormLabel>
+                        <FormDescription>
+                          Select which donation types should be counted towards the fundraising goal.
+                        </FormDescription>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 border rounded-md">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="select-all-types"
+                            checked={form.watch('allowedDonationTypes')?.length === donationCategories.length}
+                            onCheckedChange={(checked) => {
+                              form.setValue('allowedDonationTypes', checked ? [...donationCategories] : []);
+                            }}
+                          />
+                          <Label htmlFor="select-all-types" className="font-bold">Any</Label>
+                        </div>
+                        {donationCategories.map((type) => (
+                          <FormField
+                            key={type}
+                            control={form.control}
+                            name="allowedDonationTypes"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={type}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(type)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...(field.value || []), type])
+                                          : field.onChange(
+                                              (field.value || []).filter(
+                                                (value) => value !== type
+                                              )
+                                            )
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormLabel className="font-normal">
+                                    {type}
+                                  </FormLabel>
+                                </FormItem>
+                              )
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                     control={form.control}
