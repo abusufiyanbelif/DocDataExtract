@@ -114,18 +114,18 @@ export default function PublicCampaignSummaryPage() {
             });
         });
 
-        const verifiedNonZakatDonations = Object.entries(amountsByCategory)
+        const totalCollectedForGoal = Object.entries(amountsByCategory)
             .filter(([category]) => campaign.allowedDonationTypes?.includes(category as DonationCategory))
             .reduce((sum, [, amount]) => sum + amount, 0);
 
         const fundingGoal = campaign.targetAmount || 0;
-        const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
+        const fundingProgress = fundingGoal > 0 ? (totalCollectedForGoal / fundingGoal) * 100 : 0;
         
         return {
-            verifiedNonZakatDonations,
+            totalCollectedForGoal,
             fundingProgress,
             targetAmount: campaign.targetAmount || 0,
-            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
+            remainingToCollect: Math.max(0, fundingGoal - totalCollectedForGoal),
             amountsByCategory,
         };
     }, [donations, campaign]);
@@ -181,7 +181,7 @@ ${campaign.description || 'To support those in need.'}
 
 *Financial Update:*
 🎯 Target for Kits: ₹${fundingData.targetAmount.toLocaleString('en-IN')}
-✅ Collected (Verified): ₹${fundingData.verifiedNonZakatDonations.toLocaleString('en-IN')}
+✅ Collected (Verified): ₹${fundingData.totalCollectedForGoal.toLocaleString('en-IN')}
 ⏳ Remaining: *₹${fundingData.remainingToCollect.toLocaleString('en-IN')}*
 
 Your contribution, big or small, makes a huge difference.
@@ -335,15 +335,15 @@ Your contribution, big or small, makes a huge difference.
                 position += 15;
 
                 const imgData = canvas.toDataURL('image/png');
-                const contentHeight = (canvas.height * (pdfWidth - 30)) / canvas.width;
+                const contentHeight = (canvas.height * (pdfWidth - 20)) / canvas.width;
                 
                 if (position + contentHeight > pageHeight - footerHeight) {
                      pdf.addPage();
                      position = 15;
                 }
-
-                pdf.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, contentHeight);
                 
+                pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, contentHeight);
+
                 if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
                     pdf.setGState(new pdf.GState({ opacity: 0.1 }));
@@ -481,16 +481,11 @@ Your contribution, big or small, makes a huge difference.
                     <CardHeader>
                         <CardTitle>Funding Progress (for Kits)</CardTitle>
                         <CardDescription>
-                            Rupee {fundingData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(fundingData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
+                            Rupee {fundingData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of Rupee {(fundingData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
-                            <div 
-                                className="h-full bg-primary transition-all"
-                                style={{ width: `${fundingData?.fundingProgress || 0}%` }}
-                            ></div>
-                        </div>
+                        <Progress value={fundingData?.fundingProgress || 0} />
                     </CardContent>
                 </Card>
 

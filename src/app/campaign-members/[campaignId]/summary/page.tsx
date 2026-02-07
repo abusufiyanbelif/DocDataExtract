@@ -232,7 +232,7 @@ export default function CampaignSummaryPage() {
             });
         });
 
-        const verifiedNonZakatDonations = Object.entries(amountsByCategory)
+        const totalCollectedForGoal = Object.entries(amountsByCategory)
             .filter(([category]) => campaign.allowedDonationTypes?.includes(category as DonationCategory))
             .reduce((sum, [, amount]) => sum + amount, 0);
 
@@ -241,7 +241,7 @@ export default function CampaignSummaryPage() {
             .reduce((acc, d) => acc + d.amount, 0);
 
         const fundingGoal = campaign.targetAmount || 0;
-        const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
+        const fundingProgress = fundingGoal > 0 ? (totalCollectedForGoal / fundingGoal) * 100 : 0;
         
         const beneficiariesByCategory = beneficiaries.reduce((acc, ben) => {
             const key = ben.members || 0;
@@ -273,11 +273,11 @@ export default function CampaignSummaryPage() {
         const beneficiariesPending = beneficiaries.length - beneficiariesGiven;
 
         return {
-            verifiedNonZakatDonations,
+            totalCollectedForGoal,
             pendingDonations,
             fundingProgress,
             targetAmount: campaign.targetAmount || 0,
-            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
+            remainingToCollect: Math.max(0, fundingGoal - totalCollectedForGoal),
             amountsByCategory,
             totalBeneficiaries: beneficiaries.length,
             beneficiariesGiven,
@@ -321,7 +321,7 @@ ${campaign.description || 'To support those in need.'}
 
 *Financial Update:*
 🎯 Target for Kits: ₹${summaryData.targetAmount.toLocaleString('en-IN')}
-✅ Collected (Verified): ₹${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
+✅ Collected (Verified): ₹${summaryData.totalCollectedForGoal.toLocaleString('en-IN')}
 ⏳ Remaining: *₹${summaryData.remainingToCollect.toLocaleString('en-IN')}*
 
 Your contribution, big or small, makes a huge difference.
@@ -834,7 +834,7 @@ Your contribution, big or small, makes a huge difference.
                     <CardHeader>
                         <CardTitle>Funding Progress</CardTitle>
                         <CardDescription>
-                            Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded.
+                            Rupee {summaryData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

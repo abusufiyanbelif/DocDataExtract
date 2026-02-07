@@ -16,6 +16,7 @@ import type { Lead, Donation, DonationCategory, Beneficiary } from '@/lib/types'
 import { donationCategories } from '@/lib/modules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Loader2, LogIn, Share2, Download, Users, Gift, Hourglass } from 'lucide-react';
 import { ShareDialog } from '@/components/share-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -89,13 +90,26 @@ export default function PublicLeadSummaryPage() {
             });
         });
 
-        return { amountsByCategory };
+        const totalCollectedForGoal = Object.entries(amountsByCategory)
+            .filter(([category]) => lead.allowedDonationTypes?.includes(category as DonationCategory))
+            .reduce((sum, [, amount]) => sum + amount, 0);
+
+        const fundingGoal = lead.targetAmount || 0;
+        const fundingProgress = fundingGoal > 0 ? (totalCollectedForGoal / fundingGoal) * 100 : 0;
+        
+        return {
+            totalCollectedForGoal,
+            fundingProgress,
+            targetAmount: fundingGoal,
+            remainingToCollect: Math.max(0, fundingGoal - totalCollectedForGoal),
+            amountsByCategory,
+        };
     }, [donations, lead]);
     
     const isLoading = isLeadLoading || isBrandingLoading || isPaymentLoading || areDonationsLoading;
 
     const handleShare = async () => {
-        if (!lead) return;
+        if (!lead || !fundingData) return;
         
         const shareText = `
 *Assalamualaikum Warahmatullahi Wabarakatuh*
@@ -107,7 +121,12 @@ We are exploring a new initiative: *${lead.name}*.
 *Details:*
 ${lead.description || 'To support those in need.'}
 
-We are currently assessing the needs for this initiative. Your support and feedback are valuable.
+*Financial Update:*
+🎯 Target: ₹${fundingData.targetAmount.toLocaleString('en-IN')}
+✅ Collected: ₹${fundingData.totalCollectedForGoal.toLocaleString('en-IN')}
+⏳ Remaining: *₹${fundingData.remainingToCollect.toLocaleString('en-IN')}*
+
+Your support and feedback are valuable.
         `.trim().replace(/^\s+/gm, '');
 
 
@@ -359,6 +378,17 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                 <p className="mt-1 text-lg font-semibold">{lead.endDate}</p>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Funding Progress</CardTitle>
+                        <CardDescription>
+                            Rupee {fundingData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of Rupee {(fundingData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Progress value={fundingData?.fundingProgress || 0} />
                     </CardContent>
                 </Card>
                  <Card>

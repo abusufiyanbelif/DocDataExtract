@@ -33,6 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Loader2, Users, Edit, Save, Wallet, Share2, Hourglass, LogIn, Download, Gift } from 'lucide-react';
 import {
   Select,
@@ -217,6 +218,13 @@ export default function LeadSummaryPage() {
                 }
             });
         });
+        
+        const totalCollectedForGoal = Object.entries(amountsByCategory)
+            .filter(([category]) => lead.allowedDonationTypes?.includes(category as DonationCategory))
+            .reduce((sum, [, amount]) => sum + amount, 0);
+
+        const fundingGoal = lead.targetAmount || 0;
+        const fundingProgress = fundingGoal > 0 ? (totalCollectedForGoal / fundingGoal) * 100 : 0;
 
         const pendingDonations = donations
             .filter(d => d.status === 'Pending')
@@ -252,6 +260,10 @@ export default function LeadSummaryPage() {
         const beneficiariesPending = beneficiaries.length - beneficiariesGiven;
 
         return {
+            totalCollectedForGoal,
+            fundingProgress,
+            targetAmount: fundingGoal,
+            remainingToCollect: Math.max(0, fundingGoal - totalCollectedForGoal),
             totalBeneficiaries: beneficiaries.length,
             beneficiariesGiven,
             beneficiariesPending,
@@ -301,7 +313,12 @@ We are exploring a new initiative: *${lead.name}*.
 *Details:*
 ${lead.description || 'To support those in need.'}
 
-We are currently assessing the needs for this initiative. Your support and feedback are valuable.
+*Financial Update:*
+🎯 Target: ₹${summaryData.targetAmount.toLocaleString('en-IN')}
+✅ Collected: ₹${summaryData.totalCollectedForGoal.toLocaleString('en-IN')}
+⏳ Remaining: *₹${summaryData.remainingToCollect.toLocaleString('en-IN')}*
+
+Your support and feedback are valuable.
         `.trim().replace(/^\s+/gm, '');
 
 
@@ -806,8 +823,23 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         </div>
                     </CardContent>
                 </Card>
+                
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Funding Progress</CardTitle>
+                        <CardDescription>
+                            Rupee {summaryData?.totalCollectedForGoal.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Progress value={summaryData?.fundingProgress || 0} />
+                         <div className="mt-2 text-xs text-muted-foreground">
+                            {summaryData && summaryData.pendingDonations > 0 && <span>(+ Rupee {summaryData.pendingDonations.toLocaleString('en-IN')} pending verification)</span>}
+                        </div>
+                    </CardContent>
+                </Card>
 
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-6 sm:grid-cols-3">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
@@ -835,17 +867,8 @@ We are currently assessing the needs for this initiative. Your support and feedb
                             <div className="text-2xl font-bold">{summaryData?.beneficiariesPending ?? 0}</div>
                         </CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
-                            <Hourglass className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                        </CardContent>
-                    </Card>
                 </div>
-                
+
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card>
                         <CardHeader>
