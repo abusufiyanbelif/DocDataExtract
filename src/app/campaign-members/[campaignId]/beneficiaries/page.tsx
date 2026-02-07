@@ -606,7 +606,7 @@ export default function BeneficiariesPage() {
     const isSorted = sortConfig?.key === sortKey;
     return (
         <TableHead className={cn("cursor-pointer hover:bg-muted/50", className)} onClick={() => handleSort(sortKey)}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 whitespace-nowrap">
                 {children}
                 {isSorted && (sortConfig?.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />)}
             </div>
@@ -682,7 +682,7 @@ export default function BeneficiariesPage() {
                       </Button>
                     )}
                     {canReadBeneficiaries && (
-                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-transparent pb-3 pt-2 data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
+                      <Button variant="ghost" asChild className="shrink-0 rounded-b-none border-b-2 border-primary text-primary shadow-none data-[active=true]:border-primary data-[active=true]:text-primary data-[active=true]:shadow-none" data-active="true">
                           <Link href={`/campaign-members/${campaignId}/beneficiaries`}>Beneficiary List</Link>
                       </Button>
                     )}
@@ -875,7 +875,7 @@ export default function BeneficiariesPage() {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/50">
-                            {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 bg-card text-center w-[100px]">Actions</TableHead>}
+                            {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 bg-card text-center w-[100px] whitespace-nowrap">Actions</TableHead>}
                             <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
                             <SortableHeader sortKey="name">Name</SortableHeader>
                             <SortableHeader sortKey="address">Address</SortableHeader>
@@ -884,9 +884,9 @@ export default function BeneficiariesPage() {
                             <SortableHeader sortKey="earningMembers" className="text-center">Earning</SortableHeader>
                             <SortableHeader sortKey="male" className="text-center">M/F</SortableHeader>
                             <SortableHeader sortKey="addedDate">Added Date</SortableHeader>
-                            <TableHead>ID Proof Type</TableHead>
-                            <TableHead>ID Number</TableHead>
-                            <TableHead>ID Proof</TableHead>
+                            <TableHead className="whitespace-nowrap">ID Proof Type</TableHead>
+                            <TableHead className="whitespace-nowrap">ID Number</TableHead>
+                            <TableHead className="whitespace-nowrap">ID Proof</TableHead>
                             <SortableHeader sortKey="referralBy">Referred By</SortableHeader>
                             <SortableHeader sortKey="kitAmount" className="text-right">Kit Amount (₹)</SortableHeader>
                             <SortableHeader sortKey="status">Status</SortableHeader>

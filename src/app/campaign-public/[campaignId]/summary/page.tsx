@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
@@ -557,9 +556,9 @@ Your contribution, big or small, makes a huge difference.
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Category Name</TableHead>
-                                            <TableHead className="text-center">Total Beneficiaries</TableHead>
-                                            <TableHead className="text-right">Kit Amount (per kit)</TableHead>
+                                            <TableHead className="whitespace-nowrap">Category Name</TableHead>
+                                            <TableHead className="text-center whitespace-nowrap">Total Beneficiaries</TableHead>
+                                            <TableHead className="text-right whitespace-nowrap">Kit Amount (per kit)</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>

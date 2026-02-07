@@ -71,10 +71,10 @@ export function AppFooter() {
   }
 
   return (
-    <footer className="bg-card border-t mt-auto p-6 text-card-foreground">
+    <footer className="bg-card border-t mt-auto p-4 md:p-6 text-card-foreground">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
         {/* Org & Contact Info */}
-        <div className="flex flex-col items-center md:items-start gap-3 transition-transform duration-300 ease-in-out hover:scale-105 animate-slide-in-from-bottom" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
+        <div className="flex flex-col items-center text-center md:items-start md:text-left gap-3 transition-transform duration-300 ease-in-out hover:scale-105 animate-slide-in-from-bottom" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
           {isLoading ? <Skeleton className="h-7 w-2/3" /> : <h3 className="font-semibold text-lg">{brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur'}</h3>}
           {isLoading ? <Skeleton className="h-4 w-full" /> : paymentSettings?.address && <p className="text-sm text-muted-foreground">{paymentSettings.address}</p>}
            <div className="text-sm text-muted-foreground space-y-1">
@@ -85,7 +85,7 @@ export function AppFooter() {
           {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.contactEmail && (
             <div className="flex items-center gap-2 text-sm transition-all hover:text-primary">
               <Mail className="h-4 w-4" />
-              <span>{paymentSettings.contactEmail}</span>
+              <span className="break-all">{paymentSettings.contactEmail}</span>
             </div>
           )}
           {isLoading ? <Skeleton className="h-5 w-3/5" /> : paymentSettings?.contactPhone && (
@@ -97,7 +97,7 @@ export function AppFooter() {
            {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.website && (
             <div className="flex items-center gap-2 text-sm transition-all hover:text-primary">
               <Globe className="h-4 w-4" />
-              <a href={paymentSettings.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{paymentSettings.website}</a>
+              <a href={paymentSettings.website} target="_blank" rel="noopener noreferrer" className="hover:underline break-all">{paymentSettings.website}</a>
             </div>
           )}
         </div>
@@ -108,7 +108,7 @@ export function AppFooter() {
             {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.upiId && (
                 <div className="flex items-center gap-2 transition-all hover:text-primary">
                 <QrCode className="h-4 w-4" />
-                <a href={`upi://pay?pa=${paymentSettings.upiId}&pn=${encodeURIComponent(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}&cu=INR`} className="font-mono text-sm hover:underline">
+                <a href={`upi://pay?pa=${paymentSettings.upiId}&pn=${encodeURIComponent(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}&cu=INR`} className="font-mono text-sm hover:underline break-all">
                     {paymentSettings.upiId}
                 </a>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(paymentSettings!.upiId!, 'UPI ID')}>
@@ -119,7 +119,7 @@ export function AppFooter() {
             {isLoading ? <Skeleton className="h-5 w-3/5" /> : paymentSettings?.paymentMobileNumber && (
                 <div className="flex items-center gap-2 transition-all hover:text-primary">
                 <Smartphone className="h-4 w-4" />
-                <a href={`upi://pay?pa=${paymentSettings.paymentMobileNumber}&pn=${encodeURIComponent(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}&cu=INR`} className="font-mono text-sm hover:underline">
+                <a href={`tel:${paymentSettings.paymentMobileNumber}`} className="font-mono text-sm hover:underline break-all">
                     {paymentSettings.paymentMobileNumber}
                 </a>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(paymentSettings!.paymentMobileNumber!, 'Phone Number')}>

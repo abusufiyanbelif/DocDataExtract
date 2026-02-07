@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -434,7 +433,7 @@ export default function DonationsPage() {
     const isSorted = sortConfig?.key === sortKey;
     return (
         <TableHead className={cn("cursor-pointer hover:bg-muted/50", className)} onClick={() => handleSort(sortKey)}>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 whitespace-nowrap">
                 {children}
                 {isSorted && (sortConfig?.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />)}
             </div>
@@ -618,7 +617,7 @@ export default function DonationsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/50">
-                            <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10">Actions</TableHead>
+                            <TableHead className="w-[100px] text-center sticky left-0 bg-card z-10 whitespace-nowrap">Actions</TableHead>
                             <SortableHeader sortKey="srNo">#</SortableHeader>
                             <SortableHeader sortKey="status">Status</SortableHeader>
                             <SortableHeader sortKey="donorName">Donor Name</SortableHeader>
@@ -626,11 +625,11 @@ export default function DonationsPage() {
                             <SortableHeader sortKey="donorPhone">Phone</SortableHeader>
                             <SortableHeader sortKey="referral">Referral</SortableHeader>
                             <SortableHeader sortKey="amount" className="text-right">Amount (₹)</SortableHeader>
-                            <TableHead>Category</TableHead>
+                            <TableHead className="whitespace-nowrap">Category</TableHead>
                             <SortableHeader sortKey="donationType">Donation Type</SortableHeader>
                             <SortableHeader sortKey="transactionId">Transaction ID</SortableHeader>
                             <SortableHeader sortKey="donationDate">Date</SortableHeader>
-                            <TableHead>Screenshot</TableHead>
+                            <TableHead className="whitespace-nowrap">Screenshot</TableHead>
                             <SortableHeader sortKey="uploadedBy">Uploaded By</SortableHeader>
                         </TableRow>
                     </TableHeader>
