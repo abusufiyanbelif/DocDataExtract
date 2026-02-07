@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, Check, ChevronsUpDown, X } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, Check, ChevronsUpDown, X, Users, CheckCircle2, BadgeCheck, Hourglass, XCircle, Info } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -108,6 +108,33 @@ export default function BeneficiariesPage() {
   const canCreate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.create;
   const canUpdate = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.update;
   const canDelete = userProfile?.role === 'Admin' || !!userProfile?.permissions?.campaigns?.beneficiaries?.delete;
+
+  const statusCounts = useMemo(() => {
+    if (!beneficiaries) {
+      return {
+        Total: 0,
+        Given: 0,
+        Verified: 0,
+        Pending: 0,
+        Hold: 0,
+        'Need More Details': 0,
+      };
+    }
+    const counts = beneficiaries.reduce((acc, b) => {
+      const status = b.status || 'Pending';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      Total: beneficiaries.length,
+      Given: counts.Given || 0,
+      Verified: counts.Verified || 0,
+      Pending: counts.Pending || 0,
+      Hold: counts.Hold || 0,
+      'Need More Details': counts['Need More Details'] || 0,
+    };
+  }, [beneficiaries]);
 
   const handleAdd = () => {
     if (!canCreate) return;
@@ -700,6 +727,32 @@ export default function BeneficiariesPage() {
                         </Button>
                     </div>
                 )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-4">
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Total</CardTitle><Users className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Total}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Given</CardTitle><CheckCircle2 className="h-4 w-4 text-success-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Given}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Verified</CardTitle><BadgeCheck className="h-4 w-4 text-primary"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Verified}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Pending</CardTitle><Hourglass className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Pending}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Hold</CardTitle><XCircle className="h-4 w-4 text-destructive"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Hold}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Need Details</CardTitle><Info className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts['Need More Details']}</div></CardContent>
+                </Card>
             </div>
             <div className="flex flex-col gap-2 pt-4">
               <div className="flex flex-wrap items-center gap-2">

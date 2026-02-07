@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, Check, ChevronsUpDown, X } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Upload, Download, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, Check, ChevronsUpDown, X, Users, CheckCircle2, BadgeCheck, Hourglass, XCircle, Info } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,6 +112,33 @@ export default function BeneficiariesPage() {
   const canUpdate = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.beneficiaries.update', false);
   const canDelete = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.beneficiaries.delete', false);
 
+  const statusCounts = useMemo(() => {
+    if (!beneficiaries) {
+      return {
+        Total: 0,
+        Given: 0,
+        Verified: 0,
+        Pending: 0,
+        Hold: 0,
+        'Need More Details': 0,
+      };
+    }
+    const counts = beneficiaries.reduce((acc, b) => {
+      const status = b.status || 'Pending';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      Total: beneficiaries.length,
+      Given: counts.Given || 0,
+      Verified: counts.Verified || 0,
+      Pending: counts.Pending || 0,
+      Hold: counts.Hold || 0,
+      'Need More Details': counts['Need More Details'] || 0,
+    };
+  }, [beneficiaries]);
+  
   const handleAdd = () => {
     if (!canCreate) return;
     setEditingBeneficiary(null);
@@ -476,6 +503,32 @@ export default function BeneficiariesPage() {
                     </div>
                 )}
             </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-4">
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Total</CardTitle><Users className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Total}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Given</CardTitle><CheckCircle2 className="h-4 w-4 text-success-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Given}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Verified</CardTitle><BadgeCheck className="h-4 w-4 text-primary"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Verified}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Pending</CardTitle><Hourglass className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Pending}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Hold</CardTitle><XCircle className="h-4 w-4 text-destructive"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts.Hold}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Need Details</CardTitle><Info className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">{statusCounts['Need More Details']}</div></CardContent>
+                </Card>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="w-full overflow-x-auto">
@@ -485,6 +538,7 @@ export default function BeneficiariesPage() {
                             {(canUpdate || canDelete) && <TableHead className="sticky left-0 z-10 bg-card text-center w-[100px]">Actions</TableHead>}
                             <SortableHeader sortKey="srNo" className="w-[50px]">#</SortableHeader>
                             <SortableHeader sortKey="name">Name</SortableHeader>
+                            <SortableHeader sortKey="status">Status</SortableHeader>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -494,6 +548,7 @@ export default function BeneficiariesPage() {
                                     {(canUpdate || canDelete) && <TableCell className="sticky left-0 z-10 bg-card text-center"><Skeleton className="h-6 w-12 mx-auto" /></TableCell>}
                                     <TableCell><Skeleton className="h-6 w-8" /></TableCell>
                                     <TableCell><Skeleton className="h-6 w-32" /></TableCell>
+                                    <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                                 </TableRow>
                             ))
                         ) : filteredAndSortedBeneficiaries.length > 0 ? (
@@ -526,11 +581,19 @@ export default function BeneficiariesPage() {
                                     )}
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell className="font-medium">{beneficiary.name}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={
+                                            beneficiary.status === 'Given' ? 'success' :
+                                            beneficiary.status === 'Verified' ? 'success' :
+                                            beneficiary.status === 'Pending' ? 'secondary' :
+                                            beneficiary.status === 'Hold' ? 'destructive' : 'outline'
+                                        }>{beneficiary.status}</Badge>
+                                    </TableCell>
                                 </TableRow>
                                 ))
                         ) : (
                         <TableRow>
-                            <TableCell colSpan={(canUpdate || canDelete) ? 3 : 2} className="text-center h-24 text-muted-foreground">
+                            <TableCell colSpan={(canUpdate || canDelete) ? 4 : 3} className="text-center h-24 text-muted-foreground">
                                 No beneficiaries found for this lead.
                             </TableCell>
                         </TableRow>
