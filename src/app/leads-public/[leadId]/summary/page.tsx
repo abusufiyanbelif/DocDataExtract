@@ -17,7 +17,6 @@ import { donationCategories } from '@/lib/modules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, Loader2, LogIn, Share2, Download, Users, Gift, Hourglass } from 'lucide-react';
-import { AppFooter } from '@/components/app-footer';
 import { ShareDialog } from '@/components/share-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -251,7 +250,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
                     pdf.setFontSize(18);
-                    // Vertically center the text with the logo
                     const textY = position + (logoHeight / 2) + 3;
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
                     position += logoHeight + 10;
@@ -343,7 +341,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 </div>
             </div>
 
-<<<<<<< HEAD
             <div className="space-y-6" ref={summaryRef}>
                 <Card>
                     <CardHeader>
@@ -355,32 +352,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                             <div className="space-y-1">
                                 <p className="text-sm font-medium text-muted-foreground">Target Amount</p>
                                 <p className="mt-1 text-lg font-semibold">Rupee {(lead.targetAmount ?? 0).toLocaleString('en-IN')}</p>
-=======
-                <div className="space-y-6 p-4" ref={summaryRef}>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Lead Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <p className="mt-1 text-sm">{lead.description || 'No description provided.'}</p>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Target Amount</p>
-                                    <p className="mt-1 text-lg font-semibold">₹{(lead.targetAmount ?? 0).toLocaleString('en-IN')}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Category</p>
-                                    <p className="mt-1 text-lg font-semibold">{lead.category}</p>
-                                </div>
-                                 <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">Start Date</p>
-                                    <p className="mt-1 text-lg font-semibold">{lead.startDate}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-sm font-medium text-muted-foreground">End Date</p>
-                                    <p className="mt-1 text-lg font-semibold">{lead.endDate}</p>
-                                </div>
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
                             </div>
                             <div className="space-y-1">
                                 <p className="text-sm font-medium text-muted-foreground">Category</p>
@@ -457,16 +428,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 onOpenChange={setIsShareDialogOpen} 
                 shareData={shareDialogData} 
             />
-             <div className="mt-8">
-                <AppFooter />
-             </div>
         </main>
     );
 }
-<<<<<<< HEAD
-=======
-
-    
-
-    
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da

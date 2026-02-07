@@ -39,7 +39,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { ShareDialog } from '@/components/share-dialog';
-import { AppFooter } from '@/components/app-footer';
 import { donationCategories } from '@/lib/modules';
 import {
   Table,
@@ -598,9 +597,6 @@ Your contribution, big or small, makes a huge difference.
                 onOpenChange={setIsShareDialogOpen} 
                 shareData={shareDialogData} 
             />
-            <div className="mt-8">
-                <AppFooter />
-             </div>
         </main>
     );
 }
