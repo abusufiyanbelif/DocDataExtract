@@ -12,27 +12,24 @@ export const contentType = 'image/png'
 
 // Image generation
 export default function Icon() {
-  return ImageResponse(
+  return new ImageResponse(
     (
       <div
         style={{
           fontSize: 20,
-          background: 'hsl(142.1 76.2% 36.3%)', // primary color
+          background: 'hsl(var(--primary))',
           width: '100%',
           height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'hsl(140 50% 98%)', // primary-foreground color
+          color: 'hsl(var(--primary-foreground))',
           borderRadius: '50%',
           fontWeight: 'bold',
         }}
       >
         B
       </div>
-    ),
-    {
-      ...size,
-    }
+    )
   )
 }
