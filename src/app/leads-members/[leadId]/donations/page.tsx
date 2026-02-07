@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, DollarSign, CheckCircle2, Hourglass, XCircle } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, DollarSign, CheckCircle2, Hourglass, XCircle, DatabaseZap } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
 import { get } from '@/lib/utils';
+import { syncDonationsAction } from '../../../../donations/actions';
 
 type SortKey = keyof Donation | 'srNo';
 
@@ -93,6 +94,7 @@ export default function DonationsPage() {
   const [typeFilter, setTypeFilter] = useState('All');
   const [donationTypeFilter, setDonationTypeFilter] = useState('All');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'ascending' | 'descending' } | null>({ key: 'donationDate', direction: 'descending'});
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const canReadSummary = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.summary.read', false);
   const canReadBeneficiaries = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.beneficiaries.read', false);
@@ -101,6 +103,28 @@ export default function DonationsPage() {
   const canCreate = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.donations.create', false);
   const canUpdate = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.donations.update', false);
   const canDelete = userProfile?.role === 'Admin' || !!get(userProfile, 'permissions.leads-members.donations.delete', false);
+
+  const handleSync = async () => {
+    if (!canUpdate) {
+        toast({ title: "Permission Denied", description: "You don't have permission to sync data.", variant: "destructive"});
+        return;
+    }
+    setIsSyncing(true);
+    toast({ title: 'Syncing Donations...', description: 'Please wait while old donation records are updated to the new format.' });
+
+    try {
+        const result = await syncDonationsAction();
+        if (result.success) {
+            toast({ title: 'Sync Complete', description: result.message, variant: 'success' });
+        } else {
+            toast({ title: 'Sync Failed', description: result.message, variant: 'destructive' });
+        }
+    } catch (error: any) {
+         toast({ title: 'Sync Error', description: 'An unexpected client-side error occurred.', variant: 'destructive' });
+    }
+
+    setIsSyncing(false);
+  };
 
   const handleAdd = () => {
     if (!canCreate) return;
@@ -473,12 +497,20 @@ export default function DonationsPage() {
               <div className="flex-1 space-y-1.5">
                 <CardTitle>Donation List ({filteredAndSortedDonations.length})</CardTitle>
               </div>
-              {canCreate && (
-                  <Button onClick={handleAdd}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Donation
-                  </Button>
-              )}
+               <div className="flex flex-wrap gap-2">
+                    {canUpdate && (
+                        <Button onClick={handleSync} disabled={isSyncing} variant="secondary">
+                            {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DatabaseZap className="mr-2 h-4 w-4" />}
+                            Sync Data
+                        </Button>
+                    )}
+                    {canCreate && (
+                        <Button onClick={handleAdd}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add Donation
+                        </Button>
+                    )}
+                </div>
             </div>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
                 <Card>
