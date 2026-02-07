@@ -23,7 +23,7 @@ function Watermark() {
     const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
 
     return (
-        <div className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none opacity-5">
+        <div className="fixed inset-0 z-[-1] flex items-center justify-center pointer-events-none opacity-10">
             {validLogoUrl ? (
                 <img
                     src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
@@ -66,7 +66,9 @@ export function Providers({ children }: { children: ReactNode }) {
         <FirebaseContentWrapper>
           <div className="app-root relative">
             <Watermark />
-            <MainLayout>{children}</MainLayout>
+            <div className="relative z-10">
+              <MainLayout>{children}</MainLayout>
+            </div>
           </div>
           <Toaster />
         </FirebaseContentWrapper>
