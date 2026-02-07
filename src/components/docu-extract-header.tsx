@@ -8,7 +8,7 @@ import { useAuth } from '@/firebase';
 import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
 import { signOut } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ export function DocuExtractHeader() {
   const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
   const auth = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = async () => {
     if (auth) {
@@ -149,12 +150,14 @@ export function DocuExtractHeader() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button asChild variant="outline">
-            <Link href="/login">
-              <LogIn className="mr-2 h-4 w-4" />
-              Organization members login
-            </Link>
-          </Button>
+          pathname !== '/login' && (
+            <Button asChild variant="outline">
+                <Link href="/login">
+                <LogIn className="mr-2 h-4 w-4" />
+                Organization members login
+                </Link>
+            </Button>
+          )
         )}
       </div>
     </header>

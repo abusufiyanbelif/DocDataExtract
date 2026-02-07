@@ -41,7 +41,7 @@ function Watermark() {
 
 function MainLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    const noHeaderFooterRoutes = ['/login'];
+    const noHeaderFooterRoutes: string[] = [];
 
     if (noHeaderFooterRoutes.includes(pathname)) {
         return <>{children}</>;
@@ -50,7 +50,7 @@ function MainLayout({ children }: { children: ReactNode }) {
     return (
       <div className="relative flex flex-col min-h-screen">
           <DocuExtractHeader />
-          <div className="flex-grow">
+          <div className="flex-grow animate-slide-in-from-bottom" style={{ animationDelay: '300ms', animationFillMode: 'backwards' }}>
               {children}
           </div>
           <AppFooter />
