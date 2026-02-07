@@ -121,9 +121,6 @@ export default function Home() {
                         <Button asChild variant="outline" size="lg">
                             <Link href="/leads-public">View Public Leads</Link>
                         </Button>
-                        <Button asChild variant="secondary" size="lg">
-                            <Link href="/login">Member Login</Link>
-                        </Button>
                     </CardContent>
                 </Card>
             )}
