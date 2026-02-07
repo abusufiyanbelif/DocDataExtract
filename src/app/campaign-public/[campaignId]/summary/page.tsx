@@ -94,9 +94,8 @@ export default function PublicCampaignSummaryPage() {
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
     const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
     
-    // Memoized calculations
-    const summaryData = useMemo(() => {
-        if (!donations || !campaign || !beneficiaries) return null;
+    const fundingData = useMemo(() => {
+        if (!donations || !campaign) return null;
 
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
@@ -122,6 +121,18 @@ export default function PublicCampaignSummaryPage() {
         const fundingGoal = campaign.targetAmount || 0;
         const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
         
+        return {
+            verifiedNonZakatDonations,
+            fundingProgress,
+            targetAmount: campaign.targetAmount || 0,
+            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
+            amountsByCategory,
+        };
+    }, [donations, campaign]);
+
+    const beneficiaryData = useMemo(() => {
+        if (!beneficiaries) return null;
+
         const beneficiariesByCategory = beneficiaries.reduce((acc, ben) => {
             const key = ben.members || 0;
             if (!acc[key]) {
@@ -131,30 +142,25 @@ export default function PublicCampaignSummaryPage() {
             acc[key].totalAmount += ben.kitAmount || 0;
             return acc;
         }, {} as Record<number, { beneficiaries: Beneficiary[], totalAmount: number }>);
-
+        
         const sortedBeneficiaryCategories = Object.keys(beneficiariesByCategory).map(Number).sort((a, b) => b - a);
 
         const beneficiariesGiven = beneficiaries.filter(b => b.status === 'Given').length;
         const beneficiariesPending = beneficiaries.length - beneficiariesGiven;
-
+        
         return {
-            verifiedNonZakatDonations,
-            fundingProgress,
-            targetAmount: campaign.targetAmount || 0,
-            remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
-            amountsByCategory,
             totalBeneficiaries: beneficiaries.length,
             beneficiariesGiven,
             beneficiariesPending,
             beneficiariesByCategory,
             sortedBeneficiaryCategories,
-        };
-    }, [donations, campaign, beneficiaries]);
+        }
+    }, [beneficiaries]);
 
     const isLoading = isCampaignLoading || areBeneficiariesLoading || areDonationsLoading || isBrandingLoading || isPaymentLoading;
     
     const handleShare = async () => {
-        if (!campaign || !summaryData) {
+        if (!campaign || !fundingData) {
             toast({
                 title: 'Error',
                 description: 'Cannot share, summary data is not available.',
@@ -174,9 +180,9 @@ Join us for the *${campaign.name}* campaign as we work to provide essential aid 
 ${campaign.description || 'To support those in need.'}
 
 *Financial Update:*
-🎯 Target for Kits: ₹${summaryData.targetAmount.toLocaleString('en-IN')}
-✅ Collected (Verified): ₹${summaryData.verifiedNonZakatDonations.toLocaleString('en-IN')}
-⏳ Remaining: *₹${summaryData.remainingToCollect.toLocaleString('en-IN')}*
+🎯 Target for Kits: ₹${fundingData.targetAmount.toLocaleString('en-IN')}
+✅ Collected (Verified): ₹${fundingData.verifiedNonZakatDonations.toLocaleString('en-IN')}
+⏳ Remaining: *₹${fundingData.remainingToCollect.toLocaleString('en-IN')}*
 
 Your contribution, big or small, makes a huge difference.
 
@@ -270,15 +276,6 @@ Your contribution, big or small, makes a huge difference.
                 
                 ctx.drawImage(contentCanvas, PADDING, HEADER_HEIGHT + (PADDING/2));
                 
-                if (logoImg) {
-                    const wmScale = 0.8;
-                    const wmWidth = finalCanvas.width * wmScale;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.1;
-                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
-                    ctx.globalAlpha = 1.0;
-                }
-                
                 const footerY = finalCanvas.height - FOOTER_HEIGHT;
                 if (qrImg) {
                     const qrSize = 200;
@@ -293,6 +290,15 @@ Your contribution, big or small, makes a huge difference.
                 if (paymentSettings?.contactPhone) { ctx.fillText(`Phone: ${paymentSettings.contactPhone}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
+
+                if (logoImg) {
+                    const wmScale = 0.8;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.1;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+                }
 
                 const link = document.createElement('a');
                 link.download = `campaign-summary-${campaignId}.png`;
@@ -348,11 +354,7 @@ Your contribution, big or small, makes a huge difference.
                 }
 
                 position = pageHeight - footerHeight;
-
-                if (position > pageHeight - 60) {
-                    pdf.addPage();
-                    position = 15;
-                }
+                
                 pdf.setLineWidth(0.2);
                 pdf.line(15, position, pdfWidth - 15, position);
                 position += 8;
@@ -391,7 +393,7 @@ Your contribution, big or small, makes a huge difference.
 
     if (isLoading) {
         return (
-            <main className="container mx-auto p-4 md:p-8">
+            <main className="flex items-center justify-center min-h-screen p-4">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </main>
         );
@@ -479,14 +481,14 @@ Your contribution, big or small, makes a huge difference.
                     <CardHeader>
                         <CardTitle>Funding Progress (for Kits)</CardTitle>
                         <CardDescription>
-                            Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
+                            Rupee {fundingData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(fundingData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
                             <div 
                                 className="h-full bg-primary transition-all"
-                                style={{ width: `${summaryData?.fundingProgress || 0}%` }}
+                                style={{ width: `${fundingData?.fundingProgress || 0}%` }}
                             ></div>
                         </div>
                     </CardContent>
@@ -499,7 +501,7 @@ Your contribution, big or small, makes a huge difference.
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
+                            <div className="text-2xl font-bold">{beneficiaryData?.totalBeneficiaries ?? 0}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -508,7 +510,7 @@ Your contribution, big or small, makes a huge difference.
                             <Gift className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{summaryData?.beneficiariesGiven ?? 0}</div>
+                            <div className="text-2xl font-bold">{beneficiaryData?.beneficiariesGiven ?? 0}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -517,7 +519,7 @@ Your contribution, big or small, makes a huge difference.
                             <Hourglass className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{summaryData?.beneficiariesPending ?? 0}</div>
+                            <div className="text-2xl font-bold">{beneficiaryData?.beneficiariesPending ?? 0}</div>
                         </CardContent>
                     </Card>
                 </div>
@@ -529,7 +531,7 @@ Your contribution, big or small, makes a huge difference.
                         </CardHeader>
                         <CardContent>
                             <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
-                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
+                                <BarChart data={Object.entries(fundingData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
                                     <CartesianGrid vertical={false} />
                                     <XAxis
                                         dataKey="name"
@@ -540,7 +542,7 @@ Your contribution, big or small, makes a huge difference.
                                     <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Bar dataKey="value" radius={4}>
-                                        {Object.entries(summaryData?.amountsByCategory || {}).map(([name,]) => (
+                                        {Object.entries(fundingData?.amountsByCategory || {}).map(([name,]) => (
                                             <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
                                         ))}
                                     </Bar>
@@ -549,7 +551,7 @@ Your contribution, big or small, makes a huge difference.
                         </CardContent>
                     </Card>
 
-                    {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                    {beneficiaryData && beneficiaryData.sortedBeneficiaryCategories.length > 0 && (
                         <Card>
                             <CardHeader>
                                 <CardTitle>Beneficiaries by Category</CardTitle>
@@ -567,8 +569,8 @@ Your contribution, big or small, makes a huge difference.
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {summaryData.sortedBeneficiaryCategories.map(memberCount => {
-                                            const group = summaryData.beneficiariesByCategory[memberCount];
+                                        {beneficiaryData.sortedBeneficiaryCategories.map(memberCount => {
+                                            const group = beneficiaryData.beneficiariesByCategory[memberCount];
                                             const count = group.beneficiaries.length;
                                             const kitAmount = group.beneficiaries[0]?.kitAmount || 0;
                                             return (
@@ -583,7 +585,7 @@ Your contribution, big or small, makes a huge difference.
                                     <TableFooter>
                                         <TableRow>
                                             <TableCell className="font-bold">Total</TableCell>
-                                            <TableCell className="text-center font-bold">{summaryData.totalBeneficiaries}</TableCell>
+                                            <TableCell className="text-center font-bold">{beneficiaryData.totalBeneficiaries}</TableCell>
                                             <TableCell></TableCell>
                                         </TableRow>
                                     </TableFooter>

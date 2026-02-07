@@ -72,8 +72,8 @@ export default function PublicLeadSummaryPage() {
     const beneficiariesCollectionRef = useMemo(() => (firestore && leadId) ? collection(firestore, `leads/${leadId}/beneficiaries`) : null, [firestore, leadId]);
     const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
     
-    const summaryData = useMemo(() => {
-        if (!donations || !lead || !beneficiaries) return null;
+    const fundingData = useMemo(() => {
+        if (!donations || !lead) return null;
 
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
@@ -92,16 +92,21 @@ export default function PublicLeadSummaryPage() {
             });
         });
 
+        return { amountsByCategory };
+    }, [donations, lead]);
+
+    const beneficiaryData = useMemo(() => {
+        if (!beneficiaries) return null;
+        
         const beneficiariesGiven = beneficiaries.filter(b => b.status === 'Given').length;
         const beneficiariesPending = beneficiaries.length - beneficiariesGiven;
-
+        
         return {
-            amountsByCategory,
             totalBeneficiaries: beneficiaries.length,
             beneficiariesGiven,
             beneficiariesPending,
-        };
-    }, [donations, lead, beneficiaries]);
+        }
+    }, [beneficiaries]);
     
     const isLoading = isLeadLoading || isBrandingLoading || isPaymentLoading || areDonationsLoading || areBeneficiariesLoading;
 
@@ -263,7 +268,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
 
                 const imgData = canvas.toDataURL('image/png');
                 const contentHeight = (canvas.height * (pdfWidth - 20)) / canvas.width;
-
+                
                 if (position + contentHeight > pageHeight - footerHeight) {
                      pdf.addPage();
                      position = 15;
@@ -379,7 +384,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
+                            <div className="text-2xl font-bold">{beneficiaryData?.totalBeneficiaries ?? 0}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -388,7 +393,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                             <Gift className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{summaryData?.beneficiariesGiven ?? 0}</div>
+                            <div className="text-2xl font-bold">{beneficiaryData?.beneficiariesGiven ?? 0}</div>
                         </CardContent>
                     </Card>
                     <Card>
@@ -397,7 +402,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                             <Hourglass className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{summaryData?.beneficiariesPending ?? 0}</div>
+                            <div className="text-2xl font-bold">{beneficiaryData?.beneficiariesPending ?? 0}</div>
                         </CardContent>
                     </Card>
                 </div>
@@ -407,7 +412,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
-                            <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
+                            <BarChart data={Object.entries(fundingData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
                                 <CartesianGrid vertical={false} />
                                 <XAxis
                                     dataKey="name"
@@ -418,7 +423,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                 <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Bar dataKey="value" radius={4}>
-                                    {Object.entries(summaryData?.amountsByCategory || {}).map(([name,]) => (
+                                    {Object.entries(fundingData?.amountsByCategory || {}).map(([name,]) => (
                                         <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
                                     ))}
                                 </Bar>
