@@ -333,7 +333,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 </div>
             </div>
 
-            <div className="space-y-6 bg-background p-4" ref={summaryRef}>
+            <div className="space-y-6" ref={summaryRef}>
                 <Card>
                     <CardHeader>
                         <CardTitle>Lead Details</CardTitle>
