@@ -4,11 +4,15 @@ import { ImageResponse } from 'next/server'
 export const runtime = 'edge'
 
 // Image metadata
+export const size = {
+  width: 32,
+  height: 32,
+}
 export const contentType = 'image/png'
 
 // Image generation
 export default function Icon() {
-  return ImageResponse(
+  return new ImageResponse(
     (
       <div
         style={{
@@ -27,8 +31,7 @@ export default function Icon() {
       </div>
     ),
     {
-      width: 32,
-      height: 32,
+      ...size,
     }
   )
 }
