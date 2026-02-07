@@ -75,9 +75,9 @@ export function Toaster() {
                         altText="OK"
                         className={cn(
                             "border-transparent",
-                            props.variant === 'success' && "bg-success-foreground text-success hover:bg-success-foreground/90 hover:text-success",
+                            props.variant === 'success' && "bg-success-foreground text-primary-foreground hover:bg-success-foreground/90",
                             props.variant === 'destructive' && "bg-destructive-foreground text-destructive hover:bg-destructive-foreground/90 hover:text-destructive",
-                            props.variant === 'default' && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                            props.variant === 'default' && "bg-primary text-primary-foreground hover:bg-primary/90"
                         )}
                       >
                         OK
