@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useSession } from '@/hooks/use-session';
 import { Users, FolderKanban, ScanSearch, Settings, MessageSquare, Lightbulb, Database, FlaskConical, LifeBuoy } from 'lucide-react';
 import { get } from '@/lib/utils';
-import React from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function DashboardCard({ title, description, href, icon: Icon, isVisible, animationDelay }: { title: string, description: string, href: string, icon: React.ComponentType<{ className?: string }>, isVisible: boolean, animationDelay: string }) {
@@ -13,20 +12,19 @@ function DashboardCard({ title, description, href, icon: Icon, isVisible, animat
     return null;
   }
   return (
-    <Card 
-      className="hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 animate-fade-in-zoom" 
-      style={{ animationDelay }}
-    >
-      <Link href={href} className="block h-full p-6">
-        <div className="flex justify-between items-start">
-            <div className="space-y-1">
-                <CardTitle className="text-lg">{title}</CardTitle>
-                <CardDescription className="text-xs">{description}</CardDescription>
-            </div>
-            <Icon className="h-6 w-6 text-muted-foreground" />
-        </div>
-      </Link>
-    </Card>
+    <div className="animate-fade-in-zoom" style={{ animationDelay }}>
+        <Link href={href} className="block group">
+            <Card className="h-full p-6 transition-all duration-300 ease-in-out group-hover:shadow-lg group-hover:scale-105 group-hover:border-primary active:scale-95">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                        <CardTitle className="text-lg">{title}</CardTitle>
+                        <CardDescription className="text-xs">{description}</CardDescription>
+                    </div>
+                    <Icon className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
+                </div>
+            </Card>
+        </Link>
+    </div>
   );
 }
 
