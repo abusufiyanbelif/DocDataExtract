@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, DollarSign } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -325,10 +325,45 @@ export default function DonationsPage() {
     return sortableItems;
   }, [donations, searchTerm, statusFilter, typeFilter, donationTypeFilter, sortConfig]);
 
-  const totalDonationAmount = useMemo(() => {
-    if (!filteredAndSortedDonations) return 0;
-    return filteredAndSortedDonations.reduce((acc, d) => acc + (d.amount || 0), 0);
-  }, [filteredAndSortedDonations]);
+  const { zakatTotal, loanTotal, interestTotal, otherTotal, grandTotal } = useMemo(() => {
+    if (!filteredAndSortedDonations) {
+        return { zakatTotal: 0, loanTotal: 0, interestTotal: 0, otherTotal: 0, grandTotal: 0 };
+    }
+
+    let zakat = 0;
+    let loan = 0;
+    let interest = 0;
+    let other = 0;
+
+    for (const d of filteredAndSortedDonations) {
+        if (d.typeSplit && d.typeSplit.length > 0) {
+            for (const split of d.typeSplit) {
+                switch (split.category) {
+                    case 'Zakat':
+                        zakat += split.amount;
+                        break;
+                    case 'Loan':
+                        loan += split.amount;
+                        break;
+                    case 'Interest':
+                        interest += split.amount;
+                        break;
+                    default:
+                        other += split.amount;
+                        break;
+                }
+            }
+        }
+    }
+
+    return {
+        zakatTotal: zakat,
+        loanTotal: loan,
+        interestTotal: interest,
+        otherTotal: other,
+        grandTotal: zakat + loan + interest + other,
+    };
+}, [filteredAndSortedDonations]);
 
   const isLoading = isCampaignLoading || areDonationsLoading || isProfileLoading;
   
@@ -400,9 +435,6 @@ export default function DonationsPage() {
             <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
               <div className="flex-1 space-y-1.5">
                 <CardTitle>Donation List ({filteredAndSortedDonations.length})</CardTitle>
-                <p className="text-muted-foreground">
-                    Total Donations for filtered results: <span className="font-bold text-foreground">Rupee {totalDonationAmount.toFixed(2)}</span>
-                </p>
               </div>
               {canCreate && (
                   <Button onClick={handleAdd}>
@@ -410,6 +442,28 @@ export default function DonationsPage() {
                       Add Donation
                   </Button>
               )}
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 pt-4">
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Grand Total</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">₹{grandTotal.toLocaleString('en-IN')}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Zakat</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">₹{zakatTotal.toLocaleString('en-IN')}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Interest</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">₹{interestTotal.toLocaleString('en-IN')}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Loan</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">₹{loanTotal.toLocaleString('en-IN')}</div></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Other</CardTitle><DollarSign className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2"><div className="text-2xl font-bold">₹{otherTotal.toLocaleString('en-IN')}</div></CardContent>
+                </Card>
             </div>
             <div className="flex flex-wrap items-center gap-2 pt-4">
                 <Input

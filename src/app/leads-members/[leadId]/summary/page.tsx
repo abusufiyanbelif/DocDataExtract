@@ -72,6 +72,7 @@ import {
   ChartLegendContent,
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
+import { Separator } from '@/components/ui/separator';
 
 const donationCategoryChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
@@ -242,6 +243,11 @@ export default function LeadSummaryPage() {
 
         const sortedBeneficiaryCategories = Object.keys(beneficiariesByCategory).map(Number).sort((a, b) => b - a);
 
+        const zakatTotal = amountsByCategory['Zakat'] || 0;
+        const loanTotal = amountsByCategory['Loan'] || 0;
+        const interestTotal = amountsByCategory['Interest'] || 0;
+        const otherTotal = (amountsByCategory['Sadaqah'] || 0) + (amountsByCategory['Lillah'] || 0) + (amountsByCategory['Monthly Contribution'] || 0);
+        const grandTotal = zakatTotal + loanTotal + interestTotal + otherTotal;
 
         return {
             totalBeneficiaries: beneficiaries.length,
@@ -250,6 +256,13 @@ export default function LeadSummaryPage() {
             donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value })),
             beneficiariesByCategory,
             sortedBeneficiaryCategories,
+            fundTotals: {
+                zakat: zakatTotal,
+                loan: loanTotal,
+                interest: interestTotal,
+                other: otherTotal,
+                grandTotal: grandTotal,
+            }
         };
     }, [beneficiaries, donations, lead]);
     
@@ -473,7 +486,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 
                 pdf.save(`lead-summary-${leadId}.pdf`);
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error("Download failed:", error);
             const errorMessage = error.message ? `: ${error.message}` : '. Please check console for details.';
             toast({ title: 'Download Failed', description: `Could not generate the file${errorMessage}. This can happen if images are blocked by browser security.`, variant: 'destructive', duration: 9000});
@@ -817,26 +830,33 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         </CardContent>
                     </Card>
                 </div>
-
                  <Card>
                     <CardHeader>
-                        <CardTitle>Verified Donations by Category</CardTitle>
-                        <CardDescription>
-                            Total verified funds collected for this lead, broken down by category.
-                        </CardDescription>
+                        <CardTitle>Fund Totals by Type</CardTitle>
+                        <CardDescription>A breakdown of funds collected for this lead by their purpose.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {donationCategories.map(category => (
-                            <Card key={category}>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">{category}</CardTitle>
-                                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">Rupee {summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
-                                </CardContent>
-                            </Card>
-                        ))}
+                    <CardContent className="space-y-4">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Zakat</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Interest (for disposal)</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Other Donations</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.other.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between items-center text-lg">
+                            <span className="font-semibold">Grand Total</span>
+                            <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
                     </CardContent>
                 </Card>
 

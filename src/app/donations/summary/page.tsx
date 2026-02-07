@@ -46,6 +46,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert } from 'lucide-react';
 import { syncDonationsAction } from '../actions';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 const donationCategoryChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
@@ -134,6 +135,12 @@ export default function DonationsSummaryPage() {
             return acc;
         }, {} as Record<string, number>);
         
+        const zakatTotal = amountsByCategory['Zakat'] || 0;
+        const loanTotal = amountsByCategory['Loan'] || 0;
+        const interestTotal = amountsByCategory['Interest'] || 0;
+        const otherTotal = (amountsByCategory['Sadaqah'] || 0) + (amountsByCategory['Lillah'] || 0) + (amountsByCategory['Monthly Contribution'] || 0);
+        const grandTotal = zakatTotal + loanTotal + interestTotal + otherTotal;
+
         return {
             allocatedCount,
             unallocatedCount,
@@ -142,6 +149,13 @@ export default function DonationsSummaryPage() {
             amountsByStatus,
             countsByStatus,
             donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value })),
+            fundTotals: {
+                zakat: zakatTotal,
+                loan: loanTotal,
+                interest: interestTotal,
+                other: otherTotal,
+                grandTotal: grandTotal,
+            }
         };
     }, [donations]);
     
@@ -205,6 +219,35 @@ export default function DonationsSummaryPage() {
             </div>
             
             <div className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Fund Totals by Type</CardTitle>
+                        <CardDescription>A breakdown of all collected funds by their designated purpose.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Zakat</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Interest (for disposal)</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Other Donations</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.other.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between items-center text-lg">
+                            <span className="font-semibold">Grand Total</span>
+                            <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                    </CardContent>
+                </Card>
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card>
                         <CardHeader>

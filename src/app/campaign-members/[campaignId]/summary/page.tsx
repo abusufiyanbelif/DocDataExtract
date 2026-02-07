@@ -74,6 +74,7 @@ import {
   ChartLegendContent,
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
+import { Separator } from '@/components/ui/separator';
 
 
 const donationCategoryChartConfig = {
@@ -255,6 +256,12 @@ export default function CampaignSummaryPage() {
             return acc;
         }, {} as Record<string, number>);
 
+        const zakatTotal = amountsByCategory['Zakat'] || 0;
+        const loanTotal = amountsByCategory['Loan'] || 0;
+        const interestTotal = amountsByCategory['Interest'] || 0;
+        const otherTotal = (amountsByCategory['Sadaqah'] || 0) + (amountsByCategory['Lillah'] || 0) + (amountsByCategory['Monthly Contribution'] || 0);
+        const grandTotal = zakatTotal + loanTotal + interestTotal + otherTotal;
+
         return {
             verifiedNonZakatDonations,
             pendingDonations,
@@ -267,6 +274,13 @@ export default function CampaignSummaryPage() {
             beneficiariesByCategory,
             sortedBeneficiaryCategories,
             donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value })),
+            fundTotals: {
+                zakat: zakatTotal,
+                loan: loanTotal,
+                interest: interestTotal,
+                other: otherTotal,
+                grandTotal: grandTotal,
+            }
         };
     }, [donations, campaign, beneficiaries]);
     
@@ -855,38 +869,38 @@ Your contribution, big or small, makes a huge difference.
                         </div>
                     </CardContent>
                 </Card>
-
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Pending Donations Verification</CardTitle>
-                            <Hourglass className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Verified Donations by Category</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {donationCategories.map(category => (
-                                <Card key={category} className="shadow-none border-0">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 pb-0">
-                                        <CardTitle className="text-xs font-medium">{category}</CardTitle>
-                                        <Wallet className="h-3 w-3 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent className="p-2 pt-1">
-                                        <div className="text-lg font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </CardContent>
-                    </Card>
-                </div>
                 
-                 {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Fund Totals by Type</CardTitle>
+                        <CardDescription>A breakdown of funds collected for this campaign by their purpose.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Zakat</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.zakat.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Interest (for disposal)</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.interest.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Loan (Qard-e-Hasana)</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.loan.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Other Donations</span>
+                            <span className="font-semibold">Rupee {summaryData?.fundTotals?.other.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between items-center text-lg">
+                            <span className="font-semibold">Grand Total</span>
+                            <span className="font-bold text-primary">Rupee {summaryData?.fundTotals?.grandTotal.toLocaleString('en-IN') ?? '0.00'}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Beneficiaries by Category</CardTitle>
