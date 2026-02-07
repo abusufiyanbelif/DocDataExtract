@@ -1,17 +1,19 @@
 
+
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFirestore, useDoc } from '@/firebase';
+import { useFirestore, useDoc, useCollection } from '@/firebase';
 import { useBranding } from '@/hooks/use-branding';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
-import { doc, DocumentReference } from 'firebase/firestore';
+import { doc, collection, query, where, DocumentReference } from 'firebase/firestore';
 import Link from 'next/link';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-import type { Lead } from '@/lib/types';
+import type { Lead, Donation, DonationCategory } from '@/lib/types';
+import { donationCategories } from '@/lib/modules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ArrowLeft, Loader2, LogIn, Share2, Download } from 'lucide-react';
@@ -19,6 +21,30 @@ import { AppFooter } from '@/components/app-footer';
 import { ShareDialog } from '@/components/share-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
+
+
+const donationCategoryChartConfig = {
+    Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
+    Sadaqah: { label: "Sadaqah", color: "hsl(var(--chart-2))" },
+    Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
+    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
+    Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
+    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
+} satisfies ChartConfig;
 
 
 export default function PublicLeadSummaryPage() {
@@ -34,11 +60,45 @@ export default function PublicLeadSummaryPage() {
     const [shareDialogData, setShareDialogData] = useState({ title: '', text: '', url: '' });
     const summaryRef = useRef<HTMLDivElement>(null);
 
-
     const leadDocRef = useMemo(() => (firestore && leadId) ? doc(firestore, 'leads', leadId) as DocumentReference<Lead> : null, [firestore, leadId]);
     const { data: lead, isLoading: isLeadLoading } = useDoc<Lead>(leadDocRef);
+
+    const donationsCollectionRef = useMemo(() => {
+        if (!firestore || !leadId) return null;
+        return query(collection(firestore, 'donations'), where('campaignId', '==', leadId));
+    }, [firestore, leadId]);
+
+    const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
     
-    const isLoading = isLeadLoading || isBrandingLoading || isPaymentLoading;
+    const summaryData = useMemo(() => {
+        if (!donations || !lead) return null;
+
+        const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
+    
+        const amountsByCategory: Record<DonationCategory, number> = donationCategories.reduce((acc, cat) => ({...acc, [cat]: 0}), {} as Record<DonationCategory, number>);
+
+        verifiedDonationsList.forEach(d => {
+            if (d.typeSplit && d.typeSplit.length > 0) {
+                 d.typeSplit.forEach(split => {
+                    const category = (split.category as any) === 'General' || (split.category as any) === 'Sadqa' ? 'Sadaqah' : split.category as DonationCategory;
+                    if (amountsByCategory.hasOwnProperty(category)) {
+                        amountsByCategory[category] += split.amount;
+                    }
+                });
+            } else if (d.type) {
+                const category = d.type === 'General' || (d.type as any) === 'Sadqa' ? 'Sadaqah' : d.type;
+                if (amountsByCategory.hasOwnProperty(category)) {
+                    amountsByCategory[category as DonationCategory] += d.amount;
+                }
+            }
+        });
+
+        return {
+            amountsByCategory,
+        };
+    }, [donations, lead]);
+    
+    const isLoading = isLeadLoading || isBrandingLoading || isPaymentLoading || areDonationsLoading;
 
     const handleShare = async () => {
         if (!lead) return;
@@ -304,6 +364,31 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                 <p className="mt-1 text-lg font-semibold">{lead.endDate}</p>
                             </div>
                         </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>All Donations by Category</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
+                            <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis
+                                    dataKey="name"
+                                    tickLine={false}
+                                    tickMargin={10}
+                                    axisLine={false}
+                                />
+                                <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                                <Bar dataKey="value" radius={4}>
+                                    {Object.keys(summaryData?.amountsByCategory || {}).map((name) => (
+                                        <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ChartContainer>
                     </CardContent>
                 </Card>
             </div>

@@ -62,8 +62,8 @@ import type { ChartConfig } from '@/components/ui/chart';
 const donationCategoryChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
     Sadaqah: { label: "Sadaqah", color: "hsl(var(--chart-2))" },
-    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
+    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
     'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
@@ -115,7 +115,7 @@ export default function PublicCampaignSummaryPage() {
         });
 
         const verifiedNonZakatDonations = Object.entries(amountsByCategory)
-            .filter(([category]) => category !== 'Zakat')
+            .filter(([category]) => campaign.allowedDonationTypes?.includes(category as DonationCategory))
             .reduce((sum, [, amount]) => sum + amount, 0);
 
         const fundingGoal = campaign.targetAmount || 0;
@@ -488,7 +488,7 @@ Your contribution, big or small, makes a huge difference.
                         <CardHeader>
                             <CardTitle>Funding Progress (for Kits)</CardTitle>
                             <CardDescription>
-                                Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
+                                Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from selected donation types.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -498,31 +498,32 @@ Your contribution, big or small, makes a huge difference.
                                     style={{ width: `${summaryData?.fundingProgress || 0}%` }}
                                 ></div>
                             </div>
-                             <div className="mt-2 flex justify-between text-sm text-muted-foreground">
-                                <div className="flex items-center gap-2">
-                                    <span className="h-2 w-2 rounded-full bg-primary"></span>
-                                    <span>Verified</span>
-                                </div>
-                            </div>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Verified Donations by Category</CardTitle>
+                            <CardTitle>All Donations by Category</CardTitle>
                         </CardHeader>
-                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {donationCategories.map(category => (
-                                <Card key={category} className="shadow-none border-0">
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 pb-0">
-                                        <CardTitle className="text-xs font-medium">{category}</CardTitle>
-                                        <Wallet className="h-3 w-3 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent className="p-2 pt-1">
-                                        <div className="text-lg font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                        <CardContent>
+                            <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
+                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        tickLine={false}
+                                        tickMargin={10}
+                                        axisLine={false}
+                                    />
+                                    <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="value" radius={4}>
+                                        {Object.keys(summaryData?.amountsByCategory || {}).map((name) => (
+                                            <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
                         </CardContent>
                     </Card>
 

@@ -75,8 +75,8 @@ import { Separator } from '@/components/ui/separator';
 const donationCategoryChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
     Sadaqah: { label: "Sadaqah", color: "hsl(var(--chart-2))" },
-    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
+    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
     'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
@@ -920,13 +920,18 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         </CardHeader>
                         <CardContent>
                             <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
-                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
                                     <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                                    <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
+                                    <XAxis
+                                        dataKey="name"
+                                        tickLine={false}
+                                        tickMargin={10}
+                                        axisLine={false}
+                                    />
+                                    <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Bar dataKey="value" radius={4}>
-                                        {Object.entries(summaryData?.amountsByCategory || {}).map(([name]) => (
+                                        {Object.keys(summaryData?.amountsByCategory || {}).map((name) => (
                                             <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
                                         ))}
                                     </Bar>

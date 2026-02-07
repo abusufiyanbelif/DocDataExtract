@@ -80,8 +80,8 @@ import { Separator } from '@/components/ui/separator';
 const donationCategoryChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
     Sadaqah: { label: "Sadaqah", color: "hsl(var(--chart-2))" },
-    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
+    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
     'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
@@ -231,7 +231,6 @@ export default function CampaignSummaryPage() {
 
         const fundingGoal = campaign.targetAmount || 0;
         const fundingProgress = fundingGoal > 0 ? (verifiedNonZakatDonations / fundingGoal) * 100 : 0;
-        const pendingProgress = fundingGoal > 0 ? (pendingDonations / fundingGoal) * 100 : 0;
         
         const beneficiariesByCategory = beneficiaries.reduce((acc, ben) => {
             const key = ben.members || 0;
@@ -263,7 +262,6 @@ export default function CampaignSummaryPage() {
             verifiedNonZakatDonations,
             pendingDonations,
             fundingProgress,
-            pendingProgress,
             targetAmount: campaign.targetAmount || 0,
             remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
             amountsByCategory,
@@ -837,35 +835,42 @@ Your contribution, big or small, makes a huge difference.
                 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Funding Progress (for Kits)</CardTitle>
+                        <CardTitle>Funding Progress</CardTitle>
                         <CardDescription>
-                            Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded from non-Zakat donations.
+                            Rupee {summaryData?.verifiedNonZakatDonations.toLocaleString('en-IN') ?? 0} of Rupee {(summaryData?.targetAmount ?? 0).toLocaleString('en-IN')} funded.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="relative h-4 w-full overflow-hidden rounded-full bg-secondary">
-                            <div 
-                                className="h-full bg-primary transition-all"
-                                style={{ width: `${summaryData?.fundingProgress || 0}%` }}
-                            ></div>
-                            <div 
-                                className="absolute top-0 h-full bg-yellow-400/50 transition-all"
-                                style={{ 
-                                    left: `${summaryData?.fundingProgress || 0}%`, 
-                                    width: `${summaryData?.pendingProgress || 0}%`
-                                }}
-                            ></div>
+                        <Progress value={summaryData?.fundingProgress || 0} />
+                         <div className="mt-2 text-xs text-muted-foreground">
+                            {summaryData && summaryData.pendingDonations > 0 && <span>(+ Rupee {summaryData.pendingDonations.toLocaleString('en-IN')} pending verification)</span>}
                         </div>
-                         <div className="mt-2 flex justify-between text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-primary"></span>
-                                <span>Verified</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="h-2 w-2 rounded-full bg-yellow-400/50"></span>
-                                <span>Pending</span>
-                            </div>
-                        </div>
+                    </CardContent>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>All Donations by Category</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
+                            <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis
+                                    dataKey="name"
+                                    tickLine={false}
+                                    tickMargin={10}
+                                    axisLine={false}
+                                />
+                                <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                                <Bar dataKey="value" radius={4}>
+                                    {Object.keys(summaryData?.amountsByCategory || {}).map((name) => (
+                                        <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ChartContainer>
                     </CardContent>
                 </Card>
                 
@@ -907,25 +912,6 @@ Your contribution, big or small, makes a huge difference.
                     </CardContent>
                 </Card>
                 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Verified Donations by Category</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {donationCategories.map(category => (
-                            <Card key={category} className="shadow-none border-0">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 pb-0">
-                                    <CardTitle className="text-xs font-medium">{category}</CardTitle>
-                                    <Wallet className="h-3 w-3 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent className="p-2 pt-1">
-                                    <div className="text-lg font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </CardContent>
-                </Card>
-
                 {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
                     <Card>
                         <CardHeader>
@@ -997,4 +983,3 @@ Your contribution, big or small, makes a huge difference.
         </main>
     );
 }
-
