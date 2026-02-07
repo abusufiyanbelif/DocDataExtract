@@ -70,13 +70,11 @@ export function createAdminPermissions(): UserPermissions {
   const allPermissions: UserPermissions = {};
   for (const mod of modules) {
     const modId = mod.id;
-    allPermissions[modId] = {};
     for (const perm of mod.permissions) {
       set(allPermissions, `${modId}.${perm}`, true);
     }
     if ('subModules' in mod && mod.subModules) {
       for (const subMod of mod.subModules) {
-        allPermissions[modId]![subMod.id] = {};
         for (const subPerm of subMod.permissions) {
           set(allPermissions, `${modId}.${subMod.id}.${subPerm}`, true);
         }
