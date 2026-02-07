@@ -41,7 +41,7 @@ function Watermark() {
 
 function MainLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    const noHeaderFooterRoutes: string[] = [];
+    const noHeaderFooterRoutes = ['/login'];
 
     if (noHeaderFooterRoutes.includes(pathname)) {
         return <>{children}</>;
