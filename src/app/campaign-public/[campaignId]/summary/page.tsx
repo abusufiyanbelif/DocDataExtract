@@ -437,12 +437,6 @@ Your contribution, big or small, makes a huge difference.
                         <Share2 className="mr-2 h-4 w-4" />
                         Share
                     </Button>
-                    <Button asChild>
-                        <Link href="/login">
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Organization members login
-                        </Link>
-                    </Button>
                 </div>
             </div>
 

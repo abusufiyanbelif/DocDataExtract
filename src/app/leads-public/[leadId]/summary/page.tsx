@@ -330,12 +330,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     <Button onClick={handleShare} variant="outline">
                         <Share2 className="mr-2 h-4 w-4" /> Share
                     </Button>
-                    <Button asChild>
-                        <Link href="/login">
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Organization members login
-                        </Link>
-                    </Button>
                 </div>
             </div>
 

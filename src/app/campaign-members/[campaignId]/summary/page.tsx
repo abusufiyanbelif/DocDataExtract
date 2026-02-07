@@ -222,7 +222,7 @@ export default function CampaignSummaryPage() {
         });
 
         const verifiedNonZakatDonations = Object.entries(amountsByCategory)
-            .filter(([category]) => category !== 'Zakat')
+            .filter(([category]) => campaign.allowedDonationTypes?.includes(category as DonationCategory))
             .reduce((sum, [, amount]) => sum + amount, 0);
 
         const pendingDonations = donations
@@ -614,14 +614,6 @@ Your contribution, big or small, makes a huge difference.
                                 </Button>
                             </div>
                         )
-                    )}
-                    {!isProfileLoading && !userProfile && (
-                        <Button asChild>
-                            <Link href="/login">
-                                <LogIn className="mr-2 h-4 w-4" />
-                                Organization members login
-                            </Link>
-                        </Button>
                     )}
                 </div>
             </div>

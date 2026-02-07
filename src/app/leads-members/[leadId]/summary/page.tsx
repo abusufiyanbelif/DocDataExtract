@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -593,14 +594,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                 </Button>
                             </div>
                         )
-                    )}
-                    {!isProfileLoading && !userProfile && (
-                        <Button asChild>
-                            <Link href="/login">
-                                <LogIn className="mr-2 h-4 w-4" />
-                                Organization members login
-                            </Link>
-                        </Button>
                     )}
                 </div>
             </div>
