@@ -215,18 +215,19 @@ export default function ProfilePage() {
             </Card>
 
             <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-                <DialogContent className="max-w-3xl">
+                <DialogContent className="max-w-4xl">
                     <DialogHeader>
                         <DialogTitle>ID Proof</DialogTitle>
                     </DialogHeader>
                     {imageToView && (
-                        <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
-                            <div
-                                className="absolute inset-0 transition-transform duration-200 ease-out"
+                        <div className="relative h-[70vh] w-full mt-4 overflow-auto bg-secondary/20 border rounded-md">
+                            <img
+                                src={`/api/image-proxy?url=${encodeURIComponent(imageToView)}`}
+                                alt="ID Proof"
+                                className="transition-transform duration-200 ease-out origin-center"
                                 style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
-                            >
-                                <Image src={imageToView} alt="ID proof" fill className="object-contain" unoptimized />
-                            </div>
+                                crossOrigin="anonymous"
+                            />
                         </div>
                     )}
                     <DialogFooter className="sm:justify-center pt-4">

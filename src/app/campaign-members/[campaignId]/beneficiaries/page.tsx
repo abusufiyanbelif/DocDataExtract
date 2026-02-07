@@ -1002,17 +1002,17 @@ export default function BeneficiariesPage() {
       </Dialog>
       
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl">
             <DialogHeader>
                 <DialogTitle>ID Proof</DialogTitle>
             </DialogHeader>
             {imageToView && (
-                 <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
+                 <div className="relative h-[70vh] w-full mt-4 overflow-auto bg-secondary/20 border rounded-md">
                     <img
-                        src={imageToView}
+                        src={`/api/image-proxy?url=${encodeURIComponent(imageToView)}`}
                         alt="ID proof"
-                        className="object-contain h-full w-full"
-                        style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
+                        className="transition-transform duration-200 ease-out origin-center"
+                        style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`}}
                         crossOrigin="anonymous"
                     />
                 </div>
@@ -1028,7 +1028,3 @@ export default function BeneficiariesPage() {
     </>
   );
 }
-
-    
-
-    

@@ -643,16 +643,16 @@ export default function DonationsPage() {
       </AlertDialog>
 
       <Dialog open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl">
             <DialogHeader>
                 <DialogTitle>Donation Screenshot</DialogTitle>
             </DialogHeader>
             {imageToView && (
-                <div className="relative h-[70vh] w-full mt-4 overflow-hidden bg-secondary/20">
+                <div className="relative h-[70vh] w-full mt-4 overflow-auto bg-secondary/20 border rounded-md">
                     <img
                         src={`/api/image-proxy?url=${encodeURIComponent(imageToView)}`}
                         alt="Donation screenshot"
-                        className="object-contain h-full w-full"
+                        className="transition-transform duration-200 ease-out origin-center"
                         style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
                         crossOrigin="anonymous"
                     />
