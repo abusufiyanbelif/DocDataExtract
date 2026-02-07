@@ -568,11 +568,7 @@ export default function CampaignDetailsPage() {
                         <TableHead className="min-w-[100px]">Quantity</TableHead>
                         <TableHead className="min-w-[150px]">Quantity Type</TableHead>
                         {isGeneral ? (
-<<<<<<< HEAD
-                            <TableHead className="text-right min-w-[120px]">Price per Unit (Rupee)</TableHead>
-=======
-                            <TableHead className="text-right min-w-[120px]">Price (₹)</TableHead>
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
+                            <TableHead className="text-right min-w-[120px]">Price per Unit (₹)</TableHead>
                         ) : (
                             <>
                                 <TableHead className="min-w-[180px]">Notes</TableHead>
@@ -1002,8 +998,3 @@ export default function CampaignDetailsPage() {
     </>
   );
 }
-
-<<<<<<< HEAD
-=======
-    
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da

@@ -341,7 +341,6 @@ export default function DonationDetailsPage() {
                 </div>
             </div>
 
-<<<<<<< HEAD
             {!userProfile && (
                  <Alert variant="destructive" className="mb-4">
                     <ShieldAlert className="h-4 w-4" />
@@ -363,37 +362,10 @@ export default function DonationDetailsPage() {
                 onOpenChange={setIsShareDialogOpen} 
                 shareData={{
                     title: `Thank you for your donation!`,
-                    text: `JazakAllah Khair for your generous donation of Rupee ${donation.amount.toFixed(2)} towards the "${campaign.name}" campaign. May Allah accept it and bless you abundantly.`,
+                    text: `JazakAllah Khair for your generous donation of ₹${donation.amount.toFixed(2)} towards the "${campaign.name}" campaign. May Allah accept it and bless you abundantly.`,
                     url: `${window.location.origin}/campaign-public/${campaignId}/summary`
                 }} 
             />
-=======
-                {!userProfile && (
-                     <Alert variant="destructive" className="mb-4">
-                        <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>You are not logged in</AlertTitle>
-                        <AlertDescription>
-                            You are viewing this as a public user. Some actions may be unavailable.
-                        </AlertDescription>
-                    </Alert>
-                )}
-                
-                <DonationReceipt 
-                    ref={receiptRef}
-                    donation={donation} 
-                    campaign={campaign} 
-                />
-                
-                <ShareDialog 
-                    open={isShareDialogOpen} 
-                    onOpenChange={setIsShareDialogOpen} 
-                    shareData={{
-                        title: `Thank you for your donation!`,
-                        text: `JazakAllah Khair for your generous donation of ₹${donation.amount.toFixed(2)} towards the "${campaign.name}" campaign. May Allah accept it and bless you abundantly.`,
-                        url: `${window.location.origin}/campaign-public/${campaignId}/summary`
-                    }} 
-                />
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
 
             {(donation.comments || donation.suggestions) && (
                 <Card className="mt-6">
