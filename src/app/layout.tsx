@@ -29,7 +29,6 @@ async function getBrandingSettings(): Promise<BrandingSettings | null> {
 // generateMetadata allows us to create dynamic metadata for the page <head>.
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getBrandingSettings();
-  const iconUrl = branding?.logoUrl;
   const siteName = branding?.name || 'Baitulmal Samajik Sanstha Solapur';
 
   const metadata: Metadata = {
@@ -39,12 +38,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: 'Managing and tracking community support campaigns efficiently.',
   };
-
-  if (iconUrl) {
-    metadata.icons = {
-      icon: iconUrl,
-    };
-  }
   
   return metadata;
 }
