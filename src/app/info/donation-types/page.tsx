@@ -83,7 +83,7 @@ export default function DonationInfoPage() {
 
           <div>
             <h2 className="text-2xl font-semibold text-primary mb-4">At a Glance</h2>
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

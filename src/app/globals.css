@@ -39,6 +39,32 @@
   * {
     @apply border-border;
   }
+
+  /* Custom Scrollbar Styles */
+  /* For Firefox */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
+  }
+
+  /* For Webkit browsers (Chrome, Safari, new Edge) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground));
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--foreground));
+  }
 }
 
 body {
