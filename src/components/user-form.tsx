@@ -92,7 +92,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading, is
       name: user?.name || '',
       email: user?.email?.includes('@docdataextract.app') ? '' : user?.email || '',
       phone: user?.phone || '',
-      userKey: user?.userKey || `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      userKey: user?.userKey || '',
       loginId: user?.loginId || '',
       role: user?.role || 'User',
       status: user?.status || 'Active',
@@ -110,6 +110,13 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading, is
   const idProofFile = watch('idProofFile');
 
   const [preview, setPreview] = useState<string | null>(user?.idProofUrl || null);
+  
+  useEffect(() => {
+    // Client-side effect to generate userKey for new users to prevent hydration errors
+    if (!isEditing && !getValues('userKey')) {
+        setValue('userKey', `user_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
+    }
+  }, [isEditing, getValues, setValue]);
 
   useEffect(() => {
     if (!isEditing && nameValue && !getValues('loginId')) {
@@ -535,7 +542,7 @@ export function UserForm({ user, onSubmit, onCancel, isSubmitting, isLoading, is
             {!isReadOnly && (
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={onCancel} disabled={isFormDisabled}>Cancel</Button>
-                <Button type="submit" disabled={isFormDisabled || !isDirty}>
+                <Button type="submit" disabled={isFormDisabled || (isEditing && !isDirty)}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     {isSubmitting ? 'Saving...' : 'Save User'}
                 </Button>
