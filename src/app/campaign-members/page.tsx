@@ -270,7 +270,7 @@ export default function CampaignPage() {
             </Link>
           </Button>
         </div>
-        <Card>
+        <Card className="animate-fade-in-zoom">
           <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
              <div className="flex-1 space-y-2">
                 <CardTitle>Campaigns ({filteredAndSortedCampaigns.length})</CardTitle>
@@ -323,7 +323,7 @@ export default function CampaignPage() {
                 )}
                 {!isLoading && paginatedCampaigns.map((campaign, index) => {
                     return (
-                    <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer animate-fade-in-zoom" style={{ animationDelay: `${100 * index}ms` }} onClick={() => router.push(`/campaign-members/${campaign.id}/summary`)}>
+                    <Card key={campaign.id} className="flex flex-col hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1 cursor-pointer animate-fade-in-zoom" style={{ animationDelay: `${100 * index}ms` }} onClick={() => router.push(`/campaign-members/${campaign.id}/summary`)}>
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
                                 <CardTitle className="w-full break-words">{campaign.name}</CardTitle>

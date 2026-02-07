@@ -14,7 +14,7 @@ function DashboardCard({ title, description, href, icon: Icon, isVisible, animat
   return (
     <div className="animate-fade-in-zoom" style={{ animationDelay }}>
         <Link href={href} className="block group">
-            <Card className="h-full p-6 transition-all duration-300 ease-in-out group-hover:shadow-lg group-hover:scale-105 group-hover:border-primary active:scale-95">
+            <Card className="h-full p-6 transition-all duration-300 ease-in-out group-hover:shadow-xl group-hover:-translate-y-1 group-hover:border-primary active:scale-95">
                 <div className="flex justify-between items-start">
                     <div className="space-y-1">
                         <CardTitle className="text-lg">{title}</CardTitle>

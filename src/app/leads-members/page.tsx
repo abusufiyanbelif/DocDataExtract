@@ -260,7 +260,7 @@ export default function LeadPage() {
             </Link>
           </Button>
         </div>
-        <Card>
+        <Card className="animate-fade-in-zoom">
           <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
              <div className="flex-1 space-y-2">
                 <CardTitle>Leads ({filteredAndSortedLeads.length})</CardTitle>
@@ -313,7 +313,7 @@ export default function LeadPage() {
                 )}
                 {!isLoading && paginatedLeads.map((lead, index) => {
                     return (
-                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer animate-fade-in-zoom" style={{ animationDelay: `${100 * index}ms` }} onClick={() => router.push(`/leads-members/${lead.id}/summary`)}>
+                    <Card key={lead.id} className="flex flex-col hover:shadow-xl transition-all duration-300 ease-in-out hover:-translate-y-1 cursor-pointer animate-fade-in-zoom" style={{ animationDelay: `${100 * index}ms` }} onClick={() => router.push(`/leads-members/${lead.id}/summary`)}>
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
                                 <CardTitle className="w-full break-words">{lead.name}</CardTitle>
