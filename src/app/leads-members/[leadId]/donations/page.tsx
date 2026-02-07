@@ -443,12 +443,6 @@ export default function DonationsPage() {
             <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-4">
               <div className="flex-1 space-y-1.5">
                 <CardTitle>Donation List ({filteredAndSortedDonations.length})</CardTitle>
-<<<<<<< HEAD
-=======
-                <p className="text-muted-foreground">
-                    Total Donations for filtered results: <span className="font-bold text-foreground">₹{totalDonationAmount.toFixed(2)}</span>
-                </p>
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
               </div>
               {canCreate && (
                   <Button onClick={handleAdd}>
