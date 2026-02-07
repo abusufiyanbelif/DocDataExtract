@@ -627,16 +627,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 </ScrollArea>
             </div>
 
-            <div className="relative space-y-6 p-4 bg-background" ref={summaryRef}>
-                {validLogoUrl && (
-                    <img
-                        src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
-                        alt="Watermark"
-                        crossOrigin="anonymous"
-                        className="absolute inset-0 m-auto object-contain opacity-5 pointer-events-none"
-                        style={{aspectRatio: '1 / 1'}}
-                    />
-                )}
+            <div className="space-y-6 p-4 bg-background" ref={summaryRef}>
                 <Card>
                     <CardHeader>
                         <CardTitle>Lead Details</CardTitle>
