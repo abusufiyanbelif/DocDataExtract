@@ -32,17 +32,21 @@ export async function generateMetadata(): Promise<Metadata> {
   const iconUrl = branding?.logoUrl;
   const siteName = branding?.name || 'Baitulmal Samajik Sanstha Solapur';
 
-  return {
+  const metadata: Metadata = {
     title: {
       template: `%s | ${siteName}`,
       default: `Welcome to ${siteName}`,
     },
     description: 'Managing and tracking community support campaigns efficiently.',
-    icons: {
-      // Use the dynamic logo URL as the icon, with a fallback.
-      icon: iconUrl || '/favicon.ico',
-    },
   };
+
+  if (iconUrl) {
+    metadata.icons = {
+      icon: iconUrl,
+    };
+  }
+  
+  return metadata;
 }
 
 
