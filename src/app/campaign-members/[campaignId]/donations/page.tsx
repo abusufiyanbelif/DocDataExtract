@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, DollarSign } from 'lucide-react';
+import { ArrowLeft, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2, Eye, ArrowUp, ArrowDown, RefreshCw, ZoomIn, ZoomOut, RotateCw, DollarSign, CheckCircle2, Hourglass, XCircle } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -376,6 +376,34 @@ export default function DonationsPage() {
     };
 }, [filteredAndSortedDonations]);
 
+  const statusStats = useMemo(() => {
+    if (!filteredAndSortedDonations) {
+      return {
+        verified: { count: 0, amount: 0 },
+        pending: { count: 0, amount: 0 },
+        canceled: { count: 0, amount: 0 },
+      };
+    }
+    return filteredAndSortedDonations.reduce((acc, donation) => {
+      const status = donation.status || 'Pending';
+      if (status === 'Verified') {
+        acc.verified.count += 1;
+        acc.verified.amount += donation.amount;
+      } else if (status === 'Pending') {
+        acc.pending.count += 1;
+        acc.pending.amount += donation.amount;
+      } else if (status === 'Canceled') {
+        acc.canceled.count += 1;
+        acc.canceled.amount += donation.amount;
+      }
+      return acc;
+    }, {
+      verified: { count: 0, amount: 0 },
+      pending: { count: 0, amount: 0 },
+      canceled: { count: 0, amount: 0 },
+    });
+  }, [filteredAndSortedDonations]);
+
   const isLoading = isCampaignLoading || areDonationsLoading || isProfileLoading;
   
   const SortableHeader = ({ sortKey, children, className }: { sortKey: SortKey, children: React.ReactNode, className?: string }) => {
@@ -453,6 +481,29 @@ export default function DonationsPage() {
                       Add Donation
                   </Button>
               )}
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Verified</CardTitle><CheckCircle2 className="h-4 w-4 text-success-foreground"/></CardHeader>
+                    <CardContent className="p-2">
+                        <div className="text-2xl font-bold">{statusStats.verified.count}</div>
+                        <p className="text-xs text-muted-foreground">₹{statusStats.verified.amount.toLocaleString('en-IN')}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Pending</CardTitle><Hourglass className="h-4 w-4 text-muted-foreground"/></CardHeader>
+                    <CardContent className="p-2">
+                        <div className="text-2xl font-bold">{statusStats.pending.count}</div>
+                        <p className="text-xs text-muted-foreground">₹{statusStats.pending.amount.toLocaleString('en-IN')}</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="p-2 pb-0 flex-row items-center justify-between"><CardTitle className="text-sm font-medium">Canceled</CardTitle><XCircle className="h-4 w-4 text-destructive"/></CardHeader>
+                    <CardContent className="p-2">
+                        <div className="text-2xl font-bold">{statusStats.canceled.count}</div>
+                        <p className="text-xs text-muted-foreground">₹{statusStats.canceled.amount.toLocaleString('en-IN')}</p>
+                    </CardContent>
+                </Card>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
                 <Card>
