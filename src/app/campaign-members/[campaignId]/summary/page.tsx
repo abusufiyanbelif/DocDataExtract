@@ -258,6 +258,9 @@ export default function CampaignSummaryPage() {
         const monthlyContributionTotal = amountsByCategory['Monthly Contribution'] || 0;
         const grandTotal = zakatTotal + loanTotal + interestTotal + sadaqahTotal + lillahTotal + monthlyContributionTotal;
 
+        const beneficiariesGiven = beneficiaries.filter(b => b.status === 'Given').length;
+        const beneficiariesPending = beneficiaries.length - beneficiariesGiven;
+
         return {
             verifiedNonZakatDonations,
             pendingDonations,
@@ -266,6 +269,8 @@ export default function CampaignSummaryPage() {
             remainingToCollect: Math.max(0, fundingGoal - verifiedNonZakatDonations),
             amountsByCategory,
             totalBeneficiaries: beneficiaries.length,
+            beneficiariesGiven,
+            beneficiariesPending,
             beneficiariesByCategory,
             sortedBeneficiaryCategories,
             donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value })),
@@ -830,6 +835,36 @@ Your contribution, big or small, makes a huge difference.
                         </div>
                     </CardContent>
                 </Card>
+
+                <div className="grid gap-6 sm:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Kits Given</CardTitle>
+                            <Gift className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{summaryData?.beneficiariesGiven ?? 0}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Kits Pending</CardTitle>
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{summaryData?.beneficiariesPending ?? 0}</div>
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card>

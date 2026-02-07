@@ -12,11 +12,11 @@ import Link from 'next/link';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-import type { Lead, Donation, DonationCategory } from '@/lib/types';
+import type { Lead, Donation, DonationCategory, Beneficiary } from '@/lib/types';
 import { donationCategories } from '@/lib/modules';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ArrowLeft, Loader2, LogIn, Share2, Download } from 'lucide-react';
+import { ArrowLeft, Loader2, LogIn, Share2, Download, Users, Gift, Hourglass } from 'lucide-react';
 import { AppFooter } from '@/components/app-footer';
 import { ShareDialog } from '@/components/share-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -69,9 +69,12 @@ export default function PublicLeadSummaryPage() {
     }, [firestore, leadId]);
 
     const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
+
+    const beneficiariesCollectionRef = useMemo(() => (firestore && leadId) ? collection(firestore, `leads/${leadId}/beneficiaries`) : null, [firestore, leadId]);
+    const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
     
     const summaryData = useMemo(() => {
-        if (!donations || !lead) return null;
+        if (!donations || !lead || !beneficiaries) return null;
 
         const verifiedDonationsList = donations.filter(d => d.status === 'Verified');
     
@@ -93,12 +96,18 @@ export default function PublicLeadSummaryPage() {
             }
         });
 
+        const beneficiariesGiven = beneficiaries.filter(b => b.status === 'Given').length;
+        const beneficiariesPending = beneficiaries.length - beneficiariesGiven;
+
         return {
             amountsByCategory,
+            totalBeneficiaries: beneficiaries.length,
+            beneficiariesGiven,
+            beneficiariesPending,
         };
-    }, [donations, lead]);
+    }, [donations, lead, beneficiaries]);
     
-    const isLoading = isLeadLoading || isBrandingLoading || isPaymentLoading || areDonationsLoading;
+    const isLoading = isLeadLoading || isBrandingLoading || isPaymentLoading || areDonationsLoading || areBeneficiariesLoading;
 
     const handleShare = async () => {
         if (!lead) return;
@@ -360,6 +369,35 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         </div>
                     </CardContent>
                 </Card>
+                <div className="grid gap-6 sm:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Kits Given</CardTitle>
+                            <Gift className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{summaryData?.beneficiariesGiven ?? 0}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Kits Pending</CardTitle>
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{summaryData?.beneficiariesPending ?? 0}</div>
+                        </CardContent>
+                    </Card>
+                </div>
                  <Card>
                     <CardHeader>
                         <CardTitle>All Donations by Category</CardTitle>

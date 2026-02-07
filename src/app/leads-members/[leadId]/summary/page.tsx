@@ -33,7 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Loader2, Users, Edit, Save, Wallet, Share2, Hourglass, LogIn, Download } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, Edit, Save, Wallet, Share2, Hourglass, LogIn, Download, Gift } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -250,9 +250,14 @@ export default function LeadSummaryPage() {
         const lillahTotal = amountsByCategory['Lillah'] || 0;
         const monthlyContributionTotal = amountsByCategory['Monthly Contribution'] || 0;
         const grandTotal = zakatTotal + loanTotal + interestTotal + sadaqahTotal + lillahTotal + monthlyContributionTotal;
+        
+        const beneficiariesGiven = beneficiaries.filter(b => b.status === 'Given').length;
+        const beneficiariesPending = beneficiaries.length - beneficiariesGiven;
 
         return {
             totalBeneficiaries: beneficiaries.length,
+            beneficiariesGiven,
+            beneficiariesPending,
             pendingDonations,
             amountsByCategory,
             donationPaymentTypeChartData: Object.entries(paymentTypeData).map(([name, value]) => ({ name, value })),
@@ -797,14 +802,32 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     </CardContent>
                 </Card>
 
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-                     <Card>
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Kits Given</CardTitle>
+                            <Gift className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{summaryData?.beneficiariesGiven ?? 0}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Kits Pending</CardTitle>
+                            <Hourglass className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{summaryData?.beneficiariesPending ?? 0}</div>
                         </CardContent>
                     </Card>
                     <Card>
