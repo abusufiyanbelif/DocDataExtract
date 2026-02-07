@@ -12,7 +12,7 @@ export const contentType = 'image/png'
 
 // Image generation
 export default function Icon() {
-  return ImageResponse(
+  return new ImageResponse(
     (
       <div
         style={{
@@ -24,12 +24,14 @@ export default function Icon() {
           alignItems: 'center',
           justifyContent: 'center',
           color: 'hsl(var(--primary-foreground))',
-          borderRadius: '50%',
           fontWeight: 'bold',
         }}
       >
         B
       </div>
-    )
+    ),
+    {
+      ...size,
+    }
   )
 }

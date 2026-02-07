@@ -1,2 +1,1 @@
-src/app/icon.tsx(15,10): error TS7009: 'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.
 src/app/icon.tsx(16,5): error TS2554: Expected 0 arguments, but got 1.
