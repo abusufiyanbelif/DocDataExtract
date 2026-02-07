@@ -69,7 +69,7 @@ export function DocuExtractHeader() {
             )}
             </div>
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block">
-            Baitulmal Samajik Sanstha Solapur
+            {isBrandingLoading ? <Skeleton className="h-8 w-80" /> : (brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}
           </h1>
         </Link>
 
