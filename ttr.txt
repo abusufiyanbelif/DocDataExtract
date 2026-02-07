@@ -1,4 +1,2 @@
 src/app/icon.tsx(15,10): error TS7009: 'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.
 src/app/icon.tsx(16,5): error TS2554: Expected 0 arguments, but got 2.
-src/lib/modules.ts(79,9): error TS7053: Element implicitly has an 'any' type because expression of type '"summary" | "ration" | "beneficiaries" | "donations"' can't be used to index type 'Partial<Record<"create" | "read" | "update" | "delete", boolean>> | CampaignPermissions | LeadPermissions'.
-  Property 'summary' does not exist on type 'Partial<Record<"create" | "read" | "update" | "delete", boolean>> | CampaignPermissions | LeadPermissions'.
