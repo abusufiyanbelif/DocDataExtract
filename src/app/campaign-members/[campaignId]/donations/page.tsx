@@ -53,7 +53,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
-import { syncDonationsAction } from '../../../../donations/actions';
+import { syncDonationsAction } from '@/app/donations/actions';
 
 type SortKey = keyof Donation | 'srNo';
 
