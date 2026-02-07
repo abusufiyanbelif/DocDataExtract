@@ -154,13 +154,6 @@ export default function DonationDetailsPage() {
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
                 if (logoImg) {
-                    const wmScale = 0.8;
-                    const wmWidth = finalCanvas.width * wmScale;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.25;
-                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
-                    ctx.globalAlpha = 1.0;
-
                     const logoHeight = 80;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
@@ -187,6 +180,15 @@ export default function DonationDetailsPage() {
                 if (paymentSettings?.contactEmail) { ctx.fillText(`Email: ${paymentSettings.contactEmail}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
+
+                if (logoImg) {
+                    const wmScale = 0.8;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.1;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+                }
 
                 const link = document.createElement('a');
                 link.download = `donation-receipt-${donationId}.png`;
@@ -218,15 +220,6 @@ export default function DonationDetailsPage() {
                 pdf.setFontSize(16).text('Donation Receipt', pageCenter, position, { align: 'center' });
                 position += 15;
 
-                if (logoImg && logoDataUrl) {
-                    pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.25 }));
-                    const wmWidth = pdfWidth * 0.75;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
-                    pdf.restoreGraphicsState();
-                }
-
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = pdf.getImageProperties(imgData);
 
@@ -243,6 +236,16 @@ export default function DonationDetailsPage() {
 
                 const xOffset = (pdfWidth - imgWidth) / 2;
                 pdf.addImage(imgData, 'PNG', xOffset, position, imgWidth, imgHeight);
+                
+                if (logoImg && logoDataUrl) {
+                    pdf.saveGraphicsState();
+                    pdf.setGState(new pdf.GState({ opacity: 0.1 }));
+                    const wmWidth = pdfWidth * 0.75;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
+                    pdf.restoreGraphicsState();
+                }
+
                 position = pageHeight - footerHeight;
                 
                 pdf.setLineWidth(0.2);

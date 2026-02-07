@@ -188,15 +188,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-                if (logoImg) {
-                    const wmScale = 0.8;
-                    const wmWidth = finalCanvas.width * wmScale;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.25;
-                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
-                    ctx.globalAlpha = 1.0;
-                }
-
                 let headerTextX = PADDING;
                 if (logoImg) {
                     const logoHeight = 80;
@@ -231,6 +222,15 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 28; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
 
+                if (logoImg) {
+                    const wmScale = 0.8;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.1;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+                }
+
                 const link = document.createElement('a');
                 link.download = `lead-summary-${leadId}.png`;
                 link.href = finalCanvas.toDataURL('image/png');
@@ -263,18 +263,18 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 pdf.setFontSize(22).text(lead?.name || 'Lead Summary', pageCenter, position, { align: 'center' });
                 position += 15;
 
+                const imgData = canvas.toDataURL('image/png');
+                const contentHeight = (canvas.height * (pdfWidth - 20)) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, contentHeight);
+
                 if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.25 }));
+                    pdf.setGState(new pdf.GState({ opacity: 0.1 }));
                     const wmWidth = pdfWidth * 0.75;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
                     pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
                     pdf.restoreGraphicsState();
                 }
-
-                const imgData = canvas.toDataURL('image/png');
-                const contentHeight = (canvas.height * (pdfWidth - 20)) / canvas.width;
-                pdf.addImage(imgData, 'PNG', 10, position, pdfWidth - 20, contentHeight);
 
                 pdf.save(`lead-summary-${leadId}.pdf`);
             }

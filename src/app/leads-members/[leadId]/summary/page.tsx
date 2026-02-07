@@ -14,7 +14,6 @@ import Link from 'next/link';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-<<<<<<< HEAD
 import {
   BarChart,
   Bar,
@@ -28,9 +27,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-=======
-import { PieChart, Pie, Cell } from 'recharts';
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
 
 import type { Lead, Beneficiary, Donation, DonationCategory } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -76,7 +72,6 @@ import {
   ChartLegendContent,
 } from '@/components/ui/chart';
 import type { ChartConfig } from '@/components/ui/chart';
-<<<<<<< HEAD
 import { Separator } from '@/components/ui/separator';
 
 const donationCategoryChartConfig = {
@@ -94,17 +89,6 @@ const donationPaymentTypeChartConfig = {
     Check: { label: "Check", color: "hsl(var(--chart-5))" },
     Other: { label: "Other", color: "hsl(var(--chart-4))" },
 } satisfies ChartConfig;
-=======
-
-const donationTypeChartConfig = {
-    Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
-    Sadqa: { label: "Sadqa", color: "hsl(var(--chart-2))" },
-    Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
-    Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
-    'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
-} satisfies ChartConfig;
-
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
 
 export default function LeadSummaryPage() {
     const params = useParams();
@@ -224,7 +208,6 @@ export default function LeadSummaryPage() {
         verifiedDonationsList.forEach(d => {
             if (d.typeSplit && d.typeSplit.length > 0) {
                 d.typeSplit.forEach(split => {
-<<<<<<< HEAD
                     const category = (split.category as any) === 'General' || (split.category as any) === 'Sadqa' ? 'Sadaqah' : split.category as DonationCategory;
                     if (amountsByCategory.hasOwnProperty(category)) {
                         amountsByCategory[category] += split.amount;
@@ -235,14 +218,6 @@ export default function LeadSummaryPage() {
                 if (amountsByCategory.hasOwnProperty(category)) {
                     amountsByCategory[category as DonationCategory] += d.amount;
                 }
-=======
-                    if (donationCategories.includes(split.category)) {
-                        amountsByCategory[split.category as DonationCategory] += split.amount;
-                    }
-                });
-            } else if (d.type && donationCategories.includes(d.type as DonationCategory)) {
-                amountsByCategory[d.type as DonationCategory] += d.amount;
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
             }
         });
 
@@ -400,15 +375,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-                if (logoImg) {
-                    const wmScale = 0.8;
-                    const wmWidth = finalCanvas.width * wmScale;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.25;
-                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
-                    ctx.globalAlpha = 1.0;
-                }
-
                 let headerTextX = PADDING;
                 if (logoImg) {
                     const logoHeight = 80;
@@ -443,6 +409,15 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 28; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
 
+                if (logoImg) {
+                    const wmScale = 0.8;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.1;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+                }
+
                 const link = document.createElement('a');
                 link.download = `lead-summary-${leadId}.png`;
                 link.href = finalCanvas.toDataURL('image/png');
@@ -454,7 +429,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 const pageCenter = pdfWidth / 2;
                 let position = 15;
 
-                pdf.setTextColor(19, 106, 51);
+                pdf.setTextColor(10, 41, 19);
 
                 // Header with Logo and Org Name
                 if (logoImg && logoDataUrl) {
@@ -475,15 +450,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 pdf.setFontSize(22).text(lead?.name || 'Lead Summary', pageCenter, position, { align: 'center' });
                 position += 15;
 
-                if (logoImg && logoDataUrl) {
-                    pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.15 }));
-                    const wmWidth = pdfWidth * 0.75;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
-                    pdf.restoreGraphicsState();
-                }
-
                 const imgData = canvas.toDataURL('image/png');
                 const contentHeight = (canvas.height * (pdfWidth - 30)) / canvas.width;
                 
@@ -493,8 +459,18 @@ We are currently assessing the needs for this initiative. Your support and feedb
                 }
 
                 pdf.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, contentHeight);
-                position += contentHeight + 10;
                 
+                if (logoImg && logoDataUrl) {
+                    pdf.saveGraphicsState();
+                    pdf.setGState(new pdf.GState({ opacity: 0.1 }));
+                    const wmWidth = pdfWidth * 0.75;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
+                    pdf.restoreGraphicsState();
+                }
+                
+                position = pageHeight - footerHeight;
+
                 if (position > pageHeight - 60) {
                     pdf.addPage();
                     position = 15;
@@ -684,24 +660,9 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                 <p className="mt-1 text-sm">{lead.description || 'No description provided.'}</p>
                             )}
                         </div>
-<<<<<<< HEAD
                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div className="space-y-1">
                                 <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Fundraising Goal (Target)</Label>
-=======
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </div>
-
-                <div className="space-y-6 p-4" ref={summaryRef}>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Lead Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <Label htmlFor="description" className="text-sm font-medium text-muted-foreground">Description</Label>
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
                                 {editMode && canUpdate ? (
                                     <Input
                                         id="targetAmount"
@@ -714,119 +675,8 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                     <p className="mt-1 text-lg font-semibold">Rupee {(lead.targetAmount || 0).toLocaleString('en-IN')}</p>
                                 )}
                             </div>
-<<<<<<< HEAD
                             <div className="space-y-1">
                                 <Label htmlFor="category" className="text-sm font-medium text-muted-foreground">Category</Label>
-=======
-                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div className="space-y-1">
-                                    <Label htmlFor="targetAmount" className="text-sm font-medium text-muted-foreground">Fundraising Goal (Target)</Label>
-                                    {editMode && canUpdate ? (
-                                        <Input
-                                            id="targetAmount"
-                                            type="number"
-                                            value={editableLead.targetAmount}
-                                            onChange={(e) => setEditableLead(p => ({...p, targetAmount: Number(e.target.value) || 0}))}
-                                            className="mt-1"
-                                        />
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">₹{(lead.targetAmount || 0).toLocaleString('en-IN')}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="category" className="text-sm font-medium text-muted-foreground">Category</Label>
-                                    {editMode && canUpdate ? (
-                                        <Select
-                                            value={editableLead.category}
-                                            onValueChange={(value) => setEditableLead(p => ({...p, category: value as any}))}
-                                        >
-                                            <SelectTrigger id="category" className="mt-1">
-                                                <SelectValue placeholder="Select a category" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Ration">Ration</SelectItem>
-                                                <SelectItem value="Relief">Relief</SelectItem>
-                                                <SelectItem value="General">General</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.category}</p>
-                                    )}
-                                </div>
-                                 <div className="space-y-1">
-                                    <Label htmlFor="startDate" className="text-sm font-medium text-muted-foreground">Start Date</Label>
-                                    {editMode && canUpdate ? (
-                                        <Input
-                                            id="startDate"
-                                            type="date"
-                                            value={editableLead.startDate}
-                                            onChange={(e) => setEditableLead(p => ({...p, startDate: e.target.value}))}
-                                            className="mt-1"
-                                        />
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.startDate}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="endDate" className="text-sm font-medium text-muted-foreground">End Date</Label>
-                                    {editMode && canUpdate ? (
-                                        <Input
-                                            id="endDate"
-                                            type="date"
-                                            value={editableLead.endDate}
-                                            onChange={(e) => setEditableLead(p => ({...p, endDate: e.target.value}))}
-                                            className="mt-1"
-                                        />
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.endDate}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="authenticityStatus" className="text-sm font-medium text-muted-foreground">Authenticity Status</Label>
-                                    {editMode && canUpdate ? (
-                                        <Select
-                                            value={editableLead.authenticityStatus}
-                                            onValueChange={(value) => setEditableLead(p => ({...p, authenticityStatus: value as any}))}
-                                        >
-                                            <SelectTrigger id="authenticityStatus" className="mt-1">
-                                                <SelectValue placeholder="Select a status" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Pending Verification">Pending Verification</SelectItem>
-                                                <SelectItem value="Verified">Verified</SelectItem>
-                                                <SelectItem value="On Hold">On Hold</SelectItem>
-                                                <SelectItem value="Rejected">Rejected</SelectItem>
-                                                <SelectItem value="Need More Details">Need More Details</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.authenticityStatus || 'N/A'}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-1">
-                                    <Label htmlFor="publicVisibility" className="text-sm font-medium text-muted-foreground">Public Visibility</Label>
-                                    {editMode && canUpdate ? (
-                                        <Select
-                                            value={editableLead.publicVisibility}
-                                            onValueChange={(value) => setEditableLead(p => ({...p, publicVisibility: value as any}))}
-                                        >
-                                            <SelectTrigger id="publicVisibility" className="mt-1">
-                                                <SelectValue placeholder="Select visibility" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Hold">Hold (Private)</SelectItem>
-                                                <SelectItem value="Ready to Publish">Ready to Publish</SelectItem>
-                                                <SelectItem value="Published">Published</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <p className="mt-1 text-lg font-semibold">{lead.publicVisibility || 'N/A'}</p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="space-y-2 pt-4">
-                                <Label className="text-sm font-medium text-muted-foreground">Allowed Donation Types</Label>
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
                                 {editMode && canUpdate ? (
                                     <Select
                                         value={editableLead.category}
@@ -970,7 +820,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                             <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
                         </CardContent>
                     </Card>
-<<<<<<< HEAD
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Kits Given</CardTitle>
@@ -996,49 +845,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">Rupee {summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-=======
-
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
-                                <Users className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">{summaryData?.totalBeneficiaries ?? 0}</div>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
-                                <Hourglass className="h-4 w-4 text-muted-foreground" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">₹{summaryData?.pendingDonations.toLocaleString('en-IN') ?? '0.00'}</div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Verified Donations by Category</CardTitle>
-                            <CardDescription>
-                                Total verified funds collected for this lead, broken down by category.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                            {donationCategories.map(category => (
-                                <Card key={category}>
-                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                        <CardTitle className="text-sm font-medium">{category}</CardTitle>
-                                        <Wallet className="h-4 w-4 text-muted-foreground" />
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-2xl font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
-                                    </CardContent>
-                                </Card>
-                            ))}
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
                         </CardContent>
                     </Card>
                 </div>
@@ -1082,7 +888,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         </CardContent>
                     </Card>
 
-<<<<<<< HEAD
                     {summaryData && summaryData.sortedBeneficiaryCategories.length > 0 && (
                         <Card>
                             <CardHeader>
@@ -1168,29 +973,10 @@ We are currently assessing the needs for this initiative. Your support and feedb
                                         ))}
                                     </Pie>
                                     <ChartLegend content={<ChartLegendContent />} />
-=======
-                {chartData.length > 0 && (
-                    <Card className="mt-6">
-                        <CardHeader>
-                            <CardTitle>Donation Breakdown</CardTitle>
-                            <CardDescription>Visual breakdown of verified donations by category.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={donationTypeChartConfig} className="mx-auto aspect-square h-[300px]">
-                                <PieChart>
-                                    <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                                    <Pie data={chartData} dataKey="value" nameKey="name" innerRadius={60}>
-                                        {chartData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.name in donationTypeChartConfig ? `var(--color-${(entry.name as string).replace(/\s+/g, '')})` : 'hsl(var(--muted))'} />
-                                        ))}
-                                    </Pie>
-                                    <ChartLegend content={<ChartLegendContent nameKey="name" />} />
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
                                 </PieChart>
                             </ChartContainer>
                         </CardContent>
                     </Card>
-<<<<<<< HEAD
                 </div>
             </div>
 
@@ -1202,18 +988,3 @@ We are currently assessing the needs for this initiative. Your support and feedb
         </main>
     );
 }
-=======
-                )}
-
-
-                <ShareDialog 
-                    open={isShareDialogOpen} 
-                    onOpenChange={setIsShareDialogOpen} 
-                    shareData={shareDialogData} 
-                />
-            </main>
-        </div>
-    );
-}
-
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da

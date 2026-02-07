@@ -251,15 +251,6 @@ Your contribution, big or small, makes a huge difference.
                 ctx.fillStyle = '#FFFFFF';
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
-                if (logoImg) {
-                    const wmScale = 0.8;
-                    const wmWidth = finalCanvas.width * wmScale;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.25;
-                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
-                    ctx.globalAlpha = 1.0;
-                }
-
                 let headerTextX = PADDING;
                 if (logoImg) {
                     const logoHeight = 80;
@@ -294,6 +285,15 @@ Your contribution, big or small, makes a huge difference.
                 if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
 
+                if (logoImg) {
+                    const wmScale = 0.8;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.1;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+                }
+
                 const link = document.createElement('a');
                 link.download = `campaign-summary-${campaignId}.png`;
                 link.href = finalCanvas.toDataURL('image/png');
@@ -327,15 +327,6 @@ Your contribution, big or small, makes a huge difference.
                 pdf.setFontSize(22).text(campaign?.name || 'Campaign Summary', pageCenter, position, { align: 'center' });
                 position += 15;
 
-                if (logoImg && logoDataUrl) {
-                    pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.25 }));
-                    const wmWidth = pdfWidth * 0.75;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
-                    pdf.restoreGraphicsState();
-                }
-
                 const imgData = canvas.toDataURL('image/png');
                 const contentHeight = (canvas.height * (pdfWidth - 30)) / canvas.width;
                 
@@ -345,8 +336,18 @@ Your contribution, big or small, makes a huge difference.
                 }
 
                 pdf.addImage(imgData, 'PNG', 15, position, pdfWidth - 30, contentHeight);
-                position += contentHeight + 10;
                 
+                if (logoImg && logoDataUrl) {
+                    pdf.saveGraphicsState();
+                    pdf.setGState(new pdf.GState({ opacity: 0.1 }));
+                    const wmWidth = pdfWidth * 0.75;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
+                    pdf.restoreGraphicsState();
+                }
+
+                position = pageHeight - footerHeight;
+
                 if (position > pageHeight - 60) {
                     pdf.addPage();
                     position = 15;

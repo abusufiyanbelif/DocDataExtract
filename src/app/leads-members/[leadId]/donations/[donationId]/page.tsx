@@ -152,13 +152,6 @@ export default function DonationDetailsPage() {
                 ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
 
                 if (logoImg) {
-                    const wmScale = 0.8;
-                    const wmWidth = finalCanvas.width * wmScale;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.25;
-                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
-                    ctx.globalAlpha = 1.0;
-
                     const logoHeight = 80;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
@@ -185,6 +178,15 @@ export default function DonationDetailsPage() {
                 if (paymentSettings?.contactEmail) { ctx.fillText(`Email: ${paymentSettings.contactEmail}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
+
+                if (logoImg) {
+                    const wmScale = 0.8;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.1;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+                }
 
                 const link = document.createElement('a');
                 link.download = `donation-receipt-${donationId}.png`;
@@ -219,15 +221,6 @@ export default function DonationDetailsPage() {
                 pdf.setFontSize(16).text('Donation Receipt', pageCenter, position, { align: 'center' });
                 position += 15;
 
-                if (logoImg && logoDataUrl) {
-                    pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.25 }));
-                    const wmWidth = pdfWidth * 0.75;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
-                    pdf.restoreGraphicsState();
-                }
-
                 const imgData = canvas.toDataURL('image/png');
                 const imgProps = pdf.getImageProperties(imgData);
 
@@ -244,6 +237,16 @@ export default function DonationDetailsPage() {
                 
                 const xOffset = (pdfWidth - imgWidth) / 2;
                 pdf.addImage(imgData, 'PNG', xOffset, position, imgWidth, imgHeight);
+
+                if (logoImg && logoDataUrl) {
+                    pdf.saveGraphicsState();
+                    pdf.setGState(new pdf.GState({ opacity: 0.1 }));
+                    const wmWidth = pdfWidth * 0.75;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
+                    pdf.restoreGraphicsState();
+                }
+
                 position = pageHeight - footerHeight;
                 
                 pdf.setLineWidth(0.2);
@@ -342,7 +345,6 @@ export default function DonationDetailsPage() {
                 </div>
             </div>
 
-<<<<<<< HEAD
             {!userProfile && (
                  <Alert variant="destructive" className="mb-4">
                     <ShieldAlert className="h-4 w-4" />
@@ -367,32 +369,6 @@ export default function DonationDetailsPage() {
                     url: `${window.location.origin}/leads-public/${leadId}/summary`
                 }} 
             />
-=======
-                {!userProfile && (
-                     <Alert variant="destructive" className="mb-4">
-                        <ShieldAlert className="h-4 w-4" />
-                        <AlertTitle>You are not logged in</AlertTitle>
-                        <AlertDescription>
-                            You are viewing this as a public user. Some actions may be unavailable.
-                        </AlertDescription>
-                    </Alert>
-                )}
-                
-                <DonationReceipt 
-                    ref={receiptRef}
-                    donation={donation} 
-                    campaign={lead} 
-                />
-                 <ShareDialog 
-                    open={isShareDialogOpen} 
-                    onOpenChange={setIsShareDialogOpen} 
-                    shareData={{
-                        title: `Thank you for your donation!`,
-                        text: `JazakAllah Khair for your generous donation of ₹${donation.amount.toFixed(2)} towards the "${lead.name}" initiative. May Allah accept it and bless you abundantly.`,
-                        url: `${window.location.origin}/leads-public/${leadId}/summary`
-                    }} 
-                />
->>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
 
             {(donation.comments || donation.suggestions) && (
                 <Card className="mt-6">
