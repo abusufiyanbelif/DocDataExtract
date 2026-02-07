@@ -12,7 +12,7 @@ export const contentType = 'image/png'
 
 // Image generation
 export default function Icon() {
-  return new ImageResponse(
+  return ImageResponse(
     (
       <div
         style={{
