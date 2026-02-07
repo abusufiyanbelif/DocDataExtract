@@ -52,8 +52,11 @@ const donationCategoryChartConfig = {
     Zakat: { label: "Zakat", color: "hsl(var(--chart-1))" },
     Sadaqah: { label: "Sadaqah", color: "hsl(var(--chart-2))" },
     Lillah: { label: "Lillah", color: "hsl(var(--chart-4))" },
+<<<<<<< HEAD
     Interest: { label: "Interest", color: "hsl(var(--chart-3))" },
     Loan: { label: "Loan", color: "hsl(var(--chart-6))" },
+=======
+>>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
     'Monthly Contribution': { label: "Monthly Contribution", color: "hsl(var(--chart-5))" },
 } satisfies ChartConfig;
 
@@ -229,6 +232,7 @@ export default function DonationsSummaryPage() {
                             <CardTitle>Fund Totals by Type</CardTitle>
                             <CardDescription>A breakdown of all collected funds by their designated purpose.</CardDescription>
                         </CardHeader>
+<<<<<<< HEAD
                         <CardContent className="space-y-4">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Zakat</span>
@@ -273,6 +277,108 @@ export default function DonationsSummaryPage() {
                                     <LinkIcon className="h-5 w-5 text-primary"/>
                                     <span className="font-bold text-2xl">{summaryData?.allocatedCount}</span>
                                     <span>Allocated</span>
+=======
+                        <CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {donationCategories.filter(c => c !== 'Loan').map(category => (
+                                <Card key={category}>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">{category}</CardTitle>
+                                        <Wallet className="h-4 w-4 text-muted-foreground" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">₹{summaryData?.amountsByCategory?.[category]?.toLocaleString('en-IN') ?? '0.00'}</div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </CardContent>
+                    </Card>
+
+                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Verified Donations</CardTitle>
+                                <CheckCircle className="h-4 w-4 text-success" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">₹{summaryData?.amountsByStatus.Verified.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Verified ?? 0} donations</p>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Pending Donations</CardTitle>
+                                <Hourglass className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">₹{summaryData?.amountsByStatus.Pending.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Pending ?? 0} donations</p>
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Canceled Donations</CardTitle>
+                                <XCircle className="h-4 w-4 text-destructive" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">₹{summaryData?.amountsByStatus.Canceled.toLocaleString('en-IN') ?? '0.00'}</div>
+                                <p className="text-xs text-muted-foreground">from {summaryData?.countsByStatus.Canceled ?? 0} donations</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Donations by Payment Type</CardTitle>
+                                <CardDescription>Count of donations per payment method.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="h-[300px] flex items-center justify-center">
+                                <ChartContainer config={donationPaymentTypeChartConfig} className="h-[300px] w-full">
+                                    <BarChart data={summaryData?.donationPaymentTypeChartData} layout="vertical" margin={{ left: 20 }}>
+                                        <CartesianGrid horizontal={false} />
+                                        <YAxis
+                                            dataKey="name"
+                                            type="category"
+                                            tickLine={false}
+                                            tickMargin={10}
+                                            axisLine={false}
+                                        />
+                                        <XAxis type="number" hide />
+                                        <ChartTooltip
+                                            cursor={false}
+                                            content={<ChartTooltipContent indicator="dot" />}
+                                        />
+                                        <Bar
+                                            dataKey="value"
+                                            radius={4}
+                                            layout="vertical"
+                                        >
+                                             {summaryData?.donationPaymentTypeChartData?.map((entry) => (
+                                                <Cell key={`cell-${entry.name}`} fill={`var(--color-${entry.name.replace(/\s+/g, '')})`} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ChartContainer>
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Allocation Status</CardTitle>
+                                <CardDescription>Number of donations linked to a campaign vs. unlinked.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-col items-center justify-center h-[300px] gap-4">
+                                <div className="flex items-center gap-4 text-lg">
+                                    <div className="flex items-center gap-2">
+                                        <LinkIcon className="h-5 w-5 text-primary"/>
+                                        <span className="font-bold text-2xl">{summaryData?.allocatedCount}</span>
+                                        <span>Allocated</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Link2Off className="h-5 w-5 text-muted-foreground"/>
+                                        <span className="font-bold text-2xl">{summaryData?.unallocatedCount}</span>
+                                        <span>Unallocated</span>
+                                    </div>
+>>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Link2Off className="h-5 w-5 text-muted-foreground"/>

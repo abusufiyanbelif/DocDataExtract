@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -50,25 +49,41 @@ export function DocuExtractHeader() {
   
   const validLogoUrl = brandingSettings?.logoUrl?.trim() ? brandingSettings.logoUrl : null;
   const homeHref = user ? '/dashboard' : '/';
+  
+  const logoStyle: React.CSSProperties = {
+    objectFit: 'contain',
+    maxHeight: '4.5rem', // 72px
+  };
+
+  if (brandingSettings?.logoWidth) {
+    logoStyle.width = `${brandingSettings.logoWidth}px`;
+  } else {
+    logoStyle.width = 'auto';
+  }
+  if (brandingSettings?.logoHeight) {
+    logoStyle.height = `${brandingSettings.logoHeight}px`;
+  } else {
+    logoStyle.height = 'auto';
+  }
 
   return (
     <header className="bg-card border-b p-2 shadow-sm">
       <div className="container mx-auto flex justify-between items-center">
-        <Link href={homeHref} className="flex items-center gap-3 w-fit">
-          <div className="relative h-12 w-24 flex-shrink-0 flex items-center justify-center">
+        <Link href={homeHref} className="flex items-center gap-3 w-fit group transition-transform duration-300 ease-in-out hover:scale-105 animate-slide-in-from-top" style={{ animationDelay: '0.1s', animationFillMode: 'backwards' }}>
+          <div className="relative flex items-center justify-center" style={{ minHeight: '4.5rem' }}>
             {isLoading ? (
-                <Skeleton className="h-full w-full" />
+                <Skeleton className="h-12 w-24" />
             ) : (
                 validLogoUrl && (
                   <img
                     src={`/api/image-proxy?url=${encodeURIComponent(validLogoUrl)}`}
                     alt="Company Logo"
-                    className="object-contain h-full w-full"
+                    style={logoStyle}
                   />
                 )
             )}
             </div>
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold font-headline text-foreground hidden sm:block animate-slide-in-from-top" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
             {isBrandingLoading ? <Skeleton className="h-8 w-80" /> : (brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}
           </h1>
         </Link>
@@ -78,7 +93,7 @@ export function DocuExtractHeader() {
         ) : user && userProfile ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full transition-transform duration-200 ease-in-out hover:scale-110 active:scale-100 animate-slide-in-from-top" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
                 <Avatar className="h-10 w-10">
                   <AvatarImage
                     src={user.photoURL || ''}

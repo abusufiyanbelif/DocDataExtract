@@ -91,7 +91,7 @@ export default function DonationDetailsPage() {
     
     const handleShare = () => {
         if (!donation || !campaign) return;
-        const shareText = `JazakAllah Khair for your generous donation of Rupee ${donation.amount.toFixed(2)} towards the "${campaign.name}" campaign. May Allah accept it and bless you abundantly.`;
+        const shareText = `JazakAllah Khair for your generous donation of ₹${donation.amount.toFixed(2)} towards the "${campaign.name}" campaign. May Allah accept it and bless you abundantly.`;
         setIsShareDialogOpen(true);
     };
 
@@ -146,7 +146,7 @@ export default function DonationDetailsPage() {
                 const contentWidth = canvas.width;
                 const contentHeight = canvas.height;
 
-                finalCanvas.width = contentWidth + PADDING * 2;
+                finalCanvas.width = 1240;
                 finalCanvas.height = contentHeight + HEADER_HEIGHT + FOOTER_HEIGHT + PADDING * 2;
                 const ctx = finalCanvas.getContext('2d')!;
                 
@@ -157,7 +157,7 @@ export default function DonationDetailsPage() {
                     const wmScale = 0.8;
                     const wmWidth = finalCanvas.width * wmScale;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.15;
+                    ctx.globalAlpha = 0.25;
                     ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
                     ctx.globalAlpha = 1.0;
 
@@ -166,18 +166,18 @@ export default function DonationDetailsPage() {
                     ctx.drawImage(logoImg, PADDING, PADDING, logoWidth, logoHeight);
                 }
                 
-                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.fillStyle = 'rgb(19, 106, 51)';
                 ctx.font = 'bold 22px sans-serif';
                 ctx.fillText(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', PADDING + (logoImg ? 90 : 0), PADDING + 50);
 
-                ctx.drawImage(canvas, PADDING, PADDING + HEADER_HEIGHT, contentWidth, contentHeight);
+                ctx.drawImage(canvas, (finalCanvas.width - contentWidth) / 2, PADDING + HEADER_HEIGHT);
                 
                 const footerY = finalCanvas.height - FOOTER_HEIGHT - PADDING;
                 if (qrImg) {
                     const qrSize = 200;
                     ctx.drawImage(qrImg, finalCanvas.width - PADDING - qrSize, footerY, qrSize, qrSize);
                 }
-                ctx.fillStyle = 'rgb(10, 41, 19)';
+                ctx.fillStyle = 'rgb(19, 106, 51)';
                 ctx.font = 'bold 18px sans-serif';
                 ctx.fillText('For Donations & Contact', PADDING, footerY + 25);
                 ctx.font = '16px sans-serif';
@@ -199,28 +199,28 @@ export default function DonationDetailsPage() {
                 const pageCenter = pdfWidth / 2;
                 let position = 15;
 
-                pdf.setTextColor(10, 41, 19);
+                pdf.setTextColor(19, 106, 51);
 
                 if (logoImg && logoDataUrl) {
                     const logoHeight = 20;
                     const logoWidth = (logoImg.width / logoImg.height) * logoHeight;
                     pdf.addImage(logoDataUrl, 'PNG', 15, position, logoWidth, logoHeight);
-                    pdf.setFontSize(16);
+                    pdf.setFontSize(14);
                     const textY = position + (logoHeight / 2) + 3;
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', 15 + logoWidth + 5, textY);
                     position += logoHeight + 10;
                 } else {
-                    pdf.setFontSize(16);
+                    pdf.setFontSize(14);
                     pdf.text(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur', pageCenter, position, { align: 'center' });
                     position += 15;
                 }
                 
-                pdf.setFontSize(18).text('Donation Receipt', pageCenter, position, { align: 'center' });
+                pdf.setFontSize(16).text('Donation Receipt', pageCenter, position, { align: 'center' });
                 position += 15;
 
                 if (logoImg && logoDataUrl) {
                     pdf.saveGraphicsState();
-                    pdf.setGState(new pdf.GState({ opacity: 0.15 }));
+                    pdf.setGState(new pdf.GState({ opacity: 0.25 }));
                     const wmWidth = pdfWidth * 0.75;
                     const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
                     pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
@@ -341,6 +341,7 @@ export default function DonationDetailsPage() {
                 </div>
             </div>
 
+<<<<<<< HEAD
             {!userProfile && (
                  <Alert variant="destructive" className="mb-4">
                     <ShieldAlert className="h-4 w-4" />
@@ -366,6 +367,33 @@ export default function DonationDetailsPage() {
                     url: `${window.location.origin}/campaign-public/${campaignId}/summary`
                 }} 
             />
+=======
+                {!userProfile && (
+                     <Alert variant="destructive" className="mb-4">
+                        <ShieldAlert className="h-4 w-4" />
+                        <AlertTitle>You are not logged in</AlertTitle>
+                        <AlertDescription>
+                            You are viewing this as a public user. Some actions may be unavailable.
+                        </AlertDescription>
+                    </Alert>
+                )}
+                
+                <DonationReceipt 
+                    ref={receiptRef}
+                    donation={donation} 
+                    campaign={campaign} 
+                />
+                
+                <ShareDialog 
+                    open={isShareDialogOpen} 
+                    onOpenChange={setIsShareDialogOpen} 
+                    shareData={{
+                        title: `Thank you for your donation!`,
+                        text: `JazakAllah Khair for your generous donation of ₹${donation.amount.toFixed(2)} towards the "${campaign.name}" campaign. May Allah accept it and bless you abundantly.`,
+                        url: `${window.location.origin}/campaign-public/${campaignId}/summary`
+                    }} 
+                />
+>>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
 
             {(donation.comments || donation.suggestions) && (
                 <Card className="mt-6">

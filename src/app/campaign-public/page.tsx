@@ -1,5 +1,9 @@
 
 'use client';
+<<<<<<< HEAD
+=======
+import { DocuExtractHeader } from '@/components/docu-extract-header';
+>>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -8,6 +12,7 @@ import { useCollection, useFirestore } from '@/firebase';
 import type { Campaign } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +20,7 @@ import { collection, query, where } from 'firebase/firestore';
 
 export default function PublicCampaignPage() {
   const firestore = useFirestore();
+  const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -85,6 +91,7 @@ export default function PublicCampaignPage() {
                   </SelectContent>
               </Select>
           </div>
+<<<<<<< HEAD
       </div>
 
       {isLoading && (
@@ -98,6 +105,14 @@ export default function PublicCampaignPage() {
               {filteredCampaigns.map(campaign => {
                   return (
                     <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-shadow">
+=======
+        )}
+        
+        {!isLoading && filteredCampaigns.length > 0 && (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredCampaigns.map(campaign => (
+                    <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer" onClick={() => router.push(`/campaign-public/${campaign.id}/summary`)}>
+>>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
                                 <CardTitle>{campaign.name}</CardTitle>
@@ -110,6 +125,7 @@ export default function PublicCampaignPage() {
                         </CardHeader>
                         <CardContent className="flex flex-col flex-grow space-y-4">
                             <p className="text-sm text-muted-foreground line-clamp-3 flex-grow">{campaign.description || "No description provided."}</p>
+<<<<<<< HEAD
                             {campaign.targetAmount && campaign.targetAmount > 0 && (
                                 <div className="text-sm">
                                     <span className="font-medium">Goal: </span>
@@ -122,6 +138,12 @@ export default function PublicCampaignPage() {
                                 <Link href={`/campaign-public/${campaign.id}/summary`}>
                                     View Details
                                 </Link>
+=======
+                        </CardContent>
+                        <CardFooter>
+                            <Button className="w-full" tabIndex={-1}>
+                                View Details
+>>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
                             </Button>
                         </CardFooter>
                     </Card>

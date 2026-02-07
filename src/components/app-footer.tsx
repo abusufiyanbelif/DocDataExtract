@@ -15,10 +15,8 @@ export function AppFooter() {
   const { paymentSettings, isLoading: isPaymentLoading } = usePaymentSettings();
   const { brandingSettings, isLoading: isBrandingLoading } = useBranding();
   const { toast } = useToast();
-  const pathname = usePathname();
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
 
-  const isSummaryPage = pathname.includes('/summary');
   const isLoading = isPaymentLoading || isBrandingLoading;
 
   const copyToClipboard = (text: string, type: string) => {
@@ -63,10 +61,6 @@ export function AppFooter() {
         });
     }
   };
-
-  if (isSummaryPage) {
-    return null;
-  }
   
   const hasPaymentInfo = paymentSettings?.upiId || paymentSettings?.paymentMobileNumber || validQrCodeUrl;
   const hasContactInfo = paymentSettings?.contactEmail || paymentSettings?.contactPhone || paymentSettings?.website;
@@ -80,7 +74,7 @@ export function AppFooter() {
     <footer className="bg-card border-t mt-auto p-6 text-card-foreground">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
         {/* Org & Contact Info */}
-        <div className="flex flex-col items-center md:items-start gap-3">
+        <div className="flex flex-col items-center md:items-start gap-3 transition-transform duration-300 ease-in-out hover:scale-105 animate-slide-in-from-bottom" style={{ animationDelay: '0.2s', animationFillMode: 'backwards' }}>
           {isLoading ? <Skeleton className="h-7 w-2/3" /> : <h3 className="font-semibold text-lg">{brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur'}</h3>}
           {isLoading ? <Skeleton className="h-4 w-full" /> : paymentSettings?.address && <p className="text-sm text-muted-foreground">{paymentSettings.address}</p>}
            <div className="text-sm text-muted-foreground space-y-1">
@@ -89,19 +83,19 @@ export function AppFooter() {
             </div>
              <Separator className="my-2"/>
           {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.contactEmail && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm transition-all hover:text-primary">
               <Mail className="h-4 w-4" />
               <span>{paymentSettings.contactEmail}</span>
             </div>
           )}
           {isLoading ? <Skeleton className="h-5 w-3/5" /> : paymentSettings?.contactPhone && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm transition-all hover:text-primary">
               <Phone className="h-4 w-4" />
               <span>{paymentSettings.contactPhone}</span>
             </div>
           )}
            {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.website && (
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm transition-all hover:text-primary">
               <Globe className="h-4 w-4" />
               <a href={paymentSettings.website} target="_blank" rel="noopener noreferrer" className="hover:underline">{paymentSettings.website}</a>
             </div>
@@ -109,10 +103,10 @@ export function AppFooter() {
         </div>
 
         {/* Payment Info */}
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3 transition-transform duration-300 ease-in-out hover:scale-105 animate-slide-in-from-bottom" style={{ animationDelay: '0.3s', animationFillMode: 'backwards' }}>
             {isLoading ? <Skeleton className="h-7 w-1/2" /> : <h3 className="font-semibold text-lg">For Donations</h3>}
             {isLoading ? <Skeleton className="h-5 w-4/5" /> : paymentSettings?.upiId && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 transition-all hover:text-primary">
                 <QrCode className="h-4 w-4" />
                 <a href={`upi://pay?pa=${paymentSettings.upiId}&pn=${encodeURIComponent(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}&cu=INR`} className="font-mono text-sm hover:underline">
                     {paymentSettings.upiId}
@@ -123,7 +117,7 @@ export function AppFooter() {
                 </div>
             )}
             {isLoading ? <Skeleton className="h-5 w-3/5" /> : paymentSettings?.paymentMobileNumber && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 transition-all hover:text-primary">
                 <Smartphone className="h-4 w-4" />
                 <a href={`upi://pay?pa=${paymentSettings.paymentMobileNumber}&pn=${encodeURIComponent(brandingSettings?.name || 'Baitulmal Samajik Sanstha Solapur')}&cu=INR`} className="font-mono text-sm hover:underline">
                     {paymentSettings.paymentMobileNumber}
@@ -136,14 +130,14 @@ export function AppFooter() {
         </div>
 
         {/* QR Code */}
-        <div className="flex justify-center md:justify-end">
+        <div className="flex justify-center md:justify-end animate-slide-in-from-bottom" style={{ animationDelay: '0.4s', animationFillMode: 'backwards' }}>
           {isLoading ? (
             <Skeleton className="h-32 w-32 rounded-lg" />
           ) : (
             validQrCodeUrl && (
                  <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
                     <DialogTrigger asChild>
-                        <button className="cursor-pointer transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
+                        <button className="cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg">
                             <img
                                 src={`/api/image-proxy?url=${encodeURIComponent(validQrCodeUrl)}`}
                                 alt="UPI QR Code"

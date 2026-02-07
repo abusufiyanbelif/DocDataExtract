@@ -1,5 +1,10 @@
 
 'use client';
+<<<<<<< HEAD
+=======
+import { DocuExtractHeader } from '@/components/docu-extract-header';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+>>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
@@ -8,6 +13,7 @@ import { useCollection, useFirestore } from '@/firebase';
 import type { Lead } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +21,7 @@ import { collection, query, where } from 'firebase/firestore';
 
 export default function PublicLeadPage() {
   const firestore = useFirestore();
+  const router = useRouter();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -85,6 +92,7 @@ export default function PublicLeadPage() {
                   </SelectContent>
               </Select>
           </div>
+<<<<<<< HEAD
       </div>
 
       {isLoading && (
@@ -136,5 +144,47 @@ export default function PublicLeadPage() {
           </div>
       )}
     </main>
+=======
+        )}
+        
+        {!isLoading && filteredLeads.length > 0 && (
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredLeads.map(lead => (
+                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer" onClick={() => router.push(`/leads-public/${lead.id}/summary`)}>
+                        <CardHeader>
+                            <div className="flex justify-between items-start gap-2">
+                                <CardTitle>{lead.name}</CardTitle>
+                                <Badge variant={
+                                    lead.status === 'Active' ? 'success' :
+                                    lead.status === 'Completed' ? 'secondary' : 'outline'
+                                }>{lead.status}</Badge>
+                            </div>
+                            <CardDescription>{lead.startDate} to {lead.endDate}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-col flex-grow">
+                            <p className="text-sm text-muted-foreground line-clamp-3 flex-grow">{lead.description || "No description provided."}</p>
+                             <div className="flex justify-between text-sm text-muted-foreground pt-2">
+                                <Badge variant="outline">{lead.authenticityStatus}</Badge>
+                                <Badge variant="outline">{lead.publicVisibility}</Badge>
+                            </div>
+                        </CardContent>
+                         <CardFooter>
+                            <Button className="w-full" tabIndex={-1}>
+                                View Details
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        )}
+        
+         {!isLoading && filteredLeads.length === 0 && (
+            <div className="text-center py-16">
+                <p className="text-muted-foreground">No public leads found matching your criteria.</p>
+            </div>
+        )}
+      </main>
+    </div>
+>>>>>>> b801c4913b8f519048c191e413de6d9c3ca543da
   );
 }
