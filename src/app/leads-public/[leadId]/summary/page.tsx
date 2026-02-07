@@ -69,9 +69,6 @@ export default function PublicLeadSummaryPage() {
 
     const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
 
-    const beneficiariesCollectionRef = useMemo(() => (firestore && leadId) ? collection(firestore, `leads/${leadId}/beneficiaries`) : null, [firestore, leadId]);
-    const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
-    
     const fundingData = useMemo(() => {
         if (!donations || !lead) return null;
 
@@ -94,21 +91,8 @@ export default function PublicLeadSummaryPage() {
 
         return { amountsByCategory };
     }, [donations, lead]);
-
-    const beneficiaryData = useMemo(() => {
-        if (!beneficiaries) return null;
-        
-        const beneficiariesGiven = beneficiaries.filter(b => b.status === 'Given').length;
-        const beneficiariesPending = beneficiaries.length - beneficiariesGiven;
-        
-        return {
-            totalBeneficiaries: beneficiaries.length,
-            beneficiariesGiven,
-            beneficiariesPending,
-        }
-    }, [beneficiaries]);
     
-    const isLoading = isLeadLoading || isBrandingLoading || isPaymentLoading || areDonationsLoading || areBeneficiariesLoading;
+    const isLoading = isLeadLoading || isBrandingLoading || isPaymentLoading || areDonationsLoading;
 
     const handleShare = async () => {
         if (!lead) return;
@@ -284,7 +268,7 @@ We are currently assessing the needs for this initiative. Your support and feedb
                     pdf.addImage(logoDataUrl, 'PNG', (pdfWidth - wmWidth) / 2, (pageHeight - wmHeight) / 2, wmWidth, wmHeight);
                     pdf.restoreGraphicsState();
                 }
-
+                
                 pdf.save(`lead-summary-${leadId}.pdf`);
             }
         } catch (error) {
@@ -377,35 +361,6 @@ We are currently assessing the needs for this initiative. Your support and feedb
                         </div>
                     </CardContent>
                 </Card>
-                <div className="grid gap-6 sm:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Beneficiaries</CardTitle>
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{beneficiaryData?.totalBeneficiaries ?? 0}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Kits Given</CardTitle>
-                            <Gift className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{beneficiaryData?.beneficiariesGiven ?? 0}</div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Kits Pending</CardTitle>
-                            <Hourglass className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{beneficiaryData?.beneficiariesPending ?? 0}</div>
-                        </CardContent>
-                    </Card>
-                </div>
                  <Card>
                     <CardHeader>
                         <CardTitle>All Donations by Category</CardTitle>
