@@ -103,16 +103,16 @@ export default function PublicCampaignSummaryPage() {
         const amountsByCategory: Record<DonationCategory, number> = donationCategories.reduce((acc, cat) => ({...acc, [cat]: 0}), {} as Record<DonationCategory, number>);
 
         verifiedDonationsList.forEach(d => {
-            if (d.typeSplit && d.typeSplit.length > 0) {
-                 d.typeSplit.forEach(split => {
-                    if (donationCategories.includes(split.category)) {
-                        amountsByCategory[split.category as DonationCategory] += split.amount;
-                    }
-                });
-            } else if (d.type && donationCategories.includes(d.type as DonationCategory)) {
-                 const category = (d.type as any) === 'General' ? 'Sadaqah' : d.type;
-                 amountsByCategory[category as DonationCategory] += d.amount;
-            }
+            const splits = d.typeSplit && d.typeSplit.length > 0
+                ? d.typeSplit
+                : (d.type ? [{ category: d.type as DonationCategory, amount: d.amount }] : []);
+            
+            splits.forEach(split => {
+                const category = (split.category as any) === 'General' || (split.category as any) === 'Sadqa' ? 'Sadaqah' : split.category;
+                if (amountsByCategory.hasOwnProperty(category)) {
+                    amountsByCategory[category as DonationCategory] += split.amount;
+                }
+            });
         });
 
         const verifiedNonZakatDonations = Object.entries(amountsByCategory)
@@ -270,6 +270,15 @@ Your contribution, big or small, makes a huge difference.
                 
                 ctx.drawImage(contentCanvas, PADDING, HEADER_HEIGHT + (PADDING/2));
                 
+                if (logoImg) {
+                    const wmScale = 0.8;
+                    const wmWidth = finalCanvas.width * wmScale;
+                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
+                    ctx.globalAlpha = 0.1;
+                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
+                    ctx.globalAlpha = 1.0;
+                }
+                
                 const footerY = finalCanvas.height - FOOTER_HEIGHT;
                 if (qrImg) {
                     const qrSize = 200;
@@ -285,15 +294,6 @@ Your contribution, big or small, makes a huge difference.
                 if (paymentSettings?.website) { ctx.fillText(`Website: ${paymentSettings.website}`, PADDING, textY); textY += 24; }
                 if (paymentSettings?.address) { ctx.fillText(paymentSettings.address, PADDING, textY); }
 
-                if (logoImg) {
-                    const wmScale = 0.8;
-                    const wmWidth = finalCanvas.width * wmScale;
-                    const wmHeight = (logoImg.height / logoImg.width) * wmWidth;
-                    ctx.globalAlpha = 0.1;
-                    ctx.drawImage(logoImg, (finalCanvas.width - wmWidth) / 2, (finalCanvas.height - wmHeight) / 2, wmWidth, wmHeight);
-                    ctx.globalAlpha = 1.0;
-                }
-
                 const link = document.createElement('a');
                 link.download = `campaign-summary-${campaignId}.png`;
                 link.href = finalCanvas.toDataURL('image/png');
@@ -303,6 +303,7 @@ Your contribution, big or small, makes a huge difference.
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
                 const pageCenter = pdfWidth / 2;
+                const footerHeight = 60;
                 let position = 15;
 
                 pdf.setTextColor(19, 106, 51);
@@ -330,7 +331,7 @@ Your contribution, big or small, makes a huge difference.
                 const imgData = canvas.toDataURL('image/png');
                 const contentHeight = (canvas.height * (pdfWidth - 30)) / canvas.width;
                 
-                if (position + contentHeight > pageHeight - 40) {
+                if (position + contentHeight > pageHeight - footerHeight) {
                      pdf.addPage();
                      position = 15;
                 }
@@ -361,7 +362,7 @@ Your contribution, big or small, makes a huge difference.
                 let textY = position + 6;
                 pdf.setFontSize(9);
                 
-                if (qrImg) {
+                if (qrImg && qrDataUrl) {
                     const qrSize = 30;
                     const qrX = pdfWidth - 15 - qrSize;
                     pdf.addImage(qrDataUrl!, 'PNG', qrX, position - 2, qrSize, qrSize);
@@ -539,7 +540,7 @@ Your contribution, big or small, makes a huge difference.
                                     <YAxis tickFormatter={(value) => `Rupee ${Number(value).toLocaleString()}`} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Bar dataKey="value" radius={4}>
-                                        {Object.keys(summaryData?.amountsByCategory || {}).map((name) => (
+                                        {Object.entries(summaryData?.amountsByCategory || {}).map(([name,]) => (
                                             <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
                                         ))}
                                     </Bar>

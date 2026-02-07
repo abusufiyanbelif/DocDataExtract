@@ -88,7 +88,7 @@ ${colorConfig
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    return color ? `  --color-${key.replace(/\s+/g, '')}: ${color};` : null
   })
   .join("\n")}
 }
@@ -339,15 +339,15 @@ function getPayloadConfigFromPayload(
     key in payload &&
     typeof payload[key as keyof typeof payload] === "string"
   ) {
-    configLabelKey = (payload[key as keyof typeof payload] as string).replace(/\s+/g, '');
+    configLabelKey = payload[key as keyof typeof payload] as string;
   } else if (
     payloadPayload &&
     key in payloadPayload &&
     typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
   ) {
-    configLabelKey = (payloadPayload[
+    configLabelKey = payloadPayload[
       key as keyof typeof payloadPayload
-    ] as string).replace(/\s+/g, '');
+    ] as string;
   }
 
   return configLabelKey in config
@@ -363,5 +363,3 @@ export {
   ChartLegendContent,
   ChartStyle,
 }
-
-    
