@@ -74,26 +74,6 @@ export default function LeadPage() {
 
   const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsCollectionRef);
 
-  const donationsCollectionRef = useMemo(() => {
-    if (!firestore) return null;
-    // Only fetch verified donations to calculate collected amounts
-    return query(collection(firestore, 'donations'), where('status', '==', 'Verified'));
-  }, [firestore]);
-  const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
-  
-  const leadCollectedAmounts = useMemo(() => {
-    if (!donations) return {};
-    return donations.reduce((acc, donation) => {
-        if (donation.campaignId && donation.status === 'Verified') {
-            const nonZakatAmount = (donation.typeSplit || [])
-                .filter(split => split.category !== 'Zakat')
-                .reduce((sum, split) => sum + split.amount, 0);
-            acc[donation.campaignId] = (acc[donation.campaignId] || 0) + nonZakatAmount;
-        }
-        return acc;
-    }, {} as Record<string, number>);
-  }, [donations]);
-  
   const canCreate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.create', false);
   const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.update', false);
   const canDelete = userProfile?.role === 'Admin' || get(userProfile, 'permissions.leads-members.delete', false);
@@ -245,7 +225,7 @@ export default function LeadPage() {
     return filteredAndSortedLeads.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredAndSortedLeads, currentPage, itemsPerPage]);
 
-  const isLoading = areLeadsLoading || isProfileLoading || isDeleting || areDonationsLoading;
+  const isLoading = areLeadsLoading || isProfileLoading || isDeleting;
   
   if (!isLoading && userProfile && !canViewLeads) {
     return (
@@ -331,12 +311,9 @@ export default function LeadPage() {
                 {isLoading && (
                     [...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 w-full" />)
                 )}
-                {!isLoading && paginatedLeads.map((lead) => {
-                    const collected = leadCollectedAmounts[lead.id] || 0;
-                    const target = lead.targetAmount || 0;
-                    const progress = target > 0 ? (collected / target) * 100 : 0;
+                {!isLoading && paginatedLeads.map((lead, index) => {
                     return (
-                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer" onClick={() => router.push(`/leads-members/${lead.id}/summary`)}>
+                    <Card key={lead.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer animate-fade-in-zoom" style={{ animationDelay: `${100 * index}ms` }} onClick={() => router.push(`/leads-members/${lead.id}/summary`)}>
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
                                 <CardTitle className="w-full break-words">{lead.name}</CardTitle>
@@ -413,21 +390,6 @@ export default function LeadPage() {
                             <CardDescription>{lead.startDate} to {lead.endDate}</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-grow space-y-4">
-                             <div className="space-y-2">
-                                <div className="flex justify-between text-sm font-medium">
-                                    <span className="text-foreground">
-                                        ₹{collected.toLocaleString('en-IN')}
-                                        <span className="text-muted-foreground"> raised</span>
-                                    </span>
-                                    {target > 0 && (
-                                        <span className="text-muted-foreground">
-                                            Goal: ₹{target.toLocaleString('en-IN')}
-                                        </span>
-                                    )}
-                                </div>
-                                <Progress value={progress} className="h-2" />
-                                {target > 0 && <p className="text-xs text-muted-foreground text-right">{progress.toFixed(0)}% funded</p>}
-                            </div>
                              <div className="flex justify-between text-sm text-muted-foreground">
                                 <Badge variant="outline">{lead.category}</Badge>
                                 <Badge variant={

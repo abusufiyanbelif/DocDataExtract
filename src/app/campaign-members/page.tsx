@@ -73,26 +73,6 @@ export default function CampaignPage() {
   }, [firestore]);
   const { data: campaigns, isLoading: areCampaignsLoading } = useCollection<Campaign>(campaignsCollectionRef);
   
-  const donationsCollectionRef = useMemo(() => {
-    if (!firestore) return null;
-    // Only fetch verified donations to calculate collected amounts
-    return query(collection(firestore, 'donations'), where('status', '==', 'Verified'));
-  }, [firestore]);
-  const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
-
-  const campaignCollectedAmounts = useMemo(() => {
-    if (!donations) return {};
-    return donations.reduce((acc, donation) => {
-        if (donation.campaignId && donation.status === 'Verified') {
-            const nonZakatAmount = (donation.typeSplit || [])
-                .filter(split => split.category !== 'Zakat')
-                .reduce((sum, split) => sum + split.amount, 0);
-            acc[donation.campaignId] = (acc[donation.campaignId] || 0) + nonZakatAmount;
-        }
-        return acc;
-    }, {} as Record<string, number>);
-  }, [donations]);
-  
   const canCreate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.create', false);
   const canUpdate = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.update', false);
   const canDelete = userProfile?.role === 'Admin' || get(userProfile, 'permissions.campaigns.delete', false);
@@ -255,7 +235,7 @@ export default function CampaignPage() {
     return filteredAndSortedCampaigns.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredAndSortedCampaigns, currentPage, itemsPerPage]);
 
-  const isLoading = areCampaignsLoading || isProfileLoading || isDeleting || areDonationsLoading;
+  const isLoading = areCampaignsLoading || isProfileLoading || isDeleting;
   
   if (!isLoading && userProfile && !canViewCampaigns) {
     return (
@@ -341,12 +321,9 @@ export default function CampaignPage() {
                 {isLoading && (
                     [...Array(6)].map((_, i) => <Skeleton key={i} className="h-64 w-full" />)
                 )}
-                {!isLoading && paginatedCampaigns.map((campaign) => {
-                    const collected = campaignCollectedAmounts[campaign.id] || 0;
-                    const target = campaign.targetAmount || 0;
-                    const progress = target > 0 ? (collected / target) * 100 : 0;
+                {!isLoading && paginatedCampaigns.map((campaign, index) => {
                     return (
-                    <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer" onClick={() => router.push(`/campaign-members/${campaign.id}/summary`)}>
+                    <Card key={campaign.id} className="flex flex-col hover:shadow-lg transition-all duration-200 ease-in-out hover:scale-105 active:scale-95 cursor-pointer animate-fade-in-zoom" style={{ animationDelay: `${100 * index}ms` }} onClick={() => router.push(`/campaign-members/${campaign.id}/summary`)}>
                         <CardHeader>
                             <div className="flex justify-between items-start gap-2">
                                 <CardTitle className="w-full break-words">{campaign.name}</CardTitle>
@@ -420,21 +397,6 @@ export default function CampaignPage() {
                             <CardDescription>{campaign.startDate} to {campaign.endDate}</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-grow space-y-4">
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm font-medium">
-                                    <span className="text-foreground">
-                                        Rupee {collected.toLocaleString('en-IN')}
-                                        <span className="text-muted-foreground"> raised</span>
-                                    </span>
-                                    {target > 0 && (
-                                        <span className="text-muted-foreground">
-                                            Goal: Rupee {target.toLocaleString('en-IN')}
-                                        </span>
-                                    )}
-                                </div>
-                                <Progress value={progress} className="h-2" />
-                                {target > 0 && <p className="text-xs text-muted-foreground text-right">{progress.toFixed(0)}% funded</p>}
-                            </div>
                              <div className="flex justify-between text-sm text-muted-foreground">
                                 <Badge variant="outline">{campaign.category}</Badge>
                                 <Badge variant={
