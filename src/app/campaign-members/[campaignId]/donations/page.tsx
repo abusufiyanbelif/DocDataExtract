@@ -214,7 +214,7 @@ export default function DonationsPage() {
             const { default: Resizer } = await import('react-image-file-resizer');
             const resizedBlob = await new Promise<Blob>((resolve) => {
                  Resizer.imageFileResizer(
-                    file, 1024, 1024, 'JPEG', 80, 0,
+                    file, 1024, 1024, 'PNG', 100, 0,
                     blob => {
                         resolve(blob as Blob);
                     }, 'blob'
@@ -227,7 +227,7 @@ export default function DonationsPage() {
             const transactionIdPart = data.transactionId || 'NULL';
             const fileNameParts = [ data.donorName, data.donorPhone, data.donationDate, transactionIdPart, 'referby', userProfile.name ];
             const sanitizedBaseName = fileNameParts.join('_').replace(/[^a-zA-Z0-9_.-]/g, '_').replace(/_{2,}/g, '_');
-            const fileExtension = 'jpeg';
+            const fileExtension = 'png';
             const finalFileName = `${docRef.id}_${sanitizedBaseName}.${fileExtension}`;
             const filePath = `campaigns/${campaignFolderName}/donations/${finalFileName}`;
             const fileRef = storageRef(storage, filePath);
@@ -669,8 +669,8 @@ export default function DonationsPage() {
             <DialogHeader>
                 <DialogTitle>Donation Screenshot</DialogTitle>
             </DialogHeader>
-            {imageToView && (
-                <div className="relative h-[70vh] w-full mt-4 overflow-auto bg-secondary/20 border rounded-md">
+            <div className="relative h-[70vh] w-full mt-4 overflow-auto bg-secondary/20 border rounded-md">
+                {imageToView && (
                     <img
                         src={`/api/image-proxy?url=${encodeURIComponent(imageToView)}`}
                         alt="Donation screenshot"
@@ -678,8 +678,8 @@ export default function DonationsPage() {
                         style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
                         crossOrigin="anonymous"
                     />
-                </div>
-            )}
+                )}
+            </div>
              <DialogFooter className="sm:justify-center pt-4">
                 <Button variant="outline" onClick={() => setZoom(z => z * 1.2)}><ZoomIn className="mr-2"/> Zoom In</Button>
                 <Button variant="outline" onClick={() => setZoom(z => z / 1.2)}><ZoomOut className="mr-2"/> Zoom Out</Button>
