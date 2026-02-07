@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useMemo, useState, useRef } from 'react';
@@ -104,17 +105,12 @@ export default function PublicCampaignSummaryPage() {
 
         verifiedDonationsList.forEach(d => {
             if (d.typeSplit && d.typeSplit.length > 0) {
-                d.typeSplit.forEach(split => {
-                    const category = (split.category as any) === 'General' || (split.category as any) === 'Sadqa' ? 'Sadaqah' : split.category as DonationCategory;
+                 d.typeSplit.forEach(split => {
+                    const category = split.category as DonationCategory;
                     if (amountsByCategory.hasOwnProperty(category)) {
                         amountsByCategory[category] += split.amount;
                     }
                 });
-            } else if (d.type) {
-                const category = d.type === 'General' || (d.type as any) === 'Sadqa' ? 'Sadaqah' : d.type;
-                if (amountsByCategory.hasOwnProperty(category)) {
-                    amountsByCategory[category as DonationCategory] += d.amount;
-                }
             }
         });
 
@@ -572,26 +568,6 @@ Your contribution, big or small, makes a huge difference.
                             </CardContent>
                         </Card>
                     )}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Donations by Category</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={donationCategoryChartConfig} className="h-[250px] w-full">
-                                <BarChart data={Object.entries(summaryData?.amountsByCategory || {}).map(([name, value]) => ({ name, value }))} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                                    <YAxis tickFormatter={(value) => `₹${Number(value).toLocaleString()}`} />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Bar dataKey="value" radius={4}>
-                                        {Object.entries(summaryData?.amountsByCategory || {}).map(([name]) => (
-                                            <Cell key={name} fill={`var(--color-${name.replace(/\s+/g, '')})`} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
                 </div>
             </div>
 
