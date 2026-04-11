@@ -2,10 +2,19 @@
 import React, { useState, useMemo, Suspense } from 'react';
 import { useParams, useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useStorage, useAuth, useMemoFirebase, useCollection, useDoc } from '@/firebase';
+import { 
+    useFirestore, 
+    useStorage, 
+    useAuth, 
+    useMemoFirebase, 
+    useCollection, 
+    useDoc,
+    storageRef,
+    uploadBytes,
+    getDownloadURL
+} from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, doc, serverTimestamp, setDoc, updateDoc, type DocumentReference, deleteField } from 'firebase/firestore';
 import type { Donation, Lead, Campaign } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -79,6 +88,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogFooter,
 } from "@/components/ui/dialog";
 import { DonationForm, type DonationFormData } from '@/components/donation-form';
 import { DonationSearchDialog } from '@/components/donation-search-dialog';
@@ -597,7 +607,7 @@ function LeadDonationListContent() {
                         <CardDescription className="font-normal text-primary/70">Verified Contribution Logs For This Individual Case.</CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" size="sm" onClick={handleExport} className="font-bold border-primary/20 text-primary active:scale-95 transition-transform"><Download className="mr-2 h-4 w-4"/> Export CSV</Button>
+                        <Button variant="outline" size="sm" onClick={() => { if(!donations.length) return; const headers = ['ID', 'Donor Name', 'Donor Phone', 'Amount', 'Date', 'Type', 'Status']; const rows = donations.map(d => [ d.id, d.donorName, d.donorPhone, d.amountForThisLead, d.donationDate, d.donationType, d.status ]); const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n'); const blob = new Blob([csv], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `donations_lead_${leadId}.csv`; a.click(); }} className="font-bold border-primary/20 text-primary active:scale-95 transition-transform"><Download className="mr-2 h-4 w-4"/> Export CSV</Button>
                         <Button variant="outline" size="sm" onClick={() => setIsImportOpen(true)} className="font-bold border-primary/20 text-primary active:scale-95 transition-transform"><UploadCloud className="mr-2 h-4 w-4"/> Import Data</Button>
                         {canUpdate && <Button variant="outline" onClick={() => setIsSearchOpen(true)} className="font-bold border-primary/20 text-primary active:scale-95 transition-transform"><LinkIcon className="mr-2 h-4 w-4"/> Select From Master</Button>}
                         {canCreate && <Button onClick={() => { setEditingDonation(null); setIsFormOpen(true); }} className="font-bold shadow-md active:scale-95 transition-transform rounded-[12px]"><PlusCircle className="mr-2 h-4 w-4"/> Add Record</Button>}

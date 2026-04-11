@@ -5,9 +5,19 @@ import { useSession } from '@/hooks/use-session';
 import { useBranding } from '@/hooks/use-branding';
 import { usePaymentSettings } from '@/hooks/use-payment-settings';
 import { useGuidingPrinciples } from '@/hooks/use-guiding-principles';
-import { useStorage, useFirestore, useMemoFirebase, useCollection, collection } from '@/firebase';
-import { doc, setDoc, writeBatch } from 'firebase/firestore';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { 
+    useStorage, 
+    useFirestore, 
+    useMemoFirebase, 
+    useCollection, 
+    collection,
+    doc,
+    setDoc,
+    writeBatch,
+    storageRef,
+    uploadBytes,
+    getDownloadURL
+} from '@/firebase';
 import Resizer from 'react-image-file-resizer';
 import Link from 'next/link';
 

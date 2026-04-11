@@ -2,7 +2,18 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { useFirestore, useCollection, useStorage, useAuth, useMemoFirebase, collection, doc } from '@/firebase';
+import { 
+    useFirestore, 
+    useCollection, 
+    useStorage, 
+    useAuth, 
+    useMemoFirebase, 
+    collection, 
+    doc, 
+    storageRef, 
+    uploadBytes, 
+    getDownloadURL 
+} from '@/firebase';
 import type { Donation, Campaign, Lead, DonationLink, TransactionDetail, Donor } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from '@/hooks/use-session';
