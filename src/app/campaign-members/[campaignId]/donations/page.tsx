@@ -46,7 +46,8 @@ import {
     Wallet,
     CalendarIcon,
     AlertCircle,
-    Save
+    Save,
+    Users
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -353,7 +354,7 @@ function DonationListContent() {
     setIsUnlinkDialogOpen(false);
     setIsSubmitting(true);
     const docRef = doc(firestore, 'donations', donationToUnlink);
-    const newLinkSplit = (donationData.linkSplit || []).filter((link: any) => link.linkId !== campaignId || link.linkType !== 'campaign');
+    const newLinkSplit = (donationData.linkSplit || []).filter((link: any) => link.linkId !== campaignId || link.linkType === 'campaign');
     const updateData = { linkSplit: newLinkSplit };
     try {
         await updateDoc(docRef, updateData);
@@ -752,7 +753,7 @@ function DonationListContent() {
 export default function DonationsPage() {
     return (
         <Suspense fallback={<BrandedLoader message="Syncing Campaign Donations..." />}>
-            <DonationListContent />
+            <LeadDonationListContent />
         </Suspense>
     );
 }
