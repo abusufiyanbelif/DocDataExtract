@@ -467,9 +467,9 @@ export default function AppSettingsPage() {
     
     const handleCancel = () => setIsEditMode(false);
 
-    const isLoadingState = isSessionLoading || isBrandingLoading || isPaymentLoading || isGPLoading;
+    const isLoadingPage = isSessionLoading || isBrandingLoading || isPaymentLoading || isGPLoading;
 
-    if (isLoadingState) {
+    if (isLoadingPage) {
         return <BrandedLoader message="Syncing Institutional Settings..." />;
     }
 

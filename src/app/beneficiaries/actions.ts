@@ -90,7 +90,7 @@ export async function syncMasterBeneficiaryListAction(): Promise<{ success: bool
         }
 
         revalidatePath('/beneficiaries');
-        return { success: true, message: `Sync complete. Discovered and registered ${addedCount} missing profiles.` };
+        return { success: true, message: `Sync Complete. Discovered And Registered ${addedCount} Missing Profiles.` };
     } catch (error: any) {
         console.error("Master Sync Failed:", error);
         return { success: false, message: `Sync Failed: ${error.message}` };
@@ -157,7 +157,6 @@ export async function updateBeneficiaryStatusInInitiativeAction(
 
 /**
  * Robust server-side action to upsert a beneficiary within an initiative context.
- * This resolves permission errors by handling cross-collection updates on the server.
  */
 export async function upsertInitiativeBeneficiaryAction(
     initiativeType: 'campaign' | 'lead',
@@ -183,7 +182,6 @@ export async function upsertInitiativeBeneficiaryAction(
 
             const { status, kitAmount, zakatAllocation, itemCategoryId, itemCategoryName, verificationStatus, ...masterFields } = beneficiaryData;
             
-            // 1. Update Master Profile
             const masterStatusToSave = status === 'Given' ? 'Verified' : (status || 'Pending');
             transaction.set(masterRef, {
                 ...masterFields,
@@ -193,7 +191,6 @@ export async function upsertInitiativeBeneficiaryAction(
                 updatedByName: updatedBy.name,
             }, { merge: true });
 
-            // 2. Update Initiative-Specific Record
             const initiativeBeneficiaryData = {
                 ...beneficiaryData,
                 verificationStatus: masterStatusToSave,
@@ -201,7 +198,6 @@ export async function upsertInitiativeBeneficiaryAction(
             };
             transaction.set(subRef, initiativeBeneficiaryData, { merge: true });
 
-            // 3. Adjust Initiative Total Goal if this is a new link
             if (!subSnap.exists) {
                 const currentInitiative = initiativeSnap.data() as Campaign | Lead;
                 const newTarget = (currentInitiative.targetAmount || 0) + (kitAmount || 0);
@@ -248,8 +244,6 @@ export async function updateMasterBeneficiaryAction(
         
         revalidatePath(`/beneficiaries/${beneficiaryId}`);
         revalidatePath('/beneficiaries');
-        revalidatePath('/campaign-members', 'layout');
-        revalidatePath('/leads-members', 'layout');
 
         return { success: true, message: `Beneficiary Master Record Synchronized.` };
     } catch (error: any) {
@@ -489,8 +483,6 @@ export async function deleteBeneficiaryAction(beneficiaryId: string): Promise<{ 
         await batch.commit();
 
         revalidatePath('/beneficiaries');
-        revalidatePath('/campaign-members', 'layout');
-        revalidatePath('/leads-members', 'layout');
 
         return { success: true, message: 'Beneficiary Permanently Removed.' };
     } catch (error: any) {

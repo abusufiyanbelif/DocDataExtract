@@ -47,7 +47,8 @@ import {
     CalendarIcon,
     AlertCircle,
     Save,
-    Users
+    Users,
+    CheckCircle2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -127,7 +128,7 @@ function StatCard({ title, count, description, icon: Icon, delay, isCurrency = f
         >
             <div className="flex justify-between items-start mb-2">
                 <div className="space-y-0.5">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight"> {title} </p>
+                    <p className="text-[10px] font-bold text-muted-foreground tracking-tight">{title}</p>
                     <p className="text-2xl font-black text-primary tracking-tight">
                         {isCurrency ? `₹${count}` : count}
                     </p>
@@ -144,7 +145,7 @@ function StatCard({ title, count, description, icon: Icon, delay, isCurrency = f
 function SortableHeader({ sortKey, children, className, sortConfig, handleSort }: { sortKey: any, children: React.ReactNode, className?: string, sortConfig: { key: string; direction: 'ascending' | 'descending' } | null, handleSort: (key: any) => void }) {
     const isSorted = sortConfig?.key === sortKey;
     return (
-        <div className={cn("cursor-pointer hover:bg-muted/50 text-[hsl(var(--table-header-fg))] font-bold text-[10px] tracking-tight flex items-center gap-2 uppercase", className)} onClick={() => handleSort(sortKey)}>
+        <div className={cn("cursor-pointer hover:bg-muted/50 text-[hsl(var(--table-header-fg))] font-bold text-[10px] tracking-tight flex items-center gap-2", className)} onClick={() => handleSort(sortKey)}>
             {children}
             <div className="flex flex-col opacity-40">
                 <ArrowUp className={cn("h-2.5 w-2.5 -mb-1", isSorted && sortConfig?.direction === 'ascending' && "text-primary opacity-100")} />
@@ -619,9 +620,9 @@ function DonationListContent() {
                         <SortableHeader sortKey="donorName" sortConfig={sortConfig} handleSort={handleSort}>Donor</SortableHeader>
                         <SortableHeader sortKey="amountForThisCampaign" className="text-right" sortConfig={sortConfig} handleSort={handleSort}>Amount</SortableHeader>
                         <SortableHeader sortKey="donationDate" sortConfig={sortConfig} handleSort={handleSort}>Date</SortableHeader>
-                        <div className="font-bold text-[hsl(var(--table-header-fg))] text-[10px] tracking-tight uppercase">Method</div>
-                        <div className="font-bold text-[hsl(var(--table-header-fg))] text-[10px] tracking-tight uppercase">Status</div>
-                        <div className="text-right pr-4 font-bold text-[hsl(var(--table-header-fg))] text-[10px] tracking-tight uppercase">Actions</div>
+                        <div className="font-bold text-[hsl(var(--table-header-fg))] text-[10px] tracking-tight">Method</div>
+                        <div className="font-bold text-[hsl(var(--table-header-fg))] text-[10px] tracking-tight">Status</div>
+                        <div className="text-right pr-4 font-bold text-[hsl(var(--table-header-fg))] text-[10px] tracking-tight">Actions</div>
                     </div>
                     <div className="w-full max-h-[70vh]">
                         {paginatedDonations.map((donation, index) => {
@@ -724,7 +725,7 @@ function DonationListContent() {
                 <DonationForm donation={editingDonation} onSubmit={handleFormSubmit} onCancel={() => setIsFormOpen(false)} campaigns={allCampaigns || []} leads={allLeads || []} defaultLinkId={`campaign_${campaignId}`} />
             </div>
             <DialogFooter className="bg-primary/5 border-t p-4 shrink-0 flex justify-between items-center">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest uppercase">Securing Institutional Records</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Securing Institutional Records</p>
                 <Button variant="outline" onClick={() => setIsFormOpen(false)} className="font-bold border-primary/20 text-primary">Close Form</Button>
             </DialogFooter>
         </DialogContent>
@@ -744,7 +745,7 @@ function DonationListContent() {
       )}
       
       <AlertDialog open={isUnlinkDialogOpen} onOpenChange={setIsUnlinkDialogOpen}>
-        <AlertDialogContent className="rounded-[16px] border-primary/10 shadow-dropdown"><AlertDialogHeader><AlertDialogTitle className="font-bold text-destructive uppercase">Unlink From Project?</AlertDialogTitle><AlertDialogDescription className="font-normal text-primary/70">Detach This Record From The Current Campaign? The Record Remains Secured In The Master Registry.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="font-bold border-primary/10 text-primary">Cancel</AlertDialogCancel><AlertDialogAction onClick={handleUnlinkConfirm} className="bg-destructive text-white font-bold rounded-[12px] transition-transform active:scale-95 shadow-md">Confirm Unlink</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+        <AlertDialogContent className="rounded-[16px] border-primary/10 shadow-dropdown"><AlertDialogHeader><AlertDialogTitle className="font-bold text-destructive">Unlink From Project?</AlertDialogTitle><AlertDialogDescription className="font-normal text-primary/70">Detach This Record From The Current Campaign? The Record Remains Secured In The Master Registry.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel className="font-bold border-primary/10 text-primary">Cancel</AlertDialogCancel><AlertDialogAction onClick={handleUnlinkConfirm} className="bg-destructive text-white font-bold rounded-[12px] transition-transform active:scale-95 shadow-md">Confirm Unlink</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
     </main>
   );
@@ -753,7 +754,7 @@ function DonationListContent() {
 export default function DonationsPage() {
     return (
         <Suspense fallback={<BrandedLoader message="Syncing Campaign Donations..." />}>
-            <LeadDonationListContent />
+            <DonationListContent />
         </Suspense>
     );
 }
