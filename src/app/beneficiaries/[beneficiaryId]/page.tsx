@@ -292,8 +292,6 @@ export default function BeneficiaryDetailsPage() {
                         beneficiary={formBeneficiaryData} 
                         onSubmit={handleSave} 
                         onCancel={() => setIsEditMode(false)} 
-                        isSubmitting={isSubmitting} 
-                        isLoading={isInitiativeDataLoading} 
                         isReadOnly={!isEditMode} 
                         itemCategories={[]} 
                         hideKitAmount={true} 
@@ -331,7 +329,7 @@ export default function BeneficiaryDetailsPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {linkedInitiatives.map((link) => (
+                                        {linkedInitiatives.map((link: any) => (
                                             <TableRow key={`${link.type}_${link.id}`} className="hover:bg-[hsl(var(--table-row-hover))] transition-colors border-b border-primary/5 bg-white">
                                                 <TableCell className="pl-6 py-4">
                                                     <div className="flex items-center gap-3">
@@ -457,7 +455,7 @@ export default function BeneficiaryDetailsPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {linkedInitiatives.map((link) => (
+                                        {linkedInitiatives.map((link: any) => (
                                             <TableRow key={`fin_${link.type}_${link.id}`} className="hover:bg-[hsl(var(--table-row-hover))] transition-colors border-b border-primary/5 bg-white">
                                                 <TableCell className="pl-6 py-4">
                                                     <div className="flex items-center gap-2">

@@ -43,7 +43,6 @@ import {
     UploadCloud,
     IndianRupee,
     Hourglass,
-    XCircle,
     Smartphone,
     Wallet,
     CalendarIcon,
@@ -234,7 +233,7 @@ function LeadDonationListContent() {
     setIsUnlinkDialogOpen(false);
     setIsSubmitting(true);
     const docRef = doc(firestore, 'donations', donationToUnlink);
-    const newLinkSplit = (donationData.linkSplit || []).filter(link => link.linkId !== leadId || link.linkType !== 'lead');
+    const newLinkSplit = (donationData.linkSplit || []).filter((link: any) => link.linkId !== leadId || link.linkType !== 'lead');
     const updateData = { linkSplit: newLinkSplit };
     try {
         await updateDoc(docRef, updateData);
@@ -252,7 +251,7 @@ function LeadDonationListContent() {
     return allDonations
       .filter(d => d.linkSplit?.some(link => link.linkId === leadId && link.linkType === 'lead'))
       .map(d => {
-        const leadLink = d.linkSplit?.find(l => l.linkId === leadId && l.linkType === 'lead');
+        const leadLink = d.linkSplit?.find((l: any) => l.linkId === leadId && l.linkType === 'lead');
         const amountForThisLead = leadLink?.amount || 0;
         return { ...d, amountForThisLead };
       });
@@ -333,7 +332,7 @@ function LeadDonationListContent() {
     
     const hasFilesToUpload = data.transactions.some(tx => tx.screenshotFile && (tx.screenshotFile as FileList).length > 0);
     if (hasFilesToUpload && !auth?.currentUser) {
-        toast({ title: "Authentication Error", description: "Authorization Session Expired. Please Re-Login.", variant: "destructive" });
+        toast({ title: "Authentication Error", description: "Authorization Expired. Please Re-Login.", variant: "destructive" });
         return;
     }
 
@@ -455,7 +454,7 @@ function LeadDonationListContent() {
         `"${(d.comments || '').replace(/"/g, '""')}"`,
         `"${(d.suggestions || '').replace(/"/g, '""')}"`
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const csvContent = "data:text/csv;charset=utf-8," + headers.join(',');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -753,7 +752,7 @@ function LeadDonationListContent() {
         </Card>
 
         <Dialog open={isFormOpen} onOpenChange={(open) => { setIsFormOpen(open); if(!open) setEditingDonation(null); }}>
-            <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 overflow-hidden rounded-[16px] border-primary/10">
+            <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 overflow-hidden rounded-[16px] border-primary/10 text-primary font-normal">
                 <DialogHeader className="p-6 bg-primary/5 border-b shrink-0">
                     <DialogTitle className="text-xl font-bold text-primary tracking-tight">
                         {editingDonation ? 'Modify Donation Profile' : 'Donation Details To Be Add'}
@@ -769,6 +768,10 @@ function LeadDonationListContent() {
                         defaultLinkId={`lead_${leadId}`} 
                     />
                 </div>
+                <DialogFooter className="bg-primary/5 border-t p-4 flex justify-between items-center shrink-0">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest uppercase">Securing Institutional Records</p>
+                    <Button variant="outline" onClick={() => setIsFormOpen(false)} className="font-bold border-primary/20 text-primary">Close Form</Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
 

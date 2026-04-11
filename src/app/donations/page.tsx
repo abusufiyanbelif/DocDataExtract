@@ -40,7 +40,6 @@ import {
     Users,
     CheckCircle2,
     Hourglass,
-    XCircle,
     Smartphone,
     Wallet,
     ArrowLeft,
@@ -792,7 +791,7 @@ export default function DonationsPage() {
         </Card>
 
         <Dialog open={isFormOpen} onOpenChange={(open) => { setIsFormOpen(open); if(!open) setEditingDonation(null); }}>
-            <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 overflow-hidden rounded-[16px] border-primary/10">
+            <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 overflow-hidden rounded-[16px] border-primary/10 text-primary font-normal">
                 <DialogHeader className="px-6 py-4 bg-primary/5 border-b shrink-0">
                     <DialogTitle className="text-xl font-bold text-primary tracking-tight">
                         {editingDonation ? 'Modify Donation Profile' : 'Register New Contribution'}

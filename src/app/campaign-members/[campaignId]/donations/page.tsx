@@ -44,8 +44,6 @@ import {
     XCircle,
     Smartphone,
     Wallet,
-    CheckCircle2,
-    Users,
     CalendarIcon,
     AlertCircle,
     Save
@@ -220,7 +218,7 @@ function DonationListContent() {
         return (d as any).campaignId === campaignId;
       })
       .map(d => {
-        const campaignLink = d.linkSplit?.find(l => l.linkId === campaignId && l.linkType === 'campaign');
+        const campaignLink = d.linkSplit?.find((l: any) => l.linkId === campaignId && l.linkType === 'campaign');
         const amountForThisCampaign = campaignLink?.amount || ((d as any).campaignId === campaignId ? d.amount : 0);
         return { ...d, amountForThisCampaign };
       });
@@ -355,7 +353,7 @@ function DonationListContent() {
     setIsUnlinkDialogOpen(false);
     setIsSubmitting(true);
     const docRef = doc(firestore, 'donations', donationToUnlink);
-    const newLinkSplit = (donationData.linkSplit || []).filter(link => link.linkId !== campaignId || link.linkType !== 'campaign');
+    const newLinkSplit = (donationData.linkSplit || []).filter((link: any) => link.linkId !== campaignId || link.linkType !== 'campaign');
     const updateData = { linkSplit: newLinkSplit };
     try {
         await updateDoc(docRef, updateData);
@@ -657,8 +655,8 @@ function DonationListContent() {
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-primary transition-transform active:scale-90"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="rounded-[12px] border-primary/10 shadow-dropdown border-primary/10">
-                                                    <DropdownMenuItem onClick={() => router.push(`/campaign-members/${campaignId}/donations/${donation.id}`)} className="font-normal text-primary"><Eye className="mr-2 h-4 w-4 opacity-60" /> Details</DropdownMenuItem>
-                                                    {canUpdate && <DropdownMenuItem onClick={() => { setEditingDonation(donation); setIsFormOpen(true); }} className="font-normal text-primary"><Edit className="mr-2 h-4 w-4 opacity-60" /> Edit Record</DropdownMenuItem>}
+                                                    <DropdownMenuItem onClick={() => router.push(`/campaign-members/${campaignId}/donations/${donation.id}`)} className="text-primary font-normal text-primary"><Eye className="mr-2 h-4 w-4 opacity-60" /> Details</DropdownMenuItem>
+                                                    {canUpdate && <DropdownMenuItem onClick={() => { setEditingDonation(donation); setIsFormOpen(true); }} className="text-primary font-normal text-primary"><Edit className="mr-2 h-4 w-4 opacity-60" /> Edit Record</DropdownMenuItem>}
                                                     {canUpdate && <DropdownMenuItem onClick={() => handleUnlinkClick(donation.id)} className="text-destructive font-normal"><Link2Off className="mr-2 h-4 w-4 opacity-60" /> Unlink From Project</DropdownMenuItem>}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
@@ -715,7 +713,7 @@ function DonationListContent() {
         </Card>
       
       <Dialog open={isFormOpen} onOpenChange={(open) => { setIsFormOpen(open); if(!open) setEditingDonation(null); }}>
-        <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 overflow-hidden rounded-[16px] border-primary/10">
+        <DialogContent className="max-w-2xl h-[90vh] flex flex-col p-0 overflow-hidden rounded-[16px] border-primary/10 text-primary font-normal">
             <DialogHeader className="border-b bg-primary/5 p-6 shrink-0">
                 <DialogTitle className="text-xl font-bold tracking-tight text-primary">
                     {editingDonation ? 'Modify Donation Profile' : 'Donation Details To Add'}
@@ -725,7 +723,7 @@ function DonationListContent() {
                 <DonationForm donation={editingDonation} onSubmit={handleFormSubmit} onCancel={() => setIsFormOpen(false)} campaigns={allCampaigns || []} leads={allLeads || []} defaultLinkId={`campaign_${campaignId}`} />
             </div>
             <DialogFooter className="bg-primary/5 border-t p-4 shrink-0 flex justify-between items-center">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Securing Institutional Records</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest uppercase">Securing Institutional Records</p>
                 <Button variant="outline" onClick={() => setIsFormOpen(false)} className="font-bold border-primary/20 text-primary">Close Form</Button>
             </DialogFooter>
         </DialogContent>
