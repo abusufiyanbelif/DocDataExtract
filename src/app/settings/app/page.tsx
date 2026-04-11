@@ -49,7 +49,8 @@ import {
     HelpCircle, 
     ListChecks, 
     Calendar,
-    Filter
+    Filter,
+    Eye
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -59,10 +60,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import type { GuidingPrinciple, FocusArea, Campaign, Lead, BrandingSettings } from '@/lib/types';
+import type { GuidingPrinciple, FocusArea, Campaign, Lead, BrandingSettings, DonationCategory } from '@/lib/types';
 import { BrandedLoader } from '@/components/branded-loader';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn, getNestedValue } from '@/lib/utils';
+import { donationCategories } from '@/lib/modules';
 
 interface FormDataType {
     name: string;
@@ -465,9 +467,9 @@ export default function AppSettingsPage() {
     
     const handleCancel = () => setIsEditMode(false);
 
-    const isLoading = isSessionLoading || isBrandingLoading || isPaymentLoading || isGPLoading;
+    const isLoadingState = isSessionLoading || isBrandingLoading || isPaymentLoading || isGPLoading;
 
-    if (isLoading) {
+    if (isLoadingState) {
         return <BrandedLoader message="Syncing Institutional Settings..." />;
     }
 
@@ -1057,7 +1059,7 @@ export default function AppSettingsPage() {
                                             <div className="space-y-1">
                                                 <Label className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">Visual & Label</Label>
                                                 <div className="flex gap-2">
-                                                    <Select value={area.icon} onValueChange={(val) => handleFocusAreaChange(index, 'icon', val)} disabled={isFormDisabled}>
+                                                    <Select value={area.icon} onValueChange={(val) => handleFocusAreaChange(index, 'icon', val as any)} disabled={isFormDisabled}>
                                                         <SelectTrigger className="w-12 h-9 p-0 justify-center"><FocusAreaIcon type={area.icon}/></SelectTrigger>
                                                         <SelectContent className="rounded-[12px] shadow-dropdown">
                                                             <SelectItem value="Education"><GraduationCap className="h-4 w-4 text-primary"/></SelectItem>

@@ -34,6 +34,128 @@ export async function createMasterBeneficiaryAction(data: Partial<Beneficiary>, 
 }
 
 /**
+ * Synchronizes the master beneficiary list by finding records in initiatives 
+ * that are missing from the master collection.
+ */
+export async function syncMasterBeneficiaryListAction(): Promise<{ success: boolean; message: string }> {
+    const { adminDb } = getAdminServices();
+    if (!adminDb) return { success: false, message: ADMIN_SDK_ERROR_MESSAGE };
+
+    try {
+        const masterBeneficiariesSnap = await adminDb.collection('beneficiaries').get();
+        const masterIds = new Set(masterBeneficiariesSnap.docs.map(d => d.id));
+        const batch = adminDb.batch();
+        let addedCount = 0;
+
+        // Scan Campaigns
+        const campaignsSnap = await adminDb.collection('campaigns').get();
+        for (const campaignDoc of campaignsSnap.docs) {
+            const subSnap = await adminDb.collection(`campaigns/${campaignDoc.id}/beneficiaries`).get();
+            subSnap.forEach(docSnap => {
+                if (!masterIds.has(docSnap.id)) {
+                    const data = docSnap.data();
+                    const { status, kitAmount, verificationStatus, itemCategoryId, itemCategoryName, ...masterData } = data as any;
+                    batch.set(adminDb.collection('beneficiaries').doc(docSnap.id), {
+                        ...masterData,
+                        status: 'Verified',
+                        updatedAt: FieldValue.serverTimestamp(),
+                    }, { merge: true });
+                    masterIds.add(docSnap.id);
+                    addedCount++;
+                }
+            });
+        }
+
+        // Scan Leads
+        const leadsSnap = await adminDb.collection('leads').get();
+        for (const leadDoc of leadsSnap.docs) {
+            const subSnap = await adminDb.collection(`leads/${leadDoc.id}/beneficiaries`).get();
+            subSnap.forEach(docSnap => {
+                if (!masterIds.has(docSnap.id)) {
+                    const data = docSnap.data();
+                    const { status, kitAmount, verificationStatus, itemCategoryId, itemCategoryName, ...masterData } = data as any;
+                    batch.set(adminDb.collection('beneficiaries').doc(docSnap.id), {
+                        ...masterData,
+                        status: 'Verified',
+                        updatedAt: FieldValue.serverTimestamp(),
+                    }, { merge: true });
+                    masterIds.add(docSnap.id);
+                    addedCount++;
+                }
+            });
+        }
+
+        if (addedCount > 0) {
+            await batch.commit();
+        }
+
+        revalidatePath('/beneficiaries');
+        return { success: true, message: `Sync complete. Discovered and registered ${addedCount} missing profiles.` };
+    } catch (error: any) {
+        console.error("Master Sync Failed:", error);
+        return { success: false, message: `Sync Failed: ${error.message}` };
+    }
+}
+
+/**
+ * Updates details for a beneficiary within a specific initiative context.
+ */
+export async function updateInitiativeBeneficiaryDetailsAction(
+    initiativeType: 'campaign' | 'lead',
+    initiativeId: string,
+    beneficiaryId: string,
+    data: any
+): Promise<{ success: boolean; message: string }> {
+    const { adminDb } = getAdminServices();
+    if (!adminDb) return { success: false, message: ADMIN_SDK_ERROR_MESSAGE };
+
+    try {
+        const collectionName = initiativeType === 'campaign' ? 'campaigns' : 'leads';
+        const docRef = adminDb.doc(`${collectionName}/${initiativeId}/beneficiaries/${beneficiaryId}`);
+        await docRef.set({
+            ...data,
+            updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true });
+
+        revalidatePath(`/${collectionName}-members/${initiativeId}/beneficiaries`);
+        revalidatePath(`/beneficiaries/${beneficiaryId}`);
+        return { success: true, message: 'Initiative record updated successfully.' };
+    } catch (error: any) {
+        console.error("Initiative Update Failed:", error);
+        return { success: false, message: `Update Failed: ${error.message}` };
+    }
+}
+
+/**
+ * Updates only the disbursement status of a beneficiary within an initiative.
+ */
+export async function updateBeneficiaryStatusInInitiativeAction(
+    initiativeType: 'campaign' | 'lead',
+    initiativeId: string,
+    beneficiaryId: string,
+    newStatus: Beneficiary['status']
+): Promise<{ success: boolean; message: string }> {
+    const { adminDb } = getAdminServices();
+    if (!adminDb) return { success: false, message: ADMIN_SDK_ERROR_MESSAGE };
+
+    try {
+        const collectionName = initiativeType === 'campaign' ? 'campaigns' : 'leads';
+        const docRef = adminDb.doc(`${collectionName}/${initiativeId}/beneficiaries/${beneficiaryId}`);
+        await docRef.update({ 
+            status: newStatus,
+            updatedAt: FieldValue.serverTimestamp()
+        });
+
+        revalidatePath(`/${collectionName}-members/${initiativeId}/beneficiaries`);
+        revalidatePath(`/beneficiaries/${beneficiaryId}`);
+        return { success: true, message: `Disbursement status updated to ${newStatus}.` };
+    } catch (error: any) {
+        console.error("Status Update Failed:", error);
+        return { success: false, message: `Update Failed: ${error.message}` };
+    }
+}
+
+/**
  * Robust server-side action to upsert a beneficiary within an initiative context.
  * This resolves permission errors by handling cross-collection updates on the server.
  */
