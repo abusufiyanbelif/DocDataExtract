@@ -868,7 +868,7 @@ export default function CampaignSummaryPage() {
                                         <div className="space-y-3 font-normal text-foreground">
                                             {existingDocuments.map((doc) => (
                                                 <div key={doc.url} className="flex items-center justify-between p-2 border rounded-md gap-4 bg-primary/5 transition-all hover:bg-primary/10 border-primary/5">
-                                                    <div className="flex items-center gap-3 flex-1 min-0">
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0">
                                                         <Button variant="link" className="p-0 h-auto font-bold truncate text-primary active:scale-95" onClick={() => { if (doc.name.match(/\.(jpeg|jpg|gif|png|webp)$/i)) handleViewImage(doc.url, doc.name); else window.open(doc.url, '_blank'); }}><p className="truncate text-xs">{doc.name}</p></Button>
                                                     </div>
                                                     <div className="flex items-center gap-4">

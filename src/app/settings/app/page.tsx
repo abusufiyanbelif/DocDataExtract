@@ -465,9 +465,9 @@ export default function AppSettingsPage() {
     
     const handleCancel = () => setIsEditMode(false);
 
-    const isGlobalLoading = isSessionLoading || isBrandingLoading || isPaymentLoading || isGPLoading;
+    const isLoading = isSessionLoading || isBrandingLoading || isPaymentLoading || isGPLoading;
 
-    if (isGlobalLoading) {
+    if (isLoading) {
         return <BrandedLoader message="Syncing Institutional Settings..." />;
     }
 
@@ -831,7 +831,7 @@ export default function AppSettingsPage() {
                                         ) : (
                                             <div className="text-muted-foreground text-center p-2 font-normal opacity-20">
                                                 <ImageIcon className="mx-auto h-8 w-8" />
-                                                <p className="text-[10px] mt-1 font-bold tracking-tighter uppercase uppercase">No Logo Uploaded</p>
+                                                <p className="text-[10px] mt-1 font-bold tracking-tighter uppercase">No Logo Uploaded</p>
                                             </div>
                                         )}
                                     </div>
@@ -948,7 +948,7 @@ export default function AppSettingsPage() {
                                         ) : (
                                             <div className="text-muted-foreground text-center p-2 font-normal opacity-20">
                                                 <QrCode className="mx-auto h-8 w-8" />
-                                                <p className="text-[10px] mt-1 font-bold tracking-tighter uppercase uppercase">No QR Code</p>
+                                                <p className="text-[10px] mt-1 font-bold tracking-tighter uppercase">No QR Code</p>
                                             </div>
                                         )}
                                     </div>
@@ -1030,7 +1030,7 @@ export default function AppSettingsPage() {
 
                         <div className="space-y-6">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-bold text-primary tracking-tight flex items-center gap-2 uppercase uppercase"><Target className="h-4 w-4 opacity-40"/> Impact Pillars (Focus Areas)</h4>
+                                <h4 className="text-xs font-bold text-primary tracking-tight flex items-center gap-2 uppercase"><Target className="h-4 w-4 opacity-40"/> Impact Pillars (Focus Areas)</h4>
                                 {isEditMode && (
                                     <Button type="button" variant="outline" size="sm" onClick={handleAddFocusArea} className="h-7 text-[10px] font-bold border-primary/20 text-primary active:scale-95 transition-transform shadow-sm"><Plus className="h-3 w-3 mr-1"/> Add Pillar</Button>
                                 )}
@@ -1046,7 +1046,7 @@ export default function AppSettingsPage() {
                                                         checked={area.isHidden} 
                                                         onCheckedChange={(checked) => handleFocusAreaChange(index, 'isHidden', !!checked)} 
                                                     />
-                                                    <Label htmlFor={`focus-hide-${index}`} className="text-[10px] font-bold opacity-60 uppercase cursor-pointer uppercase">Hide</Label>
+                                                    <Label htmlFor={`focus-hide-${index}`} className="text-[10px] font-bold opacity-60 uppercase cursor-pointer">Hide</Label>
                                                 </div>
                                                 <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive transition-transform active:scale-90" onClick={() => handleRemoveFocusArea(index)}>
                                                     <Trash2 className="h-4 w-4"/>
@@ -1094,7 +1094,7 @@ export default function AppSettingsPage() {
 
                         <div className="space-y-6">
                             <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-bold text-primary tracking-tight flex items-center gap-2 uppercase uppercase"><ListChecks className="h-4 w-4 opacity-40"/> Procedural Directives</h4>
+                                <h4 className="text-xs font-bold text-primary tracking-tight flex items-center gap-2 uppercase"><ListChecks className="h-4 w-4 opacity-40"/> Procedural Directives</h4>
                                 {isEditMode && (
                                     <Button type="button" variant="outline" size="sm" onClick={handleAddPrinciple} className="h-7 text-[10px] font-bold border-primary/20 text-primary active:scale-95 transition-transform shadow-sm"><Plus className="h-3 w-3 mr-1"/> Add Rule</Button>
                                 )}
@@ -1103,7 +1103,7 @@ export default function AppSettingsPage() {
                                 {(displayData.principles || []).map((principle, index) => (
                                     <div key={principle.id || index} className="relative group p-4 border rounded-xl bg-white space-y-3 shadow-sm border-primary/5 hover:border-primary/20 transition-all">
                                         <div className="flex items-center justify-between">
-                                            <p className="font-bold text-primary text-[10px] tracking-widest uppercase opacity-40 uppercase">Standard Directive #{index + 1}</p>
+                                            <p className="font-bold text-primary text-[10px] tracking-widest uppercase opacity-40">Standard Directive #{index + 1}</p>
                                             {isEditMode && (
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex items-center space-x-1.5">
@@ -1112,7 +1112,7 @@ export default function AppSettingsPage() {
                                                             checked={principle.isHidden} 
                                                             onCheckedChange={(checked) => handleFieldChange('principles', displayData.principles.map((p, i) => i === index ? {...p, isHidden: !!checked} : p))} 
                                                         />
-                                                        <Label htmlFor={`gp-hide-${index}`} className="text-[10px] font-bold opacity-60 uppercase cursor-pointer uppercase">Hide</Label>
+                                                        <Label htmlFor={`gp-hide-${index}`} className="text-[10px] font-bold opacity-60 uppercase cursor-pointer">Hide</Label>
                                                     </div>
                                                     <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive transition-transform active:scale-90" onClick={() => handleRemovePrinciple(index)}>
                                                         <Trash2 className="h-4 w-4"/>
@@ -1132,7 +1132,7 @@ export default function AppSettingsPage() {
                                                 <p className="text-sm font-normal text-foreground leading-relaxed flex-1">
                                                     {principle.text || <span className="italic opacity-30">Unspecified Directive Text</span>}
                                                 </p>
-                                                {principle.isHidden && <Badge variant="outline" className="text-[8px] font-black uppercase border-primary/10 uppercase">Private</Badge>}
+                                                {principle.isHidden && <Badge variant="outline" className="text-[8px] font-black uppercase border-primary/10">Private</Badge>}
                                             </div>
                                         )}
                                     </div>

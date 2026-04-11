@@ -42,9 +42,9 @@ export function usePublicData() {
   
   // Master beneficiaries list for unique family counting
   const beneficiariesCollectionRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore) return null;
     return collection(firestore, 'beneficiaries');
-  }, [firestore, user]);
+  }, [firestore]);
 
   // Donations must be Verified to appear in aggregates or tickers
   const donationsCollectionRef = useMemoFirebase(() => {
@@ -57,7 +57,7 @@ export function usePublicData() {
   const { data: beneficiaries, isLoading: areBeneficiariesLoading } = useCollection<Beneficiary>(beneficiariesCollectionRef);
   const { data: donations, isLoading: areDonationsLoading } = useCollection<Donation>(donationsCollectionRef);
 
-  const isLoading = areCampaignsLoading || areLeadsLoading || areDonationsLoading || (user ? areBeneficiariesLoading : false) || isSessionLoading || isBrandingLoading;
+  const isLoading = areCampaignsLoading || areLeadsLoading || areDonationsLoading || areBeneficiariesLoading || isSessionLoading || isBrandingLoading;
 
   const memoizedData = useMemo(() => {
     if (isLoading || !campaigns || !leads || !donations) {
