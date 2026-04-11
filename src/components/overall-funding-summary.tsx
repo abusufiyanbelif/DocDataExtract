@@ -1,9 +1,10 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import { usePublicData } from '@/hooks/use-public-data';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from './ui/skeleton';
-import { Target, Users, CheckCircle2 } from 'lucide-react';
+import { Target, Users, CheckCircle2, IndianRupee } from 'lucide-react';
 import {
   RadialBarChart,
   RadialBar,
@@ -11,7 +12,6 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { useMemo } from 'react';
 import { Progress } from '@/components/ui/progress';
 
 /**

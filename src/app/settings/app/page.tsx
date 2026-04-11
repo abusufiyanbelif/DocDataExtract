@@ -25,6 +25,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { 
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { 
     Loader2, 
     UploadCloud, 
     Save, 
@@ -477,9 +484,9 @@ export default function AppSettingsPage() {
     
     const handleCancel = () => setIsEditMode(false);
 
-    const isLoadingPage = isSessionLoading || isBrandingLoading || isPaymentLoading || isGPLoading;
+    const isLoading = isSessionLoading || isBrandingLoading || isPaymentLoading || isGPLoading;
 
-    if (isLoadingPage) {
+    if (isLoading) {
         return <BrandedLoader message="Syncing Institutional Settings..." />;
     }
 
